@@ -802,6 +802,7 @@ dialog h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-size:20
 .opt small{color:var(--muted);display:block;font-size:11px;margin-top:2px}
 .opt b{color:var(--flap);font-weight:500;white-space:nowrap}
 .leaflet-container{background:#11151b;font-family:var(--mono)}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.35)}
 .leaflet-control-attribution{font-size:9px!important;background:rgba(14,17,22,.7)!important;color:var(--muted)!important}
 .leaflet-control-attribution a{color:var(--muted)!important}
 .num-pin{background:var(--flap);color:var(--flap-ink);border-radius:50%;font:500 11px/20px var(--mono);text-align:center;border:2px solid var(--ink)}
@@ -987,11 +988,11 @@ function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTi
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 
 /* ---------- maps ---------- */
-const TILES="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
-const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+const TILES="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 function mkMap(el,opts){
   const m=L.map(el,Object.assign({zoomControl:false,attributionControl:true},opts||{}));
-  L.tileLayer(TILES,{attribution:ATTR,subdomains:"abcd",maxZoom:19}).addTo(m);
+  L.tileLayer(TILES,{attribution:ATTR,maxZoom:19}).addTo(m);
   return m;
 }
 const pinStyle=open=>({radius:6,weight:1.5,color:"#0E1116",fillColor:open?"#F2B632":"#59606a",fillOpacity:open?1:.85});
@@ -1026,7 +1027,7 @@ function updateSetupCount(){
   sPins.forEach(p=>{const o=openOK(p._v,t);p.setStyle(pinStyle(o))});
   const thin=S.len===60?3:5;
   const h=$("setupHeads");
-  if(inC.length===0){h.hidden=false;h.textContent="No rooftops in this circle. Drag the map toward the yellow pins."}
+  if(inC.length===0){h.hidden=false;h.innerHTML=`No rooftops in this circle. <button class="link" type="button" id="toCity" style="color:var(--flap)">Jump to the city</button>`;$("toCity").onclick=()=>{sMap.setView([-33.8732,151.2069]);fitCircle()}}
   else if(open.length<thin){h.hidden=false;h.textContent=`Heads-up: only ${open.length} open in this circle right now.`}
   else h.hidden=true;
   $("startBtn").disabled=open.length===0;
@@ -1039,7 +1040,7 @@ function renderSetup(){
 }
 $("recentre").onclick=async()=>{
   if(S.test){if(S.fake)sMap.setView([S.fake.lat,S.fake.lng]);$("locWarn").hidden=true;return}
-  try{const p=await getOnce();here=p;$("locWarn").hidden=true;sMap.setView([p.lat,p.lng]);drawYou()}catch(e){showLocWarn(e)}
+  try{const p=await getOnce();here=p;$("locWarn").hidden=true;drawYou();if(inCircle(p,S.radius).length)sMap.setView([p.lat,p.lng]);else{const n=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];$("setupHeads").hidden=false;$("setupHeads").textContent=`You're ${km(dist(p,n))} from the nearest rooftop, so your circle stays put. Drag it to wherever you'll start.`}}catch(e){showLocWarn(e)}
 };
 function showLocWarn(e){
   const w=$("locWarn");w.hidden=false;
@@ -1422,7 +1423,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){loop();if
 /* ---------- boot ---------- */
 if(S.game&&!S.test)startWatch();
 if(S.view==="setup"&&!S.test&&navigator.permissions&&navigator.geolocation){
-  navigator.permissions.query({name:"geolocation"}).then(p=>{if(p.state==="granted")getOnce().then(pos=>{here=pos;if(sMap&&!S.game)sMap.setView([pos.lat,pos.lng]);drawYou()}).catch(()=>{})}).catch(()=>{});
+  navigator.permissions.query({name:"geolocation"}).then(p=>{if(p.state==="granted")getOnce().then(pos=>{here=pos;if(sMap&&!S.game&&inCircle(pos,S.radius).length)sMap.setView([pos.lat,pos.lng]);drawYou()}).catch(()=>{})}).catch(()=>{});
 }
 render();loop();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
