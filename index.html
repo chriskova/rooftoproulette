@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rooftop Roulette</title>
+<meta name="description" content="A rooftop bar crawl against the clock. Spin, walk, drink, spin again.">
+<meta name="theme-color" content="#0E1116">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rooftop Roulette">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<style>
+@font-face{font-family:"Big Shoulders Display";font-weight:500;font-display:swap;src:url(fonts/big-shoulders-display-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-weight:500;font-display:swap;src:url(fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
+:root{
+  --ink:#0E1116;--panel:#171B22;--slot:#1F242D;--line:#2C333E;
+  --text:#ECE7DA;--muted:#8E949C;--flap:#F2B632;--flap-ink:#2A1E05;--alert:#FF6B5B;--ok:#7FD19B;--you:#6FB7FF;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ink);color:var(--text);font-family:var(--mono);font-size:14px;-webkit-tap-highlight-color:transparent}
+body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,select,input{font:inherit;color:inherit}
+[hidden]{display:none!important}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding-block:10px 22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{display:flex;align-items:center;gap:8px;min-height:36px}
+.brand{font-family:var(--display);font-weight:800;font-size:clamp(18px,5.4vw,23px);line-height:1;white-space:nowrap;letter-spacing:.08em;text-transform:uppercase;flex:1;min-width:0;user-select:none}
+.brand span{color:var(--flap)}
+.tabs{display:flex;gap:4px}
+.tab,.icon{appearance:none;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:7px;height:32px;padding:0 9px;font-size:11px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--text);border-color:var(--text)}
+.clock{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.clock b{font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;color:var(--text)}
+.clock small{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.clock.warn b,.clock.warn small{color:var(--flap)}
+.clock.red b,.clock.red small{color:var(--alert)}
+.lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{appearance:none;background:var(--slot);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--flap);color:var(--flap)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row .lbl{width:52px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px}
+.card h3{margin:0;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+.card p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.note{font-size:11.5px;color:var(--muted);line-height:1.5}
+.note b{color:var(--text);font-weight:500}
+.heads{font-size:11.5px;color:var(--flap);line-height:1.5}
+.warnbox{border:1px solid var(--alert);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;color:var(--text);background:rgba(255,107,91,.08)}
+.warnbox b{color:var(--alert);font-weight:500}
+.mapbox{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#11151b}
+#setupMap{height:min(52vh,420px)}
+#playMap{height:170px}
+#endMap{height:220px}
+.cross{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;pointer-events:none;z-index:500}
+.cross::before,.cross::after{content:"";position:absolute;background:var(--flap)}
+.cross::before{left:6px;top:0;width:2px;height:14px}.cross::after{top:6px;left:0;height:2px;width:14px}
+.maphint{position:absolute;left:8px;bottom:8px;z-index:500;font-size:10.5px;background:rgba(14,17,22,.85);border:1px solid var(--line);border-radius:6px;padding:3px 7px;color:var(--muted);pointer-events:none}
+.mapbtn{position:absolute;right:8px;top:8px;z-index:500;appearance:none;background:rgba(14,17,22,.9);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11px;cursor:pointer}
+.count{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
+.count span{color:var(--flap)}
+.big{width:100%;appearance:none;border:0;border-radius:999px;background:var(--text);color:var(--ink);font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.14em;text-transform:uppercase;height:50px;cursor:pointer}
+.big:disabled{opacity:.4;cursor:default}
+.big.y{background:var(--flap);color:var(--flap-ink)}
+.ghost{appearance:none;background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 10px;font-size:11.5px;cursor:pointer}
+.link{appearance:none;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:11.5px;cursor:pointer;padding:4px 0}
+.strip{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.strip::-webkit-scrollbar{display:none}
+.pip{flex:none;font-size:11px;padding:4px 8px;border-radius:999px;background:var(--slot);border:1px solid var(--line);white-space:nowrap}
+.pip.yes{border-color:var(--ok);color:var(--ok)}
+.pip.no{opacity:.5;text-decoration:line-through}
+.pip.q{border-style:dashed;color:var(--flap);border-color:var(--flap)}
+.pip.here{border-color:var(--flap);color:var(--flap)}
+.ticket{background:var(--flap);color:var(--flap-ink);border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:none;opacity:1}}
+.ticket .tl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.ticket h2{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(26px,8vw,34px);line-height:1;text-transform:uppercase;text-wrap:balance}
+.ticket .sub{font-size:12px}
+.ticket .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;margin-top:4px;border-top:1px dashed rgba(42,30,5,.35);padding-top:7px;font-size:12px}
+.ticket .grid small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.65}
+.ticket .acts{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.ticket .acts a{font-size:11.5px;font-weight:500;color:var(--flap-ink);background:rgba(42,30,5,.1);border:1px solid rgba(42,30,5,.35);border-radius:999px;padding:6px 11px;text-decoration:none}
+.ticket.at{background:var(--panel);color:var(--text);border:1px solid var(--ok)}
+.ticket.at .tl{color:var(--ok);opacity:1}
+.ticket.at .grid{border-top-color:var(--line)}
+.ticket.empty{background:var(--panel);color:var(--muted);border:1px dashed var(--line);animation:none;text-align:center;font-size:12.5px;justify-content:center;min-height:84px;line-height:1.5}
+.dwell{font-variant-numeric:tabular-nums}
+.reel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.reelrow{height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--slot);border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+.reelrow.mid{height:48px;font-weight:800;font-size:clamp(20px,6.5vw,28px);color:var(--flap);border:1px solid var(--flap)}
+.flip{animation:flip 70ms ease-out}
+@keyframes flip{from{transform:translateY(-35%);opacity:.35}to{transform:none;opacity:1}}
+.ask{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--flap);border-radius:10px;padding:9px 11px;font-size:12.5px}
+.ask span{flex:1;min-width:150px}
+.ask small{display:block;color:var(--muted);font-size:10.5px;margin-top:2px}
+.ask button{appearance:none;border:1px solid var(--line);background:var(--slot);border-radius:999px;padding:6px 14px;font-size:12px;cursor:pointer}
+.ask button.yes{border-color:var(--ok);color:var(--ok)}
+details.more{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+details.more summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:"+ "}
+details.more[open] summary::before{content:"– "}
+.list{display:flex;flex-direction:column;margin-top:6px}
+.li{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-top:1px solid var(--line)}
+.li span:last-child{color:var(--muted);white-space:nowrap}
+.sc-head{font-family:var(--display);font-weight:800;text-transform:uppercase;line-height:1}
+.sc-head .n{font-size:64px;color:var(--flap)}
+.sc-head .t{font-size:22px;letter-spacing:.04em}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{background:var(--slot);border-radius:9px;padding:8px 10px;min-width:0}
+.stat small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stat b{font-weight:500;font-size:13px;display:block;margin-top:2px}
+.stat.wide{grid-column:1/-1}
+.pb{font-size:12px;color:var(--flap)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{appearance:none;font-size:11.5px;padding:5px 10px;border-radius:999px;background:var(--slot);border:1px solid var(--line);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--flap);color:var(--flap)}
+.photo img{width:100%;border-radius:10px;display:block}
+.hist{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
+.hist .n{font-family:var(--display);font-weight:800;font-size:30px;color:var(--flap);width:40px;text-align:center}
+.hist .d{flex:1;min-width:0;font-size:12px;line-height:1.45}
+.hist .d small{color:var(--muted);display:block}
+.hist img{width:44px;height:44px;object-fit:cover;border-radius:8px}
+.foot{color:var(--muted);font-size:10.5px;line-height:1.6;text-align:center}
+.test{border:1px dashed var(--you);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:rgba(111,183,255,.05)}
+.test .lbl{color:var(--you)}
+.test .ghost{color:var(--text)}
+.test select{background:var(--slot);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;min-width:0;flex:1}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;width:min(400px,calc(100vw - 32px));padding:14px}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.05em;text-transform:uppercase}
+.opt{display:flex;justify-content:space-between;gap:10px;width:100%;appearance:none;background:var(--slot);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px;cursor:pointer;text-align:left;font-size:12.5px}
+.opt small{color:var(--muted);display:block;font-size:11px;margin-top:2px}
+.opt b{color:var(--flap);font-weight:500;white-space:nowrap}
+.leaflet-container{background:#11151b;font-family:var(--mono)}
+.leaflet-control-attribution{font-size:9px!important;background:rgba(14,17,22,.7)!important;color:var(--muted)!important}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.num-pin{background:var(--flap);color:var(--flap-ink);border-radius:50%;font:500 11px/20px var(--mono);text-align:center;border:2px solid var(--ink)}
+:focus-visible{outline:2px solid var(--flap);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.flip,.ticket{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand" id="brand">Rooftop <span>Roulette</span></div>
+    <div class="tabs" id="tabs">
+      <button class="tab" id="tabPlay" role="tab" type="button">Play</button>
+      <button class="tab" id="tabHist" role="tab" type="button">History</button>
+    </div>
+    <div class="clock" id="clock" hidden><b id="clockT">60:00</b><small id="clockL">Left</small></div>
+  </div>
+
+  <!-- SETUP -->
+  <section id="vSetup" hidden>
+    <div class="wrap" style="padding:0">
+      <div class="mapbox">
+        <div id="setupMap"></div>
+        <div class="cross"></div>
+        <button class="mapbtn" id="recentre" type="button">Use my location</button>
+        <div class="maphint" id="maphint">Drag the map to move your circle</div>
+      </div>
+      <div class="count" id="setupCount">— rooftops</div>
+      <div class="heads" id="setupHeads" hidden></div>
+      <div class="card">
+        <div class="row"><span class="lbl">Circle</span><div class="seg" id="radSeg"></div></div>
+        <div class="row"><span class="lbl">Clock</span><div class="seg" id="lenSeg"></div></div>
+        <p>Start anywhere. You can move areas once during the game.</p>
+      </div>
+      <div class="warnbox" id="locWarn" hidden></div>
+      <button class="big y" id="startBtn" type="button">Start the clock</button>
+      <div class="note">Uses GPS while you play so it can check you in at each bar. Expect extra battery use.</div>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section id="vPlay" hidden>
+    <div class="wrap" style="padding:0">
+      <div class="strip" id="strip"></div>
+      <div id="ticketBox"></div>
+      <div class="ask" id="ask" hidden></div>
+      <button class="big" id="spinBtn" type="button">Spin</button>
+      <div class="row" style="justify-content:space-between">
+        <button class="link" id="moveBtn" type="button">Change areas</button>
+        <button class="link" id="endBtn" type="button">End game</button>
+      </div>
+      <div class="mapbox"><div id="playMap"></div><div class="maphint" id="playHint" hidden>Test: tap the map to move yourself</div></div>
+      <details class="more" id="more"><summary id="moreS">More nearby</summary><div class="list" id="moreL"></div></details>
+      <div class="note" id="gpsNote"></div>
+    </div>
+  </section>
+
+  <!-- END / SCORECARD -->
+  <section id="vEnd" hidden>
+    <div class="wrap" style="padding:0" id="endBox"></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="vHist" hidden>
+    <div class="card" id="histBox"></div>
+  </section>
+
+  <!-- TEST PANEL -->
+  <section class="test" id="testPanel" hidden>
+    <div class="row" style="justify-content:space-between"><span class="lbl" style="width:auto">Test mode</span><span class="note" id="testClock"></span></div>
+    <div class="row">
+      <button class="ghost" type="button" data-ff="1">+1 min</button>
+      <button class="ghost" type="button" data-ff="5">+5 min</button>
+      <button class="ghost" type="button" data-ff="15">+15 min</button>
+      <button class="ghost" type="button" data-ff="60">+1 hr</button>
+      <button class="ghost" type="button" id="ffReset">Real time</button>
+    </div>
+    <div class="row" id="testPlayRow">
+      <button class="ghost" type="button" id="tArrive">Walk to target</button>
+      <button class="ghost" type="button" id="tLeave">Walk away 200m</button>
+    </div>
+    <div class="row"><select id="tJump" aria-label="Put me at a bar"></select></div>
+    <div class="note">Tap any map to put yourself there. Fast-forward moves the game clock and opening hours together.</div>
+    <button class="link" type="button" id="tOff">Turn off test mode</button>
+  </section>
+
+  <div class="foot">Opening hours come from Google and can be wrong. Check before you queue.<br>Drink water. Don't drive.</div>
+</div>
+
+<dialog id="dlg"><div id="dlgBody"></div></dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script>
+"use strict";
+const VENUES=[{"id":"untied","name":"Untied","area":"Barangaroo","lat":-33.865555,"lng":151.201996,"rating":4.7,"address":"Level 4, 400 Barangaroo Ave","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1320]],[[720,1440]],[[720,1440]],[[720,1260]]]},{"id":"jimmy-s-rooftop","name":"Jimmy's Rooftop","area":"Sydney CBD","lat":-33.866292,"lng":151.207502,"rating":4.3,"address":"Level 4, 320 George St","hours":[[],[[720,1440]],[[720,1440]],[[720,1620]],[[720,1620]],[[720,1620]],[[900,1440]]]},{"id":"sora-rooftop-bar","name":"Sora Rooftop Bar","area":"Sydney CBD","lat":-33.872503,"lng":151.205453,"rating":4.3,"address":"Level 9, 285 Clarence St","hours":[[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1560]],[[720,1560]],[]]},{"id":"above-319","name":"Above 319","area":"Sydney CBD","lat":-33.875183,"lng":151.204269,"rating":4.2,"address":"Rooftop, 319 Sussex St","hours":[[],[],[[990,1260]],[[990,1260]],[[990,1380]],[[780,1380]],[[780,1200]]]},{"id":"harper-rooftop","name":"Harper Rooftop","area":"Sydney CBD","lat":-33.874979,"lng":151.207602,"rating":3.7,"address":"Level 7, 339 Pitt St","hours":[[],[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1380]],[[720,1380]]]},{"id":"j-ji","name":"Jōji","area":"Sydney CBD","lat":-33.868396,"lng":151.207405,"rating":4.6,"address":"Level 5, 388 George St","hours":[[[960,1380]],[[720,1380]],[[720,1440]],[[720,1500]],[[720,1500]],[[720,1560]],[[960,1380]]]},{"id":"the-rook","name":"The Rook","area":"Sydney CBD","lat":-33.86973,"lng":151.20635,"rating":4.4,"address":"Level 7, 56 York St","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[]]},{"id":"babylon-rooftop","name":"Babylon Rooftop","area":"Sydney CBD","lat":-33.869726,"lng":151.208454,"rating":4.2,"address":"Level 7, 182 Pitt St","hours":[[[720,1320]],[[720,1380]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1320]]]},{"id":"the-rooftop-sydney","name":"The Rooftop Sydney","area":"Sydney CBD","lat":-33.871149,"lng":151.204121,"rating":4.1,"address":"Shelbourne Hotel, 200 Sussex St","hours":[[],[],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]]},{"id":"jacksons-on-george","name":"Jacksons on George","area":"Sydney CBD","lat":-33.861808,"lng":151.208123,"rating":3.9,"address":"176 George St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1560]]]},{"id":"taylor-s-rooftop","name":"Taylor's Rooftop","area":"Sydney CBD","lat":-33.863841,"lng":151.208726,"rating":4.0,"address":"Republic Hotel, 69 Pitt St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"hotel-sweeney-s","name":"Hotel Sweeney's","area":"Sydney CBD","lat":-33.872606,"lng":151.20585,"rating":4.1,"address":"236 Clarence St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1560]],[[600,1650]],[[600,1650]],[[720,1320]]]},{"id":"the-bristol","name":"The Bristol","area":"Sydney CBD","lat":-33.867754,"lng":151.203187,"rating":3.9,"address":"81 Sussex St","hours":[[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[600,1620]],[[720,1620]],[]]},{"id":"the-sussex-hotel","name":"The Sussex Hotel","area":"Sydney CBD","lat":-33.865008,"lng":151.203379,"rating":4.0,"address":"20 Sussex St","hours":[[[600,1440]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[720,1560]],[]]},{"id":"sky-bar-shell-house","name":"Sky Bar, Shell House","area":"Sydney CBD","lat":-33.865166,"lng":151.206718,"rating":4.0,"address":"37 Margaret St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]]},{"id":"old-mate-s-place","name":"Old Mate's Place","area":"Sydney CBD","lat":-33.869547,"lng":151.205153,"rating":4.7,"address":"Level 4, 199 Clarence St","hours":[[],[[960,1560]],[[960,1560]],[[960,1560]],[[900,1560]],[[900,1560]],[[900,1560]]]},{"id":"zephyr","name":"Zephyr","area":"Sydney CBD","lat":-33.869509,"lng":151.203289,"rating":4.2,"address":"Level 12, 161 Sussex St","hours":[[],[[900,1320]],[[900,1320]],[[900,1320]],[[900,1440]],[[840,1440]],[[840,1320]]]},{"id":"panorama-bar","name":"Panorama Bar","area":"Sydney CBD","lat":-33.867884,"lng":151.209637,"rating":4.1,"address":"The International, 25 Martin Pl","hours":[[],[[960,1440]],[[960,1440]],[[900,1440]],[[900,1440]],[[960,1440]],[]]},{"id":"aster","name":"Aster","area":"Sydney CBD","lat":-33.862904,"lng":151.212384,"rating":4.2,"address":"Level 32, 117 Macquarie St","hours":[[[960,1320]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1320]]]},{"id":"cirq","name":"CIRQ","area":"Barangaroo","lat":-33.862548,"lng":151.201074,"rating":4.1,"address":"Level 26, 1 Barangaroo Ave","hours":[[],[],[[960,1440]],[[960,1440]],[[960,1500]],[[960,1500]],[[960,1320]]]},{"id":"smoke-bar","name":"Smoke Bar","area":"Barangaroo","lat":-33.865576,"lng":151.201534,"rating":4.4,"address":"Level 2, 35 Barangaroo Ave","hours":[[],[[900,1320]],[[900,1440]],[[900,1440]],[[900,1500]],[[900,1500]],[[900,1380]]]},{"id":"zeta-bar","name":"Zeta Bar","area":"Sydney CBD","lat":-33.87175,"lng":151.207175,"rating":3.7,"address":"Hilton, Level 4, 488 George St","hours":[[],[],[],[],[[1020,1440]],[[1020,1440]],[]]},{"id":"the-glenmore","name":"The Glenmore","area":"The Rocks","lat":-33.858627,"lng":151.207429,"rating":4.3,"address":"96 Cumberland St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1500]],[[660,1500]],[[660,1440]]]},{"id":"henry-deane","name":"Henry Deane","area":"Millers Point","lat":-33.857891,"lng":151.202225,"rating":4.0,"address":"Hotel Palisade, 35 Bettington St","hours":[[],[[960,1320]],[[960,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1320]]]},{"id":"keg-brew","name":"Keg & Brew","area":"Surry Hills","lat":-33.883864,"lng":151.209905,"rating":4.3,"address":"26 Foveaux St","hours":[[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1620]],[[600,1620]],[[600,1320]]]},{"id":"taphouse","name":"Taphouse","area":"Darlinghurst","lat":-33.884582,"lng":151.218117,"rating":4.3,"address":"122 Flinders St","hours":[[[960,1380]],[[960,1380]],[[960,1380]],[[960,1440]],[[690,1500]],[[690,1500]],[[690,1380]]]},{"id":"colombian-hotel","name":"Colombian Hotel","area":"Darlinghurst","lat":-33.87958,"lng":151.215284,"rating":3.8,"address":"117 Oxford St","hours":[[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]]]},{"id":"the-tilbury","name":"The Tilbury","area":"Woolloomooloo","lat":-33.86978,"lng":151.220455,"rating":4.1,"address":"12 Nicholson St","hours":[[[660,1200]],[[660,1200]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]]},{"id":"the-imperial","name":"The Imperial","area":"Erskineville","lat":-33.899142,"lng":151.182612,"rating":4.2,"address":"35 Erskineville Rd","hours":[[[960,1320]],[[960,1320]],[[960,1380]],[[960,1380]],[[960,1620]],[[720,1680]],[[720,1320]]]},{"id":"the-surry-rooftop","name":"The Surry Rooftop","area":"Surry Hills","lat":-33.88192,"lng":151.209761,"rating":4.7,"address":"Level 11/28 Albion St","hours":[[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]]]},{"id":"aurora-hotel-rooftop","name":"Aurora Hotel Rooftop","area":"Surry Hills","lat":-33.884126,"lng":151.208419,"rating":4.0,"address":"324 Elizabeth St","hours":[[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]]]},{"id":"slims-rooftop","name":"Slims Rooftop","area":"Darlinghurst","lat":-33.874257,"lng":151.214643,"rating":3.9,"address":"47/49 William St","hours":[[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1440]]]},{"id":"the-strawberry","name":"The Strawberry","area":"Surry Hills","lat":-33.886524,"lng":151.208032,"rating":4.0,"address":"453 Elizabeth St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"east-village-hotel","name":"East Village Hotel","area":"Darlinghurst","lat":-33.877594,"lng":151.216632,"rating":4.2,"address":"234 Palmer St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]]},{"id":"burdekin-rooftop","name":"Burdekin Rooftop","area":"Darlinghurst","lat":-33.877028,"lng":151.212957,"rating":4.5,"address":"2 Oxford St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1440]],[[720,1440]],[]]},{"id":"kasbah-the-strand","name":"Kasbah, The Strand","area":"Darlinghurst","lat":-33.874564,"lng":151.216521,"rating":4.5,"address":"99 William St","hours":[[],[],[],[[960,1380]],[[960,1440]],[[780,1440]],[[780,1260]]]},{"id":"monica-rooftop","name":"Monica Rooftop","area":"Paddington","lat":-33.881801,"lng":151.219223,"rating":4.1,"address":"Level 5/1 Oxford St","hours":[[[900,1320]],[[900,1320]],[[900,1320]],[[900,1320]],[[720,1435]],[[720,1435]],[[720,1320]]]},{"id":"royal-hotel","name":"Royal Hotel","area":"Paddington","lat":-33.882399,"lng":151.228503,"rating":4.1,"address":"237 Glenmore Rd","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[600,1440]],[[660,1320]]]},{"id":"the-light-brigade","name":"The Light Brigade","area":"Woollahra","lat":-33.888535,"lng":151.232214,"rating":4.0,"address":"Cnr Oxford St & Jersey Rd","hours":[[[690,1440]],[[690,1440]],[[690,1440]],[[690,1440]],[[690,1500]],[[690,1500]],[[690,1320]]]},{"id":"sweethearts-terraza","name":"Sweethearts Terraza","area":"Potts Point","lat":-33.873366,"lng":151.223741,"rating":4.2,"address":"Level 3/33-35 Darlinghurst Rd","hours":[[],[],[[1020,1440]],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]]]},{"id":"kings-cross-hotel","name":"Kings Cross Hotel","area":"Potts Point","lat":-33.874903,"lng":151.222045,"rating":4.1,"address":"244-248 William St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]]]},{"id":"arturo-s-rooftop","name":"Arturo's Rooftop","area":"Woolloomooloo","lat":-33.869182,"lng":151.219488,"rating":3.6,"address":"Level 2/2 Bourke St","hours":[[],[],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]],[[720,1200]]]},{"id":"green-moustache","name":"Green Moustache","area":"North Sydney","lat":-33.838401,"lng":151.206795,"rating":4.3,"address":"Level 10/100 Miller St","hours":[[],[[705,1320]],[[705,1320]],[[690,1320]],[[690,1350]],[[690,1350]],[]]},{"id":"four-hundred","name":"Four Hundred","area":"North Sydney","lat":-33.840308,"lng":151.207483,"rating":4.7,"address":"Greenwood Plaza Rooftop","hours":[[],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[]]},{"id":"the-treehouse-hotel","name":"The Treehouse Hotel","area":"North Sydney","lat":-33.839196,"lng":151.206475,"rating":4.3,"address":"60 Miller St","hours":[[[720,1320]],[[720,1320]],[[720,1380]],[[720,1380]],[[720,1380]],[[1020,1380]],[]]},{"id":"le-rooftop","name":"Le Rooftop","area":"McMahons Point","lat":-33.843322,"lng":151.204459,"rating":4.1,"address":"178 Blues Point Rd","hours":[[],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]]]},{"id":"websters","name":"Websters","area":"Newtown","lat":-33.896988,"lng":151.179059,"rating":4.1,"address":"323 King St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"corridor","name":"Corridor","area":"Newtown","lat":-33.89357,"lng":151.183129,"rating":4.4,"address":"153A King St","hours":[[[1020,1380]],[[1020,1380]],[[1020,1380]],[[1020,1380]],[[960,1440]],[[900,1440]],[[900,1380]]]},{"id":"hotel-steyne","name":"Hotel Steyne","area":"Manly","lat":-33.796961,"lng":151.287679,"rating":3.7,"address":"75 The Corso","hours":[[[540,1620]],[[540,1620]],[[540,1620]],[[540,1620]],[[540,1800]],[[540,1800]],[[540,720]]]},{"id":"coogee-pavilion-rooftop","name":"Coogee Pavilion Rooftop","area":"Coogee","lat":-33.918713,"lng":151.258244,"rating":3.7,"address":"Level 3/169 Dolphin St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[660,1440]],[[660,1440]]]},{"id":"the-rooftop-pyrmont","name":"The Rooftop, Pyrmont","area":"Pyrmont","lat":-33.871066,"lng":151.194971,"rating":3.8,"address":"214-216 Harris St","hours":[[],[],[[720,1350]],[[720,1350]],[[720,1440]],[[720,1440]],[[720,1260]]]},{"id":"the-old-clare-rooftop","name":"The Old Clare Rooftop","area":"Chippendale","lat":-33.884421,"lng":151.201388,"rating":3.8,"address":"Level 4, 1 Kensington St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1320]],[[960,1320]],[]]}];
+const AREAS=[
+ {name:"Town Hall",lat:-33.8732,lng:151.2069},{name:"Wynyard",lat:-33.8659,lng:151.2059},
+ {name:"Martin Place",lat:-33.8678,lng:151.2113},{name:"Circular Quay",lat:-33.8614,lng:151.2108},
+ {name:"The Rocks",lat:-33.8590,lng:151.2070},{name:"Barangaroo",lat:-33.8630,lng:151.2017},
+ {name:"Central",lat:-33.8832,lng:151.2063},{name:"Chippendale",lat:-33.8844,lng:151.2014},
+ {name:"Surry Hills",lat:-33.8857,lng:151.2122},{name:"Darlinghurst",lat:-33.8790,lng:151.2183},
+ {name:"Kings Cross",lat:-33.8746,lng:151.2228},{name:"Potts Point",lat:-33.8710,lng:151.2240},
+ {name:"Woolloomooloo",lat:-33.8695,lng:151.2200},{name:"Paddington",lat:-33.8846,lng:151.2268},
+ {name:"Newtown",lat:-33.8978,lng:151.1793},{name:"Erskineville",lat:-33.8991,lng:151.1826},
+ {name:"Pyrmont",lat:-33.8705,lng:151.1947},{name:"North Sydney",lat:-33.8403,lng:151.2073},
+ {name:"Manly",lat:-33.7988,lng:151.2860},{name:"Coogee",lat:-33.9205,lng:151.2560}
+];
+const RADII=[1,1.5,2],LENS=[60,120];
+const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=5,SOON=30,FINAL=30;
+const KEY="rr-game-v2",HKEY="rr-history-v2";
+const $=id=>document.getElementById(id);
+const byId=id=>VENUES.find(v=>v.id===id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- state ---------- */
+let S={view:"setup",center:{lat:-33.8732,lng:151.2069},radius:1.5,len:60,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
+if(/[?&]test\b/.test(location.search))S.test=true;
+let H=[];try{H=JSON.parse(localStorage.getItem(HKEY)||"[]")||[]}catch(e){H=[]}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H))}catch(e){
+  // storage full: drop photos from oldest games first
+  for(let i=H.length-1;i>=0;i--){if(H[i].photo){H[i].photo=null;try{localStorage.setItem(HKEY,JSON.stringify(H));return}catch(_){}}}
+}};
+const now=()=>Date.now()+(S.ff||0);
+
+/* ---------- time + hours (Sydney) ---------- */
+function sydAt(ts){
+  const p=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date(ts));
+  const g=t=>p.find(x=>x.type===t).value;
+  let h=+g("hour");if(h===24)h=0;
+  return {day:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(g("weekday")),min:h*60+ +g("minute")};
+}
+function openState(v,ts){
+  const {day,min}=sydAt(ts),prev=(day+6)%7;
+  for(const [o,c] of v.hours[prev]) if(c>1440&&min<c-1440) return {open:true,until:c-1440-min,closeAt:c-1440};
+  let opens=null;
+  for(const [o,c] of v.hours[day]){
+    if(min>=o&&min<c) return {open:true,until:c-min,closeAt:c%1440};
+    if(o>min&&(opens===null||o<opens))opens=o;
+  }
+  return {open:false,opens};
+}
+const openOK=(v,ts)=>{const s=openState(v,ts);return s.open&&s.until>SOON};
+function clock12(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60;const ap=h>=12?"pm":"am";h=h%12||12;return h+(mm?":"+String(mm).padStart(2,"0"):"")+ap}
+const mmss=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const hmm=ms=>{if(ms<60000)return "<1 min";const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m":m+" min"};
+
+/* ---------- geo ---------- */
+function dist(a,b){const R=6371000,t=x=>x*Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin(t(b.lat-a.lat)/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(t(b.lng-a.lng)/2)**2))}
+const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
+const km=m=>(m/1000).toFixed(m<10000?1:0)+" km";
+const nearestArea=p=>AREAS.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0].name;
+function inCircle(c,r){return VENUES.filter(v=>dist(c,v)<=r*1000)}
+
+/* ---------- location ---------- */
+let here=null,watchId=null,locErr=null;
+function you(){return S.test&&S.fake?S.fake:here}
+function startWatch(){
+  if(S.test||watchId!==null||!navigator.geolocation)return;
+  watchId=navigator.geolocation.watchPosition(p=>{
+    here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;onLocation();
+  },e=>{locErr=e.code;renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+}
+function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+function getOnce(){
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation)return rej({code:-1});
+    navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+  });
+}
+
+/* ---------- sound ---------- */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(a.destination);o.start(t);o.stop(t+.05)}
+function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;out.gain.value=.9;lp.connect(out).connect(a.destination);[[659.25,.0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+
+/* ---------- maps ---------- */
+const TILES="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+function mkMap(el,opts){
+  const m=L.map(el,Object.assign({zoomControl:false,attributionControl:true},opts||{}));
+  L.tileLayer(TILES,{attribution:ATTR,subdomains:"abcd",maxZoom:19}).addTo(m);
+  return m;
+}
+const pinStyle=open=>({radius:6,weight:1.5,color:"#0E1116",fillColor:open?"#F2B632":"#59606a",fillOpacity:open?1:.85});
+let sMap=null,sCircle=null,sPins=[],sYou=null;
+function initSetupMap(){
+  if(sMap){sMap.invalidateSize();return}
+  sMap=mkMap("setupMap",{center:[S.center.lat,S.center.lng],zoom:14});
+  sCircle=L.circle([S.center.lat,S.center.lng],{radius:S.radius*1000,color:"#F2B632",weight:2,fillColor:"#F2B632",fillOpacity:.07,interactive:false}).addTo(sMap);
+  VENUES.forEach(v=>{const c=L.circleMarker([v.lat,v.lng],pinStyle(false)).addTo(sMap).bindTooltip(v.name,{direction:"top",offset:[0,-6]});c._v=v;sPins.push(c)});
+  sMap.on("move",()=>{const c=sMap.getCenter();S.center={lat:c.lat,lng:c.lng};sCircle.setLatLng(c);updateSetupCount()});
+  sMap.on("moveend",save);
+  sMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();drawYou()}});
+  fitCircle();
+}
+function fitCircle(){if(sMap){sMap.fitBounds(L.latLng(S.center.lat,S.center.lng).toBounds(S.radius*2000*1.08),{animate:false})}}
+function drawYou(){
+  const y=you();
+  [[sMap,"s"],[pMap,"p"]].forEach(([m,k])=>{
+    if(!m)return;
+    if(!y){if(m._you){m.removeLayer(m._you);m._you=null}return}
+    if(!m._you)m._you=L.circleMarker([y.lat,y.lng],{radius:7,weight:3,color:"#0E1116",fillColor:"#6FB7FF",fillOpacity:1}).addTo(m);
+    else m._you.setLatLng([y.lat,y.lng]);
+  });
+}
+
+/* ---------- setup ---------- */
+RADII.forEach(r=>{const b=document.createElement("button");b.type="button";b.textContent=r+" km";b.onclick=()=>{S.radius=r;save();sCircle&&sCircle.setRadius(r*1000);fitCircle();renderSetup()};b.dataset.v=r;$("radSeg").appendChild(b)});
+LENS.forEach(l=>{const b=document.createElement("button");b.type="button";b.textContent=(l/60)+(l===60?" hour":" hours");b.onclick=()=>{S.len=l;save();renderSetup()};b.dataset.v=l;$("lenSeg").appendChild(b)});
+function updateSetupCount(){
+  const t=now(),inC=inCircle(S.center,S.radius),open=inC.filter(v=>openOK(v,t));
+  $("setupCount").innerHTML=`${inC.length} rooftop${inC.length===1?"":"s"} · <span>${open.length} open now</span>`;
+  sPins.forEach(p=>{const o=openOK(p._v,t);p.setStyle(pinStyle(o))});
+  const thin=S.len===60?3:5;
+  const h=$("setupHeads");
+  if(inC.length===0){h.hidden=false;h.textContent="No rooftops in this circle. Drag the map toward the yellow pins."}
+  else if(open.length<thin){h.hidden=false;h.textContent=`Heads-up: only ${open.length} open in this circle right now.`}
+  else h.hidden=true;
+  $("startBtn").disabled=open.length===0;
+}
+function renderSetup(){
+  $("radSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.radius)));
+  $("lenSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.len)));
+  $("maphint").textContent=S.test?"Drag to move the circle · tap to put yourself there":"Drag the map to move your circle";
+  updateSetupCount();drawYou();
+}
+$("recentre").onclick=async()=>{
+  if(S.test&&S.fake){sMap.setView([S.fake.lat,S.fake.lng]);return}
+  try{const p=await getOnce();here=p;$("locWarn").hidden=true;sMap.setView([p.lat,p.lng]);drawYou()}catch(e){showLocWarn(e)}
+};
+function showLocWarn(e){
+  const w=$("locWarn");w.hidden=false;
+  if(e&&e.code===1)w.innerHTML=`<b>Location is off for this site.</b> Rooftop Roulette needs it to check you in at each bar, the same way a run tracker needs it to log a run. Turn on Location for this website in your browser settings, then tap Start again.`;
+  else w.innerHTML=`<b>Couldn't find you.</b> Check Location Services is on for your browser, step outside if you're deep indoors, then tap Start again.`;
+}
+$("startBtn").onclick=async()=>{
+  ac();
+  let pos;
+  if(S.test){pos=S.fake||{lat:S.center.lat,lng:S.center.lng};S.fake=pos}
+  else{
+    $("startBtn").disabled=true;$("startBtn").textContent="Finding you…";
+    try{pos=await getOnce();here=pos}catch(e){showLocWarn(e);$("startBtn").textContent="Start the clock";updateSetupCount();return}
+    $("startBtn").textContent="Start the clock";
+  }
+  $("locWarn").hidden=true;
+  const t=now();
+  S.game={id:"g"+t,startedAt:t,endsAt:t+S.len*60000,len:S.len,radius:S.radius,center:{...S.center},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[nearestArea(S.center)],moves:[],voluntaryUsed:false,
+    visits:[],target:null,targetAt:null,targetFrom:null,ended:false};
+  S.view="play";save();
+  if(!S.test)startWatch();
+  render();
+};
+
+/* ---------- game logic ---------- */
+const G=()=>S.game;
+const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
+const visited=id=>G().visits.some(v=>v.id===id);
+function remaining(){return G().endsAt-now()}
+function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
+function basePool(){
+  const g=G(),t=now();
+  return inCircle(g.center,g.radius).filter(v=>!visited(v.id)&&v.id!==g.target&&openOK(v,t));
+}
+function spinPool(){
+  const g=G(),rem=remaining()/60000,from=fromPoint();
+  let P=basePool();
+  if(rem<=FINAL){
+    const reach=P.filter(v=>walkMin(from,v)<=rem/2);
+    if(reach.length)return {pool:reach,final:true};
+    // nothing in reach: nearest two or three open bars, inside the circle first, then anywhere
+    let cand=P.length?P:VENUES.filter(v=>!visited(v.id)&&v.id!==g.target&&openState(v,now()).open);
+    cand=cand.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3);
+    return {pool:cand,final:true};
+  }
+  return {pool:P,final:false};
+}
+function closeVisit(v,t,reason){
+  if(!v||v.leftAt!=null)return;
+  v.leftAt=t;
+  const dwell=(t-v.arrivedAt)/60000;
+  if(reason==="end")v.counted=v.arrivedAt<G().endsAt;
+  else v.counted=dwell>=DWELL_MIN?true:null; // null = ask
+}
+function onLocation(){
+  drawYou();
+  const g=G();if(!g||g.ended||S.view!=="play"){return}
+  const y=you();if(!y)return;
+  const slack=Math.min(y.acc||0,40);
+  const a=atVisit();
+  if(a){ if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()} }
+  else if(g.target && now()<g.endsAt){
+    const v=byId(g.target);
+    if(dist(y,v)-slack<=CHECKIN_M){
+      g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined,spunAt:g.targetAt,from:g.targetFrom});
+      g.target=null;ding();buzz([60,40,60]);save();
+    }
+  }
+  renderPlay();
+}
+let spinning=false;
+function doSpin(){
+  const g=G();if(spinning||!g||g.ended)return;
+  ac();
+  const a=atVisit();
+  if(a){closeVisit(a,now(),"spin")}
+  const {pool:P}=spinPool();
+  if(!P.length){save();renderPlay();openMove(true);return}
+  const pick=P[Math.floor(Math.random()*P.length)];
+  const from=fromPoint();
+  spinning=true;renderPlay();
+  const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<4)VENUES.forEach(v=>names.push(v.name));
+  const box=$("ticketBox");
+  box.innerHTML=`<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>`;
+  const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(40),55,75,100,130,170,215];
+  let i=0,k=Math.floor(Math.random()*names.length);
+  const step=()=>{
+    const last=i===delays.length-1;
+    const nm=j=>names[(k+j+names.length)%names.length];
+    $("r0").textContent=nm(-1);$("r1").textContent=last?pick.name:nm(0);$("r2").textContent=nm(1);
+    ["r0","r1","r2"].forEach(r=>{const el=$(r);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
+    tick(last?900:600+Math.random()*80);k++;
+    if(!last){setTimeout(step,delays[i++]);return}
+    setTimeout(()=>{
+      g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};
+      spinning=false;ding();buzz(40);save();renderPlay();
+      onLocation();
+    },380);
+  };
+  step();
+}
+$("spinBtn").onclick=doSpin;
+
+function answer(idx,yes){const v=G()?G().visits[idx]:null;if(v){v.counted=!!yes;save();renderPlay()}}
+
+/* moves */
+function moveOptions(){
+  const g=G(),t=now(),from=fromPoint();
+  return AREAS.filter(a=>dist(a,g.center)>500).map(a=>{
+    const open=inCircle(a,g.radius).filter(v=>!visited(v.id)&&openOK(v,t));
+    return {a,open:open.length,m:dist(from,a)};
+  }).filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
+}
+function openMove(free){
+  const g=G(),opts=moveOptions();
+  const head=free?`<h3>Nothing left here</h3><p class="note">Fewer than two bars are still open in your circle. This move is free.</p>`
+    :`<h3>Change areas</h3><p class="note">You get one move a game. Your circle jumps to the area you pick.</p>`;
+  let body=opts.length?opts.map((o,i)=>`<button class="opt" data-i="${i}" type="button"><span>${esc(o.a.name)}<small>${km(o.m)} away · ~${Math.round(o.m*1.3/80)} min walk</small></span><b>${o.open} open</b></button>`).join("")
+    :`<p class="note">No other area has two or more rooftops open right now.</p>`;
+  $("dlgBody").innerHTML=head+body+`<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="ghost" type="button" id="dlgX">${free?"Close":"Stay here"}</button></div>`;
+  $("dlgBody").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const o=opts[+b.dataset.i];g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);
+    g.moves.push({at:now(),to:o.a.name,free:!!free});if(!free)g.voluntaryUsed=true;
+    save();$("dlg").close();renderPlay();fitPlay();
+  });
+  $("dlgX").onclick=()=>$("dlg").close();
+  $("dlg").showModal();
+}
+$("moveBtn").onclick=()=>{const free=basePool().length<2;openMove(free)};
+$("endBtn").onclick=()=>{
+  $("dlgBody").innerHTML=`<h3>End the game?</h3><p class="note">Your scorecard is saved either way. The bar you're at counts if you checked in.</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" id="dlgN" type="button">Keep playing</button><button class="ghost" id="dlgY" type="button" style="color:var(--alert);border-color:var(--alert)">End now</button></div>`;
+  $("dlgN").onclick=()=>$("dlg").close();
+  $("dlgY").onclick=()=>{$("dlg").close();endGame(now())};
+  $("dlg").showModal();
+};
+
+function endGame(at){
+  const g=G();if(!g||g.ended)return;
+  const t=Math.min(at,g.endsAt),early=at<g.endsAt;
+  if(early)g.endsAt=at;
+  const a=atVisit();if(a)closeVisit(a,t,"end");
+  // closest call
+  if(g.target){const y=you();const v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
+  g.ended=true;g.endedAt=t;g.early=early;
+  const rec=JSON.parse(JSON.stringify(g));
+  H.unshift(rec);saveH();
+  S.lastEnd=rec.id;S.game=null;S.view="end";save();stopWatch();
+  ding();buzz([100,60,100,60,200]);render();
+}
+
+/* ---------- stats ---------- */
+function stats(r){
+  const arrived=r.visits.filter(v=>v.arrivedAt!=null);
+  const counted=arrived.filter(v=>v.counted===true);
+  const pts=[r.startPos,...arrived.map(v=>byId(v.id))];
+  let total=0,legs=[];
+  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i-1],d})}
+  const longest=legs.slice().sort((a,b)=>b.d-a.d)[0];
+  let quick=null;
+  for(let i=1;i<arrived.length;i++){const p=arrived[i-1];if(p.leftAt!=null){const dt=arrived[i].arrivedAt-p.leftAt;if(dt>0&&(!quick||dt<quick.ms))quick={ms:dt,from:p.id,to:arrived[i].id}}}
+  const dur=(r.endedAt||r.endsAt)-r.startedAt;
+  const last=arrived[arrived.length-1];
+  return {arrived,counted,total,longest,quick,dur,last};
+}
+function pbFor(len,excludeId){
+  return H.filter(r=>r.len===len&&r.id!==excludeId).reduce((m,r)=>Math.max(m,stats(r).counted.length),0);
+}
+
+/* ---------- render: play ---------- */
+let pMap=null,pCircle=null,pTarget=null,pDone=null;
+function initPlayMap(){
+  const g=G();
+  if(!pMap){
+    pMap=mkMap("playMap",{center:[g.center.lat,g.center.lng],zoom:14});
+    pCircle=L.circle([g.center.lat,g.center.lng],{radius:g.radius*1000,color:"#F2B632",weight:1.5,fillOpacity:.04,interactive:false}).addTo(pMap);
+    pDone=L.layerGroup().addTo(pMap);
+    pMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation()}});
+    fitPlay();
+  }else pMap.invalidateSize();
+}
+function fitPlay(){
+  const g=G();if(!pMap||!g)return;
+  pCircle.setLatLng([g.center.lat,g.center.lng]).setRadius(g.radius*1000);
+  const pts=[[g.center.lat,g.center.lng]];const y=you();if(y)pts.push([y.lat,y.lng]);
+  if(g.target){const v=byId(g.target);pts.push([v.lat,v.lng])}
+  pMap.fitBounds(L.latLngBounds(pts).extend(L.latLng(g.center.lat,g.center.lng).toBounds(g.radius*2000)),{animate:false,maxZoom:16});
+}
+let lastTargetDrawn=undefined;
+function drawPlayMap(){
+  const g=G();if(!pMap||!g)return;
+  pDone.clearLayers();
+  g.visits.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:`<div class="num-pin" style="width:20px;height:20px">${i+1}</div>`,iconSize:[20,20]})}).addTo(pDone)});
+  if(pTarget){pMap.removeLayer(pTarget);pTarget=null}
+  if(g.target){const v=byId(g.target);pTarget=L.circleMarker([v.lat,v.lng],{radius:9,weight:3,color:"#F2B632",fillColor:"#0E1116",fillOpacity:1}).addTo(pMap)}
+  if(lastTargetDrawn!==g.target){lastTargetDrawn=g.target;fitPlay()}
+  drawYou();
+}
+function renderPlay(){
+  const g=G();if(!g||S.view!=="play")return;
+  // strip
+  const strip=$("strip");
+  strip.innerHTML=g.visits.length?g.visits.map((v,i)=>{
+    const b=byId(v.id),cls=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";
+    return `<span class="pip ${cls}">${i+1} ${esc(b.name)}${cls==="yes"?" ✓":cls==="q"?" ?":""}</span>`}).join("")
+    :`<span class="pip" style="color:var(--muted)">Your crawl shows up here</span>`;
+  // ticket
+  const box=$("ticketBox"),a=atVisit(),t=now();
+  if(!spinning){
+    if(a){
+      const v=byId(a.id),st=openState(v,t),d=t-a.arrivedAt;
+      box.innerHTML=`<div class="ticket at"><div class="tl">Checked in</div><h2>${esc(v.name)}</h2><div class="sub">${esc(v.area)}${st.open?" · closes "+clock12(st.closeAt):""}</div>
+      <div class="grid"><div><small>Here for</small><span class="dwell" id="dwell">${mmss(d)}</span></div><div><small>Counts</small>${d>=DWELL_MIN*60000?"Yes":"After "+DWELL_MIN+" min, or if you had a drink"}</div></div></div>`;
+    }else if(g.target){
+      const v=byId(g.target),y=you()||g.targetFrom,st=openState(v,t),dm=dist(y,v);
+      box.innerHTML=`<div class="ticket"><div class="tl">Next rooftop</div><h2>${esc(v.name)}</h2><div class="sub">${esc(v.area)} · ${v.rating}★</div>
+      <div class="grid"><div><small>Walk</small>~${walkMin(y,v)} min</div><div><small>Distance</small>${dm<1000?Math.round(dm)+" m":km(dm)}</div>
+      <div><small>Closes</small>${st.open?clock12(st.closeAt):"—"}</div><div><small>Check-in</small>Automatic within ${CHECKIN_M} m</div></div>
+      <div class="acts"><a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}&travelmode=walking" target="_blank" rel="noopener">Directions</a></div></div>`;
+    }else{
+      box.innerHTML=`<div class="ticket empty">${g.visits.length?"Spin for the next one.":"Spin for your first rooftop."}</div>`;
+    }
+  }
+  // ask
+  const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
+  const ask=$("ask");
+  if(qi>=0){
+    ask.hidden=false;
+    ask.innerHTML=`<span>Had a drink at ${esc(byId(g.visits[qi].id).name)}?<small>Only bars you drank at count.</small></span><button class="yes" type="button" id="aY">Yes</button><button type="button" id="aN">No</button>`;
+    $("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false);
+  }else ask.hidden=true;
+  // spin
+  const sp=spinPool();
+  $("spinBtn").disabled=spinning;
+  $("spinBtn").textContent=spinning?"Spinning…":(a?"Spin for the next one":"Spin");
+  // move
+  const free=basePool().length<2;
+  $("moveBtn").hidden=!free&&g.voluntaryUsed;
+  $("moveBtn").textContent=free?"Move areas (free)":"Change areas";
+  // more nearby
+  const from=fromPoint();
+  const more=sp.pool.filter(v=>v.id!==g.target).sort((x,y)=>dist(from,x)-dist(from,y));
+  $("moreS").textContent=more.length?`${more.length} more ${sp.final?"in reach":"open nearby"}`:"Nothing else open nearby";
+  $("moreL").innerHTML=more.map(v=>{const st=openState(v,t);return `<div class="li"><span>${esc(v.name)}</span><span>~${walkMin(from,v)} min · til ${clock12(st.closeAt)}</span></div>`}).join("");
+  // gps note
+  const gn=$("gpsNote");
+  if(S.test)gn.textContent="Test mode: location is whatever you tap on the map.";
+  else if(locErr===1)gn.innerHTML=`<b style="color:var(--alert)">Location is off.</b> Check-ins won't work until it's back on for this site.`;
+  else if(!here)gn.textContent="Waiting for GPS…";
+  else gn.textContent=`GPS on${here.acc?" · ±"+Math.round(here.acc)+" m":""}. If your phone was locked when you arrived, you'll check in when you open the app.`;
+  $("playHint").hidden=!S.test;
+  drawPlayMap();
+  renderClock();
+}
+function renderClock(){
+  const c=$("clock");
+  if(S.view!=="play"||!G()){c.hidden=true;return}
+  c.hidden=false;
+  const r=remaining();
+  $("clockT").textContent=mmss(r);
+  c.classList.toggle("warn",r<=FINAL*60000&&r>10*60000);
+  c.classList.toggle("red",r<=10*60000);
+  $("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
+}
+
+/* ---------- render: scorecard ---------- */
+let eMap=null;
+function renderEnd(){
+  const r=H.find(x=>x.id===S.lastEnd);
+  const box=$("endBox");
+  if(!r){S.view="setup";render();return}
+  const st=stats(r),n=st.counted.length,lenTxt=r.len===60?"1 hour":"2 hours";
+  const prevBest=pbFor(r.len,r.id),isPB=n>0&&n>prevBest&&H.some(x=>x.len===r.len&&x.id!==r.id);
+  const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
+  const legsTxt=st.longest?`${km(st.longest.d)} to ${esc(byId(st.longest.to.id).name)}`:"—";
+  const quickTxt=st.quick?`${hmm(st.quick.ms)} · ${esc(byId(st.quick.from).name)} → ${esc(byId(st.quick.to).name)}`:"—";
+  const pace=n?`${Math.round(st.dur/60000/n)} min per bar`:"—";
+  let close="—";
+  if(r.missed){const v=byId(r.missed.id);close=r.missed.m!=null?`Final dash: ${esc(v.name)} was ${r.missed.m} m away at zero`:`Final dash: didn't reach ${esc(v.name)}`}
+  else if(st.last&&!r.early){const left=r.endsAt-st.last.arrivedAt;close=`Into ${esc(byId(st.last.id).name)} with ${mmss(left)} left`}
+  const areas=r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ");
+  const bod=r.barOfDay;
+  box.innerHTML=`
+    <div class="card">
+      <div class="lbl">${lenTxt} · ${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})}</div>
+      <div class="sc-head"><span class="n">${n}</span> <span class="t">bar${n===1?"":"s"} · ${km(st.total)} · ${hmm(st.dur)}</span></div>
+      ${isPB?`<div class="pb">New personal best for ${lenTxt}.</div>`:prevBest?`<div class="note">Personal best for ${lenTxt}: ${prevBest}</div>`:""}
+    </div>
+    ${pending.map(o=>`<div class="ask"><span>Had a drink at ${esc(byId(o.v.id).name)}?<small>Only bars you drank at count.</small></span><button class="yes" type="button" data-q="${o.i}" data-a="1">Yes</button><button type="button" data-q="${o.i}" data-a="0">No</button></div>`).join("")}
+    <div class="mapbox"><div id="endMap"></div></div>
+    <div class="card">
+      <div class="note">${esc(areas)}</div>
+      <div class="list" style="margin:0">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${v.counted===true?"":v.counted===false?" (didn't count)":" (?)"}</span><span>${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span>No check-ins this time.</span><span></span></div>`}</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>Longest leg</small><b>${legsTxt}</b></div>
+      <div class="stat"><small>Pace</small><b>${pace}</b></div>
+      <div class="stat wide"><small>Quickest turnaround</small><b>${quickTxt}</b></div>
+      <div class="stat wide"><small>Closest call</small><b>${close}</b></div>
+    </div>
+    ${st.counted.length?`<div class="card"><h3>Bar of the day?</h3><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${bod===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
+    <div class="card photo"><h3>Crew photo</h3>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:`<p>Optional. Saved on this phone only.</p>`}
+      <label class="ghost" style="text-align:center">${r.photo?"Replace photo":"Add a photo"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>
+    <button class="big y" type="button" id="againBtn">New game</button>`;
+  box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{r.visits[+b.dataset.q].counted=b.dataset.a==="1";saveH();renderEnd()});
+  box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{r.barOfDay=r.barOfDay===b.dataset.b?null:b.dataset.b;saveH();renderEnd()});
+  $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;shrink(f,900).then(d=>{r.photo=d;saveH();renderEnd()})};
+  $("againBtn").onclick=()=>{S.view="setup";save();render()};
+  // route map
+  if(eMap){eMap.remove();eMap=null}
+  eMap=mkMap("endMap");
+  const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
+  L.polyline(pts,{color:"#F2B632",weight:3,opacity:.9,dashArray:"6 6"}).addTo(eMap);
+  L.circleMarker(pts[0],{radius:6,weight:2,color:"#0E1116",fillColor:"#6FB7FF",fillOpacity:1}).addTo(eMap).bindTooltip("Start");
+  st.arrived.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:`<div class="num-pin" style="width:20px;height:20px;${v.counted===true?"":"opacity:.5"}">${i+1}</div>`,iconSize:[20,20]})}).addTo(eMap).bindTooltip(b.name)});
+  eMap.fitBounds(L.latLngBounds(pts).pad(.25),{animate:false,maxZoom:16});
+}
+function shrink(file,max){
+  return new Promise(res=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.src=u});
+}
+
+/* ---------- render: history ---------- */
+function renderHist(){
+  const b=$("histBox");
+  if(!H.length){b.innerHTML=`<h3>History</h3><p>Finished games show up here.</p>`;return}
+  const best=l=>H.filter(r=>r.len===l).reduce((m,r)=>Math.max(m,stats(r).counted.length),0);
+  const pbs=LENS.filter(l=>H.some(r=>r.len===l)).map(l=>`${l===60?"1 hour":"2 hours"}: <b>${best(l)}</b>`).join(" · ");
+  b.innerHTML=`<h3>History</h3><div class="note">Personal bests · ${pbs}</div>`+H.map(r=>{const st=stats(r);const bod=r.barOfDay?byId(r.barOfDay):null;
+    return `<button class="hist" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="d">${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})} · ${r.len===60?"1 hr":"2 hr"} · ${km(st.total)}<small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("");
+  b.querySelectorAll(".hist").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;S.view="end";save();render()});
+}
+
+/* ---------- test panel ---------- */
+const tj=$("tJump");
+tj.innerHTML=`<option value="">Put me at a bar…</option>`+VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.area)})</option>`).join("");
+tj.onchange=()=>{const v=byId(tj.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();if(S.view==="setup"&&sMap)sMap.setView([v.lat,v.lng]);onLocation()}tj.value=""};
+document.querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();render()});
+$("ffReset").onclick=()=>{S.ff=0;save();render()};
+$("tArrive").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+0.0002,lng:v.lng};save();onLocation()};
+$("tLeave").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+0.0018,lng:y.lng};save();onLocation()};
+$("tOff").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);if(S.view==="play")startWatch();render()};
+let taps=0,tapT=0;
+$("brand").onclick=()=>{const t=Date.now();taps=t-tapT<600?taps+1:1;tapT=t;if(taps>=5){S.test=true;taps=0;stopWatch();save();render()}};
+
+/* ---------- tabs + router ---------- */
+$("tabPlay").onclick=()=>{S.view=S.game?"play":"setup";save();render()};
+$("tabHist").onclick=()=>{S.view="hist";save();render()};
+function render(){
+  if(S.view==="play"&&!S.game)S.view="setup";
+  const v=S.view;
+  $("vSetup").hidden=v!=="setup";$("vPlay").hidden=v!=="play";$("vEnd").hidden=v!=="end";$("vHist").hidden=v!=="hist";
+  $("tabs").hidden=v==="play";
+  $("tabPlay").setAttribute("aria-selected",String(v!=="hist"));$("tabHist").setAttribute("aria-selected",String(v==="hist"));
+  $("testPanel").hidden=!S.test;
+  $("testPlayRow").hidden=v!=="play";
+  if(v==="setup"){initSetupMap();renderSetup()}
+  if(v==="play"){initPlayMap();renderPlay()}
+  if(v==="end")renderEnd();
+  if(v==="hist")renderHist();
+  renderClock();renderTestClock();
+}
+function renderTestClock(){if(!S.test)return;const s=sydAt(now());$("testClock").textContent=`Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?" (+"+Math.round(S.ff/60000)+" min)":""}`}
+
+/* ---------- loop ---------- */
+function loop(){
+  const g=G();
+  if(g&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
+  if(S.view==="play"&&g){
+    renderClock();
+    const a=atVisit(),d=$("dwell");
+    if(a&&d)d.textContent=mmss(now()-a.arrivedAt);
+    // re-render every 15s so open/closed and dwell rule stay fresh
+    if(Date.now()%15000<1000)renderPlay();
+  }
+  renderTestClock();
+}
+setInterval(loop,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loop();if(S.view==="play")renderPlay()}});
+
+/* ---------- boot ---------- */
+if(S.game&&!S.test)startWatch();
+if(S.view==="setup"&&!S.test&&navigator.permissions&&navigator.geolocation){
+  navigator.permissions.query({name:"geolocation"}).then(p=>{if(p.state==="granted")getOnce().then(pos=>{here=pos;if(sMap&&!S.game)sMap.setView([pos.lat,pos.lng]);drawYou()}).catch(()=>{})}).catch(()=>{});
+}
+render();loop();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
