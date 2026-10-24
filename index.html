@@ -977,7 +977,6 @@ dialog.sheet[open]{animation:up .25s ease-out}
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
       <button class="btn" id="newGame" type="button">Start a new game</button>
     </div>
-    <button class="colcard" type="button" id="homeCol"></button>
     <div class="card">
       <div class="eyebrow" style="margin-bottom:12px">How it works</div>
       <div class="steps" id="homeSteps"></div>
@@ -1026,13 +1025,11 @@ dialog.sheet[open]{animation:up .25s ease-out}
   <!-- ROOFTOPS TAB -->
   <section class="view" id="v-bars" hidden>
     <h1 class="q">Rooftops</h1>
-    <button class="colcard" type="button" id="barsCol" style="cursor:default"></button>
-    <div class="areas" id="barsAreas"></div>
     <div class="map"><div id="barsMap" style="height:34vh;min-height:220px"></div></div>
     <div class="seg" id="barsSeg">
       <button type="button" data-v="all" aria-pressed="true">All</button>
       <button type="button" data-v="todo">Not yet</button>
-      <button type="button" data-v="done">Collected</button>
+      <button type="button" data-v="done">Been</button>
       <button type="button" data-v="open">Open now</button>
     </div>
     <div class="list card" id="barsList" style="padding:4px 16px"></div>
@@ -1161,6 +1158,8 @@ const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&(!newOnly||isNew(v.id,c)))}
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
+function nextOpen(list,t){ // earliest opening time later today among closed bars
+  let best=null;list.forEach(v=>{const o=openState(v,t);if(!o.open&&o.opens!=null&&(best===null||o.opens<best))best=o.opens});return best==null?null:clock12(best)}
 function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){s+=dist(list[i],list[j]);n++}return s/n}
 
 /* ---------- location ---------- */
@@ -1268,10 +1267,8 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
-  $("homeCol").innerHTML=colCardHTML()+`<span class="txtbtn amber" style="padding:0">See all rooftops →</span>`;
   $("homeSteps").innerHTML=stepsHTML(RULES);
 }
-$("homeCol").onclick=()=>go("bars");
 $("newGame").onclick=()=>startWizard();
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
@@ -1285,15 +1282,17 @@ function renderWiz(){
   $("wProg").style.width=((w.step+1)/4*100)+"%";
   const body=$("wBody"),t=now();
   if(w.step===0){
-    const areas=AREAS.map(a=>({a,n:openIn(a,1.5,t).length})).filter(o=>o.n>=3).sort((x,y)=>y.n-x.n);
+    const areas=AREAS.map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3).sort((x,y)=>y.n-x.n||y.tot-x.tot);
+    const anyOpen=areas.some(o=>o.n>0);
     const meSel=w.start&&w.start.type==="me";
     body.innerHTML=`<div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
       <div class="opts">
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
         <div class="eyebrow" style="margin-top:8px">Or choose an area</div>
-        ${areas.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}
+        ${areas.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`).join("")}
       </div>`;
+    if(!anyOpen)body.insertAdjacentHTML("afterbegin",`<div class="banner"><b>It's early.</b> Most rooftops open later in the day. You can set up now and start once they're open.</div>`);
     body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
     $("optMe").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
     if(w.meNote){$("meNote").hidden=false;$("meNote").innerHTML=w.meNote}
@@ -1324,13 +1323,14 @@ function renderWiz(){
     body.innerHTML=`<div><h1 class="q">Your zone</h1><p class="sub" style="margin:6px 0 0"><b style="color:var(--amber)">${open.length} rooftops</b> ready to spin within ${w.radius} km of ${esc(c.type==="me"?"you":c.name)}.</p></div>
       <div class="map"><div id="zoneMap" style="height:280px"></div></div>
       <div class="chips"><button class="chip" type="button" data-s="0">${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div>
-      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>New rooftops only</b><small>Skip bars you've collected or been to before. ${newCount} new in this zone.</small></span><span class="sw"></span></button>`:""}
+      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>New rooftops only</b><small>Skip bars you've been to before. ${newCount} new to you in this zone.</small></span><span class="sw"></span></button>`:""}
       <div class="card"><div class="eyebrow" style="margin-bottom:12px">How it works</div><div class="steps">${stepsHTML(RULES)}</div></div>
       <p class="note">Fancy a change of scenery mid-game? You can move your zone once.</p>
       <details class="card"><summary class="small" style="cursor:pointer">See the ${open.length} rooftops in this zone</summary><div class="zlist" style="margin-top:6px">${open.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<div class="li"><span>${esc(v.name)}${isNew(v.id,col)?"":' <span class="small">· been</span>'}</span><span class="r">til ${clock12(openState(v,t).closeAt)}</span></div>`).join("")}</div></details>`;
     body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();renderWiz()};
-    cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>Let's go</button>`,()=>$("wStart").onclick=tryStart);
+    const op=nextOpen(playable(inCircle(c,w.radius),w.newOnly),t);
+    cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>${open.length?"Let's go":op?"Opens "+op+". Come back then":"Nothing open today"}</button>`,()=>$("wStart").onclick=tryStart);
     requestAnimationFrame(()=>{
       if(zMap){zMap.remove();zMap=null}
       zMap=mkMap("zoneMap");zoneCircle(c,w.radius).addTo(zMap);
@@ -1343,8 +1343,8 @@ function renderWiz(){
 async function useMe(){
   const w=S.wiz;
   try{
-    const p=await getOnce();const n=openIn(p,1.5).length;
-    if(n<2){const near=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];w.start=null;w.meNote=`Not enough rooftops open around you right now (the nearest is ${km(dist(p,near))} away). Pick an area below and start from there.`}
+    const p=await getOnce();const n=openIn(p,1.5).length,tot=playable(inCircle(p,1.5),false).length;
+    if(tot<3){const near=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];w.start=null;w.meNote=`There aren't any rooftops near you (the nearest is ${km(dist(p,near))} away). Pick an area below and start from there.`}
     else{w.start={type:"me",name:"you",lat:p.lat,lng:p.lng,n,sub:"Near "+nearestArea(p)};w.meNote=null}
   }catch(e){w.meNote="Couldn't find you just now. Pick an area below instead."}
   save();go("wiz");
@@ -1580,7 +1580,7 @@ function renderEnd(){
     <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
     <div class="score"><div class="big">${n}</div><div class="lbl">rooftop${n===1?"":"s"}</div>
       <div class="small" style="margin-top:8px">${esc(areas)} · ${km(st.total)} · ${hmm(st.dur)}</div>
-      ${nw?`<div class="pb">+${nw} new to your collection</div>`:""}</div>
+      ${nw?`<div class="pb">${nw} rooftop${nw===1?"":"s"} you'd never been to</div>`:""}</div>
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="map"><div id="endMap" style="height:240px"></div></div>
     <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}${v.counted===false?' <span class="small">(didn\'t count)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No visits logged this time.</span></div>`}</div></div>
@@ -1590,7 +1590,6 @@ function renderEnd(){
       <div class="stat w"><small>Quickest turnaround</small><b>${st.quick?`${hmm(st.quick.ms)} · ${esc(byId(st.quick.from).name)} → ${esc(byId(st.quick.to).name)}`:"—"}</b></div>
       <div class="stat w"><small>Closest call</small><b>${close}</b></div>
     </div>
-    <button class="colcard" type="button" id="endCol">${colCardHTML()}</button>
     ${n?`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Bar of the day</div><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${r.barOfDay===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
     <div class="card photo"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="eyebrow">Crew photo</div><div class="small">Saved on this phone only</div></div>
       <label class="btn sm dark" style="width:auto;padding:0 14px">${I.camera} ${r.photo?"Replace":"Add"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:""}</div>
@@ -1602,7 +1601,6 @@ function renderEnd(){
   $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,900).then(d=>{r.photo=d;saveH();renderEnd()})};
   $("againBtn").onclick=()=>startWizard();
   $("doneBtn").onclick=()=>go("home");
-  $("endCol").onclick=()=>go("bars");
   requestAnimationFrame(()=>{
     if(eMap){eMap.remove();eMap=null}eMap=mkMap("endMap");
     const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
@@ -1617,20 +1615,16 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 /* ---------- rooftops tab (collection) ---------- */
 let bMap=null,bMarks=[];
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
-const stampHTML=s=>s==="col"?'<span class="stamp col">Collected</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':"";
+const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':"";
 function renderBars(){
   const t=now(),y=you(),f=S.barsFilter||"all",c=collectedMap();
-  $("barsCol").innerHTML=colCardHTML()+`<div class="small">${(()=>{const s=colStats();const h=VENUES.length-s.total;return `${s.been} been before${h?` · ${h} hidden as not for us`:""}`})()}</div>`;
-  // per-area progress
-  const groups={};listed().forEach(v=>{(groups[v.area]=groups[v.area]||[]).push(v)});
-  $("barsAreas").innerHTML=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([a,l])=>{const d=l.filter(v=>c[v.id]).length;return `<div class="achip${d===l.length?" done":""}"><b>${esc(a)}</b><small>${d} of ${l.length}</small><div class="pbar"><i style="width:${d/l.length*100}%"></i></div></div>`}).join("");
   $("barsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===f)));
   let list=VENUES.map(v=>({v,o:openState(v,t),s:barStatus(v,c)}));
   if(f==="todo")list=list.filter(x=>x.s===""||x.s==="been");
-  if(f==="done")list=list.filter(x=>x.s==="col");
+  if(f==="done")list=list.filter(x=>x.s==="col"||x.s==="been");
   if(f==="open")list=list.filter(x=>x.o.open&&x.s!=="nfu");
   list.sort((a,b)=>(a.s==="nfu")-(b.s==="nfu")||(y?dist(y,a.v)-dist(y,b.v):a.v.name.localeCompare(b.v.name)));
-  $("barsList").innerHTML=list.map(({v,o,s})=>`<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}</button>`).join("")||`<div class="empty" style="padding:24px">${f==="done"?"Nothing collected yet. Play a game and every bar that counts gets stamped here.":"Nothing here right now."}</div>`;
+  $("barsList").innerHTML=list.map(({v,o,s})=>`<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}</button>`).join("")||`<div class="empty" style="padding:24px">${f==="done"?"No rooftops yet. Bars you visit in a game, or mark as been before, show up here.":"Nothing here right now."}</div>`;
   $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
   requestAnimationFrame(()=>{
     if(!bMap){bMap=mkMap("barsMap",{center:[-33.8732,151.2069],zoom:13.25});bMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation();renderBars()}})}else bMap.invalidateSize();
@@ -1645,10 +1639,10 @@ function barSheet(v){
   if(bMap&&S.route==="bars")bMap.setView([v.lat,v.lng],16,{animate:true});
   sheet(`<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${esc(v.address)}${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
     <p class="note" style="color:${o.open?"var(--green)":"var(--muted)"};margin-top:6px">${o.open?"Open now til "+clock12(o.closeAt):o.opens!=null?"Opens today at "+clock12(o.opens):"Closed today"}</p>
-    ${c[v.id]?`<p class="note" style="margin-top:6px"><span class="stamp col">Collected</span> on ${dateTxt(c[v.id])}</p>`:""}
+    ${c[v.id]?`<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> first on ${dateTxt(c[v.id])}</p>`:""}
     <div class="acts">
       ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in a spin, and doesn't count toward your collection.</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in a spin.</small></span><span class="sw"></span></button>
       <a class="btn dark" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Open in Google Maps</a>
     </div>`,()=>{
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
