@@ -1,5 +1,5 @@
 const CACHE="rr-game-v2-1";
-const ASSETS=["./","index.html","manifest.webmanifest","vendor/leaflet/leaflet.js","vendor/leaflet/leaflet.css",
+const ASSETS=["./","index.html","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
 "fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2"];
