@@ -1034,11 +1034,11 @@ function updateSetupCount(){
 function renderSetup(){
   $("radSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.radius)));
   $("lenSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.len)));
-  $("maphint").textContent=S.test?"Drag to move the circle · tap to put yourself there":"Drag the map to move your circle";
+  $("recentre").textContent=S.test?"Go to me":"Use my location";$("maphint").textContent=S.test?"Drag to move the circle · tap to put yourself there":"Drag the map to move your circle";
   updateSetupCount();drawYou();
 }
 $("recentre").onclick=async()=>{
-  if(S.test&&S.fake){sMap.setView([S.fake.lat,S.fake.lng]);return}
+  if(S.test){if(S.fake)sMap.setView([S.fake.lat,S.fake.lng]);$("locWarn").hidden=true;return}
   try{const p=await getOnce();here=p;$("locWarn").hidden=true;sMap.setView([p.lat,p.lng]);drawYou()}catch(e){showLocWarn(e)}
 };
 function showLocWarn(e){
