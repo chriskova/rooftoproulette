@@ -2,14 +2,15 @@
 <html lang="en-AU">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Rooftop Roulette</title>
-<meta name="description" content="A rooftop bar crawl against the clock. Spin, walk, drink, spin again.">
-<meta name="theme-color" content="#0E1116">
+<meta name="description" content="Spin. Walk. Drink. Beat the clock. A rooftop bar crawl game for Sydney.">
+<meta name="theme-color" content="#0B0D12">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Rooftop Roulette">
 <style>/* required styles */
@@ -677,222 +678,325 @@ svg.leaflet-image-layer.leaflet-interactive path {
 <style>
 @font-face{font-family:"Big Shoulders Display";font-weight:500;font-display:swap;src:url(fonts/big-shoulders-display-latin-500-normal.woff2) format("woff2")}
 @font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Mono";font-weight:400;font-display:swap;src:url(fonts/ibm-plex-mono-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"IBM Plex Mono";font-weight:500;font-display:swap;src:url(fonts/ibm-plex-mono-latin-500-normal.woff2) format("woff2")}
 :root{
-  --ink:#0E1116;--panel:#171B22;--slot:#1F242D;--line:#2C333E;
-  --text:#ECE7DA;--muted:#8E949C;--flap:#F2B632;--flap-ink:#2A1E05;--alert:#FF6B5B;--ok:#7FD19B;--you:#6FB7FF;
+  --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;
+  --text:#F4F1EA;--muted:#9AA1AD;--dim:#6B7280;
+  --amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.14);
+  --green:#4ADE80;--green-soft:rgba(74,222,128,.12);--red:#FF5A4E;--blue:#5AA9FF;
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --r:18px;--tab:64px;
   color-scheme:dark;
 }
-*{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:var(--ink);color:var(--text);font-family:var(--mono);font-size:14px;-webkit-tap-highlight-color:transparent}
-body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-button,select,input{font:inherit;color:inherit}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--ui);font-size:16px;line-height:1.4;overscroll-behavior:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
 [hidden]{display:none!important}
-.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:10px;padding-block:10px 22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.top{display:flex;align-items:center;gap:8px;min-height:36px}
-.brand{font-family:var(--display);font-weight:800;font-size:clamp(18px,5.4vw,23px);line-height:1;white-space:nowrap;letter-spacing:.08em;text-transform:uppercase;flex:1;min-width:0;user-select:none}
-.brand span{color:var(--flap)}
-.tabs{display:flex;gap:4px}
-.tab,.icon{appearance:none;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:7px;height:32px;padding:0 9px;font-size:11px;cursor:pointer}
-.tab[aria-selected="true"]{color:var(--text);border-color:var(--text)}
-.clock{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
-.clock b{font-variant-numeric:tabular-nums;font-size:24px;font-weight:500;color:var(--text)}
-.clock small{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px}
-.clock.warn b,.clock.warn small{color:var(--flap)}
-.clock.red b,.clock.red small{color:var(--alert)}
-.lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.seg{display:flex;gap:4px;flex-wrap:wrap}
-.seg button{appearance:none;background:var(--slot);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer}
-.seg button[aria-pressed="true"]{border-color:var(--flap);color:var(--flap)}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.row .lbl{width:52px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:9px}
-.card h3{margin:0;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
-.card p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
-.note{font-size:11.5px;color:var(--muted);line-height:1.5}
-.note b{color:var(--text);font-weight:500}
-.heads{font-size:11.5px;color:var(--flap);line-height:1.5}
-.warnbox{border:1px solid var(--alert);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5;color:var(--text);background:rgba(255,107,91,.08)}
-.warnbox b{color:var(--alert);font-weight:500}
-.mapbox{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#11151b}
-#setupMap{height:min(52vh,420px)}
-#playMap{height:170px}
-#endMap{height:220px}
-.cross{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;pointer-events:none;z-index:500}
-.cross::before,.cross::after{content:"";position:absolute;background:var(--flap)}
-.cross::before{left:6px;top:0;width:2px;height:14px}.cross::after{top:6px;left:0;height:2px;width:14px}
-.maphint{position:absolute;left:8px;bottom:8px;z-index:500;font-size:10.5px;background:rgba(14,17,22,.85);border:1px solid var(--line);border-radius:6px;padding:3px 7px;color:var(--muted);pointer-events:none}
-.mapbtn{position:absolute;right:8px;top:8px;z-index:500;appearance:none;background:rgba(14,17,22,.9);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11px;cursor:pointer}
-.count{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.04em;text-transform:uppercase;line-height:1.1}
-.count span{color:var(--flap)}
-.big{width:100%;appearance:none;border:0;border-radius:999px;background:var(--text);color:var(--ink);font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.14em;text-transform:uppercase;height:50px;cursor:pointer}
-.big:disabled{opacity:.4;cursor:default}
-.big.y{background:var(--flap);color:var(--flap-ink)}
-.ghost{appearance:none;background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:7px 10px;font-size:11.5px;cursor:pointer}
-.link{appearance:none;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:11.5px;cursor:pointer;padding:4px 0}
-.strip{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.app{max-width:480px;margin:0 auto;height:100dvh;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.view>*{flex-shrink:0}
+.view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 24px;display:flex;flex-direction:column;gap:16px}
+.app.has-tabs .view{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 24px)}
+.app.has-cta .view{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+
+/* bottom tabs */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:calc(var(--tab) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);display:flex;background:rgba(14,17,23,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);z-index:900}
+.tabs button{flex:1;appearance:none;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--dim);font-size:11.5px;font-weight:600;letter-spacing:.01em}
+.tabs button svg{width:24px;height:24px}
+.tabs button[aria-selected="true"]{color:var(--text)}
+.tabs button[aria-selected="true"] svg{color:var(--amber)}
+.tabs .live{width:6px;height:6px;border-radius:50%;background:var(--amber);position:absolute;margin:-18px 0 0 22px}
+
+/* type */
+h1,h2,h3{margin:0}
+.brand{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:.92}
+.brand span{color:var(--amber)}
+.q{font-size:28px;font-weight:750;line-height:1.15;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:15px}
+.small{font-size:13px;color:var(--muted)}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* buttons */
+.btn{appearance:none;border:0;border-radius:16px;height:56px;padding:0 20px;width:100%;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--amber);color:var(--amber-ink);transition:transform .08s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.35}
+.btn.dark{background:var(--s2);color:var(--text)}
+.btn.line{background:none;border:1.5px solid var(--line);color:var(--text)}
+.btn.sm{height:44px;font-size:15px;border-radius:13px}
+.btn svg{width:20px;height:20px;flex:none}
+a.btn{text-decoration:none}
+.txtbtn{appearance:none;background:none;border:0;color:var(--muted);font-size:14px;font-weight:600;padding:10px 4px}
+.txtbtn.amber{color:var(--amber)}
+.iconbtn{appearance:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--s2);display:grid;place-items:center;color:var(--text);flex:none}
+.iconbtn svg{width:22px;height:22px}
+.cta{position:absolute;left:0;right:0;bottom:0;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%);z-index:800;max-width:480px;margin:0 auto}
+
+/* cards */
+.card{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.opt{appearance:none;width:100%;text-align:left;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);padding:15px 16px;display:flex;align-items:center;gap:14px;transition:border-color .12s,background .12s}
+.opt[aria-checked="true"]{border-color:var(--amber);background:var(--amber-soft)}
+.opt .ic{width:42px;height:42px;border-radius:12px;background:var(--s2);display:grid;place-items:center;flex:none;color:var(--amber)}
+.opt .ic svg{width:22px;height:22px}
+.opt .t{flex:1;min-width:0}
+.opt .t b{display:block;font-size:16.5px;font-weight:700}
+.opt .t small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.opt .n{text-align:right;flex:none}
+.opt .n b{display:block;font-size:20px;font-weight:750;color:var(--amber);line-height:1}
+.opt .n small{font-size:11px;color:var(--muted)}
+.opt:disabled{opacity:.4}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--amber);color:var(--amber-ink);border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:2px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.note{font-size:13.5px;color:var(--muted);line-height:1.5}
+.alertbox{border:1px solid rgba(255,90,78,.5);background:rgba(255,90,78,.08);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.5}
+.alertbox b{color:var(--red)}
+
+/* wizard top */
+.wtop{display:flex;align-items:center;gap:12px}
+.prog{flex:1;height:6px;background:var(--s2);border-radius:99px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--amber);border-radius:99px;transition:width .3s}
+
+/* intro */
+.intro{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;padding:10px 6px}
+.intro .art{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(245,184,61,.22),transparent 70%);display:grid;place-items:center}
+.intro .art svg{width:120px;height:120px;color:var(--amber)}
+.dots{display:flex;gap:7px;justify-content:center}
+.dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
+.dots i.on{width:22px;background:var(--amber)}
+
+/* home */
+.hero{border-radius:24px;padding:22px 20px;background:radial-gradient(120% 90% at 100% 0%,rgba(245,184,61,.25),transparent 60%),var(--s1);border:1px solid var(--line);display:flex;flex-direction:column;gap:14px;overflow:hidden;position:relative}
+.hero .brand{font-size:46px}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;gap:12px;align-items:flex-start}
+.step .k{width:30px;height:30px;border-radius:50%;background:var(--s2);color:var(--amber);font-weight:800;display:grid;place-items:center;flex:none;font-size:14px}
+.step b{display:block;font-size:15px}
+.step span{color:var(--muted);font-size:13.5px}
+.statrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.mini small{display:block;font-size:12px;color:var(--muted)}
+.mini b{font-size:22px;font-weight:750}
+
+/* maps */
+.map{border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:#0F1218;position:relative}
+.leaflet-container{background:#0F1218;font-family:var(--ui)}
+.osm .leaflet-tile-pane{filter:grayscale(1) invert(1) brightness(.78) contrast(.95)}
+.leaflet-control-attribution{font-size:9px!important;background:rgba(11,13,18,.7)!important;color:var(--dim)!important}
+.leaflet-control-attribution a{color:var(--dim)!important}
+.pin{width:16px;height:16px;border-radius:50%;background:var(--amber);border:2.5px solid #0B0D12;box-shadow:0 0 0 1px rgba(245,184,61,.35),0 2px 6px rgba(0,0,0,.5)}
+.pin.off{background:#4B5160;box-shadow:none;width:12px;height:12px;border-width:2px}
+.pin.big{width:26px;height:26px;border-width:3.5px;animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,184,61,.55)}100%{box-shadow:0 0 0 16px rgba(245,184,61,0)}}
+.num{width:24px;height:24px;border-radius:50%;background:var(--amber);color:var(--amber-ink);font:800 12px/19px var(--ui);text-align:center;border:2.5px solid #0B0D12}
+.num.x{opacity:.45}
+.me{width:18px;height:18px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 6px rgba(90,169,255,.25)}
+
+/* play */
+.ptop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.count{background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+.count b{color:var(--amber)}
+.clock{text-align:center;line-height:1}
+.clock b{display:block;font-family:var(--display);font-weight:800;font-size:46px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.clock.warn b,.clock.warn small{color:var(--amber)}
+.clock.red b,.clock.red small{color:var(--red)}
+.tbar{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:-6px}
+.tbar i{display:block;height:100%;background:var(--text);border-radius:99px;transition:width 1s linear}
+.tbar.warn i{background:var(--amber)}.tbar.red i{background:var(--red)}
+.strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
 .strip::-webkit-scrollbar{display:none}
-.pip{flex:none;font-size:11px;padding:4px 8px;border-radius:999px;background:var(--slot);border:1px solid var(--line);white-space:nowrap}
-.pip.yes{border-color:var(--ok);color:var(--ok)}
-.pip.no{opacity:.5;text-decoration:line-through}
-.pip.q{border-style:dashed;color:var(--flap);border-color:var(--flap)}
-.pip.here{border-color:var(--flap);color:var(--flap)}
-.ticket{background:var(--flap);color:var(--flap-ink);border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;gap:3px;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
-@keyframes pop{from{transform:scale(.88);opacity:0}to{transform:none;opacity:1}}
-.ticket .tl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
-.ticket h2{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(26px,8vw,34px);line-height:1;text-transform:uppercase;text-wrap:balance}
-.ticket .sub{font-size:12px}
-.ticket .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;margin-top:4px;border-top:1px dashed rgba(42,30,5,.35);padding-top:7px;font-size:12px}
-.ticket .grid small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.65}
-.ticket .acts{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
-.ticket .acts a{font-size:11.5px;font-weight:500;color:var(--flap-ink);background:rgba(42,30,5,.1);border:1px solid rgba(42,30,5,.35);border-radius:999px;padding:6px 11px;text-decoration:none}
-.ticket.at{background:var(--panel);color:var(--text);border:1px solid var(--ok)}
-.ticket.at .tl{color:var(--ok);opacity:1}
-.ticket.at .grid{border-top-color:var(--line)}
-.ticket.empty{background:var(--panel);color:var(--muted);border:1px dashed var(--line);animation:none;text-align:center;font-size:12.5px;justify-content:center;min-height:84px;line-height:1.5}
-.dwell{font-variant-numeric:tabular-nums}
-.reel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:4px;overflow:hidden}
-.reelrow{height:24px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--slot);border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
-.reelrow.mid{height:48px;font-weight:800;font-size:clamp(20px,6.5vw,28px);color:var(--flap);border:1px solid var(--flap)}
+.pip{flex:none;font-size:13px;font-weight:600;padding:6px 11px;border-radius:99px;background:var(--s1);border:1px solid var(--line);white-space:nowrap;color:var(--muted)}
+.pip.yes{color:var(--green);border-color:rgba(74,222,128,.4)}
+.pip.no{text-decoration:line-through;opacity:.5}
+.pip.q{color:var(--amber);border-style:dashed;border-color:var(--amber)}
+.pip.here{color:var(--amber);border-color:var(--amber)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;padding:6px 0}
+.wheel{appearance:none;width:min(62vw,230px);aspect-ratio:1;border-radius:50%;border:0;background:radial-gradient(circle at 50% 35%,#FFD27A,var(--amber) 55%,#D9951B);color:var(--amber-ink);font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:.1em;box-shadow:0 0 0 10px var(--amber-soft),0 0 0 22px rgba(245,184,61,.06),0 18px 40px rgba(0,0,0,.45);transition:transform .1s}
+.wheel:active{transform:scale(.96)}
+.wheel small{display:block;font-family:var(--ui);font-size:12px;font-weight:700;letter-spacing:.08em;margin-top:2px;opacity:.75}
+.reel{width:100%;background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.reelrow{height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:17px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reelrow.mid{height:64px;font-weight:800;font-size:clamp(24px,8vw,34px);color:var(--amber);background:var(--s2);border:1.5px solid var(--amber);border-radius:12px}
 .flip{animation:flip 70ms ease-out}
-@keyframes flip{from{transform:translateY(-35%);opacity:.35}to{transform:none;opacity:1}}
-.ask{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--flap);border-radius:10px;padding:9px 11px;font-size:12.5px}
-.ask span{flex:1;min-width:150px}
-.ask small{display:block;color:var(--muted);font-size:10.5px;margin-top:2px}
-.ask button{appearance:none;border:1px solid var(--line);background:var(--slot);border-radius:999px;padding:6px 14px;font-size:12px;cursor:pointer}
-.ask button.yes{border-color:var(--ok);color:var(--ok)}
-details.more{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
-details.more summary{cursor:pointer;font-size:11.5px;color:var(--muted);list-style:none}
-details.more summary::-webkit-details-marker{display:none}
-details.more summary::before{content:"+ "}
-details.more[open] summary::before{content:"– "}
-.list{display:flex;flex-direction:column;margin-top:6px}
-.li{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:6px 0;border-top:1px solid var(--line)}
-.li span:last-child{color:var(--muted);white-space:nowrap}
-.sc-head{font-family:var(--display);font-weight:800;text-transform:uppercase;line-height:1}
-.sc-head .n{font-size:64px;color:var(--flap)}
-.sc-head .t{font-size:22px;letter-spacing:.04em}
-.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.stat{background:var(--slot);border-radius:9px;padding:8px 10px;min-width:0}
-.stat small{display:block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-.stat b{font-weight:500;font-size:13px;display:block;margin-top:2px}
-.stat.wide{grid-column:1/-1}
-.pb{font-size:12px;color:var(--flap)}
-.chips{display:flex;flex-wrap:wrap;gap:5px}
-.chip{appearance:none;font-size:11.5px;padding:5px 10px;border-radius:999px;background:var(--slot);border:1px solid var(--line);cursor:pointer}
-.chip[aria-pressed="true"]{border-color:var(--flap);color:var(--flap)}
-.photo img{width:100%;border-radius:10px;display:block}
-.hist{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;width:100%}
-.hist .n{font-family:var(--display);font-weight:800;font-size:30px;color:var(--flap);width:40px;text-align:center}
-.hist .d{flex:1;min-width:0;font-size:12px;line-height:1.45}
-.hist .d small{color:var(--muted);display:block}
-.hist img{width:44px;height:44px;object-fit:cover;border-radius:8px}
-.foot{color:var(--muted);font-size:10.5px;line-height:1.6;text-align:center}
-.test{border:1px dashed var(--you);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:rgba(111,183,255,.05)}
-.test .lbl{color:var(--you)}
-.test .ghost{color:var(--text)}
-.test select{background:var(--slot);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px;min-width:0;flex:1}
-dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;width:min(400px,calc(100vw - 32px));padding:14px}
-dialog::backdrop{background:rgba(0,0,0,.65)}
-dialog h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.05em;text-transform:uppercase}
-.opt{display:flex;justify-content:space-between;gap:10px;width:100%;appearance:none;background:var(--slot);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px;cursor:pointer;text-align:left;font-size:12.5px}
-.opt small{color:var(--muted);display:block;font-size:11px;margin-top:2px}
-.opt b{color:var(--flap);font-weight:500;white-space:nowrap}
-.leaflet-container{background:#11151b;font-family:var(--mono)}
-.leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.35)}
-.leaflet-control-attribution{font-size:9px!important;background:rgba(14,17,22,.7)!important;color:var(--muted)!important}
-.leaflet-control-attribution a{color:var(--muted)!important}
-.num-pin{background:var(--flap);color:var(--flap-ink);border-radius:50%;font:500 11px/20px var(--mono);text-align:center;border:2px solid var(--ink)}
-:focus-visible{outline:2px solid var(--flap);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){.flip,.ticket{animation:none}}
+@keyframes flip{from{transform:translateY(-30%);opacity:.3}to{transform:none;opacity:1}}
+.bar{width:100%;border-radius:22px;padding:18px;background:var(--amber);color:var(--amber-ink);display:flex;flex-direction:column;gap:10px;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.9);opacity:0}to{transform:none;opacity:1}}
+.bar .eyebrow{color:rgba(36,24,3,.65)}
+.bar h2{font-family:var(--display);font-weight:800;font-size:clamp(32px,10vw,44px);line-height:.95;text-transform:uppercase}
+.bar .facts{display:flex;gap:16px;flex-wrap:wrap;font-size:14.5px;font-weight:600}
+.bar .facts span{display:flex;align-items:center;gap:5px}
+.bar .facts svg{width:17px;height:17px}
+.bar .btn{background:var(--amber-ink);color:var(--amber)}
+.bar.at{background:var(--s1);color:var(--text);border:1.5px solid var(--green)}
+.bar.at .eyebrow{color:var(--green)}
+.dwell{font-family:var(--display);font-weight:800;font-size:40px;font-variant-numeric:tabular-nums;line-height:1}
+.tip{width:100%;background:var(--s2);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45;display:flex;gap:10px;align-items:flex-start;position:relative}
+.tip::before{content:"";position:absolute;top:-7px;left:50%;margin-left:-7px;border:7px solid transparent;border-top:0;border-bottom-color:var(--s2)}
+.tip.nob::before{display:none}
+.tip svg{width:20px;height:20px;color:var(--amber);flex:none;margin-top:1px}
+.tip button{appearance:none;background:none;border:0;color:var(--amber);font-weight:700;font-size:13.5px;padding:0;margin-left:auto;flex:none}
+.ask{width:100%;background:var(--s1);border:1.5px solid var(--amber);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ask b{font-size:16px}
+.ask .row{display:flex;gap:8px}
+.ask .row .btn{height:44px;font-size:15px}
+.banner{width:100%;border-radius:14px;padding:12px 14px;background:var(--amber-soft);border:1px solid rgba(245,184,61,.45);font-size:14px;line-height:1.45;color:var(--text)}
+.banner b{color:var(--amber)}
+
+/* sheets */
+dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;max-width:480px;width:100%;border:0;border-radius:24px 24px 0 0;background:var(--s1);color:var(--text);padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85dvh;overflow-y:auto}
+dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
+dialog.sheet[open]{animation:up .25s ease-out}
+@keyframes up{from{transform:translateY(40%)}to{transform:none}}
+.grab{width:40px;height:5px;border-radius:99px;background:var(--s3);margin:0 auto 14px}
+.sheet h3{font-size:22px;font-weight:750;margin-bottom:4px}
+.sheet .opts{margin-top:14px}
+.menu{display:flex;flex-direction:column;margin-top:8px}
+.menu button{appearance:none;background:none;border:0;border-top:1px solid var(--line);text-align:left;padding:15px 2px;display:flex;gap:14px;align-items:center;font-size:16px;font-weight:600}
+.menu button:first-child{border-top:0}
+.menu button svg{width:22px;height:22px;color:var(--muted)}
+.menu button small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
+.menu button.danger{color:var(--red)}
+.menu button.danger svg{color:var(--red)}
+
+/* score */
+.score{text-align:center;padding:22px 16px;border-radius:24px;background:radial-gradient(100% 80% at 50% 0%,rgba(245,184,61,.25),transparent 70%),var(--s1);border:1px solid var(--line)}
+.score .big{font-family:var(--display);font-weight:800;font-size:110px;line-height:.85;color:var(--amber)}
+.score .lbl{font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:.06em}
+.score .pb{display:inline-block;margin-top:10px;background:var(--amber);color:var(--amber-ink);font-weight:800;font-size:13px;border-radius:99px;padding:5px 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;min-width:0}
+.stat small{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.stat b{display:block;font-size:16px;font-weight:700;margin-top:3px}
+.stat.w{grid-column:1/-1}
+.list{display:flex;flex-direction:column}
+.li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:15px}
+.li:first-child{border-top:0}
+.li .r{color:var(--muted);font-size:13.5px;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1.5px solid var(--line);background:var(--s2);border-radius:99px;padding:8px 14px;font-size:14px;font-weight:600}
+.chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber);background:var(--amber-soft)}
+.photo img{width:100%;border-radius:14px;display:block;margin-top:10px}
+
+/* rooftops tab */
+.barrow{appearance:none;width:100%;background:none;border:0;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:13px 0;text-align:left}
+.barrow:first-child{border-top:0}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--amber);flex:none}
+.dot.off{background:#4B5160}
+.barrow .t{flex:1;min-width:0}
+.barrow .t b{display:block;font-size:15.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.barrow .t small{color:var(--muted);font-size:13px}
+.barrow .r{color:var(--muted);font-size:13px;white-space:nowrap}
+.seg{display:flex;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{flex:1;appearance:none;border:0;background:none;border-radius:9px;padding:8px;font-size:14px;font-weight:650;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
+
+/* history */
+.hrow{appearance:none;width:100%;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:14px;text-align:left}
+.hrow .n{font-family:var(--display);font-weight:800;font-size:38px;color:var(--amber);width:44px;text-align:center;line-height:1}
+.hrow .t{flex:1;min-width:0}
+.hrow .t b{display:block;font-size:15px}
+.hrow .t small{color:var(--muted);font-size:13px}
+.hrow img{width:48px;height:48px;border-radius:10px;object-fit:cover}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty svg{width:56px;height:56px;color:var(--s3)}
+
+/* test */
+.testfab{position:absolute;right:12px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;appearance:none;border:1.5px dashed var(--blue);background:rgba(11,13,18,.9);color:var(--blue);border-radius:99px;padding:6px 11px;font-size:12px;font-weight:800;letter-spacing:.08em}
+.trow{display:flex;gap:8px;flex-wrap:wrap}
+.trow .btn{width:auto;flex:1;min-width:30%}
+.sheet select{width:100%;background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.flip,.bar,.pin.big,dialog.sheet[open]{animation:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand" id="brand">Rooftop <span>Roulette</span></div>
-    <div class="tabs" id="tabs">
-      <button class="tab" id="tabPlay" role="tab" type="button">Play</button>
-      <button class="tab" id="tabHist" role="tab" type="button">History</button>
-    </div>
-    <div class="clock" id="clock" hidden><b id="clockT">60:00</b><small id="clockL">Left</small></div>
-  </div>
+<div class="app" id="app">
 
-  <!-- SETUP -->
-  <section id="vSetup" hidden>
-    <div class="wrap" style="padding:0">
-      <div class="mapbox">
-        <div id="setupMap"></div>
-        <div class="cross"></div>
-        <button class="mapbtn" id="recentre" type="button">Use my location</button>
-        <div class="maphint" id="maphint">Drag the map to move your circle</div>
-      </div>
-      <div class="count" id="setupCount">— rooftops</div>
-      <div class="heads" id="setupHeads" hidden></div>
-      <div class="card">
-        <div class="row"><span class="lbl">Circle</span><div class="seg" id="radSeg"></div></div>
-        <div class="row"><span class="lbl">Clock</span><div class="seg" id="lenSeg"></div></div>
-        <p>Start anywhere. You can move areas once during the game.</p>
-      </div>
-      <div class="warnbox" id="locWarn" hidden></div>
-      <button class="big y" id="startBtn" type="button">Start the clock</button>
-      <div class="note">Uses GPS while you play so it can check you in at each bar. Expect extra battery use.</div>
+  <!-- INTRO (first open) -->
+  <section class="view" id="v-intro" hidden>
+    <div class="row" style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
+    <div class="intro" id="introBody"></div>
+    <div class="dots" id="introDots"><i></i><i></i><i></i></div>
+    <button class="btn" id="introNext" type="button">Next</button>
+  </section>
+
+  <!-- HOME (Play tab, no game) -->
+  <section class="view" id="v-home" hidden>
+    <div class="hero">
+      <div class="brand">Rooftop<br><span>Roulette</span></div>
+      <div class="sub" style="color:var(--text)">Spin. Walk. Drink. Beat the clock.</div>
+      <button class="btn" id="newGame" type="button">Start a new game</button>
     </div>
+    <div class="statrow" id="homeStats"></div>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:12px">How it works</div>
+      <div class="steps">
+        <div class="step"><span class="k">1</span><div><b>Spin</b><span>The wheel picks a rooftop near you.</span></div></div>
+        <div class="step"><span class="k">2</span><div><b>Walk there</b><span>You're checked in automatically when you arrive.</span></div></div>
+        <div class="step"><span class="k">3</span><div><b>Have a drink, spin again</b><span>Hit as many rooftops as you can before the clock runs out.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WIZARD -->
+  <section class="view" id="v-wiz" hidden>
+    <div class="wtop">
+      <button class="iconbtn" id="wBack" type="button" aria-label="Back"></button>
+      <div class="prog"><i id="wProg"></i></div>
+      <button class="iconbtn" id="wClose" type="button" aria-label="Close"></button>
+    </div>
+    <div id="wBody" style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+
+  <!-- LOCATION PRIMER -->
+  <section class="view" id="v-perm" hidden>
+    <div class="wtop"><button class="iconbtn" id="pBack" type="button" aria-label="Back"></button></div>
+    <div class="intro">
+      <div class="art" id="permArt"></div>
+      <h2 class="q">Turn on location</h2>
+      <p class="sub" style="max-width:320px;margin:0">So we can find rooftops near you and check you in when you arrive. No tapping needed mid-crawl.</p>
+      <div class="alertbox" id="permWarn" hidden style="text-align:left"></div>
+    </div>
+    <button class="btn" id="permGo" type="button">Allow location</button>
   </section>
 
   <!-- PLAY -->
-  <section id="vPlay" hidden>
-    <div class="wrap" style="padding:0">
-      <div class="strip" id="strip"></div>
-      <div id="ticketBox"></div>
-      <div class="ask" id="ask" hidden></div>
-      <button class="big" id="spinBtn" type="button">Spin</button>
-      <div class="row" style="justify-content:space-between">
-        <button class="link" id="moveBtn" type="button">Change areas</button>
-        <button class="link" id="endBtn" type="button">End game</button>
-      </div>
-      <div class="mapbox"><div id="playMap"></div><div class="maphint" id="playHint" hidden>Test: tap the map to move yourself</div></div>
-      <details class="more" id="more"><summary id="moreS">More nearby</summary><div class="list" id="moreL"></div></details>
-      <div class="note" id="gpsNote"></div>
+  <section class="view" id="v-play" hidden>
+    <div class="ptop">
+      <div class="count" id="pCount"></div>
+      <div class="clock" id="clock"><b id="clockT">60:00</b><small id="clockL">Left</small></div>
+      <button class="iconbtn" id="pMenu" type="button" aria-label="Game menu"></button>
     </div>
+    <div class="tbar" id="tbar"><i id="tbarI"></i></div>
+    <div class="strip" id="strip"></div>
+    <div class="stage" id="stage"></div>
+    <div class="map" id="playMapWrap"><div id="playMap" style="height:200px"></div></div>
+    <div class="note" id="gpsNote" style="text-align:center"></div>
   </section>
 
-  <!-- END / SCORECARD -->
-  <section id="vEnd" hidden>
-    <div class="wrap" style="padding:0" id="endBox"></div>
+  <!-- SCORECARD -->
+  <section class="view" id="v-end" hidden></section>
+
+  <!-- ROOFTOPS TAB -->
+  <section class="view" id="v-bars" hidden>
+    <h1 class="q">Rooftops</h1>
+    <div class="map"><div id="barsMap" style="height:38vh;min-height:240px"></div></div>
+    <div class="seg" id="barsSeg"><button type="button" data-v="open" aria-pressed="true">Open now</button><button type="button" data-v="all" aria-pressed="false">All</button></div>
+    <div class="list card" id="barsList" style="padding:4px 16px"></div>
   </section>
 
-  <!-- HISTORY -->
-  <section id="vHist" hidden>
-    <div class="card" id="histBox"></div>
-  </section>
+  <!-- HISTORY TAB -->
+  <section class="view" id="v-hist" hidden></section>
 
-  <!-- TEST PANEL -->
-  <section class="test" id="testPanel" hidden>
-    <div class="row" style="justify-content:space-between"><span class="lbl" style="width:auto">Test mode</span><span class="note" id="testClock"></span></div>
-    <div class="row">
-      <button class="ghost" type="button" data-ff="1">+1 min</button>
-      <button class="ghost" type="button" data-ff="5">+5 min</button>
-      <button class="ghost" type="button" data-ff="15">+15 min</button>
-      <button class="ghost" type="button" data-ff="60">+1 hr</button>
-      <button class="ghost" type="button" id="ffReset">Real time</button>
-    </div>
-    <div class="row" id="testPlayRow">
-      <button class="ghost" type="button" id="tArrive">Walk to target</button>
-      <button class="ghost" type="button" id="tLeave">Walk away 200m</button>
-    </div>
-    <div class="row"><select id="tJump" aria-label="Put me at a bar"></select></div>
-    <div class="note">Tap any map to put yourself there. Fast-forward moves the game clock and opening hours together.</div>
-    <button class="link" type="button" id="tOff">Turn off test mode</button>
-  </section>
-
-  <div class="foot">Opening hours come from Google and can be wrong. Check before you queue.<br>Drink water. Don't drive.</div>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="play" id="tPlay"></button>
+    <button type="button" role="tab" data-tab="bars" id="tBars"></button>
+    <button type="button" role="tab" data-tab="hist" id="tHist"></button>
+  </nav>
+  <div class="cta" id="cta" hidden></div>
+  <button class="testfab" id="testFab" type="button" hidden>TEST</button>
 </div>
 
-<dialog id="dlg"><div id="dlgBody"></div></dialog>
+<dialog class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></dialog>
 
 <script>/* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -904,51 +1008,74 @@ dialog h3{margin:0 0 4px;font-family:var(--display);font-weight:800;font-size:20
 "use strict";
 const VENUES=[{"id":"untied","name":"Untied","area":"Barangaroo","lat":-33.865555,"lng":151.201996,"rating":4.7,"address":"Level 4, 400 Barangaroo Ave","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1320]],[[720,1440]],[[720,1440]],[[720,1260]]]},{"id":"jimmy-s-rooftop","name":"Jimmy's Rooftop","area":"Sydney CBD","lat":-33.866292,"lng":151.207502,"rating":4.3,"address":"Level 4, 320 George St","hours":[[],[[720,1440]],[[720,1440]],[[720,1620]],[[720,1620]],[[720,1620]],[[900,1440]]]},{"id":"sora-rooftop-bar","name":"Sora Rooftop Bar","area":"Sydney CBD","lat":-33.872503,"lng":151.205453,"rating":4.3,"address":"Level 9, 285 Clarence St","hours":[[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1560]],[[720,1560]],[]]},{"id":"above-319","name":"Above 319","area":"Sydney CBD","lat":-33.875183,"lng":151.204269,"rating":4.2,"address":"Rooftop, 319 Sussex St","hours":[[],[],[[990,1260]],[[990,1260]],[[990,1380]],[[780,1380]],[[780,1200]]]},{"id":"harper-rooftop","name":"Harper Rooftop","area":"Sydney CBD","lat":-33.874979,"lng":151.207602,"rating":3.7,"address":"Level 7, 339 Pitt St","hours":[[],[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1380]],[[720,1380]]]},{"id":"j-ji","name":"Jōji","area":"Sydney CBD","lat":-33.868396,"lng":151.207405,"rating":4.6,"address":"Level 5, 388 George St","hours":[[[960,1380]],[[720,1380]],[[720,1440]],[[720,1500]],[[720,1500]],[[720,1560]],[[960,1380]]]},{"id":"the-rook","name":"The Rook","area":"Sydney CBD","lat":-33.86973,"lng":151.20635,"rating":4.4,"address":"Level 7, 56 York St","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[]]},{"id":"babylon-rooftop","name":"Babylon Rooftop","area":"Sydney CBD","lat":-33.869726,"lng":151.208454,"rating":4.2,"address":"Level 7, 182 Pitt St","hours":[[[720,1320]],[[720,1380]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1320]]]},{"id":"the-rooftop-sydney","name":"The Rooftop Sydney","area":"Sydney CBD","lat":-33.871149,"lng":151.204121,"rating":4.1,"address":"Shelbourne Hotel, 200 Sussex St","hours":[[],[],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]]},{"id":"jacksons-on-george","name":"Jacksons on George","area":"Sydney CBD","lat":-33.861808,"lng":151.208123,"rating":3.9,"address":"176 George St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1560]]]},{"id":"taylor-s-rooftop","name":"Taylor's Rooftop","area":"Sydney CBD","lat":-33.863841,"lng":151.208726,"rating":4.0,"address":"Republic Hotel, 69 Pitt St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"hotel-sweeney-s","name":"Hotel Sweeney's","area":"Sydney CBD","lat":-33.872606,"lng":151.20585,"rating":4.1,"address":"236 Clarence St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1560]],[[600,1650]],[[600,1650]],[[720,1320]]]},{"id":"the-bristol","name":"The Bristol","area":"Sydney CBD","lat":-33.867754,"lng":151.203187,"rating":3.9,"address":"81 Sussex St","hours":[[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[600,1620]],[[720,1620]],[]]},{"id":"the-sussex-hotel","name":"The Sussex Hotel","area":"Sydney CBD","lat":-33.865008,"lng":151.203379,"rating":4.0,"address":"20 Sussex St","hours":[[[600,1440]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[720,1560]],[]]},{"id":"sky-bar-shell-house","name":"Sky Bar, Shell House","area":"Sydney CBD","lat":-33.865166,"lng":151.206718,"rating":4.0,"address":"37 Margaret St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]]},{"id":"old-mate-s-place","name":"Old Mate's Place","area":"Sydney CBD","lat":-33.869547,"lng":151.205153,"rating":4.7,"address":"Level 4, 199 Clarence St","hours":[[],[[960,1560]],[[960,1560]],[[960,1560]],[[900,1560]],[[900,1560]],[[900,1560]]]},{"id":"zephyr","name":"Zephyr","area":"Sydney CBD","lat":-33.869509,"lng":151.203289,"rating":4.2,"address":"Level 12, 161 Sussex St","hours":[[],[[900,1320]],[[900,1320]],[[900,1320]],[[900,1440]],[[840,1440]],[[840,1320]]]},{"id":"panorama-bar","name":"Panorama Bar","area":"Sydney CBD","lat":-33.867884,"lng":151.209637,"rating":4.1,"address":"The International, 25 Martin Pl","hours":[[],[[960,1440]],[[960,1440]],[[900,1440]],[[900,1440]],[[960,1440]],[]]},{"id":"aster","name":"Aster","area":"Sydney CBD","lat":-33.862904,"lng":151.212384,"rating":4.2,"address":"Level 32, 117 Macquarie St","hours":[[[960,1320]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1320]]]},{"id":"cirq","name":"CIRQ","area":"Barangaroo","lat":-33.862548,"lng":151.201074,"rating":4.1,"address":"Level 26, 1 Barangaroo Ave","hours":[[],[],[[960,1440]],[[960,1440]],[[960,1500]],[[960,1500]],[[960,1320]]]},{"id":"smoke-bar","name":"Smoke Bar","area":"Barangaroo","lat":-33.865576,"lng":151.201534,"rating":4.4,"address":"Level 2, 35 Barangaroo Ave","hours":[[],[[900,1320]],[[900,1440]],[[900,1440]],[[900,1500]],[[900,1500]],[[900,1380]]]},{"id":"zeta-bar","name":"Zeta Bar","area":"Sydney CBD","lat":-33.87175,"lng":151.207175,"rating":3.7,"address":"Hilton, Level 4, 488 George St","hours":[[],[],[],[],[[1020,1440]],[[1020,1440]],[]]},{"id":"the-glenmore","name":"The Glenmore","area":"The Rocks","lat":-33.858627,"lng":151.207429,"rating":4.3,"address":"96 Cumberland St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1500]],[[660,1500]],[[660,1440]]]},{"id":"henry-deane","name":"Henry Deane","area":"Millers Point","lat":-33.857891,"lng":151.202225,"rating":4.0,"address":"Hotel Palisade, 35 Bettington St","hours":[[],[[960,1320]],[[960,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1320]]]},{"id":"keg-brew","name":"Keg & Brew","area":"Surry Hills","lat":-33.883864,"lng":151.209905,"rating":4.3,"address":"26 Foveaux St","hours":[[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1620]],[[600,1620]],[[600,1320]]]},{"id":"taphouse","name":"Taphouse","area":"Darlinghurst","lat":-33.884582,"lng":151.218117,"rating":4.3,"address":"122 Flinders St","hours":[[[960,1380]],[[960,1380]],[[960,1380]],[[960,1440]],[[690,1500]],[[690,1500]],[[690,1380]]]},{"id":"colombian-hotel","name":"Colombian Hotel","area":"Darlinghurst","lat":-33.87958,"lng":151.215284,"rating":3.8,"address":"117 Oxford St","hours":[[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]]]},{"id":"the-tilbury","name":"The Tilbury","area":"Woolloomooloo","lat":-33.86978,"lng":151.220455,"rating":4.1,"address":"12 Nicholson St","hours":[[[660,1200]],[[660,1200]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]]},{"id":"the-imperial","name":"The Imperial","area":"Erskineville","lat":-33.899142,"lng":151.182612,"rating":4.2,"address":"35 Erskineville Rd","hours":[[[960,1320]],[[960,1320]],[[960,1380]],[[960,1380]],[[960,1620]],[[720,1680]],[[720,1320]]]},{"id":"the-surry-rooftop","name":"The Surry Rooftop","area":"Surry Hills","lat":-33.88192,"lng":151.209761,"rating":4.7,"address":"Level 11/28 Albion St","hours":[[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]]]},{"id":"aurora-hotel-rooftop","name":"Aurora Hotel Rooftop","area":"Surry Hills","lat":-33.884126,"lng":151.208419,"rating":4.0,"address":"324 Elizabeth St","hours":[[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]]]},{"id":"slims-rooftop","name":"Slims Rooftop","area":"Darlinghurst","lat":-33.874257,"lng":151.214643,"rating":3.9,"address":"47/49 William St","hours":[[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1440]]]},{"id":"the-strawberry","name":"The Strawberry","area":"Surry Hills","lat":-33.886524,"lng":151.208032,"rating":4.0,"address":"453 Elizabeth St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"east-village-hotel","name":"East Village Hotel","area":"Darlinghurst","lat":-33.877594,"lng":151.216632,"rating":4.2,"address":"234 Palmer St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]]},{"id":"burdekin-rooftop","name":"Burdekin Rooftop","area":"Darlinghurst","lat":-33.877028,"lng":151.212957,"rating":4.5,"address":"2 Oxford St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1440]],[[720,1440]],[]]},{"id":"kasbah-the-strand","name":"Kasbah, The Strand","area":"Darlinghurst","lat":-33.874564,"lng":151.216521,"rating":4.5,"address":"99 William St","hours":[[],[],[],[[960,1380]],[[960,1440]],[[780,1440]],[[780,1260]]]},{"id":"monica-rooftop","name":"Monica Rooftop","area":"Paddington","lat":-33.881801,"lng":151.219223,"rating":4.1,"address":"Level 5/1 Oxford St","hours":[[[900,1320]],[[900,1320]],[[900,1320]],[[900,1320]],[[720,1435]],[[720,1435]],[[720,1320]]]},{"id":"royal-hotel","name":"Royal Hotel","area":"Paddington","lat":-33.882399,"lng":151.228503,"rating":4.1,"address":"237 Glenmore Rd","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[600,1440]],[[660,1320]]]},{"id":"the-light-brigade","name":"The Light Brigade","area":"Woollahra","lat":-33.888535,"lng":151.232214,"rating":4.0,"address":"Cnr Oxford St & Jersey Rd","hours":[[[690,1440]],[[690,1440]],[[690,1440]],[[690,1440]],[[690,1500]],[[690,1500]],[[690,1320]]]},{"id":"sweethearts-terraza","name":"Sweethearts Terraza","area":"Potts Point","lat":-33.873366,"lng":151.223741,"rating":4.2,"address":"Level 3/33-35 Darlinghurst Rd","hours":[[],[],[[1020,1440]],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]]]},{"id":"kings-cross-hotel","name":"Kings Cross Hotel","area":"Potts Point","lat":-33.874903,"lng":151.222045,"rating":4.1,"address":"244-248 William St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]]]},{"id":"arturo-s-rooftop","name":"Arturo's Rooftop","area":"Woolloomooloo","lat":-33.869182,"lng":151.219488,"rating":3.6,"address":"Level 2/2 Bourke St","hours":[[],[],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]],[[720,1200]]]},{"id":"green-moustache","name":"Green Moustache","area":"North Sydney","lat":-33.838401,"lng":151.206795,"rating":4.3,"address":"Level 10/100 Miller St","hours":[[],[[705,1320]],[[705,1320]],[[690,1320]],[[690,1350]],[[690,1350]],[]]},{"id":"four-hundred","name":"Four Hundred","area":"North Sydney","lat":-33.840308,"lng":151.207483,"rating":4.7,"address":"Greenwood Plaza Rooftop","hours":[[],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[]]},{"id":"the-treehouse-hotel","name":"The Treehouse Hotel","area":"North Sydney","lat":-33.839196,"lng":151.206475,"rating":4.3,"address":"60 Miller St","hours":[[[720,1320]],[[720,1320]],[[720,1380]],[[720,1380]],[[720,1380]],[[1020,1380]],[]]},{"id":"le-rooftop","name":"Le Rooftop","area":"McMahons Point","lat":-33.843322,"lng":151.204459,"rating":4.1,"address":"178 Blues Point Rd","hours":[[],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]]]},{"id":"websters","name":"Websters","area":"Newtown","lat":-33.896988,"lng":151.179059,"rating":4.1,"address":"323 King St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]]},{"id":"corridor","name":"Corridor","area":"Newtown","lat":-33.89357,"lng":151.183129,"rating":4.4,"address":"153A King St","hours":[[[1020,1380]],[[1020,1380]],[[1020,1380]],[[1020,1380]],[[960,1440]],[[900,1440]],[[900,1380]]]},{"id":"hotel-steyne","name":"Hotel Steyne","area":"Manly","lat":-33.796961,"lng":151.287679,"rating":3.7,"address":"75 The Corso","hours":[[[540,1620]],[[540,1620]],[[540,1620]],[[540,1620]],[[540,1800]],[[540,1800]],[[540,720]]]},{"id":"coogee-pavilion-rooftop","name":"Coogee Pavilion Rooftop","area":"Coogee","lat":-33.918713,"lng":151.258244,"rating":3.7,"address":"Level 3/169 Dolphin St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[660,1440]],[[660,1440]]]},{"id":"the-rooftop-pyrmont","name":"The Rooftop, Pyrmont","area":"Pyrmont","lat":-33.871066,"lng":151.194971,"rating":3.8,"address":"214-216 Harris St","hours":[[],[],[[720,1350]],[[720,1350]],[[720,1440]],[[720,1440]],[[720,1260]]]},{"id":"the-old-clare-rooftop","name":"The Old Clare Rooftop","area":"Chippendale","lat":-33.884421,"lng":151.201388,"rating":3.8,"address":"Level 4, 1 Kensington St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1320]],[[960,1320]],[]]}];
 const AREAS=[
- {name:"Town Hall",lat:-33.8732,lng:151.2069},{name:"Wynyard",lat:-33.8659,lng:151.2059},
- {name:"Martin Place",lat:-33.8678,lng:151.2113},{name:"Circular Quay",lat:-33.8614,lng:151.2108},
- {name:"The Rocks",lat:-33.8590,lng:151.2070},{name:"Barangaroo",lat:-33.8630,lng:151.2017},
- {name:"Central",lat:-33.8832,lng:151.2063},{name:"Chippendale",lat:-33.8844,lng:151.2014},
- {name:"Surry Hills",lat:-33.8857,lng:151.2122},{name:"Darlinghurst",lat:-33.8790,lng:151.2183},
- {name:"Kings Cross",lat:-33.8746,lng:151.2228},{name:"Potts Point",lat:-33.8710,lng:151.2240},
- {name:"Woolloomooloo",lat:-33.8695,lng:151.2200},{name:"Paddington",lat:-33.8846,lng:151.2268},
- {name:"Newtown",lat:-33.8978,lng:151.1793},{name:"Erskineville",lat:-33.8991,lng:151.1826},
- {name:"Pyrmont",lat:-33.8705,lng:151.1947},{name:"North Sydney",lat:-33.8403,lng:151.2073},
- {name:"Manly",lat:-33.7988,lng:151.2860},{name:"Coogee",lat:-33.9205,lng:151.2560}
+ {name:"Town Hall",d:"City centre",lat:-33.8732,lng:151.2069},
+ {name:"Martin Place",d:"City centre",lat:-33.8678,lng:151.2113},
+ {name:"Wynyard",d:"City north",lat:-33.8659,lng:151.2059},
+ {name:"Circular Quay",d:"Harbour & The Rocks",lat:-33.8614,lng:151.2108},
+ {name:"Barangaroo",d:"Waterfront",lat:-33.8630,lng:151.2017},
+ {name:"Central",d:"City south",lat:-33.8832,lng:151.2063},
+ {name:"Darlinghurst",d:"Oxford St",lat:-33.8790,lng:151.2183},
+ {name:"Surry Hills",d:"Crown St",lat:-33.8857,lng:151.2122},
+ {name:"Potts Point",d:"Kings Cross",lat:-33.8730,lng:151.2235},
+ {name:"Pyrmont",d:"Darling Harbour",lat:-33.8705,lng:151.1947},
+ {name:"North Sydney",d:"North shore",lat:-33.8403,lng:151.2073},
+ {name:"Newtown",d:"Inner west",lat:-33.8978,lng:151.1793},
+ {name:"Manly",d:"Northern beaches",lat:-33.7988,lng:151.2860},
+ {name:"Coogee",d:"Eastern beaches",lat:-33.9205,lng:151.2560}
 ];
 const RADII=[1,1.5,2],LENS=[60,120];
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=5,SOON=30,FINAL=30;
-const KEY="rr-game-v2",HKEY="rr-history-v2";
+const KEY="rr-app-v3",HKEY="rr-history-v2";
 const $=id=>document.getElementById(id);
 const byId=id=>VENUES.find(v=>v.id===id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+/* ---------- icons ---------- */
+const I={
+ dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+ trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+ x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+ nav:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>',
+ walk:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M7 12l3-4 4 1 2 4 2 1M10 8l-1 5"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+ target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>',
+ city:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 21h18M5 21V8l5-3v16M10 21V3l6 3v15M16 21v-9l3 2v7"/></svg>',
+ ring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+ bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+ moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+ move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+ flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+ help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>',
+ bulb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.5.4.9 1 .9 1.6V16h5.2v-.5c0-.6.4-1.2.9-1.6A6 6 0 0 0 12 3z"/></svg>',
+ glass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8z"/><path d="M12 12v8M8 20h8"/><circle cx="15.5" cy="6.5" r="1" fill="currentColor"/></svg>',
+ camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+};
+const tabIcons={play:I.dice,bars:I.pin,hist:I.trophy};
+
 /* ---------- state ---------- */
-let S={view:"setup",center:{lat:-33.8732,lng:151.2069},radius:1.5,len:60,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null};
+let S={tab:"play",route:null,onboarded:false,intro:0,wiz:null,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null,tips:{},barsFilter:"open",last:{radius:1.5,len:60}};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
 if(/[?&]test\b/.test(location.search))S.test=true;
 let H=[];try{H=JSON.parse(localStorage.getItem(HKEY)||"[]")||[]}catch(e){H=[]}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H))}catch(e){
-  // storage full: drop photos from oldest games first
-  for(let i=H.length-1;i>=0;i--){if(H[i].photo){H[i].photo=null;try{localStorage.setItem(HKEY,JSON.stringify(H));return}catch(_){}}}
-}};
+const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H))}catch(e){for(let i=H.length-1;i>=0;i--){if(H[i].photo){H[i].photo=null;try{localStorage.setItem(HKEY,JSON.stringify(H));return}catch(_){}}}}};
 const now=()=>Date.now()+(S.ff||0);
 
-/* ---------- time + hours (Sydney) ---------- */
+/* ---------- time + hours ---------- */
 function sydAt(ts){
   const p=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date(ts));
-  const g=t=>p.find(x=>x.type===t).value;
-  let h=+g("hour");if(h===24)h=0;
+  const g=t=>p.find(x=>x.type===t).value;let h=+g("hour");if(h===24)h=0;
   return {day:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(g("weekday")),min:h*60+ +g("minute")};
 }
 function openState(v,ts){
   const {day,min}=sydAt(ts),prev=(day+6)%7;
   for(const [o,c] of v.hours[prev]) if(c>1440&&min<c-1440) return {open:true,until:c-1440-min,closeAt:c-1440};
   let opens=null;
-  for(const [o,c] of v.hours[day]){
-    if(min>=o&&min<c) return {open:true,until:c-min,closeAt:c%1440};
-    if(o>min&&(opens===null||o<opens))opens=o;
-  }
+  for(const [o,c] of v.hours[day]){if(min>=o&&min<c) return {open:true,until:c-min,closeAt:c%1440};if(o>min&&(opens===null||o<opens))opens=o}
   return {open:false,opens};
 }
 const openOK=(v,ts)=>{const s=openState(v,ts);return s.open&&s.until>SOON};
@@ -960,471 +1087,541 @@ const hmm=ms=>{if(ms<60000)return "<1 min";const m=Math.round(ms/60000);return m
 function dist(a,b){const R=6371000,t=x=>x*Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin(t(b.lat-a.lat)/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(t(b.lng-a.lng)/2)**2))}
 const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
 const km=m=>(m/1000).toFixed(m<10000?1:0)+" km";
+const mOrKm=m=>m<1000?Math.round(m/10)*10+" m":km(m);
 const nearestArea=p=>AREAS.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0].name;
-function inCircle(c,r){return VENUES.filter(v=>dist(c,v)<=r*1000)}
+const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
+const openIn=(c,r,t)=>inCircle(c,r).filter(v=>openOK(v,t||now()));
+function avgHop(list){ // average walk between neighbouring open bars, a feel for the zone
+  if(list.length<2)return null;let s=0;
+  let n=0;for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){s+=dist(list[i],list[j]);n++}
+  return Math.max(1,Math.round(s/n*1.3/80));
+}
 
 /* ---------- location ---------- */
 let here=null,watchId=null,locErr=null;
-function you(){return S.test&&S.fake?S.fake:here}
+const you=()=>S.test?(S.fake||null):here;
 function startWatch(){
   if(S.test||watchId!==null||!navigator.geolocation)return;
-  watchId=navigator.geolocation.watchPosition(p=>{
-    here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;onLocation();
-  },e=>{locErr=e.code;renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+  watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;onLocation()},
+    e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
 function getOnce(){
+  if(S.test)return Promise.resolve(S.fake||{lat:-33.8732,lng:151.2069});
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej({code:-1});
-    navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy}),rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
   });
 }
+async function permState(){
+  if(S.test)return "granted";
+  try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}
+}
 
-/* ---------- sound ---------- */
+/* ---------- sound + haptics ---------- */
 let AC=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume();return AC}
-function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(a.destination);o.start(t);o.stop(t+.05)}
-function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;out.gain.value=.9;lp.connect(out).connect(a.destination);[[659.25,.0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
-function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(a.destination);o.start(t);o.stop(t+.05)}
+function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(a.destination);[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
 /* ---------- maps ---------- */
-const TILES="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-const ATTR='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+const ESRI_LBL="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+const OSM="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+let tilesFallback=false;
 function mkMap(el,opts){
-  const m=L.map(el,Object.assign({zoomControl:false,attributionControl:true},opts||{}));
-  L.tileLayer(TILES,{attribution:ATTR,maxZoom:19}).addTo(m);
+  const m=L.map(el,Object.assign({zoomControl:false,attributionControl:true,zoomSnap:.25},opts||{}));
+  const useOSM=()=>{m.eachLayer(l=>{if(l instanceof L.TileLayer)m.removeLayer(l)});m.getContainer().classList.add("osm");L.tileLayer(OSM,{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(m)};
+  if(tilesFallback){useOSM();return m}
+  let errs=0;
+  const base=L.tileLayer(ESRI,{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxNativeZoom:16,maxZoom:19});
+  base.on("tileerror",()=>{if(++errs===3){tilesFallback=true;useOSM()}});
+  base.addTo(m);
+  L.tileLayer(ESRI_LBL,{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
   return m;
 }
-const pinStyle=open=>({radius:6,weight:1.5,color:"#0E1116",fillColor:open?"#F2B632":"#59606a",fillOpacity:open?1:.85});
-let sMap=null,sCircle=null,sPins=[],sYou=null;
-function initSetupMap(){
-  if(sMap){sMap.invalidateSize();return}
-  sMap=mkMap("setupMap",{center:[S.center.lat,S.center.lng],zoom:14});
-  sCircle=L.circle([S.center.lat,S.center.lng],{radius:S.radius*1000,color:"#F2B632",weight:2,fillColor:"#F2B632",fillOpacity:.07,interactive:false}).addTo(sMap);
-  VENUES.forEach(v=>{const c=L.circleMarker([v.lat,v.lng],pinStyle(false)).addTo(sMap).bindTooltip(v.name,{direction:"top",offset:[0,-6]});c._v=v;sPins.push(c)});
-  sMap.on("move",()=>{const c=sMap.getCenter();S.center={lat:c.lat,lng:c.lng};sCircle.setLatLng(c);updateSetupCount()});
-  sMap.on("moveend",save);
-  sMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();drawYou()}});
-  fitCircle();
+const pinIcon=(cls)=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="off"?[12,12]:[16,16]});
+const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num${x?" x":""}">${n}</div>`,iconSize:[24,24]});
+const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
+const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
+function fitZone(m,c,r,extra){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.12);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,{animate:false,padding:[8,8]})}
+function setMe(m){const y=you();if(!m)return;if(!y){if(m._me){m.removeLayer(m._me);m._me=null}return}
+  if(!m._me)m._me=L.marker([y.lat,y.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else m._me.setLatLng([y.lat,y.lng])}
+
+/* ---------- router ---------- */
+const VIEWS=["intro","home","wiz","perm","play","end","bars","hist"];
+function go(route){S.route=route;save();render()}
+function render(){
+  if(!S.onboarded&&S.route!=="intro"&&!S.game){S.route="intro"}
+  if(!S.route)S.route=S.game?"play":"home";
+  if(S.route==="play"&&!S.game)S.route="home";
+  const r=S.route;
+  VIEWS.forEach(v=>$("v-"+v).hidden=v!==r);
+  const tabbed=["home","play","end","bars","hist"].includes(r);
+  $("tabs").hidden=!tabbed;$("app").classList.toggle("has-tabs",tabbed);
+  const tab=r==="bars"?"bars":r==="hist"?"hist":"play";
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
+  $("tPlay").querySelector(".live")&&($("tPlay").querySelector(".live").hidden=!S.game);
+  $("cta").hidden=true;$("app").classList.remove("has-cta");
+  $("testFab").hidden=!S.test;
+  ({intro:renderIntro,home:renderHome,wiz:renderWiz,perm:renderPerm,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
+  $("v-"+r).scrollTop=$("v-"+r).dataset.keep?$("v-"+r).scrollTop:0;
 }
-function fitCircle(){if(sMap){sMap.fitBounds(L.latLng(S.center.lat,S.center.lng).toBounds(S.radius*2000*1.08),{animate:false})}}
-function drawYou(){
-  const y=you();
-  [[sMap,"s"],[pMap,"p"]].forEach(([m,k])=>{
-    if(!m)return;
-    if(!y){if(m._you){m.removeLayer(m._you);m._you=null}return}
-    if(!m._you)m._you=L.circleMarker([y.lat,y.lng],{radius:7,weight:3,color:"#0E1116",fillColor:"#6FB7FF",fillOpacity:1}).addTo(m);
-    else m._you.setLatLng([y.lat,y.lng]);
-  });
+function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
+[["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","History"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`+(k==="play"?'<i class="live" hidden></i>':"");$(id).dataset.tab=k});
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;
+  if(k==="play")go(S.game?"play":(S.route==="end"?"end":"home"));else go(k)};
+$("tPlay").addEventListener("dblclick",()=>{if(!S.game)go("home")});
+
+/* ---------- intro ---------- */
+const SLIDES=[
+ {art:I.dice,h:"Let the wheel pick",p:"One tap and Rooftop Roulette picks your next rooftop bar. No debating, no planning."},
+ {art:I.walk,h:"Walk there",p:"Follow the directions. You're checked in the moment you arrive."},
+ {art:I.clock,h:"Beat the clock",p:"Have a drink, spin again. How many rooftops can you hit in an hour?"}
+];
+function renderIntro(){
+  const i=S.intro||0,s=SLIDES[i];
+  $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0">${s.p}</p>`;
+  [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
+  $("introNext").textContent=i<SLIDES.length-1?"Next":"Set up my first game";
+  $("introSkip").hidden=i===SLIDES.length-1;
+}
+$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;startWizard()}};
+$("introSkip").onclick=()=>{S.onboarded=true;go("home")};
+(()=>{let x0=null;$("v-intro").addEventListener("touchstart",e=>x0=e.touches[0].clientX,{passive:true});$("v-intro").addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const i=S.intro||0;if(dx<0&&i<SLIDES.length-1){S.intro=i+1}else if(dx>0&&i>0){S.intro=i-1}else return;save();renderIntro()})})();
+
+/* ---------- home ---------- */
+function renderHome(){
+  const t=now(),open=VENUES.filter(v=>openOK(v,t)).length;
+  const best=H.length?Math.max(...H.map(r=>stats(r).counted.length)):null;
+  $("homeStats").innerHTML=`<div class="mini"><small>Open right now</small><b>${open}</b> <span class="small">rooftops</span></div>
+   <div class="mini"><small>${best!=null?"Your best":"Your best"}</small><b>${best!=null?best:"—"}</b> <span class="small">${best!=null?(best===1?"bar":"bars"):"play to set one"}</span></div>`;
+}
+$("newGame").onclick=()=>startWizard();
+
+/* ---------- wizard ---------- */
+function startWizard(){S.wiz={step:0,start:null,radius:S.last.radius||1.5,len:S.last.len||60};go("wiz")}
+let zMap=null;
+function wizStart(){const w=S.wiz;return w.start}
+function renderWiz(){
+  const w=S.wiz;if(!w){go("home");return}
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;
+  $("wProg").style.width=((w.step+1)/4*100)+"%";
+  const body=$("wBody"),t=now();
+  if(w.step===0){
+    const areas=AREAS.map(a=>({a,n:openIn(a,1.5,t).length})).filter(o=>o.n>=3).sort((x,y)=>y.n-x.n);
+    const meSel=w.start&&w.start.type==="me";
+    body.innerHTML=`<div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Pick a spot. Your zone is drawn around it.</p></div>
+      <div class="opts">
+        <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small id="meSub">${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
+        <div class="note" id="meNote" hidden></div>
+        <div class="eyebrow" style="margin-top:8px">Or choose an area</div>
+        ${areas.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}
+      </div>`;
+    body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};save();renderWiz()});
+    $("optMe").onclick=async()=>{
+      const st=await permState();
+      if(st!=="granted"){S.permNext="wiz-me";go("perm");return}
+      useMe();
+    };
+    if(w.meNote){$("meNote").hidden=false;$("meNote").innerHTML=w.meNote}
+    cta(`<button class="btn" id="wNext" type="button" ${w.start?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
+  }
+  if(w.step===1){
+    const c=w.start,tag=["","",""];
+    const rows=RADII.map(r=>{const o=openIn(c,r,t);return {r,n:o.length,hop:avgHop(o)}});
+    const desc={1:"Tight zone. Short walks, fewer bars.",1.5:"Best mix of choice and walking.",2:"Most choice. Some longer walks."};
+    body.innerHTML=`<div><h1 class="q">How far will you walk?</h1><p class="sub" style="margin:6px 0 0">This is the size of your zone around ${esc(c.name)}. Every spin lands inside it.</p></div>
+      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${o.r} km${o.r===1.5?'<span class="tag">Recommended</span>':""}</b><small>${desc[o.r]}${o.hop?`<br>Average walk per spin: ~${o.hop} min`:""}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}</div>`;
+    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
+    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=2;save();renderWiz()});
+  }
+  if(w.step===2){
+    const pb=l=>{const b=H.filter(r=>r.len===l).map(r=>stats(r).counted.length);return b.length?Math.max(...b):null};
+    const L1=pb(60),L2=pb(120);
+    body.innerHTML=`<div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts when you tap Start.</p></div>
+      <div class="opts">
+        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.bolt}</span><span class="t"><b>1 hour</b><small>Quick crawl. Fast spins, no lingering.</small></span>${L1!=null?`<span class="n"><b>${L1}</b><small>your best</small></span>`:""}</button>
+        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.moon}</span><span class="t"><b>2 hours</b><small>The big night. Time to settle in.</small></span>${L2!=null?`<span class="n"><b>${L2}</b><small>your best</small></span>`:""}</button>
+      </div>`;
+    body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;save();renderWiz()});
+    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
+  }
+  if(w.step===3){
+    const c=w.start,open=openIn(c,w.radius,t),all=inCircle(c,w.radius);
+    body.innerHTML=`<div><h1 class="q">Your zone</h1><p class="sub" style="margin:6px 0 0"><b style="color:var(--amber)">${open.length} rooftops</b> open within ${w.radius} km of ${esc(c.name)}.</p></div>
+      <div class="map"><div id="zoneMap" style="height:300px"></div></div>
+      <div class="chips"><button class="chip" type="button" data-s="0">${esc(c.name)}</button><button class="chip" type="button" data-s="1">${w.radius} km</button><button class="chip" type="button" data-s="2">${w.len===60?"1 hour":"2 hours"}</button></div>
+      <div class="card"><div class="steps">
+        <div class="step"><span class="k">1</span><div><b>Spin</b><span>You'll get a random open rooftop in your zone.</span></div></div>
+        <div class="step"><span class="k">2</span><div><b>Walk there</b><span>You're checked in automatically when you arrive.</span></div></div>
+        <div class="step"><span class="k">3</span><div><b>Have a drink, spin again</b><span>A bar counts once you've stayed 5 minutes or had a drink.</span></div></div>
+      </div></div>
+      <p class="note">Running out of bars? You can move your zone once during the game.</p>`;
+    body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
+    cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>Start the clock</button>`,()=>$("wStart").onclick=tryStart);
+    requestAnimationFrame(()=>{
+      if(zMap){zMap.remove();zMap=null}
+      zMap=mkMap("zoneMap",{dragging:true});
+      zoneCircle(c,w.radius).addTo(zMap);
+      all.forEach(v=>L.marker([v.lat,v.lng],{icon:pinIcon(openOK(v,t)?"":"off")}).addTo(zMap).bindTooltip(v.name,{direction:"top",offset:[0,-8]}));
+      setMe(zMap);fitZone(zMap,c,w.radius);
+    });
+  }
+}
+async function useMe(){
+  const w=S.wiz;
+  try{
+    const p=await getOnce();const n=openIn(p,1.5).length;
+    if(n<2){
+      const near=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];
+      w.start=null;w.meNote=`There aren't enough rooftops open around you (the nearest is ${km(dist(p,near))} away). Pick an area below and start from there.`;
+    }else{w.start={type:"me",name:"you",lat:p.lat,lng:p.lng,n,sub:"Near "+nearestArea(p)};w.meNote=null}
+  }catch(e){w.meNote="Couldn't find you just now. Pick an area below instead."}
+  save();go("wiz");
+}
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
+$("wClose").onclick=()=>{S.wiz=null;go("home")};
+async function tryStart(){
+  ac();
+  if(!S.test){const st=await permState();if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
+  let pos;try{pos=await getOnce()}catch(e){S.permNext="start";go("perm");return}
+  const w=S.wiz,t=now();
+  S.last={radius:w.radius,len:w.len};
+  S.game={id:"g"+t,startedAt:t,endsAt:t+w.len*60000,len:w.len,radius:w.radius,center:{lat:w.start.lat,lng:w.start.lng},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,
+    visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
+  S.wiz=null;save();startWatch();buzz(30);go("play");
 }
 
-/* ---------- setup ---------- */
-RADII.forEach(r=>{const b=document.createElement("button");b.type="button";b.textContent=r+" km";b.onclick=()=>{S.radius=r;save();sCircle&&sCircle.setRadius(r*1000);fitCircle();renderSetup()};b.dataset.v=r;$("radSeg").appendChild(b)});
-LENS.forEach(l=>{const b=document.createElement("button");b.type="button";b.textContent=(l/60)+(l===60?" hour":" hours");b.onclick=()=>{S.len=l;save();renderSetup()};b.dataset.v=l;$("lenSeg").appendChild(b)});
-function updateSetupCount(){
-  const t=now(),inC=inCircle(S.center,S.radius),open=inC.filter(v=>openOK(v,t));
-  $("setupCount").innerHTML=`${inC.length} rooftop${inC.length===1?"":"s"} · <span>${open.length} open now</span>`;
-  sPins.forEach(p=>{const o=openOK(p._v,t);p.setStyle(pinStyle(o))});
-  const thin=S.len===60?3:5;
-  const h=$("setupHeads");
-  if(inC.length===0){h.hidden=false;h.innerHTML=`No rooftops in this circle. <button class="link" type="button" id="toCity" style="color:var(--flap)">Jump to the city</button>`;$("toCity").onclick=()=>{sMap.setView([-33.8732,151.2069]);fitCircle()}}
-  else if(open.length<thin){h.hidden=false;h.textContent=`Heads-up: only ${open.length} open in this circle right now.`}
-  else h.hidden=true;
-  $("startBtn").disabled=open.length===0;
+/* ---------- permission primer ---------- */
+function renderPerm(){
+  $("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;
+  $("permGo").textContent="Allow location";
+  $("permWarn").hidden=true;
 }
-function renderSetup(){
-  $("radSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.radius)));
-  $("lenSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.len)));
-  $("recentre").textContent=S.test?"Go to me":"Use my location";$("maphint").textContent=S.test?"Drag to move the circle · tap to put yourself there":"Drag the map to move your circle";
-  updateSetupCount();drawYou();
-}
-$("recentre").onclick=async()=>{
-  if(S.test){if(S.fake)sMap.setView([S.fake.lat,S.fake.lng]);$("locWarn").hidden=true;return}
-  try{const p=await getOnce();here=p;$("locWarn").hidden=true;drawYou();if(inCircle(p,S.radius).length)sMap.setView([p.lat,p.lng]);else{const n=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];$("setupHeads").hidden=false;$("setupHeads").textContent=`You're ${km(dist(p,n))} from the nearest rooftop, so your circle stays put. Drag it to wherever you'll start.`}}catch(e){showLocWarn(e)}
-};
-function showLocWarn(e){
-  const w=$("locWarn");w.hidden=false;
-  if(e&&e.code===1)w.innerHTML=`<b>Location is off for this site.</b> Rooftop Roulette needs it to check you in at each bar, the same way a run tracker needs it to log a run. Turn on Location for this website in your browser settings, then tap Start again.`;
-  else w.innerHTML=`<b>Couldn't find you.</b> Check Location Services is on for your browser, step outside if you're deep indoors, then tap Start again.`;
-}
-$("startBtn").onclick=async()=>{
-  ac();
-  let pos;
-  if(S.test){pos=S.fake||{lat:S.center.lat,lng:S.center.lng};S.fake=pos}
-  else{
-    $("startBtn").disabled=true;$("startBtn").textContent="Finding you…";
-    try{pos=await getOnce();here=pos}catch(e){showLocWarn(e);$("startBtn").textContent="Start the clock";updateSetupCount();return}
-    $("startBtn").textContent="Start the clock";
+$("pBack").onclick=()=>go(S.permNext==="home"?"home":"wiz");
+$("permGo").onclick=async()=>{
+  try{await getOnce();
+    if(S.permNext==="wiz-me"){S.route="wiz";useMe()}
+    else if(S.permNext==="start"){S.route="wiz";save();tryStart()}
+    else go("wiz");
+  }catch(e){
+    const w=$("permWarn");w.hidden=false;
+    w.innerHTML=e&&e.code===1?`<b>Location is blocked.</b> In Chrome, tap the icon left of the web address → <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.`
+      :`<b>Couldn't find you.</b> Make sure Location is switched on for your phone, then try again.`;
   }
-  $("locWarn").hidden=true;
-  const t=now();
-  S.game={id:"g"+t,startedAt:t,endsAt:t+S.len*60000,len:S.len,radius:S.radius,center:{...S.center},
-    startPos:{lat:pos.lat,lng:pos.lng},areas:[nearestArea(S.center)],moves:[],voluntaryUsed:false,
-    visits:[],target:null,targetAt:null,targetFrom:null,ended:false};
-  S.view="play";save();
-  if(!S.test)startWatch();
-  render();
 };
 
 /* ---------- game logic ---------- */
 const G=()=>S.game;
 const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
 const visited=id=>G().visits.some(v=>v.id===id);
-function remaining(){return G().endsAt-now()}
+const remaining=()=>G().endsAt-now();
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
-function basePool(){
-  const g=G(),t=now();
-  return inCircle(g.center,g.radius).filter(v=>!visited(v.id)&&v.id!==g.target&&openOK(v,t));
-}
+function basePool(){const g=G(),t=now();return inCircle(g.center,g.radius).filter(v=>!visited(v.id)&&v.id!==g.target&&openOK(v,t))}
 function spinPool(){
-  const g=G(),rem=remaining()/60000,from=fromPoint();
-  let P=basePool();
+  const g=G(),rem=remaining()/60000,from=fromPoint();let P=basePool();
   if(rem<=FINAL){
-    const reach=P.filter(v=>walkMin(from,v)<=rem/2);
-    if(reach.length)return {pool:reach,final:true};
-    // nothing in reach: nearest two or three open bars, inside the circle first, then anywhere
+    const reach=P.filter(v=>walkMin(from,v)<=rem/2);if(reach.length)return {pool:reach,final:true};
     let cand=P.length?P:VENUES.filter(v=>!visited(v.id)&&v.id!==g.target&&openState(v,now()).open);
-    cand=cand.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3);
-    return {pool:cand,final:true};
+    return {pool:cand.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3),final:true};
   }
   return {pool:P,final:false};
 }
-function closeVisit(v,t,reason){
-  if(!v||v.leftAt!=null)return;
-  v.leftAt=t;
-  const dwell=(t-v.arrivedAt)/60000;
-  if(reason==="end")v.counted=v.arrivedAt<G().endsAt;
-  else v.counted=dwell>=DWELL_MIN?true:null; // null = ask
-}
+function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=t;if(reason==="end")v.counted=v.arrivedAt<G().endsAt;else v.counted=(t-v.arrivedAt)/60000>=DWELL_MIN?true:null}
 function onLocation(){
-  drawYou();
-  const g=G();if(!g||g.ended||S.view!=="play"){return}
+  const g=G();
+  [pMap,bMap,zMap].forEach(setMe);
+  if(!g||g.ended)return;
   const y=you();if(!y)return;
-  const slack=Math.min(y.acc||0,40);
-  const a=atVisit();
-  if(a){ if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()} }
-  else if(g.target && now()<g.endsAt){
+  const slack=Math.min(y.acc||0,40),a=atVisit();
+  if(a){if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()}}
+  else if(g.target&&now()<g.endsAt){
     const v=byId(g.target);
-    if(dist(y,v)-slack<=CHECKIN_M){
-      g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined,spunAt:g.targetAt,from:g.targetFrom});
-      g.target=null;ding();buzz([60,40,60]);save();
-    }
+    if(dist(y,v)-slack<=CHECKIN_M){g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined});g.target=null;ding();buzz([60,40,60]);save()}
   }
-  renderPlay();
+  if(S.route==="play")renderPlay();
 }
 let spinning=false;
 function doSpin(){
-  const g=G();if(spinning||!g||g.ended)return;
-  ac();
-  const a=atVisit();
-  if(a){closeVisit(a,now(),"spin")}
+  const g=G();if(spinning||!g||g.ended)return;ac();
+  const a=atVisit();if(a)closeVisit(a,now(),"spin");
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();openMove(true);return}
-  const pick=P[Math.floor(Math.random()*P.length)];
-  const from=fromPoint();
-  spinning=true;renderPlay();
-  const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<4)VENUES.forEach(v=>names.push(v.name));
-  const box=$("ticketBox");
-  box.innerHTML=`<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>`;
-  const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(40),55,75,100,130,170,215];
+  const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();
+  spinning=true;seen("spin");
+  const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
+  $("stage").innerHTML=`<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>`;
+  const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(42),58,78,104,136,176,220];
   let i=0,k=Math.floor(Math.random()*names.length);
   const step=()=>{
-    const last=i===delays.length-1;
-    const nm=j=>names[(k+j+names.length)%names.length];
+    const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
     $("r0").textContent=nm(-1);$("r1").textContent=last?pick.name:nm(0);$("r2").textContent=nm(1);
     ["r0","r1","r2"].forEach(r=>{const el=$(r);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
-    tick(last?900:600+Math.random()*80);k++;
+    tick(last?900:600+Math.random()*80);buzz(5);k++;
     if(!last){setTimeout(step,delays[i++]);return}
-    setTimeout(()=>{
-      g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};
-      spinning=false;ding();buzz(40);save();renderPlay();
-      onLocation();
-    },380);
+    setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};spinning=false;ding();buzz(40);save();renderPlay();onLocation()},420);
   };
   step();
 }
-$("spinBtn").onclick=doSpin;
+function answer(idx,yes){const v=G()&&G().visits[idx];if(v){v.counted=!!yes;save();renderPlay()}}
 
-function answer(idx,yes){const v=G()?G().visits[idx]:null;if(v){v.counted=!!yes;save();renderPlay()}}
+/* ---------- tips (first game only) ---------- */
+const seen=k=>{if(!S.tips[k]){S.tips[k]=1;save()}};
+function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow?"":" nob"}" data-tip="${k}">${I.bulb}<span>${text}</span><button type="button">Got it</button></div>`}
+document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
-/* moves */
+/* ---------- sheets ---------- */
+function sheet(html,bind){$("sheetBody").innerHTML=html;if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
+$("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
+
 function moveOptions(){
   const g=G(),t=now(),from=fromPoint();
-  return AREAS.filter(a=>dist(a,g.center)>500).map(a=>{
-    const open=inCircle(a,g.radius).filter(v=>!visited(v.id)&&openOK(v,t));
-    return {a,open:open.length,m:dist(from,a)};
-  }).filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
+  return AREAS.filter(a=>dist(a,g.center)>500).map(a=>({a,open:inCircle(a,g.radius).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
+   .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
 }
 function openMove(free){
   const g=G(),opts=moveOptions();
-  const head=free?`<h3>Nothing left here</h3><p class="note">Fewer than two bars are still open in your circle. This move is free.</p>`
-    :`<h3>Change areas</h3><p class="note">You get one move a game. Your circle jumps to the area you pick.</p>`;
-  let body=opts.length?opts.map((o,i)=>`<button class="opt" data-i="${i}" type="button"><span>${esc(o.a.name)}<small>${km(o.m)} away · ~${Math.round(o.m*1.3/80)} min walk</small></span><b>${o.open} open</b></button>`).join("")
-    :`<p class="note">No other area has two or more rooftops open right now.</p>`;
-  $("dlgBody").innerHTML=head+body+`<div class="row" style="justify-content:flex-end;margin-top:10px"><button class="ghost" type="button" id="dlgX">${free?"Close":"Stay here"}</button></div>`;
-  $("dlgBody").querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
-    const o=opts[+b.dataset.i];g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);
-    g.moves.push({at:now(),to:o.a.name,free:!!free});if(!free)g.voluntaryUsed=true;
-    save();$("dlg").close();renderPlay();fitPlay();
+  sheet(`<h3>${free?"Your zone's run dry":"Move your zone"}</h3>
+    <p class="note">${free?"Fewer than two bars are still open here, so this move is free.":"You get one move per game. Your zone jumps to the area you pick, and spins land there from now on."}</p>
+    <div class="opts">${opts.length?opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${mOrKm(o.m)} away · about ${Math.round(o.m*1.3/80)} min walk</small></span><span class="n"><b>${o.open}</b><small>open</small></span></button>`).join(""):`<p class="note">No other area has two or more rooftops open right now.</p>`}</div>
+    <button class="btn dark" type="button" id="mvX" style="margin-top:14px">${free?"Close":"Stay here"}</button>`,()=>{
+    $("sheetBody").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);g.moves.push({at:now(),to:o.a.name,free:!!free});if(!free)g.voluntaryUsed=true;save();closeSheet();lastFit=null;renderPlay()});
+    $("mvX").onclick=closeSheet;
   });
-  $("dlgX").onclick=()=>$("dlg").close();
-  $("dlg").showModal();
 }
-$("moveBtn").onclick=()=>{const free=basePool().length<2;openMove(free)};
-$("endBtn").onclick=()=>{
-  $("dlgBody").innerHTML=`<h3>End the game?</h3><p class="note">Your scorecard is saved either way. The bar you're at counts if you checked in.</p><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="ghost" id="dlgN" type="button">Keep playing</button><button class="ghost" id="dlgY" type="button" style="color:var(--alert);border-color:var(--alert)">End now</button></div>`;
-  $("dlgN").onclick=()=>$("dlg").close();
-  $("dlgY").onclick=()=>{$("dlg").close();endGame(now())};
-  $("dlg").showModal();
-};
+function openMenu(){
+  const g=G(),free=basePool().length<2,canMove=free||!g.voluntaryUsed;
+  sheet(`<h3>Game menu</h3><div class="menu">
+    <button type="button" id="mMove" ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"1 move left this game"}</small></span></button>
+    <button type="button" id="mHow">${I.help}<span>How it works</span></button>
+    <button type="button" id="mSound">${I.bolt}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and check-in chime</small></span></button>
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>End game<small>Your scorecard is saved</small></span></button>
+  </div>`,()=>{
+    $("mMove").onclick=()=>{if(canMove)openMove(free)};
+    $("mHow").onclick=()=>sheet(`<h3>How it works</h3><div class="steps" style="margin-top:12px">
+      <div class="step"><span class="k">1</span><div><b>Spin</b><span>Picks a random open rooftop in your zone. In the last 30 minutes, it only picks bars you can reach in time.</span></div></div>
+      <div class="step"><span class="k">2</span><div><b>Walk there</b><span>You're checked in when you're within ${CHECKIN_M} m.</span></div></div>
+      <div class="step"><span class="k">3</span><div><b>It counts when…</b><span>you stay ${DWELL_MIN} minutes, or tell us you had a drink. Your last bar counts if you get there before zero.</span></div></div>
+      <div class="step"><span class="k">4</span><div><b>Stuck?</b><span>Move your zone once a game from this menu. If your zone runs dry, the move is free.</span></div></div>
+      </div><button class="btn dark" type="button" style="margin-top:16px" onclick="document.getElementById('sheet').close()">Got it</button>`);
+    $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
+    $("mEnd").onclick=()=>sheet(`<h3>End the game now?</h3><p class="note">Your scorecard is saved. The bar you're at counts if you've checked in.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End game</button><button class="btn dark" type="button" id="eN">Keep playing</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
+  });
+}
+$("pMenu").onclick=openMenu;
 
 function endGame(at){
   const g=G();if(!g||g.ended)return;
-  const t=Math.min(at,g.endsAt),early=at<g.endsAt;
-  if(early)g.endsAt=at;
+  const t=Math.min(at,g.endsAt),early=at<g.endsAt;if(early)g.endsAt=at;
   const a=atVisit();if(a)closeVisit(a,t,"end");
-  // closest call
-  if(g.target){const y=you();const v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
+  if(g.target){const y=you(),v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
   g.ended=true;g.endedAt=t;g.early=early;
-  const rec=JSON.parse(JSON.stringify(g));
-  H.unshift(rec);saveH();
-  S.lastEnd=rec.id;S.game=null;S.view="end";save();stopWatch();
-  ding();buzz([100,60,100,60,200]);render();
+  H.unshift(JSON.parse(JSON.stringify(g)));saveH();
+  S.lastEnd=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");
 }
 
-/* ---------- stats ---------- */
-function stats(r){
-  const arrived=r.visits.filter(v=>v.arrivedAt!=null);
-  const counted=arrived.filter(v=>v.counted===true);
-  const pts=[r.startPos,...arrived.map(v=>byId(v.id))];
-  let total=0,legs=[];
-  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i-1],d})}
-  const longest=legs.slice().sort((a,b)=>b.d-a.d)[0];
-  let quick=null;
-  for(let i=1;i<arrived.length;i++){const p=arrived[i-1];if(p.leftAt!=null){const dt=arrived[i].arrivedAt-p.leftAt;if(dt>0&&(!quick||dt<quick.ms))quick={ms:dt,from:p.id,to:arrived[i].id}}}
-  const dur=(r.endedAt||r.endsAt)-r.startedAt;
-  const last=arrived[arrived.length-1];
-  return {arrived,counted,total,longest,quick,dur,last};
-}
-function pbFor(len,excludeId){
-  return H.filter(r=>r.len===len&&r.id!==excludeId).reduce((m,r)=>Math.max(m,stats(r).counted.length),0);
-}
-
-/* ---------- render: play ---------- */
-let pMap=null,pCircle=null,pTarget=null,pDone=null;
-function initPlayMap(){
-  const g=G();
-  if(!pMap){
-    pMap=mkMap("playMap",{center:[g.center.lat,g.center.lng],zoom:14});
-    pCircle=L.circle([g.center.lat,g.center.lng],{radius:g.radius*1000,color:"#F2B632",weight:1.5,fillOpacity:.04,interactive:false}).addTo(pMap);
-    pDone=L.layerGroup().addTo(pMap);
-    pMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation()}});
-    fitPlay();
-  }else pMap.invalidateSize();
-}
-function fitPlay(){
-  const g=G();if(!pMap||!g)return;
-  pCircle.setLatLng([g.center.lat,g.center.lng]).setRadius(g.radius*1000);
-  const pts=[[g.center.lat,g.center.lng]];const y=you();if(y)pts.push([y.lat,y.lng]);
-  if(g.target){const v=byId(g.target);pts.push([v.lat,v.lng])}
-  pMap.fitBounds(L.latLngBounds(pts).extend(L.latLng(g.center.lat,g.center.lng).toBounds(g.radius*2000)),{animate:false,maxZoom:16});
-}
-let lastTargetDrawn=undefined;
-function drawPlayMap(){
-  const g=G();if(!pMap||!g)return;
-  pDone.clearLayers();
-  g.visits.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:`<div class="num-pin" style="width:20px;height:20px">${i+1}</div>`,iconSize:[20,20]})}).addTo(pDone)});
-  if(pTarget){pMap.removeLayer(pTarget);pTarget=null}
-  if(g.target){const v=byId(g.target);pTarget=L.circleMarker([v.lat,v.lng],{radius:9,weight:3,color:"#F2B632",fillColor:"#0E1116",fillOpacity:1}).addTo(pMap)}
-  if(lastTargetDrawn!==g.target){lastTargetDrawn=g.target;fitPlay()}
-  drawYou();
-}
+/* ---------- play render ---------- */
+let pMap=null,pLayer=null,lastFit=null;
 function renderPlay(){
-  const g=G();if(!g||S.view!=="play")return;
-  // strip
-  const strip=$("strip");
-  strip.innerHTML=g.visits.length?g.visits.map((v,i)=>{
-    const b=byId(v.id),cls=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";
-    return `<span class="pip ${cls}">${i+1} ${esc(b.name)}${cls==="yes"?" ✓":cls==="q"?" ?":""}</span>`}).join("")
-    :`<span class="pip" style="color:var(--muted)">Your crawl shows up here</span>`;
-  // ticket
-  const box=$("ticketBox"),a=atVisit(),t=now();
+  const g=G();if(!g)return;
+  $("pMenu").innerHTML=I.more;
+  const counted=g.visits.filter(v=>v.counted===true).length;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b> ${counted===1?"bar":"bars"}`;
+  $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
+  $("strip").hidden=!g.visits.length;
+  renderClock();
+  const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
+  const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
+  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><span class="small">You were there under ${DWELL_MIN} minutes. Only bars you drank at count.</span><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No</button></div></div>`:"";
+  const finalBanner=rem<=FINAL*60000&&!g.shownFinal?`<div class="banner" id="finalB"><b>Final stretch.</b> From now on, spins only pick bars you can reach before the clock runs out.</div>`:"";
+  if(finalBanner){g.shownFinal=true;save()}
   if(!spinning){
     if(a){
-      const v=byId(a.id),st=openState(v,t),d=t-a.arrivedAt;
-      box.innerHTML=`<div class="ticket at"><div class="tl">Checked in</div><h2>${esc(v.name)}</h2><div class="sub">${esc(v.area)}${st.open?" · closes "+clock12(st.closeAt):""}</div>
-      <div class="grid"><div><small>Here for</small><span class="dwell" id="dwell">${mmss(d)}</span></div><div><small>Counts</small>${d>=DWELL_MIN*60000?"Yes":"After "+DWELL_MIN+" min, or if you had a drink"}</div></div></div>`;
+      const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000;
+      st.innerHTML=finalBanner+ask+`<div class="bar at"><span class="eyebrow">You're here</span><h2>${esc(v.name)}</h2>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
+        <div class="small" style="text-align:right">${ok?'<b style="color:var(--green)">Counts ✓</b>':`Counts after ${DWELL_MIN} min`}${o.open?"<br>Closes "+clock12(o.closeAt):""}</div></div></div>
+        ${tip("atbar","Nice. Grab a drink. When you're ready to move on, spin for the next one.",false)}
+        <button class="btn" type="button" id="spinBtn">Spin for the next one</button>`;
     }else if(g.target){
-      const v=byId(g.target),y=you()||g.targetFrom,st=openState(v,t),dm=dist(y,v);
-      box.innerHTML=`<div class="ticket"><div class="tl">Next rooftop</div><h2>${esc(v.name)}</h2><div class="sub">${esc(v.area)} · ${v.rating}★</div>
-      <div class="grid"><div><small>Walk</small>~${walkMin(y,v)} min</div><div><small>Distance</small>${dm<1000?Math.round(dm)+" m":km(dm)}</div>
-      <div><small>Closes</small>${st.open?clock12(st.closeAt):"—"}</div><div><small>Check-in</small>Automatic within ${CHECKIN_M} m</div></div>
-      <div class="acts"><a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}&travelmode=walking" target="_blank" rel="noopener">Directions</a></div></div>`;
+      const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v);
+      st.innerHTML=finalBanner+ask+`<div class="bar"><span class="eyebrow">Next rooftop</span><h2>${esc(v.name)}</h2>
+        <div class="facts"><span>${I.walk} ${walkMin(y,v)} min</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
+        <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}&travelmode=walking" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+        ${tip("enroute",`Head there now. You'll be checked in automatically when you're within ${CHECKIN_M} m, so you don't need to tap anything.`,true)}
+        <button class="txtbtn" type="button" id="respin">Can't get in? Spin again</button>`;
     }else{
-      box.innerHTML=`<div class="ticket empty">${g.visits.length?"Spin for the next one.":"Spin for your first rooftop."}</div>`;
+      st.innerHTML=finalBanner+ask+`<button class="wheel" type="button" id="spinBtn">SPIN<small>${g.visits.length?"Next rooftop":"Your first rooftop"}</small></button>
+        ${g.visits.length?"":tip("spin","Tap Spin to get your first rooftop. The clock's already running!",true)}`;
     }
+    const sb=$("spinBtn");if(sb)sb.onclick=doSpin;
+    const rs=$("respin");if(rs)rs.onclick=()=>sheet(`<h3>Spin again?</h3><p class="note">${esc(byId(g.target).name)} won't count. You'll get a different rooftop.</p><div style="display:flex;flex-direction:column;gap:10px;margin-top:16px"><button class="btn" type="button" id="rY">Spin again</button><button class="btn dark" type="button" id="rN">Keep this one</button></div>`,()=>{$("rN").onclick=closeSheet;$("rY").onclick=()=>{closeSheet();g.target=null;save();doSpin()}});
+    if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   }
-  // ask
-  const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=$("ask");
-  if(qi>=0){
-    ask.hidden=false;
-    ask.innerHTML=`<span>Had a drink at ${esc(byId(g.visits[qi].id).name)}?<small>Only bars you drank at count.</small></span><button class="yes" type="button" id="aY">Yes</button><button type="button" id="aN">No</button>`;
-    $("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false);
-  }else ask.hidden=true;
-  // spin
-  const sp=spinPool();
-  $("spinBtn").disabled=spinning;
-  $("spinBtn").textContent=spinning?"Spinning…":(a?"Spin for the next one":"Spin");
-  // move
-  const free=basePool().length<2;
-  $("moveBtn").hidden=!free&&g.voluntaryUsed;
-  $("moveBtn").textContent=free?"Move areas (free)":"Change areas";
-  // more nearby
-  const from=fromPoint();
-  const more=sp.pool.filter(v=>v.id!==g.target).sort((x,y)=>dist(from,x)-dist(from,y));
-  $("moreS").textContent=more.length?`${more.length} more ${sp.final?"in reach":"open nearby"}`:"Nothing else open nearby";
-  $("moreL").innerHTML=more.map(v=>{const st=openState(v,t);return `<div class="li"><span>${esc(v.name)}</span><span>~${walkMin(from,v)} min · til ${clock12(st.closeAt)}</span></div>`}).join("");
-  // gps note
+  // map
+  requestAnimationFrame(drawPlayMap);
   const gn=$("gpsNote");
-  if(S.test)gn.textContent="Test mode: location is whatever you tap on the map.";
-  else if(locErr===1)gn.innerHTML=`<b style="color:var(--alert)">Location is off.</b> Check-ins won't work until it's back on for this site.`;
-  else if(!here)gn.textContent="Waiting for GPS…";
-  else gn.textContent=`GPS on${here.acc?" · ±"+Math.round(here.acc)+" m":""}. If your phone was locked when you arrived, you'll check in when you open the app.`;
-  $("playHint").hidden=!S.test;
-  drawPlayMap();
-  renderClock();
+  if(S.test)gn.textContent="Test mode: tap the map to move yourself.";
+  else if(locErr===1)gn.innerHTML=`<b style="color:var(--red)">Location is off.</b> Check-ins won't work until you turn it back on.`;
+  else if(!here)gn.textContent="Finding you…";
+  else gn.textContent="Keep this screen open on the walk so check-in is instant.";
+}
+function drawPlayMap(){
+  const g=G();if(!g||S.route!=="play")return;
+  if(!pMap){pMap=mkMap("playMap");pLayer=L.layerGroup().addTo(pMap);pMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation()}})}
+  else pMap.invalidateSize();
+  pLayer.clearLayers();
+  zoneCircle(g.center,g.radius).addTo(pLayer);
+  g.visits.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:numIcon(i+1,v.counted===false)}).addTo(pLayer)});
+  const pts=[];
+  if(g.target){const v=byId(g.target);L.marker([v.lat,v.lng],{icon:pinIcon("big"),zIndexOffset:500}).addTo(pLayer);pts.push([v.lat,v.lng])}
+  setMe(pMap);const y=you();if(y)pts.push([y.lat,y.lng]);
+  const key=g.target+"|"+g.center.lat+"|"+(atVisit()?atVisit().id:"");
+  if(lastFit!==key){lastFit=key;
+    if(pts.length===2)pMap.fitBounds(L.latLngBounds(pts),{padding:[40,40],maxZoom:16,animate:false});
+    else fitZone(pMap,g.center,g.radius,pts.map(p=>L.latLng(p)));
+  }
 }
 function renderClock(){
-  const c=$("clock");
-  if(S.view!=="play"||!G()){c.hidden=true;return}
-  c.hidden=false;
-  const r=remaining();
+  const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   $("clockT").textContent=mmss(r);
-  c.classList.toggle("warn",r<=FINAL*60000&&r>10*60000);
-  c.classList.toggle("red",r<=10*60000);
+  const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
+  $("clock").className="clock"+(red?" red":warn?" warn":"");
+  $("tbar").className="tbar"+(red?" red":warn?" warn":"");
+  $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
 }
 
-/* ---------- render: scorecard ---------- */
+/* ---------- stats + scorecard ---------- */
+function stats(r){
+  const arrived=r.visits.filter(v=>v.arrivedAt!=null),counted=arrived.filter(v=>v.counted===true);
+  const pts=[r.startPos,...arrived.map(v=>byId(v.id))];let total=0,legs=[];
+  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i-1],d})}
+  const longest=legs.slice().sort((a,b)=>b.d-a.d)[0];let quick=null;
+  for(let i=1;i<arrived.length;i++){const p=arrived[i-1];if(p.leftAt!=null){const dt=arrived[i].arrivedAt-p.leftAt;if(dt>=0&&(!quick||dt<quick.ms))quick={ms:dt,from:p.id,to:arrived[i].id}}}
+  return {arrived,counted,total,longest,quick,dur:(r.endedAt||r.endsAt)-r.startedAt,last:arrived[arrived.length-1]};
+}
+const pbFor=(len,ex)=>H.filter(r=>r.len===len&&r.id!==ex).reduce((m,r)=>Math.max(m,stats(r).counted.length),0);
 let eMap=null;
 function renderEnd(){
-  const r=H.find(x=>x.id===S.lastEnd);
-  const box=$("endBox");
-  if(!r){S.view="setup";render();return}
+  const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
   const st=stats(r),n=st.counted.length,lenTxt=r.len===60?"1 hour":"2 hours";
-  const prevBest=pbFor(r.len,r.id),isPB=n>0&&n>prevBest&&H.some(x=>x.len===r.len&&x.id!==r.id);
+  const prev=pbFor(r.len,r.id),hadPrev=H.some(x=>x.len===r.len&&x.id!==r.id),isPB=n>0&&hadPrev&&n>prev;
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
-  const legsTxt=st.longest?`${km(st.longest.d)} to ${esc(byId(st.longest.to.id).name)}`:"—";
-  const quickTxt=st.quick?`${hmm(st.quick.ms)} · ${esc(byId(st.quick.from).name)} → ${esc(byId(st.quick.to).name)}`:"—";
-  const pace=n?`${Math.round(st.dur/60000/n)} min per bar`:"—";
   let close="—";
-  if(r.missed){const v=byId(r.missed.id);close=r.missed.m!=null?`Final dash: ${esc(v.name)} was ${r.missed.m} m away at zero`:`Final dash: didn't reach ${esc(v.name)}`}
-  else if(st.last&&!r.early){const left=r.endsAt-st.last.arrivedAt;close=`Into ${esc(byId(st.last.id).name)} with ${mmss(left)} left`}
+  if(r.missed){const v=byId(r.missed.id);close=r.missed.m!=null?`${esc(v.name)} was ${mOrKm(r.missed.m)} away at zero`:`Didn't make it to ${esc(v.name)}`}
+  else if(st.last&&!r.early)close=`Into ${esc(byId(st.last.id).name)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`;
   const areas=r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ");
-  const bod=r.barOfDay;
   box.innerHTML=`
-    <div class="card">
-      <div class="lbl">${lenTxt} · ${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})}</div>
-      <div class="sc-head"><span class="n">${n}</span> <span class="t">bar${n===1?"":"s"} · ${km(st.total)} · ${hmm(st.dur)}</span></div>
-      ${isPB?`<div class="pb">New personal best for ${lenTxt}.</div>`:prevBest?`<div class="note">Personal best for ${lenTxt}: ${prevBest}</div>`:""}
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">${lenTxt} · ${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
+    <div class="score"><div class="big">${n}</div><div class="lbl">rooftop${n===1?"":"s"}</div>
+      <div class="small" style="margin-top:8px">${km(st.total)} walked · ${hmm(st.dur)} · ${esc(areas)}</div>
+      ${isPB?`<div class="pb">New personal best</div>`:hadPrev?`<div class="small" style="margin-top:8px">Your best for ${lenTxt}: ${prev}</div>`:""}</div>
+    ${pending.map(o=>`<div class="ask"><b>Did you have a drink at ${esc(byId(o.v.id).name)}?</b><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Yes, count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">No</button></div></div>`).join("")}
+    <div class="map"><div id="endMap" style="height:240px"></div></div>
+    <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${v.counted===false?' <span class="small">(no drink)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No check-ins this time.</span></div>`}</div></div>
+    <div class="grid2">
+      <div class="stat"><small>Pace</small><b>${n?Math.round(st.dur/60000/n)+" min a bar":"—"}</b></div>
+      <div class="stat"><small>Longest walk</small><b>${st.longest?km(st.longest.d):"—"}</b></div>
+      <div class="stat w"><small>Quickest turnaround</small><b>${st.quick?`${hmm(st.quick.ms)} · ${esc(byId(st.quick.from).name)} → ${esc(byId(st.quick.to).name)}`:"—"}</b></div>
+      <div class="stat w"><small>Closest call</small><b>${close}</b></div>
     </div>
-    ${pending.map(o=>`<div class="ask"><span>Had a drink at ${esc(byId(o.v.id).name)}?<small>Only bars you drank at count.</small></span><button class="yes" type="button" data-q="${o.i}" data-a="1">Yes</button><button type="button" data-q="${o.i}" data-a="0">No</button></div>`).join("")}
-    <div class="mapbox"><div id="endMap"></div></div>
-    <div class="card">
-      <div class="note">${esc(areas)}</div>
-      <div class="list" style="margin:0">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${v.counted===true?"":v.counted===false?" (didn't count)":" (?)"}</span><span>${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span>No check-ins this time.</span><span></span></div>`}</div>
-    </div>
-    <div class="stats">
-      <div class="stat"><small>Longest leg</small><b>${legsTxt}</b></div>
-      <div class="stat"><small>Pace</small><b>${pace}</b></div>
-      <div class="stat wide"><small>Quickest turnaround</small><b>${quickTxt}</b></div>
-      <div class="stat wide"><small>Closest call</small><b>${close}</b></div>
-    </div>
-    ${st.counted.length?`<div class="card"><h3>Bar of the day?</h3><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${bod===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
-    <div class="card photo"><h3>Crew photo</h3>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:`<p>Optional. Saved on this phone only.</p>`}
-      <label class="ghost" style="text-align:center">${r.photo?"Replace photo":"Add a photo"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>
-    <button class="big y" type="button" id="againBtn">New game</button>`;
+    ${n?`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Bar of the day</div><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${r.barOfDay===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
+    <div class="card photo"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="eyebrow">Crew photo</div><div class="small">Saved on this phone only</div></div>
+      <label class="btn sm dark" style="width:auto;padding:0 14px">${I.camera.replace('<svg','<svg width="18" height="18"')} ${r.photo?"Replace":"Add"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:""}</div>
+    <button class="btn" type="button" id="againBtn">Play again</button>`;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{r.visits[+b.dataset.q].counted=b.dataset.a==="1";saveH();renderEnd()});
   box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{r.barOfDay=r.barOfDay===b.dataset.b?null:b.dataset.b;saveH();renderEnd()});
-  $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;shrink(f,900).then(d=>{r.photo=d;saveH();renderEnd()})};
-  $("againBtn").onclick=()=>{S.view="setup";save();render()};
-  // route map
-  if(eMap){eMap.remove();eMap=null}
-  eMap=mkMap("endMap");
-  const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
-  L.polyline(pts,{color:"#F2B632",weight:3,opacity:.9,dashArray:"6 6"}).addTo(eMap);
-  L.circleMarker(pts[0],{radius:6,weight:2,color:"#0E1116",fillColor:"#6FB7FF",fillOpacity:1}).addTo(eMap).bindTooltip("Start");
-  st.arrived.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:L.divIcon({className:"",html:`<div class="num-pin" style="width:20px;height:20px;${v.counted===true?"":"opacity:.5"}">${i+1}</div>`,iconSize:[20,20]})}).addTo(eMap).bindTooltip(b.name)});
-  eMap.fitBounds(L.latLngBounds(pts).pad(.25),{animate:false,maxZoom:16});
+  $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,900).then(d=>{r.photo=d;saveH();renderEnd()})};
+  $("againBtn").onclick=()=>startWizard();
+  $("doneBtn").onclick=()=>go("home");
+  requestAnimationFrame(()=>{
+    if(eMap){eMap.remove();eMap=null}eMap=mkMap("endMap");
+    const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
+    L.polyline(pts,{color:"#F5B83D",weight:3.5,opacity:.95,dashArray:"2 8",lineCap:"round"}).addTo(eMap);
+    L.marker(pts[0],{icon:meIcon}).addTo(eMap);
+    st.arrived.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:numIcon(i+1,v.counted!==true)}).addTo(eMap).bindTooltip(b.name)});
+    eMap.fitBounds(L.latLngBounds(pts).pad(.3),{animate:false,maxZoom:16});
+  });
 }
-function shrink(file,max){
-  return new Promise(res=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.src=u});
+function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.src=u})}
+
+/* ---------- rooftops tab ---------- */
+let bMap=null,bMarks={};
+function renderBars(){
+  const t=now(),y=you(),f=S.barsFilter||"open";
+  $("barsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===f)));
+  let list=VENUES.map(v=>({v,o:openState(v,t)})).filter(x=>f==="all"||x.o.open);
+  list.sort((a,b)=>y?dist(y,a.v)-dist(y,b.v):a.v.name.localeCompare(b.v.name));
+  $("barsList").innerHTML=list.map(({v,o})=>`<button class="barrow" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</small></span><span class="r">${y?mOrKm(dist(y,v)):v.rating+"★"}</span></button>`).join("")||`<div class="empty">Nothing open right now.</div>`;
+  $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
+  requestAnimationFrame(()=>{
+    if(!bMap){bMap=mkMap("barsMap",{center:[-33.8732,151.2069],zoom:13.5});bMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation();renderBars()}})}else bMap.invalidateSize();
+    Object.values(bMarks).forEach(m=>bMap.removeLayer(m));bMarks={};
+    VENUES.forEach(v=>{const o=openState(v,t).open;if(f==="open"&&!o)return;bMarks[v.id]=L.marker([v.lat,v.lng],{icon:pinIcon(o?"":"off")}).addTo(bMap).on("click",()=>barSheet(v))});
+    setMe(bMap);
+  });
+}
+$("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.barsFilter=b.dataset.v;save();renderBars()};
+function barSheet(v){
+  const t=now(),o=openState(v,t),y=you();
+  if(bMap)bMap.setView([v.lat,v.lng],16,{animate:true});
+  sheet(`<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${v.rating}★${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
+    <p class="note" style="color:${o.open?"var(--green)":"var(--muted)"};margin-top:8px">${o.open?"Open now til "+clock12(o.closeAt):o.opens!=null?"Opens today at "+clock12(o.opens):"Closed today"}</p>
+    <p class="note">${esc(v.address)}</p>
+    <a class="btn" style="margin-top:14px;text-decoration:none" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Open in Google Maps</a>`);
 }
 
-/* ---------- render: history ---------- */
+/* ---------- history tab ---------- */
 function renderHist(){
-  const b=$("histBox");
-  if(!H.length){b.innerHTML=`<h3>History</h3><p>Finished games show up here.</p>`;return}
-  const best=l=>H.filter(r=>r.len===l).reduce((m,r)=>Math.max(m,stats(r).counted.length),0);
-  const pbs=LENS.filter(l=>H.some(r=>r.len===l)).map(l=>`${l===60?"1 hour":"2 hours"}: <b>${best(l)}</b>`).join(" · ");
-  b.innerHTML=`<h3>History</h3><div class="note">Personal bests · ${pbs}</div>`+H.map(r=>{const st=stats(r);const bod=r.barOfDay?byId(r.barOfDay):null;
-    return `<button class="hist" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="d">${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})} · ${r.len===60?"1 hr":"2 hr"} · ${km(st.total)}<small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("");
-  b.querySelectorAll(".hist").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;S.view="end";save();render()});
+  const b=$("v-hist");
+  if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here, with your personal bests.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
+  const best=l=>{const x=H.filter(r=>r.len===l).map(r=>stats(r).counted.length);return x.length?Math.max(...x):null};
+  b.innerHTML=`<h1 class="q">History</h1><div class="grid2">${LENS.map(l=>`<div class="stat"><small>Best · ${l===60?"1 hour":"2 hours"}</small><b style="font-size:26px;color:var(--amber)">${best(l)??"—"}</b></div>`).join("")}</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${H.map(r=>{const st=stats(r),bod=r.barOfDay?byId(r.barOfDay):null;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${new Date(r.startedAt).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})} · ${r.len===60?"1 hr":"2 hr"}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+  b.querySelectorAll(".hrow").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
 }
 
-/* ---------- test panel ---------- */
-const tj=$("tJump");
-tj.innerHTML=`<option value="">Put me at a bar…</option>`+VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)} (${esc(v.area)})</option>`).join("");
-tj.onchange=()=>{const v=byId(tj.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();if(S.view==="setup"&&sMap)sMap.setView([v.lat,v.lng]);onLocation()}tj.value=""};
-document.querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();render()});
-$("ffReset").onclick=()=>{S.ff=0;save();render()};
-$("tArrive").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+0.0002,lng:v.lng};save();onLocation()};
-$("tLeave").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+0.0018,lng:y.lng};save();onLocation()};
-$("tOff").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);if(S.view==="play")startWatch();render()};
-let taps=0,tapT=0;
-$("brand").onclick=()=>{const t=Date.now();taps=t-tapT<600?taps+1:1;tapT=t;if(taps>=5){S.test=true;taps=0;stopWatch();save();render()}};
-
-/* ---------- tabs + router ---------- */
-$("tabPlay").onclick=()=>{S.view=S.game?"play":"setup";save();render()};
-$("tabHist").onclick=()=>{S.view="hist";save();render()};
-function render(){
-  if(S.view==="play"&&!S.game)S.view="setup";
-  const v=S.view;
-  $("vSetup").hidden=v!=="setup";$("vPlay").hidden=v!=="play";$("vEnd").hidden=v!=="end";$("vHist").hidden=v!=="hist";
-  $("tabs").hidden=v==="play";
-  $("tabPlay").setAttribute("aria-selected",String(v!=="hist"));$("tabHist").setAttribute("aria-selected",String(v==="hist"));
-  $("testPanel").hidden=!S.test;
-  $("testPlayRow").hidden=v!=="play";
-  if(v==="setup"){initSetupMap();renderSetup()}
-  if(v==="play"){initPlayMap();renderPlay()}
-  if(v==="end")renderEnd();
-  if(v==="hist")renderHist();
-  renderClock();renderTestClock();
-}
-function renderTestClock(){if(!S.test)return;const s=sydAt(now());$("testClock").textContent=`Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?" (+"+Math.round(S.ff/60000)+" min)":""}`}
+/* ---------- test mode ---------- */
+$("testFab").onclick=()=>{
+  const s=sydAt(now());
+  sheet(`<h3>Test mode</h3><p class="note">Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?` (+${Math.round(S.ff/60000)} min)`:""}. Tap any map to move yourself.</p>
+   <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
+   ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Walk to target</button><button class="btn sm dark" type="button" id="tL">Walk away 200 m</button></div>`:""}
+   <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
+   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
+    $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
+    if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();onLocation()};
+    if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
+    $("tJ").onchange=e=>{const v=byId(e.target.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();closeSheet();onLocation();render()}};
+    $("tR").onclick=()=>{S.ff=0;save();closeSheet();render()};
+    $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};save();closeSheet();go("intro")};
+    $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
+  });
+};
 
 /* ---------- loop ---------- */
 function loop(){
   const g=G();
   if(g&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
-  if(S.view==="play"&&g){
-    renderClock();
-    const a=atVisit(),d=$("dwell");
-    if(a&&d)d.textContent=mmss(now()-a.arrivedAt);
-    // re-render every 15s so open/closed and dwell rule stay fresh
-    if(Date.now()%15000<1000)renderPlay();
+  if(S.route==="play"&&g){
+    renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=mmss(now()-a.arrivedAt);
+    if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
+    if(!spinning&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
   }
-  renderTestClock();
 }
 setInterval(loop,1000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden){loop();if(S.view==="play")renderPlay()}});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loop();if(S.route==="play")renderPlay()}});
 
 /* ---------- boot ---------- */
 if(S.game&&!S.test)startWatch();
-if(S.view==="setup"&&!S.test&&navigator.permissions&&navigator.geolocation){
-  navigator.permissions.query({name:"geolocation"}).then(p=>{if(p.state==="granted")getOnce().then(pos=>{here=pos;if(sMap&&!S.game&&inCircle(pos,S.radius).length)sMap.setView([pos.lat,pos.lng]);drawYou()}).catch(()=>{})}).catch(()=>{});
-}
+if(!S.test&&navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{[zMap,bMap,pMap].forEach(setMe);if(S.route==="bars")renderBars()}).catch(()=>{})});
 render();loop();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
