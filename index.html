@@ -1114,7 +1114,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
 .reel .row.c{color:var(--text)}
 .reel.won .row.c{color:var(--amber)}
-.reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35);animation:landed .6s ease-out}
+.reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35)}
+.flyname{position:fixed;z-index:60;pointer-events:none;white-space:nowrap;font-family:var(--display);font-weight:800;letter-spacing:.03em;text-transform:uppercase;transform-origin:0 0;color:var(--amber)}
 .reel .hint{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
 .reel .hint.off{opacity:0}
 .reel .hint i{position:absolute;top:22%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 8px rgba(255,255,255,.08);animation:swipehint 1.9s cubic-bezier(.5,0,.3,1) infinite}
@@ -1631,8 +1632,8 @@ function renderQuick(){
   $("qBack").onclick=()=>{if(q.pick){q.pick=null;save();renderQuick()}else{S.quick=null;go("home")}};
   if($("qMe"))$("qMe").onclick=quickNearMe;
   b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const a=AREAS.find(z=>z.name===x.dataset.qa);q.from={type:"area",name:a.name,lat:a.lat,lng:a.lng};q.pick=null;q.seen=[];q.note=null;save();renderQuick()});
-  if($("qReel")){const P=quickPool(q,t);const nm=P.map(v=>v.name).concat(P.length<6?VENUES.filter(v=>!v.tempClosed&&dist(q.from,v)<=QR*1000).map(v=>v.name):[]);reel=makeReel($("qReel"),nm.length?nm:P.map(v=>v.name),{hint:!S.tips.swipe,onRelease:v=>quickSpin(v)})}
-  if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;save();renderQuick();quickSpin()};
+  if($("qReel")){const P=quickPool(q,t);const nm=P.map(v=>v.name).concat(P.length<6?VENUES.filter(v=>!v.tempClosed&&dist(q.from,v)<=QR*1000).map(v=>v.name):[]);reel=makeReel($("qReel"),nm.length?nm:P.map(v=>v.name),{hint:true,onRelease:v=>quickSpin(v)})}
+  if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;save();renderQuick()};
   if($("qBeen"))$("qBeen").onclick=()=>{if(S.been[q.pick])delete S.been[q.pick];else S.been[q.pick]=1;save();renderQuick()};
   if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;
     S.wiz={step:1,radius:null,len,newOnly:!!S.last.newOnly,start:f.type==="me"?{type:"me",name:"you",lat:f.lat,lng:f.lng,n:openIn(f,1.5).length,sub:"Near "+nearestArea(f)}:{type:"area",name:f.name,lat:f.lat,lng:f.lng}};
@@ -1644,7 +1645,7 @@ function quickSpin(vel){
   const pick=P[Math.floor(Math.random()*P.length)];barPhoto(pick);
   if(vel!==undefined)S.tips.swipe=1;
   spinning=true;
-  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,()=>{spinning=false;if(S.route!=="quick"||!S.quick)return;q.pick=pick.id;q.seen.push(pick.id);animateId="q:"+pick.id;save();renderQuick()});
+  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{spinning=false;if(S.route!=="quick"||!S.quick)return;q.pick=pick.id;q.seen.push(pick.id);animateId=null;save();renderQuick();reveal(info,$("v-quick"))});
 }
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
@@ -1816,14 +1817,19 @@ function makeReel(el,names,o){
       const a=Math.abs(d);r.style.transform=`translateY(${d*ROW}px) scale(${Math.max(.62,1-.13*a)})`;r.style.opacity=Math.max(0,1-.3*a);r.classList.toggle("c",a<.5)})};
   draw();
   R.spinTo=(name,v,done)=>{
-    const dir=v>0?1:-1,va=Math.min(70,Math.max(20,Math.abs(v)||30)),D=Math.min(90,Math.max(12,va*va/60));
+    // Top speed is capped so the names never strobe backwards; a harder swipe runs longer instead of faster.
+    const dir=v>0?1:-1,raw=Math.abs(v)||35,vs=Math.min(26,Math.max(14,raw)),D=Math.min(48,Math.max(15,14+raw*.45));
     let k=Math.round(R.p+dir*D),n=0;while(L[mod(k)]!==name&&n<L.length){k+=dir;n++}
     if(L[mod(k)]!==name)L[mod(k)]=name;
-    const p0=R.p,dist=k-p0,T=Math.min(4200,Math.max(1300,3*Math.abs(dist)/va*1000)),t0=performance.now();
+    const p0=R.p,dist=Math.abs(k-p0),Dd=Math.min(dist,15),Td=3*Dd/vs,Tc=(dist-Dd)/vs,T=Tc+Td,t0=performance.now();
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
-    const f=t=>{const u=Math.min(1,(t-t0)/T);R.p=p0+dist*(1-Math.pow(1-u,3));draw();
-      if(u<1){R.raf=requestAnimationFrame(f);return}
-      R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);setTimeout(()=>{R.busy=false;done&&done()},320)};
+    const f=t=>{const s=Math.min(T,(t-t0)/1000);let x;if(s<Tc)x=vs*s;else{const u=(s-Tc)/Td;x=vs*Tc+Dd*(1-Math.pow(1-u,3))}
+      R.p=p0+dir*x;draw();
+      if(s<T){R.raf=requestAnimationFrame(f);return}
+      R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
+      const c=el.querySelector(".row.c span"),fr=el.querySelector(".frame").getBoundingClientRect(),nr=c.getBoundingClientRect();
+      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name};
+      setTimeout(()=>{R.busy=false;done&&done(info)},260)};
     R.raf=requestAnimationFrame(f);
   };
   if(o.onRelease){
@@ -1837,7 +1843,23 @@ function makeReel(el,names,o){
   }
   return R;
 }
-function reelNote(){return S.tips.swipe?"Swipe down to spin":"Swipe down to spin. Harder swipe, longer spin."}
+function reveal(info,scope){
+  if(!info)return;const card=scope.querySelector(".bar");if(!card||!card.animate)return;
+  const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
+  const hs=getComputedStyle(h2),kids=[...card.children].filter(x=>x!==h2),after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
+  const E="cubic-bezier(.2,.85,.25,1)";
+  card.style.transformOrigin="0 0";
+  card.animate([{transform:`translate(${fr.left-cr.left}px,${fr.top-cr.top}px) scale(${fr.width/cr.width},${fr.height/cr.height})`,opacity:.9},{transform:"none",opacity:1}],{duration:440,easing:E});
+  kids.forEach((k,i)=>k.animate([{opacity:0,transform:"translateY(6px)"},{opacity:0,offset:.55},{opacity:1,transform:"none"}],{duration:560+i*50,easing:"ease-out"}));
+  after.forEach((k,i)=>k.animate([{opacity:0,transform:"translateY(10px)"},{opacity:0,offset:.5},{opacity:1,transform:"none"}],{duration:620+i*60,easing:"ease-out"}));
+  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=info.name;
+  Object.assign(ghost.style,{left:nr.left+"px",top:nr.top+"px",fontSize:info.fs+"px",height:nr.height+"px",lineHeight:nr.height+"px"});
+  document.body.appendChild(ghost);h2.style.opacity="0";
+  const sc=parseFloat(hs.fontSize)/info.fs,lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize);
+  ghost.animate([{transform:"none",color:"#F5B83D"},{transform:`translate(${hr.left-nr.left}px,${hr.top-nr.top+(lh-nr.height*sc)/2}px) scale(${sc})`,color:hs.color}],{duration:440,easing:E,fill:"forwards"})
+    .onfinish=()=>{h2.style.opacity="";ghost.remove()};
+}
+function reelNote(){return S.tips.swipe?"Swipe down or tap to spin":"Swipe down to spin. Harder swipe, longer spin."}
 
 function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.length>=6)return P;return P.concat(inCircle(g.center,g.radius).filter(v=>!v.tempClosed).map(v=>v.name)).concat(P.length?[]:VENUES.slice(0,10).map(v=>v.name))}
 function doSpin(force,vel){
@@ -1861,7 +1883,7 @@ function doSpin(force,vel){
     $("stage").innerHTML=`<div class="ready"><div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div><div id="reelBox"></div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
     reel=makeReel($("reelBox"),gameReelNames(),{});
   }
-  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;save();renderPlay();onLocation()});
+  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation()});
 }
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
@@ -1983,7 +2005,7 @@ function renderPlay(){
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> From now on, spins only pick bars you can reach before the clock runs out.</div>`;
   const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
-  if(a){
+  if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
     const cp=cardPhoto(v);
     st.innerHTML=ask+`<div class="bar at${cp.cls}${animateId===("at:"+a.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Visit logged${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
@@ -2013,16 +2035,18 @@ function renderPlay(){
       <div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>
       <div id="reelBox"></div>
       <div class="poolnum"><b>${pool}</b> rooftop${pool===1?"":"s"} in the mix</div>
-      <p class="note reelnote">${reelNote()}${g.started?"":"<br>The clock starts when you spin."}</p></div>`;
+      <p class="note reelnote">${reelNote()}${g.started?"":"<br>The clock starts when you spin."}</p>
+      ${a?`<button class="txtbtn" type="button" id="reelBack">Not yet, stay at ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;const im=new Image();im.onload=()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning)renderPlay()};im.src=ph.url});
-  const sb=$("spinBtn");if(sb)sb.onclick=()=>doSpin();
-  if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:!S.tips.swipe,onRelease:v=>doSpin(false,v)});
+  const sb=$("spinBtn");if(sb)sb.onclick=()=>{g.reelOpen=true;save();renderPlay()};
+  if($("reelBack"))$("reelBack").onclick=()=>{g.reelOpen=false;save();renderPlay()};
+  if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
-  const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}doSpin()}})};
-  const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin and no time is lost. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();doSpin()}})};
+  const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
+  const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin and no time is lost. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
   const gn=$("gpsNote");
