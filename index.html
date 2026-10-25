@@ -908,6 +908,19 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @media (prefers-reduced-motion:reduce){.flip,.bar,.pin.big,dialog.sheet[open]{animation:none}}
 
 /* v4 additions */
+.ready{gap:26px}
+.ready .wheel{margin:10px 0}
+.reel.big{width:100%;padding:14px 12px;gap:8px;border-radius:24px;border:1.5px solid rgba(245,184,61,.45);box-shadow:0 0 40px rgba(245,184,61,.12);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 78%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 78%,transparent 100%)}
+.reel.big .reelrow{height:40px;font-size:20px}
+.reel.big .reelrow.f1{opacity:.7}
+.reel.big .reelrow.f2{opacity:.35;font-size:17px}
+.reel.big .reelrow.mid{height:84px;font-size:clamp(30px,10vw,40px)}
+.tip.soft{background:var(--s1);border:1px solid var(--line);color:var(--muted);font-size:13.5px}
+.tip.soft b{color:var(--text);font-weight:650}
+.tip.soft svg{color:var(--muted)}
+.tip.soft.ok{border-color:rgba(74,222,128,.4)}
+.tip.soft.ok svg{color:var(--green)}
+
 #v-home{padding-top:calc(env(safe-area-inset-top,0px) + 14px)}
 .appbar{flex:none;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;background:var(--bg);z-index:10}
 .logo{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.16em;user-select:none}
@@ -1219,6 +1232,8 @@ const I={
 I.walk='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M7 12l3-4 4 1 2 4 2 1M10 8l-1 5"/></svg>';
 I.share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
 I.redo='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
+I.check='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16 9.8"/></svg>';
+I.reel='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M15 4v16"/><path d="M5 12h2M11 12h2M17 12h2" stroke-width="3"/></svg>';
 const tabIcons={play:I.dice,bars:I.pin,hist:I.trophy};
 
 /* ---------- state ---------- */
@@ -1461,7 +1476,7 @@ const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}<
 
 /* ---------- intro ---------- */
 const SLIDES=[
- {art:I.dice,h:"Let the wheel pick",p:"One tap and Rooftop Roulette picks your next rooftop bar. No debating, no planning."},
+ {art:I.reel,h:"Spin for your next rooftop",p:"One tap and Rooftop Roulette picks the bar for you. No debating, no planning."},
  {art:I.go,h:"Get there however you like",p:"Walk it, run it, train it, Uber it. Your visit is logged in the app the moment you arrive."},
  {art:I.clock,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
 ];
@@ -1682,14 +1697,13 @@ function doSpin(force){
   const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();barPhoto(pick);
   spinning=true;seen("spin");g.finalBanner=false;renderPlay();
   const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
-  const bulbs=`<div class="bulbs">${"<i></i>".repeat(14)}</div>`;
-  $("stage").innerHTML=`<div class="ready spinning"><div class="eyebrow" style="color:var(--amber)">Spinning…</div><div class="machine">${bulbs}<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>${bulbs}</div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
+  const rows=[-2,-1,0,1,2];
+  $("stage").innerHTML=`<div class="ready spinning"><div class="eyebrow" style="color:var(--amber)">Spinning…</div><div class="reel big">${rows.map(o=>`<div class="reelrow${o===0?" mid":Math.abs(o)===1?" f1":" f2"}" id="q${o+2}"></div>`).join("")}</div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
   const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(42),58,78,104,136,176,220];
   let i=0,k=Math.floor(Math.random()*names.length);
   const step=()=>{
     const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
-    $("r0").textContent=nm(-1);$("r1").textContent=last?pick.name:nm(0);$("r2").textContent=nm(1);
-    ["r0","r1","r2"].forEach(r=>{const el=$(r);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
+    rows.forEach(o=>{const el=$("q"+(o+2));el.textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
     tick(last?900:600+Math.random()*80);buzz(5);k++;
     if(!last){setTimeout(step,delays[i++]);return}
     setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;ding();buzz(40);save();renderPlay();onLocation()},420);
@@ -1820,8 +1834,8 @@ function renderPlay(){
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
+      <div class="tip nob soft${ok?" ok":""}">${ok?I.check:I.clock}<span>${ok?"<b>This rooftop's on the board.</b> Spin whenever you're ready.":`Hang around ${DWELL_MIN} minutes and this rooftop goes on the board.`}</span></div>
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
-      <span class="fine" id="dwellNote">${ok?'<b style="color:var(--green)">✓ This one counts</b>':`Counts after ${DWELL_MIN} minutes here`}</span>
       ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
