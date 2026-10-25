@@ -908,6 +908,15 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @media (prefers-reduced-motion:reduce){.flip,.bar,.pin.big,dialog.sheet[open]{animation:none}}
 
 /* v4 additions */
+.bph{position:relative;margin:-18px -18px 4px;height:0;overflow:hidden;border-radius:22px 22px 0 0;transition:height .35s ease;background:rgba(36,24,3,.15)}
+.bph.on{height:180px}
+.bar.at .bph{border-radius:20px 20px 0 0;margin:-18px -18px 4px}
+.bph img{width:100%;height:100%;object-fit:cover;display:block}
+.bph .cr{position:absolute;left:8px;bottom:7px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 7px;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bph .cr a{color:#fff;text-decoration:underline}
+.sheetph{margin:-10px -18px 14px;border-radius:24px 24px 0 0}
+.sheetph.on{height:200px}
+
 .wild{display:flex;gap:10px;align-items:flex-start;background:rgba(36,24,3,.12);border:1.5px dashed rgba(36,24,3,.45);border-radius:14px;padding:11px 12px;font-size:15px;font-weight:650;line-height:1.35}
 .wild svg{width:22px;height:22px;flex:none}
 .wild b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
@@ -1225,8 +1234,106 @@ const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num${x?" x":""}">
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
 function fitZone(m,c,r,extra){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.12);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,{animate:false,padding:[8,8]})}
-function setMe(m){const y=you();if(!m)return;if(!y){if(m._me){m.removeLayer(m._me);m._me=null}return}
-  if(!m._me)m._me=L.marker([y.lat,y.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else m._me.setLatLng([y.lat,y.lng])}
+
+/* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
+const GKEY="AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",GMAPID="114ffde49621751bad7df10a";
+let gP=null,gBad=false;
+function gload(){
+  if(gP)return gP;
+  if(location.hostname!=="chriskova.github.io"||gBad)return Promise.reject("off");
+  gP=new Promise((res,rej)=>{
+    window.__gmReady=()=>res(window.google);
+    window.gm_authFailure=()=>{gBad=true};
+    const sc=document.createElement("script");
+    sc.src=`https://maps.googleapis.com/maps/api/js?key=${GKEY}&v=weekly&loading=async&libraries=marker,places&callback=__gmReady`;
+    sc.async=true;sc.onerror=()=>rej("load");document.head.appendChild(sc);
+    setTimeout(()=>rej("timeout"),15000);
+  });
+  gP.catch(()=>{});
+  return gP;
+}
+const LL=p=>({lat:p.lat,lng:p.lng});
+function gWrap(el){
+  const map=new google.maps.Map(el,{mapId:GMAPID,colorScheme:"DARK",disableDefaultUI:true,clickableIcons:false,gestureHandling:"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
+  let ov=[],meM=null;
+  const node=h=>{const d=document.createElement("div");d.style.transform="translateY(50%)";d.innerHTML=h;return d};
+  const mk=(pos,h,z,onClick,title)=>{const m=new google.maps.marker.AdvancedMarkerElement({map,position:LL(pos),content:node(h),zIndex:z||0,title:title||"",gmpClickable:!!onClick});if(onClick)m.addListener("click",onClick);return m};
+  return {
+    clear(){ov.forEach(o=>{if(o.setMap)o.setMap(null);else o.map=null});ov=[]},
+    circle(c,r){ov.push(new google.maps.Circle({map,center:LL(c),radius:r*1000,strokeColor:"#F5B83D",strokeOpacity:.9,strokeWeight:2,fillColor:"#F5B83D",fillOpacity:.06,clickable:false}))},
+    pin(v,cls,onClick){ov.push(mk(v,`<div class="pin ${cls||""}"></div>`,cls==="big"?500:0,onClick,v.name))},
+    num(p,n,x,title){ov.push(mk(p,`<div class="num${x?" x":""}">${n}</div>`,300,null,title))},
+    dot(p){ov.push(mk(p,'<div class="me"></div>',1000))},
+    line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,icons:[{icon:{path:"M 0,-1 0,1",strokeOpacity:1,strokeColor:"#F5B83D",scale:3},offset:"0",repeat:"12px"}]}))},
+    fitZone(c,r,extra){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.1}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));map.fitBounds(b,8)},
+    fitPts(pts,maxZoom){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));map.fitBounds(b,50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})},
+    setView(p,z){map.panTo(LL(p));map.setZoom(z)},
+    me(p){if(!p){if(meM){meM.map=null;meM=null}return}if(!meM)meM=mk(p,'<div class="me"></div>',1000);else meM.position=LL(p)},
+    onTap(fn){map.addListener("click",e=>fn(e.latLng.lat(),e.latLng.lng()))},
+    resize(){},remove(){this.clear();if(meM)meM.map=null;el.innerHTML=""}
+  };
+}
+function lWrap(el){
+  const m=mkMap(el),ov=L.layerGroup().addTo(m);let meM=null;
+  return {
+    clear(){ov.clearLayers()},
+    circle(c,r){zoneCircle(c,r).addTo(ov)},
+    pin(v,cls,onClick){const mm=L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:0}).addTo(ov);if(onClick)mm.on("click",onClick);mm.bindTooltip(v.name,{direction:"top",offset:[0,-10]})},
+    num(p,n,x,title){const mm=L.marker([p.lat,p.lng],{icon:numIcon(n,x)}).addTo(ov);if(title)mm.bindTooltip(title)},
+    dot(p){L.marker([p.lat,p.lng],{icon:meIcon}).addTo(ov)},
+    line(pts){L.polyline(pts.map(p=>[p.lat,p.lng]),{color:"#F5B83D",weight:3.5,opacity:.95,dashArray:"2 8",lineCap:"round"}).addTo(ov)},
+    fitZone(c,r,extra){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)))},
+    fitPts(pts,maxZoom){m.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lng])).pad(.3),{animate:false,maxZoom:maxZoom||16})},
+    setView(p,z){m.setView([p.lat,p.lng],z,{animate:true})},
+    me(p){if(!p){if(meM){m.removeLayer(meM);meM=null}return}if(!meM)meM=L.marker([p.lat,p.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else meM.setLatLng([p.lat,p.lng])},
+    onTap(fn){m.on("click",e=>fn(e.latlng.lat,e.latlng.lng))},
+    resize(){m.invalidateSize()},remove(){m.remove()}
+  };
+}
+async function makeMap(id){const el=$(id);if(!el)return null;try{await gload();if(gBad)throw 0;return gWrap(el)}catch(e){return lWrap(el)}}
+function setMe(m){if(m)m.me(you())}
+
+/* bar photos: Google Place photo, fetched live, never stored. Capped per phone per day. */
+const PH_LIMIT=40,phMem={},phWait={};
+function phCount(){try{const d=JSON.parse(localStorage.getItem("rr-ph")||"{}");return d.k===new Date().toDateString()?d.n:0}catch(e){return 0}}
+function phBump(){try{localStorage.setItem("rr-ph",JSON.stringify({k:new Date().toDateString(),n:phCount()+1}))}catch(e){}}
+async function placeId(v){
+  S.pids=S.pids||{};if(S.pids[v.id])return S.pids[v.id];
+  const {Place}=await google.maps.importLibrary("places");
+  const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, Sydney NSW`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
+  const id=r&&r.places&&r.places[0]&&r.places[0].id;if(id){S.pids[v.id]=id;save()}return id;
+}
+function barPhoto(v){
+  if(phMem[v.id]!==undefined)return Promise.resolve(phMem[v.id]);
+  if(phWait[v.id])return phWait[v.id];
+  return phWait[v.id]=(async()=>{
+    try{
+      if(phCount()>=PH_LIMIT)return null;
+      await gload();if(gBad)return null;
+      const id=await placeId(v);if(!id)return phMem[v.id]=null;
+      const {Place}=await google.maps.importLibrary("places");
+      const pl=new Place({id});await pl.fetchFields({fields:["photos"]});
+      const ph=pl.photos&&pl.photos[0];if(!ph)return phMem[v.id]=null;
+      const a=(ph.authorAttributions||[])[0]||{};
+      phBump();
+      return phMem[v.id]={url:ph.getURI({maxWidth:900,maxHeight:600}),by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
+    }catch(e){return null}finally{delete phWait[v.id]}
+  })();
+}
+function fillPhotos(root){
+  (root||document).querySelectorAll("[data-ph]").forEach(box=>{
+    if(box.dataset.done)return;box.dataset.done="1";
+    const v=byId(box.dataset.ph);
+    barPhoto(v).then(ph=>{
+      if(!ph||!document.contains(box))return;
+      box.innerHTML=phInner(v,ph);
+      const img=box.querySelector("img");img.onload=()=>box.classList.add("on");img.onerror=()=>{box.remove()};
+    });
+  });
+}
+const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" referrerpolicy="no-referrer"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
+const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||""}" data-ph="${v.id}" data-done="1">${phInner(v,ph)}</div>`:ph===null?"":`<div class="bph ${cls||""}" data-ph="${v.id}"></div>`};
+
 
 /* ---------- router ---------- */
 const VIEWS=["intro","home","wiz","perm","play","end","bars","hist"];
@@ -1348,12 +1455,13 @@ function renderWiz(){
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();renderWiz()};
     const op=nextOpen(playable(inCircle(c,w.radius),w.newOnly),t);
     cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>${open.length?"Let's go":op?"Opens "+op+". Come back then":"Nothing open today"}</button>`,()=>$("wStart").onclick=tryStart);
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(async()=>{
       if(zMap){zMap.remove();zMap=null}
-      zMap=mkMap("zoneMap");zoneCircle(c,w.radius).addTo(zMap);
+      const el=$("zoneMap"),m=await makeMap("zoneMap");if(!m||!document.contains(el))return;zMap=m;
+      m.circle(c,w.radius);
       const openIds=new Set(open.map(v=>v.id));
-      all.forEach(v=>L.marker([v.lat,v.lng],{icon:pinIcon(openIds.has(v.id)?"":"off")}).addTo(zMap).bindTooltip(v.name,{direction:"top",offset:[0,-10]}));
-      setMe(zMap);fitZone(zMap,c,w.radius);
+      all.forEach(v=>m.pin(v,openIds.has(v.id)?"":"off",()=>barSheet(v)));
+      setMe(m);m.fitZone(c,w.radius);
     });
   }
 }
@@ -1433,7 +1541,7 @@ function doSpin(){
   const a=atVisit();if(a)closeVisit(a,now(),"spin");
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();openMove(true);return}
-  const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();
+  const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();barPhoto(pick);
   spinning=true;seen("spin");g.finalBanner=false;renderPlay();
   const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
   $("stage").innerHTML=`<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>`;
@@ -1457,7 +1565,7 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){$("sheetBody").innerHTML=html;if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 
@@ -1557,7 +1665,7 @@ function renderPlay(){
   const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}<small>Just for fun. Up to you.</small></span></div>`:"";
   if(a){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
-    st.innerHTML=ask+`<div class="bar at${animateId===("at:"+a.id)?" anim":""}"><span class="eyebrow">Visit logged${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
+    st.innerHTML=ask+`<div class="bar at${animateId===("at:"+a.id)?" anim":""}">${phBox(v)}<span class="eyebrow">Visit logged${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${ok?'<b style="color:var(--green)">Counts ✓</b>':`Counts at ${DWELL_MIN}:00`}${o.open?"<br>Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
@@ -1567,7 +1675,7 @@ function renderPlay(){
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
-    st.innerHTML=banner+ask+`<div class="bar${animateId===v.id?" anim":""}"><span class="eyebrow">Next rooftop${nw?'<span class="newpill" style="background:rgba(36,24,3,.15);color:var(--amber-ink)">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
+    st.innerHTML=banner+ask+`<div class="bar${animateId===v.id?" anim":""}">${phBox(v)}<span class="eyebrow">Next rooftop${nw?'<span class="newpill" style="background:rgba(36,24,3,.15);color:var(--amber-ink)">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -1580,6 +1688,7 @@ function renderPlay(){
       ${g.started?"":`<p class="note" style="text-align:center;margin:0">The clock starts when you spin.</p>`}`;
   }
   g._man=g.target?needManual(g):false;
+  fillPhotos(st);
   const sb=$("spinBtn");if(sb)sb.onclick=doSpin;
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=!!g.freeSkip;sheet(`<h3>Skip ${esc(byId(g.target).name)}?</h3><p class="note">${free?"Your wildcard covers this one, so no time lost.":`Skipping costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock. You'll get a different rooftop.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Skip it, free":"Skip it (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep it</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkip=false;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}doSpin()}})};
@@ -1671,13 +1780,13 @@ function renderEnd(){
   $("doneBtn").onclick=()=>go("home");
   $("runBack").onclick=()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:3,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
-  requestAnimationFrame(()=>{
-    if(eMap){eMap.remove();eMap=null}eMap=mkMap("endMap");
-    const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
-    L.polyline(pts,{color:"#F5B83D",weight:3.5,opacity:.95,dashArray:"2 8",lineCap:"round"}).addTo(eMap);
-    L.marker(pts[0],{icon:meIcon}).addTo(eMap);
-    st.arrived.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:numIcon(i+1,v.counted!==true)}).addTo(eMap).bindTooltip(b.name)});
-    eMap.fitBounds(L.latLngBounds(pts).pad(.3),{animate:false,maxZoom:16});
+  requestAnimationFrame(async()=>{
+    if(eMap){eMap.remove();eMap=null}
+    const el=$("endMap"),m=await makeMap("endMap");if(!m||!document.contains(el))return;eMap=m;
+    const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))];
+    m.line(pts);m.dot(r.startPos);
+    st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
+    m.fitPts(pts,16);
   });
 }
 async function shareStory(r){
@@ -1733,7 +1842,7 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 
 
 /* ---------- rooftops tab ---------- */
-let bMap=null,bMarks=[];
+let bMap=null,bMapP=null;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}</button>`}
@@ -1770,19 +1879,19 @@ function renderBars(){
     pins=list.filter(x=>x.s!=="nfu").map(({v,o,s})=>({v,cls:s==="col"?"done":o.open?"":"off"}));
   }
   $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
-  requestAnimationFrame(()=>{
-    if(!bMap){bMap=mkMap("barsMap",{center:[-33.8732,151.2069],zoom:13.25});bMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation();renderBars()}})}else bMap.invalidateSize();
-    bMarks.forEach(m=>bMap.removeLayer(m));bMarks=[];
-    if(g){bMarks.push(zoneCircle(g.center,g.radius).addTo(bMap));if(bMap._zoneFor!==g.id+g.center.lat){bMap._zoneFor=g.id+g.center.lat;fitZone(bMap,g.center,g.radius)}}
-    pins.forEach(({v,cls})=>bMarks.push(L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:0}).addTo(bMap).on("click",()=>barSheet(v))));
-    setMe(bMap);
+  requestAnimationFrame(async()=>{
+    if(!bMapP)bMapP=makeMap("barsMap").then(m=>{m.setView({lat:-33.8732,lng:151.2069},13);m.onTap((lat,lng)=>{if(S.test){S.fake={lat,lng};save();onLocation();renderBars()}});return m});
+    const m=bMap=await bMapP;if(!m)return;m.resize();m.clear();
+    if(g){m.circle(g.center,g.radius);if(m._zoneFor!==g.id+g.center.lat){m._zoneFor=g.id+g.center.lat;m.fitZone(g.center,g.radius)}}
+    pins.forEach(({v,cls})=>m.pin(v,cls,()=>barSheet(v)));
+    setMe(m);
   });
 }
 $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.barsFilter=b.dataset.v;save();renderBars()};
 function barSheet(v){
   const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
-  if(bMap&&S.route==="bars")bMap.setView([v.lat,v.lng],16,{animate:true});
-  sheet(`<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${esc(v.address)}${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
+  if(bMap&&S.route==="bars")bMap.setView(v,16);
+  sheet(`${phBox(v,"sheetph")}<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${esc(v.address)}${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
     <p class="note" style="color:${o.open?"var(--green)":"var(--muted)"};margin-top:6px">${o.open?"Open now til "+clock12(o.closeAt):o.opens!=null?"Opens today at "+clock12(o.opens):"Closed today"}</p>
     ${c[v.id]?`<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> first on ${dateTxt(c[v.id])}</p>`:""}
     <div class="acts">
