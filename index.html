@@ -1107,6 +1107,21 @@ dialog.sheet[open]{animation:up .25s ease-out}
 #v-quick[hidden]{display:none}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
+.reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
+.reel .frame{position:absolute;left:10px;right:10px;top:50%;height:64px;margin-top:-32px;border:1.5px solid var(--amber);border-radius:12px;background:rgba(245,184,61,.06);pointer-events:none;transition:box-shadow .3s}
+.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:.03em;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
+.reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
+.reel .row.long{font-size:clamp(19px,6vw,25px)}
+.reel .row.c{color:var(--text)}
+.reel.won .row.c{color:var(--amber)}
+.reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35);animation:landed .6s ease-out}
+.reel .hint{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
+.reel .hint.off{opacity:0}
+.reel .hint i{position:absolute;top:22%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 8px rgba(255,255,255,.08);animation:swipehint 1.9s cubic-bezier(.5,0,.3,1) infinite}
+.reel .hint i::before{content:"";position:absolute;left:50%;bottom:100%;width:6px;margin-left:-3px;height:0;border-radius:3px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.45));animation:swipetrail 1.9s cubic-bezier(.5,0,.3,1) infinite}
+@keyframes swipehint{0%{transform:translateY(-10px) scale(.8);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}60%{transform:translateY(120px) scale(1);opacity:1}80%,100%{transform:translateY(140px) scale(.9);opacity:0}}
+@keyframes swipetrail{0%,15%{height:0}60%{height:110px}80%,100%{height:0}}
+.reelnote{text-align:center;margin:0}
 </style>
 </head>
 <body>
@@ -1598,8 +1613,8 @@ function renderQuick(){
   }else if(!q.pick){
     const P=quickPool(q,t),nm=k=>P.length?P[(k+P.length*3)%P.length].name:"";
     b.innerHTML=top+`<div><h1 class="q">Just one rooftop</h1></div>${chips}
-      <div class="ready" id="qStage">${P.length?boardHTML([nm(0),nm(1),"Where to?",nm(2),nm(3)]):""}
-      ${P.length?`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><button class="wheel sm" type="button" id="qSpin">SPIN</button>`
+      <div class="ready" id="qStage">${P.length?`<div id="qReel"></div>`:""}
+      ${P.length?`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><p class="note reelnote">${reelNote()}</p>`
         :`<div class="alertbox">Nothing's open near here right now${nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t)?". First one opens at "+nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t):""}. Try another area.</div>`}</div>`;
   }else{
     const v=byId(q.pick),o=openState(v,t),y=you()||(q.from.type==="me"?q.from:null),cp=cardPhoto(v);
@@ -1609,38 +1624,27 @@ function renderQuick(){
         <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       <button class="btn dark" type="button" id="qAgain">${I.redo} Spin again</button>
       ${barStatus(v,collectedMap())?"":`<button class="toggle" type="button" id="qBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>We went here</b><small>Ticks it off your rooftops.</small></span><span class="sw"></span></button>`}
-      <div class="card qgame"><b>Got a couple of hours?</b><span class="small">Turn this into a game and spin your way around the area.</span><button class="btn sm line" type="button" id="qGame">Start a game from here</button></div>`;
+      <div class="card qgame"><b>Got an hour?</b><span class="small">Turn this into a game and see how many rooftops you can hit.</span><button class="btn sm line" type="button" id="qGame">Start a game from here</button></div>`;
     if(animateId===("q:"+v.id))animateId=null;
     if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&S.route==="quick"&&S.quick.pick===v.id){const im=new Image();im.onload=()=>renderQuick();im.src=ph.url}});
   }
   $("qBack").onclick=()=>{if(q.pick){q.pick=null;save();renderQuick()}else{S.quick=null;go("home")}};
   if($("qMe"))$("qMe").onclick=quickNearMe;
   b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const a=AREAS.find(z=>z.name===x.dataset.qa);q.from={type:"area",name:a.name,lat:a.lat,lng:a.lng};q.pick=null;q.seen=[];q.note=null;save();renderQuick()});
-  if($("qSpin"))$("qSpin").onclick=quickSpin;
+  if($("qReel")){const P=quickPool(q,t);const nm=P.map(v=>v.name).concat(P.length<6?VENUES.filter(v=>!v.tempClosed&&dist(q.from,v)<=QR*1000).map(v=>v.name):[]);reel=makeReel($("qReel"),nm.length?nm:P.map(v=>v.name),{hint:!S.tips.swipe,onRelease:v=>quickSpin(v)})}
   if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;save();renderQuick();quickSpin()};
   if($("qBeen"))$("qBeen").onclick=()=>{if(S.been[q.pick])delete S.been[q.pick];else S.been[q.pick]=1;save();renderQuick()};
   if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;
     S.wiz={step:1,radius:null,len,newOnly:!!S.last.newOnly,start:f.type==="me"?{type:"me",name:"you",lat:f.lat,lng:f.lng,n:openIn(f,1.5).length,sub:"Near "+nearestArea(f)}:{type:"area",name:f.name,lat:f.lat,lng:f.lng}};
     S.quick=null;go("wiz")};
 }
-function quickSpin(){
-  const q=S.quick;if(spinning||!q||!q.from)return;ac();
-  const P=quickPool(q,now());if(!P.length){renderQuick();return}
+function quickSpin(vel){
+  const q=S.quick;if(spinning||!q||!q.from)return false;ac();
+  const P=quickPool(q,now());if(!P.length){renderQuick();return false}
   const pick=P[Math.floor(Math.random()*P.length)];barPhoto(pick);
-  const names=VENUES.filter(v=>dist(q.from,v)<=QR*1000).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
-  $("qStage").innerHTML=boardHTML(["","","","",""],true)+`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><button class="wheel sm going" type="button" disabled>SPIN</button>`;
+  if(vel!==undefined)S.tips.swipe=1;
   spinning=true;
-  const delays=[...Array(18+Math.floor(Math.random()*4)).fill(42),58,78,104,136,176,220];let i=0,k=Math.floor(Math.random()*names.length);
-  const step=()=>{
-    const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
-    [-2,-1,0,1,2].forEach(o=>{const el=$("q"+(o+2));el.querySelector("span").textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flap-go");void el.offsetWidth;el.classList.add("flap-go")});
-    if(last){$("q2").classList.add("landed");$("board").classList.add("won")}
-    tick(last?900:600+Math.random()*80);buzz(5);k++;
-    if(!last){setTimeout(step,delays[i++]);return}
-    ding();buzz(40);
-    setTimeout(()=>{spinning=false;if(S.route!=="quick"||!S.quick)return;q.pick=pick.id;q.seen.push(pick.id);animateId="q:"+pick.id;save();renderQuick()},900);
-  };
-  step();
+  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,()=>{spinning=false;if(S.route!=="quick"||!S.quick)return;q.pick=pick.id;q.seen.push(pick.id);animateId="q:"+pick.id;save();renderQuick()});
 }
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
@@ -1795,8 +1799,48 @@ function onLocation(){
   }
   if(S.route==="play")renderPlay();
 }
-let spinning=false,animateId=null;
-function doSpin(force){
+let spinning=false,animateId=null,reel=null;
+/* ---------- the reel: swipe it like a slot reel; the swipe speed sets how far it runs ---------- */
+const ROW=58;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function makeReel(el,names,o){
+  o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));
+  const R={p:Math.floor(Math.random()*L.length),busy:false,raf:0};
+  el.classList.add("reel");el.classList.remove("won");
+  el.innerHTML=`<div class="frame"></div>${[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
+  const rows=[...el.querySelectorAll(".row")],mod=k=>((k%L.length)+L.length)%L.length;
+  let lastK=null;
+  const draw=()=>{const b=Math.floor(R.p);
+    if(lastK!==null&&b!==lastK){tick(560+Math.random()*80);if(navigator.vibrate)buzz(3)}lastK=b;
+    rows.forEach((r,i)=>{const k=b-3+i,d=k-R.p,n=L[mod(k)],sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15)}
+      const a=Math.abs(d);r.style.transform=`translateY(${d*ROW}px) scale(${Math.max(.62,1-.13*a)})`;r.style.opacity=Math.max(0,1-.3*a);r.classList.toggle("c",a<.5)})};
+  draw();
+  R.spinTo=(name,v,done)=>{
+    const dir=v>0?1:-1,va=Math.min(70,Math.max(20,Math.abs(v)||30)),D=Math.min(90,Math.max(12,va*va/60));
+    let k=Math.round(R.p+dir*D),n=0;while(L[mod(k)]!==name&&n<L.length){k+=dir;n++}
+    if(L[mod(k)]!==name)L[mod(k)]=name;
+    const p0=R.p,dist=k-p0,T=Math.min(4200,Math.max(1300,3*Math.abs(dist)/va*1000)),t0=performance.now();
+    R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
+    const f=t=>{const u=Math.min(1,(t-t0)/T);R.p=p0+dist*(1-Math.pow(1-u,3));draw();
+      if(u<1){R.raf=requestAnimationFrame(f);return}
+      R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);setTimeout(()=>{R.busy=false;done&&done()},320)};
+    R.raf=requestAnimationFrame(f);
+  };
+  if(o.onRelease){
+    let y0=0,pS=0,pts=[],down=false;
+    el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
+    el.addEventListener("pointermove",e=>{if(!down)return;R.p=pS-(e.clientY-y0)/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[0][0]>90)pts.shift();draw()});
+    const up=e=>{if(!down)return;down=false;const t=performance.now(),a=pts[0],moved=Math.abs(R.p-pS);
+      let v=(t-a[0])>8?(R.p-a[1])/((t-a[0])/1000):0;if(moved<.25)v=-(26+Math.random()*16);
+      if(o.onRelease(v)===false){R.p=Math.round(R.p);draw()}};
+    el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
+  }
+  return R;
+}
+function reelNote(){return S.tips.swipe?"Swipe down to spin":"Swipe down to spin. Harder swipe, longer spin."}
+
+function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.length>=6)return P;return P.concat(inCircle(g.center,g.radius).filter(v=>!v.tempClosed).map(v=>v.name)).concat(P.length?[]:VENUES.slice(0,10).map(v=>v.name))}
+function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&now()-a0.arrivedAt<DWELL_MIN*60000){
@@ -1805,32 +1849,19 @@ function doSpin(force){
       $("dS").onclick=closeSheet;
       $("dY").onclick=()=>{closeSheet();a0._ans=true;doSpin(true)};
       $("dN").onclick=()=>{closeSheet();a0._ans=false;doSpin(true)};
-    });return;
+    });return false;
   }
   if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
   const {pool:P}=spinPool();
-  if(!P.length){save();renderPlay();openMove(true);return}
+  if(!P.length){save();renderPlay();openMove(true);return false}
   const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();barPhoto(pick);
-  spinning=true;seen("spin");g.finalBanner=false;renderPlay();
-  const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
-  const rows=[-2,-1,0,1,2];
-  $("stage").innerHTML=`<div class="ready spinning">
-      <div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>
-      ${boardHTML(["","","","",""],true)}
-      <div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div>
-      <button class="wheel sm going" type="button" disabled>SPIN</button></div>`;
-  const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(42),58,78,104,136,176,220];
-  let i=0,k=Math.floor(Math.random()*names.length);
-  const step=()=>{
-    const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
-    rows.forEach(o=>{const el=$("q"+(o+2));el.querySelector("span").textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flap-go");void el.offsetWidth;el.classList.add("flap-go")});
-    if(last){$("q2").classList.add("landed");$("board").classList.add("won")}
-    tick(last?900:600+Math.random()*80);buzz(5);k++;
-    if(!last){setTimeout(step,delays[i++]);return}
-    setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;save();renderPlay();onLocation()},900);ding();buzz(40);
-  };
-  step();
+  spinning=true;seen("spin");if(vel!==undefined){S.tips.swipe=1}g.finalBanner=false;renderPlay();
+  if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
+    $("stage").innerHTML=`<div class="ready"><div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div><div id="reelBox"></div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
+    reel=makeReel($("reelBox"),gameReelNames(),{});
+  }
+  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;save();renderPlay();onLocation()});
 }
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
@@ -1980,15 +2011,15 @@ function renderPlay(){
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       <div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>
-      ${boardHTML([nm(0),nm(1),g.visits.length?"Next rooftop?":"Your first rooftop?",nm(2),nm(3)])}
+      <div id="reelBox"></div>
       <div class="poolnum"><b>${pool}</b> rooftop${pool===1?"":"s"} in the mix</div>
-      <button class="wheel sm" type="button" id="spinBtn">SPIN</button>
-      ${g.started?"":`<p class="note" style="text-align:center;margin:0">The clock starts when you spin.</p>`}</div>`;
+      <p class="note reelnote">${reelNote()}${g.started?"":"<br>The clock starts when you spin."}</p></div>`;
   }
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;const im=new Image();im.onload=()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning)renderPlay()};im.src=ph.url});
-  const sb=$("spinBtn");if(sb)sb.onclick=doSpin;
+  const sb=$("spinBtn");if(sb)sb.onclick=()=>doSpin();
+  if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:!S.tips.swipe,onRelease:v=>doSpin(false,v)});
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}doSpin()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin and no time is lost. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();doSpin()}})};
