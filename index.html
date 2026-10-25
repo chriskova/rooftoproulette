@@ -1331,7 +1331,7 @@ function fillPhotos(root){
     });
   });
 }
-const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" referrerpolicy="no-referrer"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
+const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.parentNode.remove()"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
 const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||""}" data-ph="${v.id}" data-done="1">${phInner(v,ph)}</div>`:ph===null?"":`<div class="bph ${cls||""}" data-ph="${v.id}"></div>`};
 
 
