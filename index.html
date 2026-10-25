@@ -1097,6 +1097,16 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .pin.off{width:13px;height:13px}
 .pin.done{background:var(--text)}
 .gmlink{display:inline-block;font-size:13px;font-weight:600;color:inherit;opacity:.85;margin:-2px 0 8px;text-decoration:underline;text-underline-offset:3px}
+#quickGo{margin-top:-4px}
+.qfrom{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+.qfrom::-webkit-scrollbar{display:none}
+.qfrom .chip{flex:none;display:flex;align-items:center;gap:6px;color:var(--text)}
+.qfrom .chip svg{width:15px;height:15px}
+.qfrom .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+#v-quick{display:flex;flex-direction:column;gap:16px}
+#v-quick[hidden]{display:none}
+.qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1123,6 +1133,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
       <button class="btn" id="newGame" type="button">Start a new game</button>
+      <button class="btn line" id="quickGo" type="button">Just pick one for us</button>
     </div>
     <div class="card">
       <div class="eyebrow" style="margin-bottom:12px">How it works</div>
@@ -1165,6 +1176,9 @@ dialog.sheet[open]{animation:up .25s ease-out}
     <div class="stage" id="stage"></div>
     <div class="note" id="gpsNote" style="text-align:center"></div>
   </section>
+
+  <!-- ONE-OFF SPIN -->
+  <section class="view" id="v-quick" hidden></section>
 
   <!-- SCORECARD -->
   <section class="view" id="v-end" hidden></section>
@@ -1471,7 +1485,7 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 
 
 /* ---------- router ---------- */
-const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist"];
+const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
 function go(route){S.route=route;save();render()}
 function render(){
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
@@ -1480,14 +1494,14 @@ function render(){
   const r=S.route;
   VIEWS.forEach(v=>$("v-"+v).hidden=v!==r);
   $("appbar").hidden=r==="home";
-  const tabbed=["home","play","end","bars","hist"].includes(r);
+  const tabbed=["home","play","end","bars","hist","quick"].includes(r);
   $("tabs").hidden=!tabbed;$("app").classList.toggle("has-tabs",tabbed);
   const tab=r==="bars"?"bars":r==="hist"?"hist":"play";
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
   const live=$("tPlay").querySelector(".live");if(live)live.hidden=!S.game;
   $("cta").hidden=true;$("app").classList.remove("has-cta");
   $("testFab").hidden=!S.test;
-  ({intro:renderIntro,ob:renderOb,home:renderHome,wiz:renderWiz,perm:renderPerm,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
+  ({intro:renderIntro,ob:renderOb,home:renderHome,wiz:renderWiz,perm:renderPerm,quick:renderQuick,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
   $("v-"+r).scrollTop=0;
 }
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
@@ -1553,8 +1567,81 @@ function renderHome(){
   $("homeSteps").innerHTML=stepsHTML(RULES);
 }
 $("newGame").onclick=()=>startWizard();
+$("quickGo").onclick=()=>{S.quick={from:null,pick:null,seen:[]};go("quick")};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
+
+
+/* ---------- one-off spin: one random rooftop, no clock, no scorecard ---------- */
+const QR=1.5; // km around the start point
+function quickPool(q,t){
+  const f=q.from;if(!f)return [];
+  const ok=VENUES.filter(v=>!S.nfu[v.id]&&openOK(v,t));
+  let p=ok.filter(v=>dist(f,v)<=QR*1000);
+  if(!p.length)p=ok.slice().sort((a,b)=>dist(f,a)-dist(f,b)).slice(0,3).filter(v=>dist(f,v)<=8000);
+  const fresh=p.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:p;
+}
+async function quickNearMe(){
+  const q=S.quick;q.note=null;
+  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng}}
+  catch(e){q.note="Couldn't find you just now. Pick an area instead."}
+  q.pick=null;q.seen=[];save();renderQuick();
+}
+function renderQuick(){
+  const q=S.quick||(S.quick={from:null,pick:null,seen:[]}),b=$("v-quick"),t=now();
+  if(!S.game)$("stage").innerHTML="";
+  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div></div></div>`;
+  const chips=`<div class="chips qfrom"><button class="chip" type="button" id="qMe" aria-pressed="${!!(q.from&&q.from.type==="me")}">${I.pin} Near me</button>${AREAS.map(a=>`<button class="chip" type="button" data-qa="${esc(a.name)}" aria-pressed="${!!(q.from&&q.from.name===a.name)}">${esc(a.name)}</button>`).join("")}</div>`;
+  if(!q.from){
+    b.innerHTML=top+`<div><h1 class="q">Just one rooftop</h1><p class="sub" style="margin:6px 0 0">No clock, no game. We'll pick one open rooftop for you.</p></div>
+      <div class="eyebrow">Where are you?</div>${chips}${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
+  }else if(!q.pick){
+    const P=quickPool(q,t),nm=k=>P.length?P[(k+P.length*3)%P.length].name:"";
+    b.innerHTML=top+`<div><h1 class="q">Just one rooftop</h1></div>${chips}
+      <div class="ready" id="qStage">${P.length?boardHTML([nm(0),nm(1),"Where to?",nm(2),nm(3)]):""}
+      ${P.length?`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><button class="wheel sm" type="button" id="qSpin">SPIN</button>`
+        :`<div class="alertbox">Nothing's open near here right now${nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t)?". First one opens at "+nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t):""}. Try another area.</div>`}</div>`;
+  }else{
+    const v=byId(q.pick),o=openState(v,t),y=you()||(q.from.type==="me"?q.from:null),cp=cardPhoto(v);
+    b.innerHTML=top+`<div class="bar${cp.cls}${animateId===("q:"+v.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Your rooftop${isNew(v.id)?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
+        <a class="gmlink" href="${gmapsURL(v)}" target="_blank" rel="noopener">Info on Google Maps ›</a>
+        <div class="facts">${y?`<span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dist(y,v))}</span>`:`<span>${I.pin} ${esc(v.area)}</span>`}${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
+        <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      <button class="btn dark" type="button" id="qAgain">${I.redo} Spin again</button>
+      ${barStatus(v,collectedMap())?"":`<button class="toggle" type="button" id="qBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>We went here</b><small>Ticks it off your rooftops.</small></span><span class="sw"></span></button>`}
+      <div class="card qgame"><b>Got a couple of hours?</b><span class="small">Turn this into a game and spin your way around the area.</span><button class="btn sm line" type="button" id="qGame">Start a game from here</button></div>`;
+    if(animateId===("q:"+v.id))animateId=null;
+    if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&S.route==="quick"&&S.quick.pick===v.id){const im=new Image();im.onload=()=>renderQuick();im.src=ph.url}});
+  }
+  $("qBack").onclick=()=>{if(q.pick){q.pick=null;save();renderQuick()}else{S.quick=null;go("home")}};
+  if($("qMe"))$("qMe").onclick=quickNearMe;
+  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const a=AREAS.find(z=>z.name===x.dataset.qa);q.from={type:"area",name:a.name,lat:a.lat,lng:a.lng};q.pick=null;q.seen=[];q.note=null;save();renderQuick()});
+  if($("qSpin"))$("qSpin").onclick=quickSpin;
+  if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;save();renderQuick();quickSpin()};
+  if($("qBeen"))$("qBeen").onclick=()=>{if(S.been[q.pick])delete S.been[q.pick];else S.been[q.pick]=1;save();renderQuick()};
+  if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;
+    S.wiz={step:1,radius:null,len,newOnly:!!S.last.newOnly,start:f.type==="me"?{type:"me",name:"you",lat:f.lat,lng:f.lng,n:openIn(f,1.5).length,sub:"Near "+nearestArea(f)}:{type:"area",name:f.name,lat:f.lat,lng:f.lng}};
+    S.quick=null;go("wiz")};
+}
+function quickSpin(){
+  const q=S.quick;if(spinning||!q||!q.from)return;ac();
+  const P=quickPool(q,now());if(!P.length){renderQuick();return}
+  const pick=P[Math.floor(Math.random()*P.length)];barPhoto(pick);
+  const names=VENUES.filter(v=>dist(q.from,v)<=QR*1000).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
+  $("qStage").innerHTML=boardHTML(["","","","",""],true)+`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><button class="wheel sm going" type="button" disabled>SPIN</button>`;
+  spinning=true;
+  const delays=[...Array(18+Math.floor(Math.random()*4)).fill(42),58,78,104,136,176,220];let i=0,k=Math.floor(Math.random()*names.length);
+  const step=()=>{
+    const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
+    [-2,-1,0,1,2].forEach(o=>{const el=$("q"+(o+2));el.querySelector("span").textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flap-go");void el.offsetWidth;el.classList.add("flap-go")});
+    if(last){$("q2").classList.add("landed");$("board").classList.add("won")}
+    tick(last?900:600+Math.random()*80);buzz(5);k++;
+    if(!last){setTimeout(step,delays[i++]);return}
+    ding();buzz(40);
+    setTimeout(()=>{spinning=false;if(S.route!=="quick"||!S.quick)return;q.pick=pick.id;q.seen.push(pick.id);animateId="q:"+pick.id;save();renderQuick()},900);
+  };
+  step();
+}
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
 function startWizard(){S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
