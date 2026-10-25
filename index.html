@@ -908,6 +908,41 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @media (prefers-reduced-motion:reduce){.flip,.bar,.pin.big,dialog.sheet[open]{animation:none}}
 
 /* v4 additions */
+.bar.photo{background-color:#111;background-size:cover;background-position:center;color:#fff;position:relative;min-height:340px;justify-content:flex-end;overflow:hidden;border:0}
+.bar.photo::before{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.94) 0%,rgba(0,0,0,.72) 42%,rgba(0,0,0,.15) 78%,rgba(0,0,0,.05) 100%)}
+.bar.photo>*{position:relative;z-index:1}
+.bar.photo .eyebrow{color:var(--amber)}
+.bar.photo .btn{background:var(--amber);color:var(--amber-ink)}
+.bar.photo .wild{background:rgba(245,184,61,.16);border-color:rgba(245,184,61,.55);color:#fff}
+.bar.photo .wild svg{color:var(--amber)}
+.bar.photo .small{color:rgba(255,255,255,.75)}
+.bar.at.photo{box-shadow:inset 0 0 0 2px var(--green)}
+.bar.at.photo .eyebrow{color:var(--green)}
+.bar>.cr{position:absolute!important;top:10px;right:10px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 7px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.bar>.cr a{color:#fff}
+.again{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px}
+.fine{font-size:12.5px;color:var(--muted)}
+.seg button{font-size:13px;padding:8px 4px}
+.chev{color:var(--dim);font-size:20px;line-height:1;margin-left:2px}
+.sc{background:var(--s1);border:1px solid var(--line);border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sc-top{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 -8px}
+.award{text-align:center;padding:4px 0 2px}
+.aw-t{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;text-transform:uppercase;letter-spacing:.02em;margin-top:6px}
+.aw-w{color:var(--muted);font-size:14px;margin-top:6px}
+.aw-more{display:flex;justify-content:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.aw-more span{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:99px;padding:4px 9px;color:var(--muted)}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tri div{background:var(--s2);border-radius:14px;padding:10px 8px;text-align:center}
+.tri b{display:block;font-family:var(--display);font-weight:800;font-size:34px;line-height:1;color:var(--amber)}
+.tri small{font-size:11.5px;color:var(--muted)}
+.sc .map{border-radius:14px}
+.sc-bars{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px}
+.sc-bars .x{color:var(--dim);text-decoration:line-through}
+.quad{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.quad div{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-top:1px solid var(--line);padding-top:6px}
+.quad small{color:var(--muted);font-size:12.5px}
+.quad b{font-weight:650;white-space:nowrap}
+
 .bph{position:relative;margin:-18px -18px 4px;height:0;overflow:hidden;border-radius:22px 22px 0 0;transition:height .35s ease;background:rgba(36,24,3,.15)}
 .bph.on{height:180px}
 .bar.at .bph{border-radius:20px 20px 0 0;margin:-18px -18px 4px}
@@ -1048,13 +1083,9 @@ dialog.sheet[open]{animation:up .25s ease-out}
   <!-- ROOFTOPS TAB -->
   <section class="view" id="v-bars" hidden>
     <h1 class="q">Rooftops</h1>
-    <div class="map"><div id="barsMap" style="height:34vh;min-height:220px"></div></div>
-    <div class="seg" id="barsSeg">
-      <button type="button" data-v="all" aria-pressed="true">All</button>
-      <button type="button" data-v="todo">Not yet</button>
-      <button type="button" data-v="done">Been</button>
-      <button type="button" data-v="open">Open now</button>
-    </div>
+    <div class="seg" id="barsSeg"></div>
+    <div id="barsIntro"></div>
+    <div class="map"><div id="barsMap" style="height:30vh;min-height:200px"></div></div>
     <div class="list card" id="barsList" style="padding:4px 16px"></div>
   </section>
 
@@ -1332,6 +1363,8 @@ function fillPhotos(root){
   });
 }
 const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.parentNode.remove()"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
+function cardPhoto(v){const ph=phMem[v.id];if(!ph)return {cls:"",style:"",cr:""};
+  return {cls:" photo",style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
 const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||""}" data-ph="${v.id}" data-done="1">${phInner(v,ph)}</div>`:ph===null?"":`<div class="bph ${cls||""}" data-ph="${v.id}"></div>`};
 
 
@@ -1394,6 +1427,7 @@ function renderHome(){
   $("homeSteps").innerHTML=stepsHTML(RULES);
 }
 $("newGame").onclick=()=>startWizard();
+(()=>{let n=0,t0=0;document.querySelector("#v-home .brand").addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}})})();
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
@@ -1483,7 +1517,7 @@ async function tryStart(){
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
   S.game={id:"g"+now(),started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,center:{lat:w.start.lat,lng:w.start.lng},
-    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   S.wiz=null;save();startWatch();buzz(30);go("play");
 }
@@ -1516,8 +1550,8 @@ function spinPool(){
   const g=G(),rem=remaining()/60000,from=fromPoint();let P=basePool();
   if(g.started&&rem<=FINAL){
     const reach=P.filter(v=>tripMin(from,v)<=rem/2);if(reach.length)return {pool:reach,final:true};
-    let cand=P.length?P:playable(VENUES,false).filter(v=>!visited(v.id)&&v.id!==g.target&&openState(v,now()).open);
-    return {pool:cand.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3),final:true};
+    if(!P.length)return {pool:[],final:true};
+    return {pool:P.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3),final:true};
   }
   return {pool:P,final:false};
 }
@@ -1665,7 +1699,8 @@ function renderPlay(){
   const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}<small>Just for fun. Up to you.</small></span></div>`:"";
   if(a){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
-    st.innerHTML=ask+`<div class="bar at${animateId===("at:"+a.id)?" anim":""}">${phBox(v)}<span class="eyebrow">Visit logged${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
+    const cp=cardPhoto(v);
+    st.innerHTML=ask+`<div class="bar at${cp.cls}${animateId===("at:"+a.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Visit logged${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${ok?'<b style="color:var(--green)">Counts ✓</b>':`Counts at ${DWELL_MIN}:00`}${o.open?"<br>Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
@@ -1675,12 +1710,14 @@ function renderPlay(){
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
-    st.innerHTML=banner+ask+`<div class="bar${animateId===v.id?" anim":""}">${phBox(v)}<span class="eyebrow">Next rooftop${nw?'<span class="newpill" style="background:rgba(36,24,3,.15);color:var(--amber-ink)">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
+    const cp=cardPhoto(v),fs=g.freeSkips||0;
+    st.innerHTML=banner+ask+`<div class="bar${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${tip("enroute","Your visit is logged when you arrive. Nothing to tap.",true)}
-      <div class="links"><button class="btn sm line" type="button" id="skipBtn" style="width:auto;padding:0 16px">${g.freeSkip?"Skip · free":"Skip · −"+SKIP_COST+" min"}</button>${man?`<button class="btn sm line" type="button" id="hereBtn" style="width:auto;padding:0 16px">I'm here</button>`:""}</div>
+      ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
+      <div class="again"><button class="btn" type="button" id="skipBtn">${I.redo} Spin again</button><span class="fine">${fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;
     if(animateId===v.id)animateId=null;
   }else{
@@ -1688,10 +1725,11 @@ function renderPlay(){
       ${g.started?"":`<p class="note" style="text-align:center;margin:0">The clock starts when you spin.</p>`}`;
   }
   g._man=g.target?needManual(g):false;
-  fillPhotos(st);
+  const pv=a?byId(a.id):g.target?byId(g.target):null;
+  if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;const im=new Image();im.onload=()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning)renderPlay()};im.src=ph.url});
   const sb=$("spinBtn");if(sb)sb.onclick=doSpin;
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
-  const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=!!g.freeSkip;sheet(`<h3>Skip ${esc(byId(g.target).name)}?</h3><p class="note">${free?"Your wildcard covers this one, so no time lost.":`Skipping costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock. You'll get a different rooftop.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Skip it, free":"Skip it (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep it</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkip=false;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}doSpin()}})};
+  const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?`This one's free. ${esc(byId(g.target).name)} won't come up again this game.`:`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}. ${esc(byId(g.target).name)} won't come up again this game.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}doSpin()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin and no time is lost. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();doSpin()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
@@ -1713,12 +1751,12 @@ const WILDS=[
  "Order the drink with the strangest name on the menu.",
  "Loser of rock-paper-scissors picks the round.",
  "Order by pointing at the menu. No talking.",
- "Free skip: your next skip won't cost any time."
+ "Free re-spin: your next re-spin won't cost any time."
 ];
 function rollWild(g,id){
   if(g.visits.length<1||Math.random()>.3){g.wild=null;return}
   let pool=WILDS.filter(w=>w!==(g.lastWild||""));const w=pool[Math.floor(Math.random()*pool.length)];
-  g.wild={id,text:w};g.lastWild=w;if(w.startsWith("Free skip"))g.freeSkip=true;
+  g.wild={id,text:w};g.lastWild=w;if(w.startsWith("Free re-spin"))g.freeSkips=(g.freeSkips||0)+1;
 }
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
@@ -1741,42 +1779,53 @@ function stats(r){
   return {arrived,counted,total,longest,quick,dur:(r.endedAt||r.endsAt)-r.startedAt,last:arrived[arrived.length-1]};
 }
 
+
 let eMap=null;
+function awards(r,st){
+  const L=[],n=st.counted.length,nm=id=>esc(byId(id).name);
+  const add=(t,why)=>L.push({t,why});
+  if(st.last&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=3*60000)add("Buzzer Beaters",`Into ${nm(st.last.id)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`);
+  if(r.missed&&r.missed.m!=null&&r.missed.m<=300)add("So Close",`${nm(r.missed.id)} was ${mOrKm(r.missed.m)} away at zero`);
+  if(st.quick&&st.quick.ms>=60000&&st.quick.ms<=6*60000)add("Pit Stop Crew",`${nm(st.quick.from)} to ${nm(st.quick.to)} in ${hmm(st.quick.ms)}`);
+  if(n>=2&&(r.newIds||[]).length===n)add("Fresh Territory","Every rooftop was a first");
+  if(st.longest&&st.longest.d>=1500)add("Long Haul",`${km(st.longest.d)} to ${nm(st.longest.to.id)}`);
+  const longStay=st.arrived.filter(v=>v.leftAt&&v.leftAt-v.arrivedAt>=30*60000).sort((a,b)=>(b.leftAt-b.arrivedAt)-(a.leftAt-a.arrivedAt))[0];
+  if(longStay)add("Settled In",`${hmm(longStay.leftAt-longStay.arrivedAt)} at ${nm(longStay.id)}`);
+  if((r.skipCost||0)>=6)add("Fussy Bunch",`${r.skipCost} minutes spent re-spinning`);
+  const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
+  if(r.areas.length>1)add("Change of Scenery",esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ")));
+  if(!r.skipCost&&!(r.skipped||[]).length&&n>=2)add("No Regrets","Took every spin the wheel gave you");
+  if(!L.length)add(n?"Top Floor":"Ground Floor",n?`${n} rooftop${n===1?"":"s"}, ${km(st.total)}`:"The wheel will be kinder next time");
+  return L;
+}
 function renderEnd(){
   const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
-  const st=stats(r),n=st.counted.length,lenTxt=r.len===60?"1 hour":"2 hours",nw=(r.newIds||[]).length;
+  const st=stats(r),n=st.counted.length,lenTxt=r.len===60?"1 hour":"2 hours",aw=awards(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
-  let photo="";
-  if(r.missed&&r.missed.m!=null&&r.missed.m<=300)photo=`${esc(byId(r.missed.id).name)} was just ${mOrKm(r.missed.m)} away at zero`;
-  else if(st.last&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=5*60000)photo=`Made it into ${esc(byId(st.last.id).name)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`;
-  const areas=r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ");
   box.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
-    <div class="score"><div class="duo"><div><div class="big">${n}</div><div class="lbl">rooftop${n===1?"":"s"}</div></div><div class="sep"></div><div><div class="big">${(st.total/1000).toFixed(1)}</div><div class="lbl">km covered</div></div></div>
-      <div class="small" style="margin-top:12px">${esc(areas)} · ${hmm(st.dur)}${r.skipCost?` · ${r.skipCost} min lost to skips`:""}</div>
-      ${nw?`<div class="pb">${nw} rooftop${nw===1?"":"s"} you'd never been to</div>`:""}</div>
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
-    <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Run it back</button></div>
-    <div class="map"><div id="endMap" style="height:240px"></div></div>
-    <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}${v.cant?' <span class="small">(couldn\'t get in)</span>':v.counted===false?' <span class="small">(didn\'t count)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No visits logged this time.</span></div>`}</div></div>
-    <div class="grid2">
-      <div class="stat"><small>At the bars</small><b>${hmm(atBars)}</b></div>
-      <div class="stat"><small>Getting there</small><b>${hmm(moving)}</b></div>
-      <div class="stat"><small>Longest trip</small><b>${st.longest?km(st.longest.d):"—"}</b></div>
-      <div class="stat"><small>Quickest turnaround</small><b>${st.quick?hmm(st.quick.ms):"—"}</b></div>
-      ${photo?`<div class="stat w" style="border-color:var(--amber)"><small style="color:var(--amber)">Photo finish</small><b>${photo}</b></div>`:""}
+    <div class="sc">
+      <div class="sc-top"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
+      <div class="award"><span class="eyebrow" style="color:var(--amber)">Tonight's title</span><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div>
+        ${aw.length>1?`<div class="aw-more">${aw.slice(1,3).map(a=>`<span>${a.t}</span>`).join("")}</div>`:""}</div>
+      <div class="tri"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div><div><b>${(st.total/1000).toFixed(1)}</b><small>km covered</small></div><div><b>${Math.round(st.dur/60000)}</b><small>minutes</small></div></div>
+      <div class="map"><div id="endMap" style="height:150px"></div></div>
+      <div class="sc-bars">${st.arrived.map((v,i)=>`<span class="${v.counted===true?"":"x"}">${i+1}. ${esc(byId(v.id).name)}${r.barOfDay===v.id?" ★":""}</span>`).join("")||'<span class="x">No visits logged</span>'}</div>
+      <div class="quad"><div><small>At the bars</small><b>${hmm(atBars)}</b></div><div><small>Getting there</small><b>${hmm(moving)}</b></div><div><small>Longest trip</small><b>${st.longest?km(st.longest.d):"—"}</b></div><div><small>Quickest turnaround</small><b>${st.quick?hmm(st.quick.ms):"—"}</b></div></div>
     </div>
+    <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
     ${n?`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Bar of the day</div><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${r.barOfDay===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
-    <div class="card photo"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="eyebrow">Crew photo</div><div class="small">Goes on your story share</div></div>
-      <label class="btn sm dark" style="width:auto;padding:0 14px">${I.camera} ${r.photo?"Replace":"Add"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:""}</div>
-    <button class="btn line" type="button" id="againBtn">New game</button>`;
+    <div class="card photo"><div class="eyebrow">Crew photo</div><div class="small" style="margin:2px 0 10px">Goes on your story. Saved on this phone only.</div>
+      ${r.photo?`<img src="${r.photo}" alt="Crew photo" style="margin:0 0 10px">`:""}
+      <div class="row2"><label class="btn sm dark">${I.camera} Take photo<input type="file" accept="image/*" capture="environment" id="photoCam" hidden></label><label class="btn sm dark">Choose photo<input type="file" accept="image/*" id="photoLib" hidden></label></div></div>
+    <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}${v.cant?' <span class="small">(couldn\'t get in)</span>':v.counted===false?' <span class="small">(didn\'t count)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No visits logged this time.</span></div>`}</div></div>`;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{r.barOfDay=r.barOfDay===b.dataset.b?null:b.dataset.b;saveH();renderEnd()});
-  $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,1080).then(d=>{r.photo=d;saveH();renderEnd()})};
-  $("againBtn").onclick=()=>startWizard();
+  const onPhoto=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,1080).then(d=>{r.photo=d;saveH();renderEnd()})};
+  $("photoCam").onchange=onPhoto;$("photoLib").onchange=onPhoto;
   $("doneBtn").onclick=()=>go("home");
   $("runBack").onclick=()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:3,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
@@ -1794,28 +1843,29 @@ async function shareStory(r){
   try{
     await Promise.all([document.fonts.load('800 100px "Big Shoulders Display"'),document.fonts.load('500 40px "Big Shoulders Display"')]).catch(()=>{});
     const W=1080,Hh=1920,c=document.createElement("canvas");c.width=W;c.height=Hh;const x=c.getContext("2d");
-    const st=stats(r),n=st.counted.length,D='"Big Shoulders Display","Arial Narrow",Impact,sans-serif',U='system-ui,-apple-system,Roboto,Arial,sans-serif';
-    const g=x.createRadialGradient(W,0,0,W,0,1300);g.addColorStop(0,"rgba(245,184,61,.35)");g.addColorStop(1,"rgba(245,184,61,0)");
+    const st=stats(r),n=st.counted.length,aw=awards(r,st),D='"Big Shoulders Display","Arial Narrow",Impact,sans-serif',U='system-ui,-apple-system,Roboto,Arial,sans-serif';
+    const plain=s=>String(s).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+    const g=x.createRadialGradient(W,0,0,W,0,1300);g.addColorStop(0,"rgba(245,184,61,.32)");g.addColorStop(1,"rgba(245,184,61,0)");
     x.fillStyle="#0B0D12";x.fillRect(0,0,W,Hh);x.fillStyle=g;x.fillRect(0,0,W,Hh);
-    x.textBaseline="alphabetic";
-    x.font=`800 64px ${D}`;x.fillStyle="#F4F1EA";x.fillText("ROOFTOP",72,150);x.fillStyle="#F5B83D";x.fillText("ROULETTE",72+x.measureText("ROOFTOP ").width,150);
-    x.font=`500 34px ${U}`;x.fillStyle="#9AA1AD";x.fillText(`${r.len===60?"1 hour":"2 hours"} · ${dateTxt(r.startedAt)}`,72,205);
-    // hero: photo, or the route
-    const bx=72,by=260,bw=W-144,bh=760;
+    x.font=`800 56px ${D}`;x.fillStyle="#F4F1EA";x.fillText("ROOFTOP",72,128);x.fillStyle="#F5B83D";x.fillText("ROULETTE",72+x.measureText("ROOFTOP ").width,128);
+    x.font=`500 32px ${U}`;x.fillStyle="#9AA1AD";x.fillText(`${r.len===60?"1 hour":"2 hours"} · ${dateTxt(r.startedAt)}`,72,178);
+    // hero: crew photo or route
+    const bx=72,by=220,bw=W-144,bh=r.photo?700:600;
     x.save();roundRect(x,bx,by,bw,bh,40);x.clip();x.fillStyle="#141820";x.fillRect(bx,by,bw,bh);
     if(r.photo){const img=await loadImg(r.photo);const s=Math.max(bw/img.width,bh/img.height);x.drawImage(img,bx+(bw-img.width*s)/2,by+(bh-img.height*s)/2,img.width*s,img.height*s)}
     else drawRoute(x,r,st,bx,by,bw,bh);
     x.restore();
-    // numbers
-    x.fillStyle="#F5B83D";x.font=`800 300px ${D}`;x.fillText(String(n),72,1330);
-    const nw=x.measureText(String(n)).width;
-    x.fillStyle="#F4F1EA";x.font=`800 64px ${D}`;x.fillText(n===1?"ROOFTOP":"ROOFTOPS",72+nw+30,1240);
-    x.fillStyle="#9AA1AD";x.font=`500 40px ${U}`;x.fillText(`${(st.total/1000).toFixed(1)} km · ${hmm(st.dur)}`,72+nw+32,1305);
-    // bar list
-    x.font=`600 40px ${U}`;let yy=1430;
-    st.arrived.slice(0,6).forEach((v,i)=>{x.fillStyle=v.counted===true?"#F4F1EA":"#6B7280";x.fillText(`${i+1}. ${byId(v.id).name}${r.barOfDay===v.id?"  ★":""}`,72,yy);yy+=62});
-    if(st.arrived.length>6){x.fillStyle="#6B7280";x.fillText(`+${st.arrived.length-6} more`,72,yy)}
-    x.fillStyle="#6B7280";x.font=`500 30px ${U}`;x.fillText("Spin. Go. Drink. Repeat.",72,1840);
+    let y=by+bh+90;
+    x.fillStyle="#F5B83D";x.font=`700 30px ${U}`;x.fillText("TONIGHT'S TITLE",72,y);y+=96;
+    x.fillStyle="#F4F1EA";x.font=`800 104px ${D}`;x.fillText(aw[0].t.toUpperCase(),72,y);y+=58;
+    x.fillStyle="#9AA1AD";x.font=`500 36px ${U}`;x.fillText(plain(aw[0].why).slice(0,52),72,y);y+=90;
+    // three stats
+    const cols=[[String(n),n===1?"rooftop":"rooftops"],[(st.total/1000).toFixed(1),"km covered"],[String(Math.round(st.dur/60000)),"minutes"]];
+    cols.forEach(([v,l],i)=>{const cx=72+i*322;x.fillStyle="#141820";roundRect(x,cx,y-70,290,170,28);x.fill();x.fillStyle="#F5B83D";x.font=`800 88px ${D}`;x.fillText(v,cx+28,y+28);x.fillStyle="#9AA1AD";x.font=`500 28px ${U}`;x.fillText(l,cx+30,y+74)});
+    y+=170;
+    x.font=`600 36px ${U}`;
+    st.arrived.slice(0,r.photo?4:6).forEach((v,i)=>{if(y>Hh-110)return;x.fillStyle=v.counted===true?"#F4F1EA":"#6B7280";x.fillText(`${i+1}. ${byId(v.id).name}${r.barOfDay===v.id?"  ★":""}`,72,y);y+=56});
+    x.fillStyle="#6B7280";x.font=`500 28px ${U}`;x.fillText("Spin. Go. Drink. Repeat.",72,Hh-60);
     const blob=await new Promise(res=>c.toBlob(res,"image/png"));
     const file=new File([blob],"rooftop-roulette.png",{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
@@ -1841,44 +1891,62 @@ function drawRoute(x,r,st,bx,by,bw,bh){
 function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.src=u})}
 
 
+
 /* ---------- rooftops tab ---------- */
 let bMap=null,bMapP=null;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
-function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}</button>`}
+function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}<span class="chev">›</span></button>`}
 function renderBars(){
-  const t=now(),y=you(),f=S.barsFilter||"all",c=collectedMap(),g=G();
-  $("barsSeg").hidden=!!g;
-  let rows=[],pins=[];
-  if(g){
-    const inZ=inCircle(g.center,g.radius).filter(v=>!S.nfu[v.id]),zIds=new Set(inZ.map(v=>v.id));
-    const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
-    const tonight=g.visits.map(v=>v.id);
-    const live=inZ.filter(v=>!tonight.includes(v.id)&&openState(v,t).open).sort(sortD);
+  const t=now(),y=you(),c=collectedMap(),g=G();
+  const tabs=g?[["zone","My zone"],["other","Other areas"],["been","Been"],["nfu","Not for us"]]:[["open","Open now"],["all","All"],["been","Been"],["nfu","Not for us"]];
+  let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
+  $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
+  const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
+  const os=v=>openState(v,t);
+  let intro="",rows=[],pins=[],extra="";
+  const tapHint=`Tap any rooftop to mark it as <b>been before</b> or <b>not for us</b>.`;
+  if(f==="zone"){
+    const inZ=inCircle(g.center,g.radius).filter(v=>!S.nfu[v.id]),tonight=g.visits.map(v=>v.id);
+    const live=inZ.filter(v=>!tonight.includes(v.id)&&os(v).open).sort(sortD);
     if(g.target){const i=live.findIndex(v=>v.id===g.target);if(i>0)live.unshift(live.splice(i,1)[0])}
-    const closedZ=inZ.filter(v=>!tonight.includes(v.id)&&!openState(v,t).open);
-    const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-    let h=`<div class="eyebrow" style="padding:14px 0 4px">In your zone · ${live.length} open</div>`;
-    h+=live.map(v=>rowHTML(v,openState(v,t),v.id===g.target?"next":barStatus(v,c),y)).join("");
-    if(tonight.length)h+=`<div class="eyebrow" style="padding:16px 0 4px">Tonight</div>`+tonight.map(id=>rowHTML(byId(id),openState(byId(id),t),"done",y)).join("");
-    if(closedZ.length)h+=`<div class="eyebrow" style="padding:16px 0 4px">In your zone · closed</div>`+closedZ.map(v=>rowHTML(v,openState(v,t),barStatus(v,c),y)).join("");
+    const closed=inZ.filter(v=>!tonight.includes(v.id)&&!os(v).open).sort(sortD);
+    intro=`These are the rooftops your spins can land on. ${tapHint}`;
+    rows=[...live.map(v=>rowHTML(v,os(v),v.id===g.target?"next":barStatus(v,c),y)),
+      ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
+      ...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
+    pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
+  }else if(f==="other"){
+    const zIds=new Set(inCircle(g.center,g.radius).map(v=>v.id));
     const others=VENUES.filter(v=>!zIds.has(v.id)&&!S.nfu[v.id]).sort(sortD);
-    h+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 0 4px;gap:10px"><span class="eyebrow">Other areas</span>${canMove?`<button class="btn sm line" type="button" id="bMove" style="width:auto;padding:0 14px">Move zone</button>`:`<span class="small">Zone move used</span>`}</div>`;
-    h+=others.map(v=>rowHTML(v,openState(v,t),barStatus(v,c),y)).join("");
-    $("barsList").innerHTML=h;
-    if($("bMove"))$("bMove").onclick=()=>openMove(free);
-    pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":openState(v,t).open?"":"off"})).concat(others.map(v=>({v,cls:"off"})));
+    const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
+    intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
+    extra=canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this game.</p>`;
+    rows=others.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
+  }else if(f==="been"){
+    const list=VENUES.filter(v=>{const s=barStatus(v,c);return s==="col"||s==="been"}).sort(sortD);
+    intro=`Rooftops you've visited in a game or marked as been before. Turn on <b>New rooftops only</b> when you set up a game and these get skipped.`;
+    rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "I've been here before".</div>`];
+    pins=list.map(v=>({v,cls:"done"}));
+  }else if(f==="nfu"){
+    const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
+    intro=`Rooftops your crew would never go to. These never come up in a spin. Tap one to bring it back.`;
+    rows=list.map(v=>rowHTML(v,os(v),"nfu",y));
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
+    pins=list.map(v=>({v,cls:"off"}));
   }else{
-    $("barsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===f)));
-    let list=VENUES.map(v=>({v,o:openState(v,t),s:barStatus(v,c)}));
-    if(f==="todo")list=list.filter(x=>x.s===""||x.s==="been");
-    if(f==="done")list=list.filter(x=>x.s==="col"||x.s==="been");
-    if(f==="open")list=list.filter(x=>x.o.open&&x.s!=="nfu");
-    list.sort((a,b)=>(a.s==="nfu")-(b.s==="nfu")||(y?dist(y,a.v)-dist(y,b.v):a.v.name.localeCompare(b.v.name)));
-    $("barsList").innerHTML=list.map(({v,o,s})=>rowHTML(v,o,s,y)).join("")||`<div class="empty" style="padding:24px">${f==="done"?"No rooftops yet. Bars you visit in a game, or mark as been before, show up here.":"Nothing here right now."}</div>`;
-    pins=list.filter(x=>x.s!=="nfu").map(({v,o,s})=>({v,cls:s==="col"?"done":o.open?"":"off"}));
+    const list=VENUES.filter(v=>!S.nfu[v.id]&&(f==="all"||os(v).open)).sort(sortD);
+    intro=`Every rooftop in Sydney${f==="open"?" that's open right now":""}. ${tapHint}`;
+    rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open right now.</div>`];
+    pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));
   }
+  $("barsIntro").innerHTML=`<p class="note" style="margin:0">${intro}</p>${extra}`;
+  $("barsList").innerHTML=rows.join("");
   $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
+  if($("bMove"))$("bMove").onclick=()=>openMove(g.started&&basePool().length<2);
   requestAnimationFrame(async()=>{
     if(!bMapP)bMapP=makeMap("barsMap").then(m=>{m.setView({lat:-33.8732,lng:151.2069},13);m.onTap((lat,lng)=>{if(S.test){S.fake={lat,lng};save();onLocation();renderBars()}});return m});
     const m=bMap=await bMapP;if(!m)return;m.resize();m.clear();
@@ -1922,6 +1990,7 @@ function renderHist(){
 $("testFab").onclick=()=>{
   const s=sydAt(now());
   sheet(`<h3>Test mode</h3><p class="note">Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?` (+${Math.round(S.ff/60000)} min)`:""}. Tap the Rooftops map to move yourself.</p>
+   <div class="eyebrow" style="margin:14px 0 8px">Time travel</div><div class="trow">${G()&&G().started?`<span class="note">Finish or end your game first.</span>`:`<button class="btn sm dark" type="button" data-to="4,1080">Friday 6pm</button><button class="btn sm dark" type="button" data-to="5,900">Saturday 3pm</button>`}</div>
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>`:""}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
@@ -1931,6 +2000,7 @@ $("testFab").onclick=()=>{
     if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
     $("tJ").onchange=e=>{const v=byId(e.target.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();closeSheet();onLocation();render()}};
     $("tR").onclick=()=>{S.ff=0;save();closeSheet();render()};
+    $("sheetBody").querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const [dd,mm]=b.dataset.to.split(",").map(Number),s0=sydAt(now());let d=((dd-s0.day+7)%7)*1440+(mm-s0.min);if(d<=0)d+=7*1440;S.ff=(S.ff||0)+d*60000;save();closeSheet();render()});
     $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};save();closeSheet();go("intro")};
     $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY)}catch(e){}location.reload()};
     $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
