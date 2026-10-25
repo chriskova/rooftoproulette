@@ -908,6 +908,25 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @media (prefers-reduced-motion:reduce){.flip,.bar,.pin.big,dialog.sheet[open]{animation:none}}
 
 /* v4 additions */
+.board{width:100%;display:flex;flex-direction:column;gap:6px;padding:10px;background:#0E1117;border:1px solid var(--line);border-radius:20px;perspective:600px;transition:box-shadow .3s,border-color .3s}
+.board.live{border-color:rgba(245,184,61,.55);box-shadow:0 0 0 4px var(--amber-soft),0 0 50px rgba(245,184,61,.15)}
+.flap{position:relative;height:38px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#20252f 0 50%,#1a1e26 50% 100%);border-radius:7px;font-family:var(--display);font-weight:500;font-size:18px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);overflow:hidden;transform-origin:50% 0}
+.flap::after{content:"";position:absolute;left:0;right:0;top:50%;height:1.5px;background:#0B0D12;box-shadow:0 1px 0 rgba(255,255,255,.04)}
+.flap span{position:relative;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:94%}
+.flap.f2{height:30px;font-size:15px;opacity:.45}
+.flap.f1{opacity:.75}
+.flap.mid{height:76px;font-weight:800;font-size:clamp(26px,8.5vw,36px);color:var(--amber);background:linear-gradient(#232832 0 50%,#1c2029 50% 100%);border:1.5px solid var(--amber)}
+.flap-go{animation:flapgo 90ms ease-out}
+@keyframes flapgo{from{transform:rotateX(-75deg);filter:brightness(1.6)}to{transform:none;filter:none}}
+.flap.landed{animation:landed .7s ease-out}
+@keyframes landed{0%{background:var(--amber);color:var(--amber-ink)}60%{background:var(--amber);color:var(--amber-ink)}100%{}}
+.board.won{box-shadow:0 0 0 6px rgba(245,184,61,.25),0 0 70px rgba(245,184,61,.35)}
+.wheel.sm{width:min(44vw,170px);font-size:38px;box-shadow:0 0 0 8px var(--amber-soft),0 14px 30px rgba(0,0,0,.45)}
+.wheel.going{animation:pulse2 .6s infinite alternate;opacity:.85}
+@keyframes pulse2{to{transform:scale(.95)}}
+.ready{gap:20px}
+.farhead{padding:16px 0 6px;border-top:1px solid var(--line)}
+
 .ready{gap:26px}
 .ready .wheel{margin:10px 0}
 .reel.big{width:100%;padding:14px 12px;gap:8px;border-radius:24px;border:1.5px solid rgba(245,184,61,.45);box-shadow:0 0 40px rgba(245,184,61,.12);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 78%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 22%,#000 78%,transparent 100%)}
@@ -1234,6 +1253,7 @@ I.share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width
 I.redo='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
 I.check='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16 9.8"/></svg>';
 I.reel='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M15 4v16"/><path d="M5 12h2M11 12h2M17 12h2" stroke-width="3"/></svg>';
+I.dice2='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="2.5" y="8.5" width="11" height="11" rx="2.5" transform="rotate(-12 8 14)"/><rect x="11" y="3.5" width="10.5" height="10.5" rx="2.5" transform="rotate(14 16.25 8.75)"/><circle cx="5.6" cy="12.6" r="1" fill="currentColor"/><circle cx="8.3" cy="14.6" r="1" fill="currentColor"/><circle cx="10.9" cy="16.4" r="1" fill="currentColor"/><circle cx="14.4" cy="6.6" r="1" fill="currentColor"/><circle cx="18" cy="10.6" r="1" fill="currentColor"/></svg>';
 const tabIcons={play:I.dice,bars:I.pin,hist:I.trophy};
 
 /* ---------- state ---------- */
@@ -1283,7 +1303,10 @@ const listed=()=>VENUES.filter(v=>!S.nfu[v.id]);
 function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
 const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 /* bars that can come up in a spin: not hidden, optionally only new */
-function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&(!newOnly||isNew(v.id,c)))}
+// rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
+const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
+function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&!FAR.has(v.id)&&(!newOnly||isNew(v.id,c)))}
+const farHead=`<div class="farhead"><div class="eyebrow">Further afield</div><p class="note" style="margin:4px 0 0">Too far from the other rooftops for a game, but worth a trip on their own.</p></div>`;
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
 function nextOpen(list,t){ // earliest opening time later today among closed bars
@@ -1476,7 +1499,7 @@ const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}<
 
 /* ---------- intro ---------- */
 const SLIDES=[
- {art:I.reel,h:"Spin for your next rooftop",p:"One tap and Rooftop Roulette picks the bar for you. No debating, no planning."},
+ {art:I.dice2,h:"Spin for your next rooftop",p:"One tap and Rooftop Roulette picks the bar for you. No debating, no planning."},
  {art:I.go,h:"Get there however you like",p:"Walk it, run it, train it, Uber it. Your visit is logged in the app the moment you arrive."},
  {art:I.clock,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
 ];
@@ -1504,10 +1527,12 @@ function renderOb(){
     cta(`<button class="btn" id="obNext" type="button">Next</button>`,()=>$("obNext").onclick=()=>{S.ob=1;save();renderOb();$("v-ob").scrollTop=0});
     return;
   }
-  const groups={};VENUES.forEach(v=>{(groups[v.area]=groups[v.area]||[]).push(v)});
+  const groups={};VENUES.filter(v=>!FAR.has(v.id)).forEach(v=>{(groups[v.area]=groups[v.area]||[]).push(v)});
+  const far=VENUES.filter(v=>FAR.has(v.id)).sort((x,y)=>x.area.localeCompare(y.area)||x.name.localeCompare(y.name));
   const n=Object.keys(S.been).length;
   body.innerHTML=`<div><h1 class="q">Been to any already?</h1><p class="sub" style="margin:6px 0 0">Tick the rooftops you've been to. When you set up a game you can skip them and try somewhere new.</p></div>
-    ${Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([a,l])=>`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a)}</div><div class="card" style="padding:2px 14px">${l.sort((x,y)=>x.name.localeCompare(y.name)).map(v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)}</span><i></i></button>`).join("")}</div></div>`).join("")}`;
+    ${Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([a,l])=>`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a)}</div><div class="card" style="padding:2px 14px">${l.sort((x,y)=>x.name.localeCompare(y.name)).map(v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)}</span><i></i></button>`).join("")}</div></div>`).join("")}
+    ${far.length?`<div>${farHead}<div class="card" style="padding:2px 14px;margin-top:8px">${far.map(v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)} <small class="small">${esc(v.area)}</small></span><i></i></button>`).join("")}</div></div>`:""}`;
   body.querySelectorAll(".tick").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(S.been[id])delete S.been[id];else S.been[id]=1;save();b.setAttribute("aria-pressed",String(!!S.been[id]));const k=Object.keys(S.been).length;$("obDone").textContent=k?`Done · ${k} ticked`:"Skip for now"});
   cta(`<button class="btn" id="obDone" type="button">${n?`Done · ${n} ticked`:"Skip for now"}</button>`,()=>$("obDone").onclick=()=>{S.ob=2;save();startWizard()});
 }
@@ -1698,17 +1723,25 @@ function doSpin(force){
   spinning=true;seen("spin");g.finalBanner=false;renderPlay();
   const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
   const rows=[-2,-1,0,1,2];
-  $("stage").innerHTML=`<div class="ready spinning"><div class="eyebrow" style="color:var(--amber)">Spinning…</div><div class="reel big">${rows.map(o=>`<div class="reelrow${o===0?" mid":Math.abs(o)===1?" f1":" f2"}" id="q${o+2}"></div>`).join("")}</div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
+  $("stage").innerHTML=`<div class="ready spinning">
+      <div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>
+      ${boardHTML(["","","","",""],true)}
+      <div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div>
+      <button class="wheel sm going" type="button" disabled>SPIN</button></div>`;
   const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(42),58,78,104,136,176,220];
   let i=0,k=Math.floor(Math.random()*names.length);
   const step=()=>{
     const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
-    rows.forEach(o=>{const el=$("q"+(o+2));el.textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
+    rows.forEach(o=>{const el=$("q"+(o+2));el.querySelector("span").textContent=o===0&&last?pick.name:nm(o);el.classList.remove("flap-go");void el.offsetWidth;el.classList.add("flap-go")});
+    if(last){$("q2").classList.add("landed");$("board").classList.add("won")}
     tick(last?900:600+Math.random()*80);buzz(5);k++;
     if(!last){setTimeout(step,delays[i++]);return}
-    setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;ding();buzz(40);save();renderPlay();onLocation()},420);
+    setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;rollWild(g,pick.id);spinning=false;save();renderPlay();onLocation()},900);ding();buzz(40);
   };
   step();
+}
+function boardHTML(names,live){
+  return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
 }
 function answer(idx,yes){const v=G()&&G().visits[idx];if(v){v.counted=!!yes;save();renderPlay()}}
 
@@ -1851,11 +1884,12 @@ function renderPlay(){
       ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;
     if(animateId===v.id)animateId=null;
   }else{
-    const pool=basePool().length;
+    const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       <div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>
-      <button class="wheel" type="button" id="spinBtn">SPIN<small>${g.visits.length?"for the next rooftop":"for your first rooftop"}</small></button>
+      ${boardHTML([nm(0),nm(1),g.visits.length?"Next rooftop?":"Your first rooftop?",nm(2),nm(3)])}
       <div class="poolnum"><b>${pool}</b> rooftop${pool===1?"":"s"} in the mix</div>
+      <button class="wheel sm" type="button" id="spinBtn">SPIN</button>
       ${g.started?"":`<p class="note" style="text-align:center;margin:0">The clock starts when you spin.</p>`}</div>`;
   }
   g._man=g.target?needManual(g):false;
@@ -2059,7 +2093,8 @@ function renderBars(){
     const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
     intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
     extra=canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this game.</p>`;
-    rows=others.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    rows=others.filter(v=>!FAR.has(v.id)).map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    const fo=others.filter(v=>FAR.has(v.id));if(fo.length)rows.push(farHead,...fo.map(v=>rowHTML(v,os(v),barStatus(v,c),y)));
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
     const list=VENUES.filter(v=>{const s=barStatus(v,c);return s==="col"||s==="been"}).sort(sortD);
@@ -2074,11 +2109,12 @@ function renderBars(){
     if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
-    const list=VENUES.filter(v=>!S.nfu[v.id]&&(f==="all"||os(v).open)).sort(sortD);
+    const list0=VENUES.filter(v=>!S.nfu[v.id]&&(f==="all"||os(v).open)).sort(sortD),list=list0.filter(v=>!FAR.has(v.id)),flist=list0.filter(v=>FAR.has(v.id));
     intro=`Every rooftop in Sydney${f==="open"?" that's open right now":""}. ${tapHint}`;
     rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
+    if(flist.length)rows.push(farHead,...flist.map(v=>rowHTML(v,os(v),barStatus(v,c),y)));
     if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open right now.</div>`];
-    pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));
+    pins=list0.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));
   }
   $("barsIntro").innerHTML=`<p class="note" style="margin:0">${intro}</p>${extra}`;
   $("barsList").innerHTML=rows.join("");
