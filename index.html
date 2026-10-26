@@ -967,6 +967,10 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .zlist .zrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .zrow .t{flex:1;min-width:0}.zrow .t b{display:block;font-size:15px;font-weight:650}.zrow .t small{color:var(--muted);font-size:12.5px}
 .zrow.off .t{opacity:.45}
+.xo{appearance:none;flex:none;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:none;color:var(--muted);display:grid;place-items:center}
+.xo svg{width:15px;height:15px}
+.xo.on{border-color:var(--amber);color:var(--amber)}
+.xo:disabled{opacity:.3}
 .lo{appearance:none;border:1.5px solid var(--line);background:none;border-radius:99px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--muted);flex:none}
 .lo[aria-pressed="true"]{border-color:var(--red);color:var(--red)}
 .lo:disabled{opacity:.35}
@@ -1155,6 +1159,18 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .sheetbar.loading .eyebrow{color:var(--amber)}
 .sheetbar.loading .gmgo{background:rgba(255,255,255,.1);color:#fff}
 @keyframes shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
+.zsum{margin-top:12px}
+.zsum .chip{display:flex;align-items:center;gap:6px;color:var(--text)}
+.zsum .chip svg{width:14px;height:14px;color:var(--amber)}
+.zcount{display:flex;align-items:baseline;gap:10px}
+.zcount b{font-family:var(--head);font-weight:800;font-size:40px;line-height:1;color:var(--amber);letter-spacing:-.03em}
+.zcount span{color:var(--text);font-size:15.5px;font-weight:600}
+.zhead{display:flex;justify-content:space-between;align-items:baseline}
+.zhead h3{font-family:var(--head);font-weight:800;font-size:20px;letter-spacing:-.02em;margin:0}
+.card.zlist{padding:2px 16px}
+.card.zlist .zrow{gap:12px}
+.card.zlist .zrow{padding:12px 0}
+.card.zlist .zrow:first-child{border-top:0}
 </style>
 </head>
 <body>
@@ -1773,18 +1789,21 @@ function renderWiz(){
     const c=w.start,open=openIn(c,w.radius,t,w.newOnly).filter(v=>!excl.includes(v.id)),all=playable(inCircle(c,w.radius),false);
     const newCount=openIn(c,w.radius,t,true).length,col=collectedMap();
     const hasHistory=Object.keys(col).length||Object.keys(S.been).length;
-    body.innerHTML=`<div><h1 class="q">Your zone</h1><p class="sub" style="margin:6px 0 0"><b style="color:var(--amber)">${open.length} rooftops</b> ready to spin within ${w.radius} km of ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="map"><div id="zoneMap" style="height:280px"></div></div>
-      <div class="chips"><button class="chip" type="button" data-s="0">${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div>
-      <div class="card mix">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3 style="font-size:18px">In the mix</h3><span class="small">${open.length} rooftops</span></div>
-        <p class="note" style="margin:0">Tap <b>Leave out</b> on up to ${MAXOUT} you'd rather skip tonight. The fun's in letting the wheel surprise you.</p>
-        ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${newCount} new to you in this zone</small></span><span class="sw"></span></button>`:""}
-        <div class="zlist">${all.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been;
-          return `<div class="zrow${out||skip||!o.open?" off":""}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${been?" · Been":""}</small></span>${skip||!o.open?"":`<button class="lo" type="button" data-x="${v.id}" aria-pressed="${out}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"Left out":"Leave out"}</button>`}</div>`}).join("")}</div>
-      </div>
-      ${H.length?"":`<div class="card"><div class="eyebrow" style="margin-bottom:12px">How it works</div><div class="steps">${stepsHTML(RULES)}</div></div>`}
-      <p class="note">Fancy a change of scenery mid-game? You can move your zone once.</p>`;
+    const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
+    const row=v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been,dim=out||skip||!o.open;
+      const status=out?"Left out":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+      const btn=skip||!o.open?"":`<button class="xo${out?" on":""}" type="button" data-x="${v.id}" aria-pressed="${out}" aria-label="${out?"Put "+esc(v.name)+" back":"Leave "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?I.redo:I.x}</button>`;
+      return `<div class="zrow${dim?" off":""}"><span class="t"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></span>${btn}</div>`};
+    body.innerHTML=`<div><h1 class="q">Your zone</h1>
+        <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div></div>
+      <div class="map"><div id="zoneMap" style="height:240px"></div></div>
+      <div class="zcount"><b>${open.length}</b><span>rooftop${open.length===1?"":"s"} your spins can land on</span></div>
+      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${newCount} of ${openIn(c,w.radius,t,false).length} open here are new to you</small></span><span class="sw"></span></button>`:""}
+      <div>
+        <div class="zhead"><h3>Rooftops in your zone</h3><span class="small">${excl.length}/${MAXOUT} left out</span></div>
+        <p class="note" style="margin:2px 0 10px">Not feeling one tonight? Tap ✕ to leave it out. Up to ${MAXOUT}.</p>
+        <div class="card zlist">${sorted.map(row).join("")}</div>
+      </div>`;
     body.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();const y=$("v-wiz").scrollTop;renderWiz();$("v-wiz").scrollTop=y});
     body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();const y=$("v-wiz").scrollTop;renderWiz();$("v-wiz").scrollTop=y};
