@@ -2118,6 +2118,7 @@ function howSheet(){
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
+    ["Watch out for wildcards","Some spins come with a little challenge for the next bar."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
     <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet);
 }
@@ -2259,18 +2260,29 @@ function confetti(){
   for(let i=0;i<46;i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
 }
 const WILDS=[
- "Order something none of you have tried before.",
  "Bartender's choice for the whole group.",
+ "Order something none of you have tried before.",
  "Everyone orders the same thing.",
  "Pick the drink for the person on your left.",
  "Order the drink with the strangest name on the menu.",
- "Loser of rock-paper-scissors picks the round.",
+ "Rock-paper-scissors. Loser picks the next round.",
  "Order by pointing at the menu. No talking.",
+ "Order without saying the drink's name. Describe it instead.",
+ "Order something that matches someone's outfit.",
+ "Whoever's phone is on the lowest battery picks the drinks.",
+ "Ask the bartender for their favourite rooftop that isn't this one.",
+ "Ask the staff what the best thing on the menu is, and get that.",
+ "Group photo with the best view in the place.",
+ "Find out what a table nearby is celebrating, and toast them.",
+ "Water round. Everyone grabs one with their drink.",
  "Free re-spin: your next re-spin won't cost any time."
 ];
+// Wildcards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
 function rollWild(g,id){
-  if(g.visits.length<1||Math.random()>.3){g.wild=null;return}
-  let pool=WILDS.filter(w=>w!==(g.lastWild||""));const w=pool[Math.floor(Math.random()*pool.length)];
+  if(g.visits.length<1||Math.random()>.35){g.wild=null;return}
+  if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(WILDS.map((_,i)=>i));g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
+  const i=g.wdeck.shift(),w=WILDS[i];
+  S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
   g.wild={id,text:w};g.lastWild=w;if(w.startsWith("Free re-spin"))g.freeSkips=(g.freeSkips||0)+1;
 }
 function renderClock(){
