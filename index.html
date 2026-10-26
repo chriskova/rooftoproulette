@@ -677,8 +677,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 </style>
 <style>
 @font-face{font-family:"Big Shoulders Display";font-weight:500;font-display:swap;src:url(fonts/big-shoulders-display-latin-500-normal.woff2) format("woff2")}
-@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:swap;src:url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:600;font-display:swap;src:url(fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2")}
 @font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format("woff2")}
 :root{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;
@@ -686,7 +686,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.14);
   --green:#4ADE80;--green-soft:rgba(74,222,128,.12);--red:#FF5A4E;--blue:#5AA9FF;
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
-  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --head:"Bricolage Grotesque",system-ui,sans-serif;
   --cream:#F3EEE6;
   --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --r:18px;--tab:64px;
@@ -1131,14 +1131,30 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes swipehint{0%{transform:translateY(-10px) scale(.8);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}60%{transform:translateY(120px) scale(1);opacity:1}80%,100%{transform:translateY(140px) scale(.9);opacity:0}}
 @keyframes swipetrail{0%,15%{height:0}60%{height:110px}80%,100%{height:0}}
 .reelnote{text-align:center;margin:0}
-h1.q,h2.q{font-family:var(--serif);font-weight:400;font-size:clamp(34px,10vw,42px);line-height:1.02;letter-spacing:-.01em;color:var(--cream)}
-h1.q i,h2.q i{color:var(--amber)}
+h1.q,h2.q{font-family:var(--head);font-weight:800;font-size:clamp(28px,8.4vw,34px);line-height:1.04;letter-spacing:-.03em;color:var(--cream)}
+h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .sheetbar{cursor:pointer;position:relative;margin-bottom:4px}
 .sheetbar.photo{min-height:230px}
 .sheetbar .gmgo{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;z-index:2}
 .sheetbar:not(.photo) .gmgo{background:rgba(36,24,3,.12);color:var(--amber-ink)}
 .sheetbar .gmgo svg{width:15px;height:15px}
 #v-quick .opts{display:flex;flex-direction:column;gap:10px}
+.grouphd{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);padding:16px 0 4px}
+.grouphd:first-child{padding-top:10px}
+.rgchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
+.rgchips::-webkit-scrollbar{display:none}
+.rgchips .chip{flex:none;display:flex;align-items:center;gap:6px;color:var(--text)}
+.rgchips .chip svg{width:14px;height:14px}
+.rgchips .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+.modeline{margin:0;color:var(--muted);font-size:14.5px;line-height:1.4}
+.hero .modeline{color:rgba(243,238,230,.75)}
+.mode2{display:flex;flex-direction:column;gap:14px;padding:18px 20px}
+.mode2 h2.q{font-size:26px;margin:0 0 4px}
+.sheetbar.loading{background:#14161c;color:#fff;min-height:230px;justify-content:flex-end;overflow:hidden}
+.sheetbar.loading::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.07) 50%,transparent 70%);background-size:220% 100%;animation:shimmer 1.2s linear infinite}
+.sheetbar.loading .eyebrow{color:var(--amber)}
+.sheetbar.loading .gmgo{background:rgba(255,255,255,.1);color:#fff}
+@keyframes shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
 </style>
 </head>
 <body>
@@ -1164,8 +1180,12 @@ h1.q i,h2.q i{color:var(--amber)}
     <div class="hero">
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
+      <p class="modeline">The game: a rooftop crawl against the clock. Spin for a bar, get there, spin again.</p>
       <button class="btn" id="newGame" type="button">Start a new game</button>
-      <button class="btn line" id="quickGo" type="button">Just the one</button>
+    </div>
+    <div class="card mode2">
+      <div><h2 class="q">Just <i>the one</i></h2><p class="modeline">No game, no clock. We'll pick one open rooftop for you.</p></div>
+      <button class="btn line" id="quickGo" type="button">Pick one for us</button>
     </div>
     <div class="card">
       <div class="eyebrow" style="margin-bottom:12px">How it works</div>
@@ -1247,24 +1267,31 @@ h1.q i,h2.q i{color:var(--amber)}
 <script>
 "use strict";
 const VENUES=[{"id":"untied","name":"Untied","area":"Barangaroo","lat":-33.865555,"lng":151.201996,"rating":4.7,"address":"Level 4, 400 Barangaroo Ave","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1320]],[[720,1440]],[[720,1440]],[[720,1260]]],"pid":"ChIJF9mEdEeuEmsRO3QF3fOwfs8"},{"id":"jimmy-s-rooftop","name":"Jimmy's Rooftop","area":"Sydney CBD","lat":-33.866292,"lng":151.207502,"rating":4.3,"address":"Level 4, 320 George St","hours":[[],[[720,1440]],[[720,1440]],[[720,1620]],[[720,1620]],[[720,1620]],[[900,1440]]],"pid":"ChIJTRT8DNKvEmsRzIMltEcEzRY"},{"id":"sora-rooftop-bar","name":"Sora Rooftop Bar","area":"Sydney CBD","lat":-33.872503,"lng":151.205453,"rating":4.3,"address":"Level 9, 285 Clarence St","hours":[[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1560]],[[720,1560]],[]],"pid":"ChIJIZl-CeivEmsR8QKYWFwFa0w"},{"id":"above-319","name":"Above 319","area":"Sydney CBD","lat":-33.875183,"lng":151.204269,"rating":4.2,"address":"Rooftop, 319 Sussex St","hours":[[],[],[[990,1260]],[[990,1260]],[[990,1380]],[[780,1380]],[[780,1200]]],"pid":"ChIJN_enO-GvEmsRDjvdxEZSBmo"},{"id":"harper-rooftop","name":"Harper Rooftop","area":"Sydney CBD","lat":-33.874979,"lng":151.207602,"rating":3.7,"address":"Level 7, 339 Pitt St","hours":[[],[],[[960,1380]],[[960,1380]],[[960,1380]],[[720,1380]],[[720,1380]]],"pid":"ChIJu0OKArCvEmsRfENSCqhDNDA"},{"id":"j-ji","name":"Jōji","area":"Sydney CBD","lat":-33.868396,"lng":151.207405,"rating":4.6,"address":"Level 5, 388 George St","hours":[[[960,1380]],[[720,1380]],[[720,1440]],[[720,1500]],[[720,1500]],[[720,1560]],[[960,1380]]],"pid":"ChIJ3eP7NQCvEmsRC-Yj4qiks8U"},{"id":"the-rook","name":"The Rook","area":"Sydney CBD","lat":-33.86973,"lng":151.20635,"rating":4.4,"address":"Level 7, 56 York St","hours":[[[720,1320]],[[720,1320]],[[720,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[]],"pid":"ChIJs-zIED-uEmsRsHT2GJUVTUQ"},{"id":"babylon-rooftop","name":"Babylon Rooftop","area":"Sydney CBD","lat":-33.869726,"lng":151.208454,"rating":4.2,"address":"Level 7, 182 Pitt St","hours":[[[720,1320]],[[720,1380]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1320]]],"pid":"ChIJ1bVicD6uEmsR84q2UI62xC4"},{"id":"the-rooftop-sydney","name":"The Rooftop Sydney","area":"Sydney CBD","lat":-33.871149,"lng":151.204121,"rating":4.1,"address":"Shelbourne Hotel, 200 Sussex St","hours":[[],[],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]],"pid":"ChIJSSLfNjmuEmsRCtzLzCGEwDY"},{"id":"jacksons-on-george","name":"Jacksons on George","area":"Sydney CBD","lat":-33.861808,"lng":151.208123,"rating":3.9,"address":"176 George St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1560]]],"pid":"ChIJT_GmSEKuEmsRyjWPfU3NleQ"},{"id":"taylor-s-rooftop","name":"Taylor's Rooftop","area":"Sydney CBD","lat":-33.863841,"lng":151.208726,"rating":4.0,"address":"Republic Hotel, 69 Pitt St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]],"pid":"ChIJS4fpjEGuEmsRlcCqLAjLgw4"},{"id":"hotel-sweeney-s","name":"Hotel Sweeney's","area":"Sydney CBD","lat":-33.872606,"lng":151.20585,"rating":4.1,"address":"236 Clarence St","hours":[[[600,1560]],[[600,1560]],[[600,1560]],[[600,1560]],[[600,1650]],[[600,1650]],[[720,1320]]],"pid":"ChIJLSVxoj6uEmsR_P552YU9Ii0"},{"id":"the-bristol","name":"The Bristol","area":"Sydney CBD","lat":-33.867754,"lng":151.203187,"rating":3.9,"address":"81 Sussex St","hours":[[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[600,1620]],[[720,1620]],[]],"pid":"ChIJ2_Y-oziuEmsRSh6QEqRiuwA"},{"id":"the-sussex-hotel","name":"The Sussex Hotel","area":"Sydney CBD","lat":-33.865008,"lng":151.203379,"rating":4.0,"address":"20 Sussex St","hours":[[[600,1440]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1560]],[[720,1560]],[]],"pid":"ChIJRRcbJEeuEmsRGUevvdn564Q"},{"id":"sky-bar-shell-house","name":"Sky Bar, Shell House","area":"Sydney CBD","lat":-33.865166,"lng":151.206718,"rating":4.0,"address":"37 Margaret St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[]],"pid":"ChIJNT38zwmvEmsRiZHInwB-M60"},{"id":"old-mate-s-place","name":"Old Mate's Place","area":"Sydney CBD","lat":-33.869547,"lng":151.205153,"rating":4.7,"address":"Level 4, 199 Clarence St","hours":[[],[[960,1560]],[[960,1560]],[[960,1560]],[[900,1560]],[[900,1560]],[[900,1560]]],"pid":"ChIJuasXSJivEmsR8XembUrbNVc"},{"id":"zephyr","name":"Zephyr","area":"Sydney CBD","lat":-33.869509,"lng":151.203289,"rating":4.2,"address":"Level 12, 161 Sussex St","hours":[[],[[900,1320]],[[900,1320]],[[900,1320]],[[900,1440]],[[840,1440]],[[840,1320]]],"pid":"ChIJcZ8-ITmuEmsRiu6ZF0314rw"},{"id":"panorama-bar","name":"Panorama Bar","area":"Sydney CBD","lat":-33.867884,"lng":151.209637,"rating":4.1,"address":"The International, 25 Martin Pl","hours":[[],[[960,1440]],[[960,1440]],[[900,1440]],[[900,1440]],[[960,1440]],[]],"pid":"ChIJc-qWKQCvEmsRxi8m2WzdqxI"},{"id":"aster","name":"Aster","area":"Sydney CBD","lat":-33.862904,"lng":151.212384,"rating":4.2,"address":"Level 32, 117 Macquarie St","hours":[[[960,1320]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1440]],[[960,1320]]],"pid":"ChIJF0c8VZWvEmsRfNK5hhY70JA"},{"id":"cirq","name":"CIRQ","area":"Barangaroo","lat":-33.862548,"lng":151.201074,"rating":4.1,"address":"Level 26, 1 Barangaroo Ave","hours":[[],[],[[960,1440]],[[960,1440]],[[960,1500]],[[960,1500]],[[960,1320]]],"pid":"ChIJiRQJU9avEmsRDzWfv2otLpg"},{"id":"smoke-bar","name":"Smoke Bar","area":"Barangaroo","lat":-33.865576,"lng":151.201534,"rating":4.4,"address":"Level 2, 35 Barangaroo Ave","hours":[[],[[900,1320]],[[900,1440]],[[900,1440]],[[900,1500]],[[900,1500]],[[900,1380]]],"pid":"ChIJ3818dUeuEmsR8lhLI5I9PWs"},{"id":"zeta-bar","name":"Zeta Bar","area":"Sydney CBD","lat":-33.87175,"lng":151.207175,"rating":3.7,"address":"Hilton, Level 4, 488 George St","hours":[[],[],[],[],[[1020,1440]],[[1020,1440]],[]],"pid":"ChIJodn99D6uEmsRqGYZbqVW-go"},{"id":"the-glenmore","name":"The Glenmore","area":"The Rocks","lat":-33.858627,"lng":151.207429,"rating":4.3,"address":"96 Cumberland St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1500]],[[660,1500]],[[660,1440]]],"pid":"ChIJz66NJ0OuEmsRRA_Dvawy8kI"},{"id":"henry-deane","name":"Henry Deane","area":"Millers Point","lat":-33.857891,"lng":151.202225,"rating":4.0,"address":"Hotel Palisade, 35 Bettington St","hours":[[],[[960,1320]],[[960,1320]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1320]]],"pid":"ChIJmwkf3USuEmsRAQuLyMIFeZ4"},{"id":"keg-brew","name":"Keg & Brew","area":"Surry Hills","lat":-33.883864,"lng":151.209905,"rating":4.3,"address":"26 Foveaux St","hours":[[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1620]],[[600,1620]],[[600,1320]]],"pid":"ChIJyVf-AyKuEmsRf5Ez1dNyUD0"},{"id":"taphouse","name":"Taphouse","area":"Darlinghurst","lat":-33.884582,"lng":151.218117,"rating":4.3,"address":"122 Flinders St","hours":[[[960,1380]],[[960,1380]],[[960,1380]],[[960,1440]],[[690,1500]],[[690,1500]],[[690,1380]]],"pid":"ChIJl3F0uxuuEmsR1-VJdifvCm4"},{"id":"colombian-hotel","name":"Colombian Hotel","area":"Darlinghurst","lat":-33.87958,"lng":151.215284,"rating":3.8,"address":"117 Oxford St","hours":[[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]],[[540,1800]]],"pid":"ChIJ04H5RReuEmsRzuSfVMcRz6U"},{"id":"the-tilbury","name":"The Tilbury","area":"Woolloomooloo","lat":-33.86978,"lng":151.220455,"rating":4.1,"address":"12 Nicholson St","hours":[[[660,1200]],[[660,1200]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]],"pid":"ChIJ70-WHm2uEmsRQJ9NjYZ9QOQ"},{"id":"the-imperial","name":"The Imperial","area":"Erskineville","lat":-33.899142,"lng":151.182612,"rating":4.2,"address":"35 Erskineville Rd","hours":[[[960,1320]],[[960,1320]],[[960,1380]],[[960,1380]],[[960,1620]],[[720,1680]],[[720,1320]]],"pid":"ChIJn2KDQDSwEmsRqtyqeKSgUb8"},{"id":"the-surry-rooftop","name":"The Surry Rooftop","area":"Surry Hills","lat":-33.88192,"lng":151.209761,"rating":4.7,"address":"Level 11/28 Albion St","hours":[[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]],[[540,1380]]],"pid":"ChIJS_AcH-2vEmsRC9xpdenATGE"},{"id":"aurora-hotel-rooftop","name":"Aurora Hotel Rooftop","area":"Surry Hills","lat":-33.884126,"lng":151.208419,"rating":4.0,"address":"324 Elizabeth St","hours":[[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]],[[540,1680]]],"pid":"ChIJQ8DXjiGuEmsRwXqm3Mt5HOo"},{"id":"slims-rooftop","name":"Slims Rooftop","area":"Darlinghurst","lat":-33.874257,"lng":151.214643,"rating":3.9,"address":"47/49 William St","hours":[[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1620]],[[600,1440]]],"pid":"ChIJz3feFRSuEmsRtgAiFAPuhac"},{"id":"the-strawberry","name":"The Strawberry","area":"Surry Hills","lat":-33.886524,"lng":151.208032,"rating":4.0,"address":"453 Elizabeth St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]],"pid":"ChIJgzJwTSCuEmsR-_il2-0vp6w"},{"id":"east-village-hotel","name":"East Village Hotel","area":"Darlinghurst","lat":-33.877594,"lng":151.216632,"rating":4.2,"address":"234 Palmer St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]],"pid":"ChIJb8UmMBGuEmsR0lfFBnciMAM"},{"id":"burdekin-rooftop","name":"Burdekin Rooftop","area":"Darlinghurst","lat":-33.877028,"lng":151.212957,"rating":4.5,"address":"2 Oxford St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1440]],[[720,1440]],[]],"pid":"ChIJp-z_ImCvEmsRlf4URZ1mG2c"},{"id":"kasbah-the-strand","name":"Kasbah, The Strand","area":"Darlinghurst","lat":-33.874564,"lng":151.216521,"rating":4.5,"address":"99 William St","hours":[[],[],[],[[960,1380]],[[960,1440]],[[780,1440]],[[780,1260]]],"pid":"ChIJx1TSsbSvEmsR9QfDNjgr_KU"},{"id":"monica-rooftop","name":"Monica Rooftop","area":"Paddington","lat":-33.881801,"lng":151.219223,"rating":4.1,"address":"Level 5/1 Oxford St","hours":[[[900,1320]],[[900,1320]],[[900,1320]],[[900,1320]],[[720,1435]],[[720,1435]],[[720,1320]]],"pid":"ChIJr6_ybjyvEmsR6Wh4-D7iuJ4"},{"id":"royal-hotel","name":"Royal Hotel","area":"Paddington","lat":-33.882399,"lng":151.228503,"rating":4.1,"address":"237 Glenmore Rd","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[600,1440]],[[660,1320]]],"pid":"ChIJfT3LxwiuEmsRlc_AQvE1Q8I"},{"id":"the-light-brigade","name":"The Light Brigade","area":"Woollahra","lat":-33.888535,"lng":151.232214,"rating":4.0,"address":"Cnr Oxford St & Jersey Rd","hours":[[[690,1440]],[[690,1440]],[[690,1440]],[[690,1440]],[[690,1500]],[[690,1500]],[[690,1320]]],"pid":"ChIJNbXEageuEmsRnctwYerAMgM"},{"id":"sweethearts-terraza","name":"Sweethearts Terraza","area":"Potts Point","lat":-33.873366,"lng":151.223741,"rating":4.2,"address":"Level 3/33-35 Darlinghurst Rd","hours":[[],[],[[1020,1440]],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]]],"pid":"ChIJwd3FH1mvEmsRJdynbd6KmtU"},{"id":"kings-cross-hotel","name":"Kings Cross Hotel","area":"Potts Point","lat":-33.874903,"lng":151.222045,"rating":4.1,"address":"244-248 William St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]]],"pid":"ChIJ_Zmujw2uEmsRAaqIm1aG_8E"},{"id":"arturo-s-rooftop","name":"Arturo's Rooftop","area":"Woolloomooloo","lat":-33.869182,"lng":151.219488,"rating":3.6,"address":"Level 2/2 Bourke St","hours":[[],[],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]],[[720,1200]]],"pid":"ChIJl2HU9MevEmsRUYj9_nsucvs"},{"id":"green-moustache","name":"Green Moustache","area":"North Sydney","lat":-33.838401,"lng":151.206795,"rating":4.3,"address":"Level 10/100 Miller St","hours":[[],[[705,1320]],[[705,1320]],[[690,1320]],[[690,1350]],[[690,1350]],[]],"pid":"ChIJk1sOd7ivEmsRKXWPQ82SEtE"},{"id":"four-hundred","name":"Four Hundred","area":"North Sydney","lat":-33.840308,"lng":151.207483,"rating":4.7,"address":"Greenwood Plaza Rooftop","hours":[[],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[[720,1380]],[]],"pid":"ChIJGfh_AZ6vEmsRwklZQAumXW4"},{"id":"the-treehouse-hotel","name":"The Treehouse Hotel","area":"North Sydney","lat":-33.839196,"lng":151.206475,"rating":4.3,"address":"60 Miller St","hours":[[[720,1320]],[[720,1320]],[[720,1380]],[[720,1380]],[[720,1380]],[[1020,1380]],[]],"pid":"ChIJx1H_TfKuEmsRHok6k4ljUVs"},{"id":"le-rooftop","name":"Le Rooftop","area":"McMahons Point","lat":-33.843322,"lng":151.204459,"rating":4.1,"address":"178 Blues Point Rd","hours":[[],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]],[[1050,1260]]],"pid":"ChIJJzYeqzKvEmsRwC_wUaZpXZY"},{"id":"websters","name":"Websters","area":"Newtown","lat":-33.896988,"lng":151.179059,"rating":4.1,"address":"323 King St","hours":[[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1680]],[[600,1440]]],"pid":"ChIJ6zc9zTawEmsRnod33Al5njQ"},{"id":"corridor","name":"Corridor","area":"Newtown","lat":-33.89357,"lng":151.183129,"rating":4.4,"address":"153A King St","hours":[[[1020,1380]],[[1020,1380]],[[1020,1380]],[[1020,1380]],[[960,1440]],[[900,1440]],[[900,1380]]],"pid":"ChIJI6pXTzGwEmsR2knXcm5PFtQ"},{"id":"hotel-steyne","name":"Hotel Steyne","area":"Manly","lat":-33.796961,"lng":151.287679,"rating":3.7,"address":"75 The Corso","hours":[[[540,1620]],[[540,1620]],[[540,1620]],[[540,1620]],[[540,1800]],[[540,1800]],[[540,720]]],"pid":"ChIJ0SobZw-rEmsR8XKo0XEZCPE"},{"id":"coogee-pavilion-rooftop","name":"Coogee Pavilion Rooftop","area":"Coogee","lat":-33.918713,"lng":151.258244,"rating":3.7,"address":"Level 3/169 Dolphin St","hours":[[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[660,1440]],[[660,1440]]],"pid":"ChIJUR24XvqzEmsRFFs3JRkMvyw"},{"id":"the-rooftop-pyrmont","name":"The Rooftop, Pyrmont","area":"Pyrmont","lat":-33.871066,"lng":151.194971,"rating":3.8,"address":"214-216 Harris St","hours":[[],[],[[720,1350]],[[720,1350]],[[720,1440]],[[720,1440]],[[720,1260]]],"pid":"ChIJqZNV7DWvEmsRWMshJxavX24"},{"id":"the-old-clare-rooftop","name":"The Old Clare Rooftop","area":"Chippendale","lat":-33.884421,"lng":151.201388,"rating":3.8,"address":"Level 4, 1 Kensington St","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1320]],[[960,1320]],[]],"pid":"ChIJoeLDLyavEmsRksXCvNmiOcQ"},{"id":"the-library-bar","name":"The Library Bar","area":"Sydney CBD","lat":-33.8665466,"lng":151.2134094,"rating":4.3,"address":"Mitchell Library, 1 Shakespeare Pl","hours":[[],[],[[960,1320]],[[960,1320]],[[960,1320]],[[960,1320]],[]],"pid":"ChIJc1vwpumvEmsRE7WYsnNTYBo"},{"id":"martinez","name":"Martinez","area":"Sydney CBD","lat":-33.8627915,"lng":151.2112344,"rating":4.2,"address":"Quay Quarter Tower, 50 Bridge St","hours":[[[690,1260]],[[690,1260]],[[690,1260]],[[690,1260]],[[690,1260]],[],[]],"pid":"ChIJt5CEcQ2vEmsR6c3vf6d45Os"},{"id":"the-butler","name":"The Butler","area":"Potts Point","lat":-33.871688,"lng":151.22268,"rating":4.6,"address":"123 Victoria St","hours":[[[960,1380]],[[960,1380]],[[720,1380]],[[720,1380]],[[720,1440]],[[720,1440]],[[720,1320]]],"pid":"ChIJk5rNr3KuEmsRQSgDz3qgIm0"},{"id":"the-toxteth","name":"The Toxteth","area":"Glebe","lat":-33.8768,"lng":151.1849,"rating":4.1,"address":"345 Glebe Point Rd","hours":[[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[660,1320]]],"pid":"ChIJ2TPEbdOvEmsRt8I7LQF5I3I"},{"id":"the-fernery","name":"The Fernery","area":"Mosman","lat":-33.8283958,"lng":151.2439408,"rating":4.2,"address":"719 Military Rd","hours":[[],[],[[720,1320]],[[720,1320]],[[720,1440]],[[720,1440]],[[720,1260]]],"pid":"ChIJp1qr8hqsEmsR8tBjPXYFOKo"},{"id":"socal","name":"SoCal","area":"Neutral Bay","lat":-33.830924,"lng":151.221458,"rating":4.4,"address":"1 Young St","hours":[[[1020,1440]],[[1020,1440]],[[1020,1440]],[[1020,1440]],[[720,1440]],[[720,1440]],[[720,1440]]],"pid":"ChIJY0p97IWJtAER-iCXGhiYGpA"},{"id":"kiln","name":"Kiln","area":"Surry Hills","lat":-33.8788571,"lng":151.209904,"rating":4.4,"address":"Level 18, Ace Hotel, 53 Wentworth Ave","hours":[[[1020,1380]],[[1020,1380]],[[1020,1380]],[[720,1380]],[[720,1440]],[[720,1440]],[]],"pid":"ChIJ5cqf0LavEmsRgYffN6rZabM"},{"id":"white-horse","name":"White Horse","area":"Surry Hills","lat":-33.8853965,"lng":151.2138641,"rating":4.7,"address":"381 Crown St","hours":[[],[[900,1380]],[[900,1380]],[[900,1380]],[[720,1410]],[[720,1410]],[[720,1260]]],"pid":"ChIJ75-1BwCvEmsRdwPXo6alBO4"},{"id":"the-lansdowne","name":"The Lansdowne","area":"Chippendale","lat":-33.8847945,"lng":151.1950215,"rating":4.2,"address":"2-6 City Rd","hours":[[],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1620]],[[720,1620]],[[720,1440]]],"pid":"ChIJ405xzymuEmsRG73wo6BzHw0"},{"id":"bar-ombre","name":"Bar Ombré","area":"Sydney CBD","lat":-33.8619735,"lng":151.210137,"rating":4.0,"address":"Level 3, Gateway, Alfred St","hours":[[[960,1440]],[[960,1440]],[[960,1440]],[[720,1440]],[[720,1440]],[[720,1440]],[[720,1320]]],"pid":"ChIJD4oA-FWvEmsRfMSH7M35uIc","tempClosed":true},{"id":"the-mercantile","name":"The Mercantile","area":"The Rocks","lat":-33.8571355,"lng":151.2083827,"rating":4.3,"address":"25 George St","hours":[[[630,1320]],[[630,1320]],[[630,1320]],[[630,1380]],[[600,1410]],[[600,1410]],[[600,1320]]],"pid":"ChIJkdqMPV2uEmsRaGwdOX-V2Oc"},{"id":"harbour-view-hotel","name":"Harbour View Hotel","area":"The Rocks","lat":-33.8565983,"lng":151.2073426,"rating":4.3,"address":"18 Lower Fort St","hours":[[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1440]],[[660,1320]]],"pid":"ChIJV_wrHl2uEmsR92Q_ubhgXDI"},{"id":"cauliflower-hotel","name":"The Cauliflower Hotel","area":"Waterloo","lat":-33.898883,"lng":151.200268,"rating":4.4,"address":"123 Botany Rd","hours":[[[600,1380]],[[600,1380]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1320]]],"pid":"ChIJibUEE8WxEmsRas8y_hrd_No"},{"id":"marrickville-springs","name":"Marrickville Springs","area":"Marrickville","lat":-33.9102514,"lng":151.1626457,"rating":4.6,"address":"Philter Brewing, 92-98 Sydenham Rd","hours":[[],[],[[900,1320]],[[900,1320]],[[720,1440]],[[720,1440]],[[720,1260]]],"pid":"ChIJ6V6RpT6xEmsRFPMvNbJ9zXM"},{"id":"watsons-bay-hotel","name":"Watsons Bay Boutique Hotel","area":"Watsons Bay","lat":-33.8429855,"lng":151.2823156,"rating":4.2,"address":"10 Marine Parade","hours":[[[660,1260]],[[660,1260]],[[660,1260]],[[660,1260]],[[660,1320]],[[600,1320]],[[600,1320]]],"pid":"ChIJg6K8SYqsEmsRc90_ZVkqUzU"},{"id":"royal-oak-double-bay","name":"Royal Oak Hotel","area":"Double Bay","lat":-33.8771556,"lng":151.2414361,"rating":4.2,"address":"28 Bay St","hours":[[[600,1440]],[[600,1440]],[[600,1440]],[[600,1440]],[[600,1500]],[[600,1500]],[[600,1380]]],"pid":"ChIJt04AY-etEmsR4KjbC2RTD1M"},{"id":"intercontinental-double-bay","name":"Rooftop at InterContinental Double Bay","area":"Double Bay","lat":-33.8763177,"lng":151.243405,"rating":4.0,"address":"33 Cross St","hours":[[[720,1140]],[[720,1140]],[[720,1140]],[[720,1140]],[[720,1140]],[[720,1140]],[[720,1140]]],"pid":"ChIJ_zdFct2tEmsRfFCl6ILF20g"},{"id":"bridgeview-hotel","name":"Bridgeview Hotel","area":"Willoughby","lat":-33.8072602,"lng":151.1990473,"rating":4.1,"address":"580 Willoughby Rd","hours":[[[600,1500]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1500]],[[600,1320]]],"pid":"ChIJs19DfVtTDWsRx-3_9Wx0jOg"},{"id":"manly-greenhouse","name":"Manly Greenhouse","area":"Manly","lat":-33.7974882,"lng":151.2882014,"rating":4.3,"address":"36-38 South Steyne","hours":[[[900,1440]],[],[],[[900,1440]],[[900,1440]],[[900,1440]],[[900,1440]]],"pid":"ChIJg6p7bg-rEmsRIh4Xw6XtYoE"}];
+/* Places, grouped into regions. Each bar belongs to one area (from its suburb).
+   Areas with enough rooftops close together can be a game's starting point; the rest are still on the map,
+   in their region, and in Just the one. */
+const REGIONS=[
+ {name:"City",d:"CBD, The Rocks, Barangaroo, Pyrmont"},
+ {name:"East",d:"Surry Hills, Darlinghurst, Potts Point, Paddington, Double Bay, Watsons Bay, Coogee"},
+ {name:"Inner West",d:"Newtown, Erskineville, Glebe, Chippendale, Marrickville"},
+ {name:"North",d:"North Sydney, Neutral Bay, Mosman, Willoughby, Manly"}];
 const AREAS=[
- {name:"Town Hall",d:"City centre",lat:-33.8732,lng:151.2069},
- {name:"Martin Place",d:"City centre",lat:-33.8678,lng:151.2113},
- {name:"Wynyard",d:"City north",lat:-33.8659,lng:151.2059},
- {name:"Circular Quay",d:"Harbour & The Rocks",lat:-33.8614,lng:151.2108},
- {name:"Barangaroo",d:"Waterfront",lat:-33.8630,lng:151.2017},
- {name:"Central",d:"City south",lat:-33.8832,lng:151.2063},
- {name:"Darlinghurst",d:"Oxford St",lat:-33.8790,lng:151.2183},
- {name:"Surry Hills",d:"Crown St",lat:-33.8857,lng:151.2122},
- {name:"Potts Point",d:"Kings Cross",lat:-33.8730,lng:151.2235},
- {name:"Pyrmont",d:"Darling Harbour",lat:-33.8705,lng:151.1947},
- {name:"North Sydney",d:"North shore",lat:-33.8403,lng:151.2073},
- {name:"Newtown",d:"Inner west",lat:-33.8978,lng:151.1793},
- {name:"Glebe",d:"Glebe Point Rd",lat:-33.8790,lng:151.1870},
- {name:"Double Bay",d:"Eastern suburbs",lat:-33.8770,lng:151.2420},
- {name:"Manly",d:"Northern beaches",lat:-33.7988,lng:151.2860},
- {name:"Coogee",d:"Eastern beaches",lat:-33.9205,lng:151.2560}
+ {name:"The City",reg:"City",d:"CBD, The Rocks, Barangaroo, Pyrmont",lat:-33.8668,lng:151.2068,src:["Sydney CBD","The Rocks","Barangaroo","Millers Point","Pyrmont"]},
+ {name:"Surry Hills & Darlinghurst",reg:"East",d:"Crown St, Oxford St",lat:-33.8812,lng:151.2138,src:["Surry Hills","Darlinghurst","Waterloo"]},
+ {name:"Potts Point",reg:"East",d:"Kings Cross, Woolloomooloo",lat:-33.8722,lng:151.2222,src:["Potts Point","Woolloomooloo"]},
+ {name:"Paddington",reg:"East",d:"Paddington, Woollahra",lat:-33.8850,lng:151.2290,src:["Paddington","Woollahra"]},
+ {name:"Double Bay",reg:"East",d:"Eastern suburbs",lat:-33.8770,lng:151.2420,src:["Double Bay"]},
+ {name:"Watsons Bay",reg:"East",d:"South Head",lat:-33.8430,lng:151.2823,src:["Watsons Bay"]},
+ {name:"Coogee",reg:"East",d:"Eastern beaches",lat:-33.9205,lng:151.2560,src:["Coogee"]},
+ {name:"Newtown",reg:"Inner West",d:"King St, Erskineville",lat:-33.8960,lng:151.1810,src:["Newtown","Erskineville"]},
+ {name:"Glebe & Chippendale",reg:"Inner West",d:"Glebe Point Rd, Broadway",lat:-33.8820,lng:151.1930,src:["Glebe","Chippendale"]},
+ {name:"Marrickville",reg:"Inner West",d:"Sydenham Rd",lat:-33.9103,lng:151.1626,src:["Marrickville"]},
+ {name:"North Sydney",reg:"North",d:"Miller St, McMahons Point",lat:-33.8400,lng:151.2065,src:["North Sydney","McMahons Point"]},
+ {name:"Neutral Bay & Mosman",reg:"North",d:"Military Rd",lat:-33.8300,lng:151.2320,src:["Neutral Bay","Mosman"]},
+ {name:"Willoughby",reg:"North",d:"Willoughby Rd",lat:-33.8073,lng:151.1990,src:["Willoughby"]},
+ {name:"Manly",reg:"North",d:"Northern beaches",lat:-33.7975,lng:151.2870,src:["Manly"]}
 ];
+const areaOf=v=>AREAS.find(a=>a.src.includes(v.area))||AREAS.slice().sort((a,b)=>dist(v,a)-dist(v,b))[0];
 const RADII=[1,1.5,2],LENS=[60,120],SKIPS=3;
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const KEY="rr-app-v3",HKEY="rr-history-v2";
@@ -1339,7 +1366,10 @@ const dateTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{weekday:"short",day:"
 function dist(a,b){const R=6371000,t=x=>x*Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin(t(b.lat-a.lat)/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(t(b.lng-a.lng)/2)**2))}
 const km=m=>(m/1000).toFixed(m<10000?1:0)+" km";
 const mOrKm=m=>m<1000?Math.round(m/10)*10+" m":km(m);
-const nearestArea=p=>AREAS.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0].name;
+const GAME_AREAS=()=>AREAS.filter(a=>VENUES.some(v=>areaOf(v)===a&&!FAR.has(v.id)));
+const nearestArea=p=>GAME_AREAS().sort((a,b)=>dist(p,a)-dist(p,b))[0].name;
+// list rows grouped under area headings, areas in their usual order
+function groupedRows(list,row){const by=new Map(AREAS.map(a=>[a,[]]));list.forEach(v=>by.get(areaOf(v)).push(v));const out=[];by.forEach((l,a)=>{if(l.length)out.push(`<div class="grouphd">${esc(a.name)}</div>`,...l.map(row))});return out}
 
 /* ---------- collection ---------- */
 function collectedMap(){ // id -> first date collected in a game
@@ -1356,7 +1386,6 @@ const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 // rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
 const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
 function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&!FAR.has(v.id)&&(!newOnly||isNew(v.id,c)))}
-const farHead=`<div class="farhead"><div class="eyebrow">Further afield</div><p class="note" style="margin:4px 0 0">Too far from the other rooftops for a game, but worth a trip on their own.</p></div>`;
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
 function nextOpen(list,t){ // earliest opening time later today among closed bars
@@ -1477,28 +1506,32 @@ const gmapsURL=v=>`https://www.google.com/maps/search/?api=1&query=${encodeURICo
 // Seeing the same bar again (after the app reloads) doesn't use up one of the 40.
 const PH_BARS=40,PH_LOADS=120,phMem={},phWait={};
 function phDay(){try{const d=JSON.parse(localStorage.getItem("rr-ph")||"{}");if(d.k===new Date().toDateString()&&Array.isArray(d.ids))return d}catch(e){}return {k:new Date().toDateString(),ids:[],n:0}}
-function phAllowed(id){const d=phDay();if(d.n>=PH_LOADS)return false;return d.ids.includes(id)||d.ids.length<PH_BARS}
-function phBump(id){try{const d=phDay();if(!d.ids.includes(id))d.ids.push(id);d.n++;localStorage.setItem("rr-ph",JSON.stringify(d))}catch(e){}}
+// Browsing the Rooftops tab has its own, smaller allowance (25 bars a day), so it can't use up a game's photos.
+const PH_KIND={play:{key:"rr-ph",bars:PH_BARS,loads:PH_LOADS},browse:{key:"rr-ph-b",bars:25,loads:60}};
+function phDayK(k){try{const d=JSON.parse(localStorage.getItem(PH_KIND[k].key)||"{}");if(d.k===new Date().toDateString()&&Array.isArray(d.ids))return d}catch(e){}return {k:new Date().toDateString(),ids:[],n:0}}
+function phAllowed(id,k){k=k||"play";const d=phDayK(k);if(d.n>=PH_KIND[k].loads)return false;return d.ids.includes(id)||d.ids.length<PH_KIND[k].bars}
+function phBump(id,k){k=k||"play";try{const d=phDayK(k);if(!d.ids.includes(id))d.ids.push(id);d.n++;localStorage.setItem(PH_KIND[k].key,JSON.stringify(d))}catch(e){}}
 async function placeId(v){
   if(v.pid)return v.pid;S.pids=S.pids||{};if(S.pids[v.id])return S.pids[v.id];
   const {Place}=await google.maps.importLibrary("places");
   const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, Sydney NSW`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
   const id=r&&r.places&&r.places[0]&&r.places[0].id;if(id){S.pids[v.id]=id;save()}return id;
 }
-function barPhoto(v){
+function barPhoto(v,kind){
+  kind=kind||"play";
   if(phMem[v.id]!==undefined)return Promise.resolve(phMem[v.id]);
   if(phWait[v.id])return phWait[v.id];
   return phWait[v.id]=(async()=>{
     try{
-      if(!phAllowed(v.id))return null;
+      if(!phAllowed(v.id,kind))return null;
       await gload();if(gBad)return null;
       const id=await placeId(v);if(!id)return phMem[v.id]=null;
       const {Place}=await google.maps.importLibrary("places");
       const pl=new Place({id});await pl.fetchFields({fields:["photos"]});
       const ph=pl.photos&&pl.photos[0];if(!ph)return phMem[v.id]=null;
       const a=(ph.authorAttributions||[])[0]||{};
-      phBump(v.id);
-      const url=ph.getURI({maxWidth:800,maxHeight:560});
+      phBump(v.id,kind);
+      const url=kind==="browse"?ph.getURI({maxWidth:640,maxHeight:440}):ph.getURI({maxWidth:800,maxHeight:560});
       await new Promise(res=>{const im=new Image();const t=setTimeout(res,4000);im.onload=im.onerror=()=>{clearTimeout(t);res()};im.src=url;if(im.decode)im.decode().then(res,()=>{})});
       return phMem[v.id]={url,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
     }catch(e){return null}finally{delete phWait[v.id]}
@@ -1519,11 +1552,11 @@ const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.p
 function cardPhoto(v){const ph=phMem[v.id];if(!ph)return {cls:"",style:"",cr:""};
   return {cls:" photo",style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
 // The card at the top of a bar's sheet: same look as the game's bar card. Tap it to open the Google listing.
-function sheetCard(v,facts){const cp=cardPhoto(v);
-  return `<div class="bar sheetbar${cp.cls}"${cp.style} data-gm="${esc(gmapsURL(v))}" data-sc="${v.id}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">${esc(v.area)}</span><h2>${esc(v.name)}</h2><div class="facts">${facts}</div></div>`}
+function sheetCard(v,facts){const cp=cardPhoto(v),wait=phMem[v.id]===undefined&&phAllowed(v.id,"browse")&&!gBad;
+  return `<div class="bar sheetbar${cp.cls}${wait?" loading":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" data-sc="${v.id}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">${esc(v.area)}</span><h2>${esc(v.name)}</h2><div class="facts">${facts}</div></div>`}
 function bindSheetCard(v,facts){const el=document.querySelector(`[data-sc="${v.id}"]`);if(!el)return;
   el.onclick=e=>{if(e.target.closest("a"))return;window.open(el.dataset.gm,"_blank","noopener")};
-  if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{const cur=document.querySelector(`[data-sc="${v.id}"]`);if(ph&&cur&&$("sheet").open){cur.outerHTML=sheetCard(v,facts);bindSheetCard(v,facts)}})}
+  if(phMem[v.id]===undefined)barPhoto(v,"browse").then(ph=>{const cur=document.querySelector(`[data-sc="${v.id}"]`);if(!ph){if(cur)cur.classList.remove("loading");return}if(cur&&$("sheet").open){cur.outerHTML=sheetCard(v,facts);bindSheetCard(v,facts);const nw=document.querySelector(`[data-sc="${v.id}"]`);if(nw&&nw.animate&&phMem[v.id])nw.animate([{filter:"brightness(.4)"},{filter:"none"}],{duration:320,easing:"ease-out"})}})}
 const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||""}" data-ph="${v.id}" data-done="1">${phInner(v,ph)}</div>`:ph===null?"":`<div class="bph ${cls||""}" data-ph="${v.id}"></div>`};
 
 
@@ -1589,12 +1622,10 @@ function renderOb(){
     cta(`<button class="btn" id="obNext" type="button">Next</button>`,()=>$("obNext").onclick=()=>{S.ob=1;save();renderOb();$("v-ob").scrollTop=0});
     return;
   }
-  const groups={};VENUES.filter(v=>!FAR.has(v.id)).forEach(v=>{(groups[v.area]=groups[v.area]||[]).push(v)});
-  const far=VENUES.filter(v=>FAR.has(v.id)).sort((x,y)=>x.area.localeCompare(y.area)||x.name.localeCompare(y.name));
   const n=Object.keys(S.been).length;
+  const tick=v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)}</span><i></i></button>`;
   body.innerHTML=`<div><h1 class="q">Been to any already?</h1><p class="sub" style="margin:6px 0 0">Tick the rooftops you've been to. When you set up a game you can skip them and try somewhere new.</p></div>
-    ${Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([a,l])=>`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a)}</div><div class="card" style="padding:2px 14px">${l.sort((x,y)=>x.name.localeCompare(y.name)).map(v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)}</span><i></i></button>`).join("")}</div></div>`).join("")}
-    ${far.length?`<div>${farHead}<div class="card" style="padding:2px 14px;margin-top:8px">${far.map(v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)} <small class="small">${esc(v.area)}</small></span><i></i></button>`).join("")}</div></div>`:""}`;
+    ${AREAS.map(a=>{const l=VENUES.filter(v=>areaOf(v)===a).sort((x,y)=>x.name.localeCompare(y.name));return l.length?`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a.name)}</div><div class="card" style="padding:2px 14px">${l.map(tick).join("")}</div></div>`:""}).join("")}`;
   body.querySelectorAll(".tick").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(S.been[id])delete S.been[id];else S.been[id]=1;save();b.setAttribute("aria-pressed",String(!!S.been[id]));const k=Object.keys(S.been).length;$("obDone").textContent=k?`Done · ${k} ticked`:"Skip for now"});
   cta(`<button class="btn" id="obDone" type="button">${n?`Done · ${n} ticked`:"Skip for now"}</button>`,()=>$("obDone").onclick=()=>{S.ob=2;save();startWizard()});
 }
@@ -1623,11 +1654,11 @@ function quickSet(q){ // every rooftop that could come up, open or not
   if(!q||!q.from)return [];
   const base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed);
   if(q.from.type==="me")return base.filter(v=>dist(q.from,v)<=(q.r||1)*1000);
-  if(q.from.type==="all")return base.filter(v=>!FAR.has(v.id));
-  return base.filter(v=>!FAR.has(v.id)&&dist(q.from,v)<=QR*1000);
+  if(q.from.type==="all")return base;
+  return base.filter(v=>areaOf(v).reg===q.from.name);
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
-const quickLabel=q=>q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"All of inner Sydney":q.from.name;
+const quickLabel=q=>q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in Sydney":q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
   try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};q.step=1}
@@ -1638,7 +1669,7 @@ function renderQuick(){
   const q=S.quick||(S.quick={step:0,from:null,pick:null,seen:[]}),b=$("v-quick"),t=now();
   if(!S.game)$("stage").innerHTML="";
   const step=q.pick?3:(q.step||0);
-  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(Math.min(step,2)+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button>${step<2?`<div class="prog"><i style="width:${(step+1)/2*100}%"></i></div>`:"<div></div>"}<button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   if(step===0){
     const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
     b.innerHTML=top+`<div><h1 class="q">Just <i>the one</i></h1><p class="sub" style="margin:6px 0 0">No clock, no game. We'll pick one open rooftop for you.</p></div>
@@ -1649,11 +1680,10 @@ function renderQuick(){
     b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
       return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
   }else if(step===1){
-    const all=VENUES.filter(v=>!FAR.has(v.id)&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t)).length;
-    const areas=AREAS.map(a=>({a,n:quickSet({from:{type:"area",name:a.name,lat:a.lat,lng:a.lng}}).filter(v=>openOK(v,t)).length})).sort((x,y)=>y.n-x.n);
-    b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1><p class="sub" style="margin:6px 0 0">Inner Sydney only, for now.</p></div>
-      <div class="opts"><button class="opt" type="button" data-qa="*"><span class="ic">${I.city}</span><span class="t"><b>All of inner Sydney</b><small>The city, east, inner west and North Sydney</small></span><span class="n"><b>${all}</b><small>open</small></span></button>
-      ${areas.map(o=>`<button class="opt" type="button" data-qa="${esc(o.a.name)}" ${o.n?"":"disabled"}><span class="ic">${I.pin}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span><span class="n">${o.n?`<b>${o.n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`).join("")}</div>`;
+    const cnt=from=>quickSet({from}).filter(v=>openOK(v,t)).length;
+    const opt=(key,title,sub,n)=>`<button class="opt" type="button" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
+    b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1></div>
+      <div class="opts">${opt("*","Anywhere","Any rooftop in Sydney",cnt({type:"all"}))}${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>`;
   }else if(step===2){
     const P=quickPool(q,t);
     b.innerHTML=top+`<div class="ready" id="qStage"><div class="mixline"><span>${esc(quickLabel(q))}</span></div>
@@ -1676,13 +1706,13 @@ function renderQuick(){
   if($("qMe"))$("qMe").onclick=quickNearMe;
   if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
   b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;q.seen=[];save();renderQuick()});
-  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa,a=AREAS.find(z=>z.name===n);
-    q.from=n==="*"?{type:"all",name:"All of inner Sydney",lat:-33.8732,lng:151.2069}:{type:"area",name:a.name,lat:a.lat,lng:a.lng};q.step=2;q.seen=[];save();renderQuick()});
+  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa;
+    q.from=n==="*"?{type:"all",name:"Anywhere"}:{type:"region",name:n};q.step=2;q.seen=[];save();renderQuick()});
   if($("qReel")){const P=quickPool(q,t),nm=P.map(v=>v.name);if(nm.length<6)quickSet(q).forEach(v=>nm.push(v.name));reel=makeReel($("qReel"),nm,{hint:true,onRelease:v=>quickSpin(v)})}
   if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;q.step=2;save();renderQuick()};
   if($("qBeen"))$("qBeen").onclick=()=>{if(S.been[q.pick])delete S.been[q.pick];else S.been[q.pick]=1;save();renderQuick()};
   if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;S.quick=null;
-    if(f.type==="all"){startWizard();return}
+    if(f.type==="all"||f.type==="region"){startWizard();return}
     S.wiz={step:1,radius:null,len,newOnly:!!S.last.newOnly,start:f.type==="me"?{type:"me",name:"you",lat:f.lat,lng:f.lng,n:openIn(f,1.5).length,sub:"Near "+nearestArea(f)}:{type:"area",name:f.name,lat:f.lat,lng:f.lng}};
     go("wiz")};
 }
@@ -1705,15 +1735,14 @@ function renderWiz(){
   $("wProg").style.width=((w.step+1)/4*100)+"%";
   const body=$("wBody"),t=now();
   if(w.step===0){
-    const areas=AREAS.map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3).sort((x,y)=>y.n-x.n||y.tot-x.tot);
+    const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
     const anyOpen=areas.some(o=>o.n>0);
     const meSel=w.start&&w.start.type==="me";
     body.innerHTML=`<div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
       <div class="opts">
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
-        <div class="eyebrow" style="margin-top:8px">Or choose an area</div>
-        ${areas.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`).join("")}
+        ${REGIONS.map(r=>{const l=areas.filter(o=>o.a.reg===r.name);return l.length?`<div class="eyebrow" style="margin-top:10px">${r.name}</div>`+l.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`).join(""):""}).join("")}
       </div>`;
     if(!anyOpen)body.insertAdjacentHTML("afterbegin",`<div class="banner"><b>It's early.</b> Most rooftops open later in the day. You can set up now and start once they're open.</div>`);
     body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
@@ -2010,7 +2039,7 @@ $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 
 function moveOptions(){
   const g=G(),t=now(),from=fromPoint();
-  return AREAS.filter(a=>dist(a,g.center)>500).map(a=>({a,open:playable(inCircle(a,g.radius),g.newOnly).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
+  return GAME_AREAS().filter(a=>dist(a,g.center)>500).map(a=>({a,open:playable(inCircle(a,g.radius),g.newOnly).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
    .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
 }
 function openMove(free){
@@ -2315,18 +2344,19 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 
 
 /* ---------- rooftops tab ---------- */
-let bMap=null,bMapP=null;
+let bMap=null,bMapP=null,bMapFit=false;
+const regionChips=(rg,openOnly)=>`<div class="chips rgchips">${[["all","All"],...REGIONS.map(r=>[r.name,r.name])].map(([k,l])=>`<button class="chip" type="button" data-rg="${k}" aria-pressed="${k===rg}">${l}</button>`).join("")}<button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}<span class="chev">›</span></button>`}
 function renderBars(){
   const t=now(),y=you(),c=collectedMap(),g=G();
-  const tabs=g?[["zone","My zone"],["other","Other zones"],["been","Been"],["nfu","Not for us"]]:[["open","Open now"],["all","All"],["been","Been"],["nfu","Not for us"]];
+  const tabs=g?[["zone","My zone"],["other","Explore"],["been","Been"],["nfu","Not for us"]]:[["all","Explore"],["been","Been"],["nfu","Not for us"]];
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
   $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
   const os=v=>openState(v,t);
-  let intro="",rows=[],pins=[],extra="";
+  let intro="",rows=[],pins=[],extra="",fitTo=null;
   const tapHint=`Tap any rooftop to mark it as <b>been before</b> or <b>not for us</b>.`;
   if(f==="zone"){
     const inZ=inCircle(g.center,g.radius).filter(v=>!S.nfu[v.id]),tonight=g.visits.map(v=>v.id);
@@ -2344,8 +2374,7 @@ function renderBars(){
     const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
     intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
     extra=canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this game.</p>`;
-    rows=others.filter(v=>!FAR.has(v.id)).map(v=>rowHTML(v,os(v),barStatus(v,c),y));
-    const fo=others.filter(v=>FAR.has(v.id));if(fo.length)rows.push(farHead,...fo.map(v=>rowHTML(v,os(v),barStatus(v,c),y)));
+    rows=groupedRows(others,v=>rowHTML(v,os(v),barStatus(v,c),y));
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
     const list=VENUES.filter(v=>{const s=barStatus(v,c);return s==="col"||s==="been"}).sort(sortD);
@@ -2360,22 +2389,26 @@ function renderBars(){
     if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
-    const list0=VENUES.filter(v=>!S.nfu[v.id]&&(f==="all"||os(v).open)).sort(sortD),list=list0.filter(v=>!FAR.has(v.id)),flist=list0.filter(v=>FAR.has(v.id));
-    intro=`Every rooftop in Sydney${f==="open"?" that's open right now":""}. ${tapHint}`;
-    rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
-    if(flist.length)rows.push(farHead,...flist.map(v=>rowHTML(v,os(v),barStatus(v,c),y)));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open right now.</div>`];
-    pins=list0.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));
+    const rg=S.barsRegion||"all",openOnly=!!S.barsOpen;
+    const list=VENUES.filter(v=>!S.nfu[v.id]&&(rg==="all"||areaOf(v).reg===rg)&&(!openOnly||os(v).open)).sort(sortD);
+    extra=regionChips(rg,openOnly);
+    intro=tapHint;
+    rows=groupedRows(list,v=>rowHTML(v,os(v),barStatus(v,c),y));
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open here right now.</div>`];
+    pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));fitTo=list;
   }
-  $("barsIntro").innerHTML=`<p class="note" style="margin:0">${intro}</p>${extra}`;
+  $("barsIntro").innerHTML=f==="all"?`${extra}<p class="note" style="margin:10px 0 0">${intro}</p>`:`<p class="note" style="margin:0">${intro}</p>${extra}`;
+  $("barsIntro").querySelectorAll("[data-rg]").forEach(x=>x.onclick=()=>{S.barsRegion=x.dataset.rg;save();bMapFit=true;renderBars()});
+  if($("rgOpen"))$("rgOpen").onclick=()=>{S.barsOpen=!S.barsOpen;save();renderBars()};
   $("barsList").innerHTML=rows.join("");
-  $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
+  $("barsList").querySelectorAll("[data-id]").forEach(b=>{b.onclick=()=>barSheet(byId(b.dataset.id));b.onpointerdown=()=>barPhoto(byId(b.dataset.id),"browse")});
   if($("bMove"))$("bMove").onclick=()=>openMove(g.started&&basePool().length<2);
   requestAnimationFrame(async()=>{
     if(!bMapP)bMapP=makeMap("barsMap").then(m=>{m.setView({lat:-33.8732,lng:151.2069},13);m.onTap((lat,lng)=>{if(S.test){S.fake={lat,lng};save();onLocation();renderBars()}});return m});
     const m=bMap=await bMapP;if(!m)return;m.resize();m.clear();
     if(g){m.circle(g.center,g.radius);if(m._zoneFor!==g.id+g.center.lat){m._zoneFor=g.id+g.center.lat;m.fitZone(g.center,g.radius)}}
     pins.forEach(({v,cls})=>m.pin(v,cls,()=>barSheet(v)));
+    if(fitTo&&fitTo.length&&(bMapFit||m._fitRg!==(S.barsRegion||"all"))){m._fitRg=S.barsRegion||"all";bMapFit=false;m.fitPts(fitTo,15)}
     setMe(m);
   });
 }
