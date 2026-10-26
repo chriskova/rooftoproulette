@@ -1108,17 +1108,19 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 .reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
-.reel .frame{position:absolute;left:8px;right:8px;top:50%;height:74px;margin-top:-37px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(rgba(245,184,61,.13),rgba(245,184,61,.05));box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12);pointer-events:none}
+.reel .frame{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border-radius:14px;background:var(--amber);box-shadow:0 0 0 5px rgba(245,184,61,.16),0 0 34px rgba(245,184,61,.22);overflow:hidden;pointer-events:none}
+.reel .lens{position:absolute;inset:0}
+.reel .lens .row{height:74px;margin-top:-37px;font-size:clamp(30px,9.6vw,42px);color:var(--amber-ink)}
+.reel .lens .row.long{font-size:clamp(24px,7.4vw,33px)}
+.reel .lens .row.ph{font-size:clamp(20px,6vw,25px);letter-spacing:.1em;color:var(--amber-ink)}
 .reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
-.reel .row.c{color:#fff}
 .reel .row.ph{color:var(--muted);font-size:clamp(18px,5.4vw,22px);letter-spacing:.12em}
-.reel .row.ph.c{color:var(--amber);text-shadow:none}
-.reel.won .row.c{color:var(--amber)}
-.reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35)}
+
+.reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
 .flyname{position:fixed;z-index:60;pointer-events:none;transform-origin:0 0;margin:0}
-.reel .hint{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
+.reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
 .reel .hint.off{opacity:0}
 .reel .hint i{position:absolute;top:22%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 8px rgba(255,255,255,.08);animation:swipehint 1.9s cubic-bezier(.5,0,.3,1) infinite}
 .reel .hint i::before{content:"";position:absolute;left:50%;bottom:100%;width:6px;margin-left:-3px;height:0;border-radius:3px;background:linear-gradient(rgba(255,255,255,0),rgba(255,255,255,.45));animation:swipetrail 1.9s cubic-bezier(.5,0,.3,1) infinite}
@@ -1820,17 +1822,21 @@ function makeReel(el,names,o){
   o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));L=[PH].concat(L);
   const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length;
   el.classList.add("reel");el.classList.remove("won");
-  el.innerHTML=`<div class="frame"></div>${[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
-  const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
+  // Two layers of the same names: dim ones outside, and big dark ones seen through the yellow centre slot,
+  // so a name grows and darkens exactly as it slides into the slot.
+  const seven=()=>[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("");
+  el.innerHTML=`${seven()}<div class="frame"><div class="lens">${seven()}</div></div>${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
+  const rows=[...el.querySelectorAll(":scope > .row")],lens=[...el.querySelectorAll(".lens .row")],frame=el.querySelector(".frame");
   let lastK=0,moved=false;
   const draw=()=>{const b=Math.round(R.p);
-    if(b!==lastK){lastK=b;tick(560+Math.random()*80);buzz(3);frame.animate&&frame.animate([{borderColor:"#FFE2A6",boxShadow:"0 0 0 4px rgba(245,184,61,.35),0 0 26px rgba(245,184,61,.35)"},{}],{duration:160})}
+    if(b!==lastK){lastK=b;tick(560+Math.random()*80);buzz(3)}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
     const fl=Math.floor(R.p);
-    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,n=L[mod(k)],sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH)}
-      const a=Math.abs(d),sc=a<1?1.16-.16*a:Math.max(.6,1-.14*(a-1));
-      r.style.transform=`translateY(${d*ROW}px) scale(${sc})`;r.style.opacity=Math.max(0,1-.3*Math.max(0,a-.4));r.classList.toggle("c",a<.5)})};
+    const set=(r,n)=>{const sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH)}};
+    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d);set(r,L[mod(k)]);
+      r.style.transform=`translateY(${d*ROW}px) scale(${Math.max(.62,.9-.1*Math.max(0,a-1))})`;r.style.opacity=Math.max(0,.85-.25*Math.max(0,a-1))});
+    lens.forEach((r,i)=>{const k=fl-3+i,d=k-R.p;set(r,L[mod(k)]);r.style.transform=`translateY(${d*ROW}px)`;r.classList.toggle("c",Math.abs(d)<.5)})};
   draw();
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
@@ -1844,8 +1850,8 @@ function makeReel(el,names,o){
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
       R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      const c=el.querySelector(".row.c span"),fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
-      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize)*1.16,name};
+      const c=el.querySelector(".lens .row.c span"),fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
+      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name};
       setTimeout(()=>{R.busy=false;done&&done(info)},240)});
   };
   if(o.onRelease){
@@ -1879,7 +1885,7 @@ function reveal(info,scope){
   document.body.appendChild(ghost);h2.style.opacity="0";
   const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lines=Math.max(1,Math.round(gr.height/(parseFloat(hs.lineHeight)||parseFloat(hs.fontSize))));
   const dy=lines>1?(nr.top-hr.top):(nr.top+nr.height/2-(hr.top+gr.height*sc/2));
-  ghost.animate([{transform:`translate(${nr.left-hr.left}px,${dy}px) scale(${sc})`,color:"#F5B83D"},{transform:"none",color:hs.color}],{duration:440,easing:E,fill:"forwards"})
+  ghost.animate([{transform:`translate(${nr.left-hr.left}px,${dy}px) scale(${sc})`,color:info.ink||hs.color},{transform:"none",color:hs.color}],{duration:440,easing:E,fill:"forwards"})
     .onfinish=()=>{h2.style.opacity="";ghost.remove()};
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
