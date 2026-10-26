@@ -1175,6 +1175,13 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .nudge{display:flex;gap:10px;align-items:flex-start;background:rgba(36,24,3,.12);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.35}
 .bar.photo .nudge{background:rgba(245,184,61,.18);color:#fff}
 .nudge svg{width:18px;height:18px;flex:none;margin-top:1px}
+.modehd{margin:8px 2px -4px}
+.card.mode{display:flex;flex-direction:column;gap:14px;padding:18px 18px 12px}
+.mode .mtop{display:flex;gap:14px;align-items:flex-start}
+.mode .mic{width:44px;height:44px;border-radius:12px;background:var(--s2);color:var(--amber);display:grid;place-items:center;flex:none}
+.mode .mic svg{width:22px;height:22px}
+.mode h2.q{font-size:26px;margin:0 0 4px}
+.mode .howlink{color:var(--muted);margin-top:-2px}
 </style>
 </head>
 <body>
@@ -1200,13 +1207,17 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
     <div class="hero">
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
-      <p class="modeline">The game: a rooftop crawl against the clock. Spin for a bar, get there, spin again.</p>
-      <button class="btn" id="newGame" type="button">Start a new game</button>
-      <button class="txtbtn howlink" id="homeHow" type="button">How the game works</button>
     </div>
-    <div class="card mode2">
-      <div><h2 class="q">No <i>rush</i></h2><p class="modeline">No clock. Spin for a bar, stay as long as you like, spin again when you're ready. One bar or five, every night gets saved.</p></div>
-      <button class="btn line" id="quickGo" type="button">Start a no-rush night</button>
+    <div class="eyebrow modehd">Pick how you're playing</div>
+    <div class="card mode">
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin for a rooftop, get there, spin again. How many can you hit before time's up?</p></div></div>
+      <button class="btn" id="newGame" type="button">Play Rush Hour</button>
+      <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
+    </div>
+    <div class="card mode">
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock: spin for a rooftop, stay as long as you like, spin again when you're ready.</p></div></div>
+      <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
+      <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
   </section>
@@ -1655,11 +1666,12 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
-  $("homeHow").onclick=howSheet;
+  $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
 }
 $("newGame").onclick=()=>{if(S.game){go("play");return}startWizard()};
 $("quickGo").onclick=()=>{if(S.game){go("play");return}S.quick={step:0,from:null};go("quick")};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
+document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?I.glass:I.clock);
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 
@@ -1689,7 +1701,7 @@ function renderQuick(){
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   if(step===0){
     const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
-    b.innerHTML=top+`<div><h1 class="q">No <i>rush</i></h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
+    b.innerHTML=top+`<div><h1 class="q">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
       <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>
       <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick a part of town</small></span></button>${soon}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
@@ -1745,7 +1757,7 @@ function renderWiz(){
     const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
     const anyOpen=areas.some(o=>o.n>0);
     const meSel=w.start&&w.start.type==="me";
-    body.innerHTML=`<div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
+    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">Rush Hour</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
       <div class="opts">
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
@@ -1863,7 +1875,7 @@ const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
 const visited=id=>G().visits.some(v=>v.id===id);
 const remaining=()=>{const g=G();return g.started?g.endsAt-now():g.len*60000};
 const CR=g=>!!(g&&g.mode==="cruise");
-// No rush: where spins can land. Near me = within your distance of where you are now.
+// R&R: where spins can land. Near me = within your distance of where you are now.
 // A region or anywhere = that part of town, kept to bars within 2 km of you once you're out (if there are any).
 function cruiseSet(g){
   const base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed),here_=fromPoint();
@@ -1873,7 +1885,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"?` · ${g.cz.r} km`:""}</span><span>No rush</span></div>`
+const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"?` · ${g.cz.r} km`:""}</span><span>R&amp;R</span></div>`
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
@@ -2106,7 +2118,7 @@ function openMenu(){
 }
 $("pMenu").onclick=openMenu;
 
-function cruiseHow(){sheet(`<h3>How No rush works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+function cruiseHow(){sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
   ["Spin when you're ready","One bar or five. End the night from the menu and it's saved to History with your time at each bar."]])}</div>`)}
@@ -2174,7 +2186,7 @@ function renderPlay(){
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
-      ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>${hmm(d)} at ${esc(v.name)}.</b> Ready for the next one? No rush, spin whenever you like.</span></div>`:""}
+      ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>${hmm(d)} at ${esc(v.name)}.</b> Ready for the next one? Spin whenever you like.</span></div>`:""}
       <div class="tip nob soft${ok?" ok":""}">${ok?I.check:I.clock}<span>${ok?"<b>This rooftop's on the board.</b> Spin whenever you're ready.":`Hang around ${DWELL_MIN} minutes and this rooftop goes on the board.`}</span></div>
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
       ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
@@ -2242,7 +2254,7 @@ function rollWild(g,id){
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
-    if(!g.started){$("clockT").textContent="No rush";$("clockL").textContent="Spin when you're ready";return}
+    if(!g.started){$("clockT").textContent="R&R";$("clockL").textContent="Spin when you're ready";return}
     $("clockT").textContent=now()-g.startedAt<60000?"Just out":hmm(now()-g.startedAt);$("clockL").textContent="Out for";return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
@@ -2297,7 +2309,7 @@ function cruiseAwards(r,st){
 }
 function renderEnd(){
   const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
-  const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"No rush night":r.len===60?"1 hour game":"2 hour game",aw=cr?cruiseAwards(r,st):awards(r,st);
+  const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours",aw=cr?cruiseAwards(r,st):awards(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
   box.innerHTML=`
@@ -2349,7 +2361,7 @@ async function shareStory(r){
     const g=x.createRadialGradient(W,0,0,W,0,1300);g.addColorStop(0,"rgba(245,184,61,.32)");g.addColorStop(1,"rgba(245,184,61,0)");
     x.fillStyle="#0B0D12";x.fillRect(0,0,W,Hh);x.fillStyle=g;x.fillRect(0,0,W,Hh);
     x.font=`800 56px ${D}`;x.fillStyle="#F4F1EA";x.fillText("ROOFTOP",72,128);x.fillStyle="#F5B83D";x.fillText("ROULETTE",72+x.measureText("ROOFTOP ").width,128);
-    x.font=`500 32px ${U}`;x.fillStyle="#9AA1AD";x.fillText(`${r.mode==="cruise"?"No rush night":r.len===60?"1 hour game":"2 hour game"} · ${dateTxt(r.startedAt)}`,72,178);
+    x.font=`500 32px ${U}`;x.fillStyle="#9AA1AD";x.fillText(`${r.mode==="cruise"?"R&R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours"} · ${dateTxt(r.startedAt)}`,72,178);
     // hero: crew photo or route
     const bx=72,by=220,bw=W-144,bh=r.photo?700:600;
     x.save();roundRect(x,bx,by,bw,bh,40);x.clip();x.fillStyle="#141820";x.fillRect(bx,by,bw,bh);
@@ -2490,7 +2502,7 @@ function renderHist(){
     <div class="grid2"><div class="stat"><small>Crawls</small><b style="font-size:24px">${games}</b></div><div class="stat"><small>Rooftop visits</small><b style="font-size:24px">${bars}</b></div>
     <div class="stat"><small>Distance covered</small><b>${km(dist_)}</b></div><div class="stat"><small>Most in one game</small><b>${LENS.filter(l=>best(l)!=null).map(l=>`${best(l)} <span class="small">(${l/60} hr)</span>`).join(" · ")}</b></div></div>
     <div style="display:flex;flex-direction:column;gap:10px">${H.map(r=>{const st=stats(r),bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
-     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(r.startedAt)} · ${r.mode==="cruise"?"No rush":r.len===60?"1 hr":"2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(r.startedAt)} · ${r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
   b.querySelectorAll(".hrow").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
 }
 
