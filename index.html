@@ -1108,11 +1108,13 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 .reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
-.reel .frame{position:absolute;left:10px;right:10px;top:50%;height:64px;margin-top:-32px;border:1.5px solid var(--amber);border-radius:12px;background:rgba(245,184,61,.06);pointer-events:none;transition:box-shadow .3s}
+.reel .frame{position:absolute;left:8px;right:8px;top:50%;height:74px;margin-top:-37px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(rgba(245,184,61,.13),rgba(245,184,61,.05));box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12);pointer-events:none}
 .reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
-.reel .row.c{color:var(--text)}
+.reel .row.c{color:#fff}
+.reel .row.ph{color:var(--muted);font-size:clamp(18px,5.4vw,22px);letter-spacing:.12em}
+.reel .row.ph.c{color:var(--amber);text-shadow:none}
 .reel.won .row.c{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35)}
 .flyname{position:fixed;z-index:60;pointer-events:none;transform-origin:0 0;margin:0}
@@ -1807,43 +1809,54 @@ function onLocation(){
 }
 let spinning=false,animateId=null,reel=null;
 /* ---------- the reel: swipe it like a slot reel; the swipe speed sets how far it runs ---------- */
-const ROW=58;
+const ROW=58,PH="Spin to start";
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+/* The reel behaves like a real one:
+   - it follows your finger;
+   - let go gently, or push it the wrong way, and it springs back to "Spin to start";
+   - flick it down and it carries on at the speed you flicked, then slows to a stop. Harder flick, longer spin.
+   Speed on screen is capped so names never strobe backwards; anything harder than the cap just runs longer. */
 function makeReel(el,names,o){
-  o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));
-  const R={p:Math.floor(Math.random()*L.length),busy:false,raf:0};
+  o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));L=[PH].concat(L);
+  const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length;
   el.classList.add("reel");el.classList.remove("won");
   el.innerHTML=`<div class="frame"></div>${[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
-  const rows=[...el.querySelectorAll(".row")],mod=k=>((k%L.length)+L.length)%L.length;
-  let lastK=null;
-  const draw=()=>{const b=Math.floor(R.p);
-    if(lastK!==null&&b!==lastK){tick(560+Math.random()*80);if(navigator.vibrate)buzz(3)}lastK=b;
-    rows.forEach((r,i)=>{const k=b-3+i,d=k-R.p,n=L[mod(k)],sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15)}
-      const a=Math.abs(d);r.style.transform=`translateY(${d*ROW}px) scale(${Math.max(.62,1-.13*a)})`;r.style.opacity=Math.max(0,1-.3*a);r.classList.toggle("c",a<.5)})};
+  const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
+  let lastK=0,moved=false;
+  const draw=()=>{const b=Math.round(R.p);
+    if(b!==lastK){lastK=b;tick(560+Math.random()*80);buzz(3);frame.animate&&frame.animate([{borderColor:"#FFE2A6",boxShadow:"0 0 0 4px rgba(245,184,61,.35),0 0 26px rgba(245,184,61,.35)"},{}],{duration:160})}
+    // once the placeholder has scrolled out of sight, it becomes a bar like the rest
+    if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
+    const fl=Math.floor(R.p);
+    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,n=L[mod(k)],sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH)}
+      const a=Math.abs(d),sc=a<1?1.16-.16*a:Math.max(.6,1-.14*(a-1));
+      r.style.transform=`translateY(${d*ROW}px) scale(${sc})`;r.style.opacity=Math.max(0,1-.3*Math.max(0,a-.4));r.classList.toggle("c",a<.5)})};
   draw();
+  const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
+  R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
   R.spinTo=(name,v,done)=>{
-    // Top speed is capped so the names never strobe backwards; a harder swipe runs longer instead of faster.
-    const dir=v>0?1:-1,raw=Math.abs(v)||35,vs=Math.min(26,Math.max(14,raw)),D=Math.min(48,Math.max(15,14+raw*.45));
-    let k=Math.round(R.p+dir*D),n=0;while(L[mod(k)]!==name&&n<L.length){k+=dir;n++}
-    if(L[mod(k)]!==name)L[mod(k)]=name;
-    const p0=R.p,dist=Math.abs(k-p0),Dd=Math.min(dist,15),Td=3*Dd/vs,Tc=(dist-Dd)/vs,T=Tc+Td,t0=performance.now();
+    moved=true;const dir=-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
+    const extra=v0>VC?Math.min(30,(v0-VC)*.5):0, Dd=Math.max(7,vs*vs/24);   // 24 = 2 × friction (12 rows/s²)
+    let k=Math.round(R.p+dir*(extra+Dd)),n=0;
+    for(;n<4&&L[mod(k)]!==name;n++)k+=dir;
+    if(L[mod(k)]!==name){k-=dir*n;L[mod(k)]=name}
+    const p0=R.p,dist=Math.abs(k-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=2*Dr/vs,T=Tc+Td;
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
-    const f=t=>{const s=Math.min(T,(t-t0)/1000);let x;if(s<Tc)x=vs*s;else{const u=(s-Tc)/Td;x=vs*Tc+Dd*(1-Math.pow(1-u,3))}
-      R.p=p0+dir*x;draw();
-      if(s<T){R.raf=requestAnimationFrame(f);return}
+    anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
       R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      const c=el.querySelector(".row.c span"),fr=el.querySelector(".frame").getBoundingClientRect(),nr=c.getBoundingClientRect();
-      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name};
-      setTimeout(()=>{R.busy=false;done&&done(info)},260)};
-    R.raf=requestAnimationFrame(f);
+      const c=el.querySelector(".row.c span"),fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
+      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize)*1.16,name};
+      setTimeout(()=>{R.busy=false;done&&done(info)},240)});
   };
   if(o.onRelease){
     let y0=0,pS=0,pts=[],down=false;
-    el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
-    el.addEventListener("pointermove",e=>{if(!down)return;R.p=pS-(e.clientY-y0)/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[0][0]>90)pts.shift();draw()});
-    const up=e=>{if(!down)return;down=false;const t=performance.now(),a=pts[0],moved=Math.abs(R.p-pS);
-      let v=(t-a[0])>8?(R.p-a[1])/((t-a[0])/1000):0;if(moved<.25)v=-(26+Math.random()*16);
-      if(o.onRelease(v)===false){R.p=Math.round(R.p);draw()}};
+    el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;cancelAnimationFrame(R.raf);down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
+    el.addEventListener("pointermove",e=>{if(!down)return;const dy=e.clientY-y0;R.p=pS-(dy>0?dy:dy*.35)/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[0][0]>80)pts.shift();draw()});
+    const up=()=>{if(!down)return;down=false;const t=performance.now(),a=pts[0],travel=R.p-pS;
+      let v=(t-a[0])>8&&(t-pts[pts.length-1][0])<60?(R.p-a[1])/((t-a[0])/1000):0;
+      if(Math.abs(travel)<.2&&Math.abs(v)<2){if(o.onRelease(-16)===false)R.bounce();return}  // a tap gives a gentle spin
+      if(v>-3.5){R.bounce();return}                                                         // too gentle, or the wrong way
+      if(o.onRelease(v)===false)R.bounce()};
     el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
   }
   return R;
@@ -1870,7 +1883,7 @@ function reveal(info,scope){
     .onfinish=()=>{h2.style.opacity="";ghost.remove()};
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
-function reelNote(){return S.tips.swipe?"Swipe down or tap to spin":"Swipe down to spin. Harder swipe, longer spin."}
+function reelNote(){return "Flick it down. Harder flick, longer spin."}
 
 function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.length>=6)return P;return P.concat(inCircle(g.center,g.radius).filter(v=>!v.tempClosed).map(v=>v.name)).concat(P.length?[]:VENUES.slice(0,10).map(v=>v.name))}
 function doSpin(force,vel){
