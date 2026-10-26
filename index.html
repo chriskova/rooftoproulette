@@ -1205,8 +1205,15 @@ h1.q.modename{font-size:46px}
 .still b{font-family:var(--head);font-size:20px;letter-spacing:-.02em}
 .still span{color:var(--text);font-size:14px;line-height:1.4}
 .still .row2{margin-top:8px}
+html.fl .app{visibility:hidden}
+.zopen{appearance:none;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.zopen b{display:block;font-size:15px;font-weight:650}.zopen small{color:var(--muted);font-size:12.5px}
+.tickbtn{appearance:none;flex:none;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:none;display:grid;place-items:center;color:var(--amber-ink);transition:background .15s,border-color .15s}
+.tickbtn.on{background:var(--amber);border-color:var(--amber)}
+.tickbtn svg{width:16px;height:16px}
+.tickbtn:disabled{opacity:.35}
+.zmapwrap{background:#0E1117}
 </style>
-<style>html.fl .app{visibility:hidden}</style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
 if(document.fonts&&document.fonts.load){Promise.all([document.fonts.load('800 20px "Big Shoulders Display"'),document.fonts.load('500 20px "Big Shoulders Display"'),document.fonts.load('800 20px "Plus Jakarta Sans"')]).then(done,done)}else done();
@@ -1815,47 +1822,56 @@ function renderWiz(){
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
   }
   if(w.step===3){
-    const excl=w.excl||(w.excl=[]),MAXOUT=3;
-    const c=w.start,open=openIn(c,w.radius,t,w.newOnly).filter(v=>!excl.includes(v.id)),all=playable(inCircle(c,w.radius),false);
-    const newCount=openIn(c,w.radius,t,true).length,col=collectedMap();
+    // Built once; leaving bars out only repaints the list, count and pins, so the map never reloads.
+    const excl=w.excl||(w.excl=[]),MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
     const hasHistory=Object.keys(col).length||Object.keys(S.been).length;
-    const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
-    const row=v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been,dim=out||skip||!o.open;
-      const status=out?"Left out":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
-      const btn=skip||!o.open?"":`<button class="xo${out?" on":""}" type="button" data-x="${v.id}" aria-pressed="${out}" aria-label="${out?"Put "+esc(v.name)+" back":"Leave "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?I.redo:I.x}</button>`;
-      return `<div class="zrow${dim?" off":""}"><span class="t"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></span>${btn}</div>`};
     body.innerHTML=`<div><h1 class="q">Your zone</h1>
         <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div></div>
-      <div class="map"><div id="zoneMap" style="height:240px"></div></div>
-      <div class="zcount"><b>${open.length}</b><span>rooftop${open.length===1?"":"s"} your spins can land on</span></div>
-      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${newCount} of ${openIn(c,w.radius,t,false).length} open here are new to you</small></span><span class="sw"></span></button>`:""}
+      <div class="map zmapwrap"><div id="zoneMap" style="height:240px"></div></div>
+      <div class="zcount"><b id="zN"></b><span id="zNs"></span></div>
+      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch"><span class="t"><b>Skip bars I've been to</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
       <div>
-        <div class="zhead"><h3>Rooftops in your zone</h3><span class="small">${excl.length}/${MAXOUT} left out</span></div>
-        <p class="note" style="margin:2px 0 10px">Not feeling one tonight? Tap ✕ to leave it out. Up to ${MAXOUT}.</p>
-        <div class="card zlist">${sorted.map(row).join("")}</div>
+        <div class="zhead"><h3>Rooftops in your zone</h3><span class="small" id="zOut"></span></div>
+        <p class="note" style="margin:2px 0 10px">Everything ticked is in. Untick up to ${MAXOUT} to sit them out tonight. Tap a name for the details.</p>
+        <div class="card zlist" id="zList"></div>
       </div>`;
-    body.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();const y=$("v-wiz").scrollTop;renderWiz();$("v-wiz").scrollTop=y});
+    const paint=()=>{
+      const t=now(),open=openIn(c,w.radius,t,w.newOnly).filter(v=>!excl.includes(v.id));
+      $("zN").textContent=open.length;$("zNs").textContent=`rooftop${open.length===1?"":"s"} your spins can land on`;
+      if($("newTog")){$("newTog").setAttribute("aria-checked",String(!!w.newOnly));$("newTogS").textContent=`${openIn(c,w.radius,t,true).length} of ${openIn(c,w.radius,t,false).length} open here are new to you`}
+      $("zOut").textContent=excl.length?`${excl.length}/${MAXOUT} sitting out`:"";
+      const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
+      $("zList").innerHTML=sorted.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been,dim=out||skip||!o.open;
+        const status=out?"Sitting this one out":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+        const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":I.check}</button>`;
+        return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></button>${tick}</div>`}).join("");
+      $("zList").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();paint()});
+      $("zList").querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z));b.onpointerdown=()=>barPhoto(byId(b.dataset.z),"browse")});
+      const op=nextOpen(playable(inCircle(c,w.radius),w.newOnly),t);
+      cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>${open.length?"Let's go":op?"Opens "+op+". Come back then":"Nothing open today"}</button>`,()=>$("wStart").onclick=tryStart);
+      if(zMap){const openIds=new Set(open.map(v=>v.id));zMap.clear();zMap.circle(c,w.radius);all.forEach(v=>zMap.pin(v,openIds.has(v.id)?"":"off",()=>zoneBarSheet(v)));setMe(zMap)}
+    };
+    zonePaint=paint;
     body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
-    if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();const y=$("v-wiz").scrollTop;renderWiz();$("v-wiz").scrollTop=y};
-    const op=nextOpen(playable(inCircle(c,w.radius),w.newOnly),t);
-    cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>${open.length?"Let's go":op?"Opens "+op+". Come back then":"Nothing open today"}</button>`,()=>$("wStart").onclick=tryStart);
+    if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();paint()};
+    paint();
     requestAnimationFrame(async()=>{
       if(zMap){zMap.remove();zMap=null}
-      const el=$("zoneMap"),m=await makeMap("zoneMap");if(!m||!document.contains(el))return;zMap=m;
-      m.circle(c,w.radius);
-      const openIds=new Set(open.map(v=>v.id));
-      all.forEach(v=>m.pin(v,openIds.has(v.id)?"":"off",()=>zoneBarSheet(v)));
-      setMe(m);m.fitZone(c,w.radius);
+      const el=$("zoneMap");el.style.opacity="0";
+      const m=await makeMap("zoneMap");if(!m||!document.contains(el))return;zMap=m;
+      paint();m.fitZone(c,w.radius);
+      setTimeout(()=>{el.style.transition="opacity .35s ease";el.style.opacity="1"},450);   // show it once it's settled on the zone
     });
   }
 }
+let zonePaint=null;
 function zoneBarSheet(v){
   const w=S.wiz;if(!w){barSheet(v);return}
   const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
   const zf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
   sheet(`${sheetCard(v,zf)}
-    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in the mix":"Leave it out tonight"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
-    $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();renderWiz()}});
+    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in":"Sit this one out tonight"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
+    $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();if(zonePaint&&w.step===3)zonePaint();else renderWiz()}});
 }
 async function useMe(){
   const w=S.wiz;
