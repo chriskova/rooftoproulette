@@ -1099,6 +1099,12 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .toggle[aria-checked="true"]{border-color:var(--amber)}
 .zlist{display:flex;flex-direction:column}
 .zlist .li{font-size:14.5px;padding:10px 0}
+.beenbtn{float:right;margin:-4px -4px 0 8px;height:26px;padding:0 10px;border-radius:13px;border:1.5px solid rgba(36,24,3,.28);background:none;color:inherit;font:inherit;font-size:11px;letter-spacing:.06em;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.beenbtn[aria-pressed="true"]{background:rgba(36,24,3,.12);border-color:transparent}
+.beenbtn svg{width:13px;height:13px}
+.zreveal{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px;border:1.5px dashed var(--line);border-radius:16px;background:none;color:var(--text);font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.zreveal small{font-weight:500;font-size:12.5px;color:var(--muted)}
+.zreveal[aria-expanded="true"]{border-style:solid;margin-bottom:12px}
 .newpill{display:inline-block;background:var(--green-soft);color:var(--green);font-size:11px;font-weight:800;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:1px}
 .sheet .acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}
 .city{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
@@ -1457,7 +1463,8 @@ const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 /* bars that can come up in a spin: not hidden, optionally only new */
 // rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
 const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
-function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&!FAR.has(v.id)&&(!newOnly||isNew(v.id,c)))}
+// Rush Hour: "skip" only leaves out bars you've been to in a past game (your own Been list doesn't count here).
+function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&!FAR.has(v.id)&&(!newOnly||!c[v.id]))}
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
 function nextOpen(list,t){ // earliest opening time later today among closed bars
@@ -1693,23 +1700,17 @@ $("introSkip").onclick=()=>{S.onboarded=true;S.ob=0;go("ob")};
 
 /* ---------- first-time setup ---------- */
 function renderOb(){
-  const step=S.ob||0,body=$("obBody");$("obProg").style.width=(step?100:50)+"%";
-  if(step===0){
+  const body=$("obBody");$("obProg").style.width="100%";
+  {
     body.innerHTML=`<div><h1 class="q">Which city?</h1><p class="sub" style="margin:6px 0 0">Rooftop Roulette is starting in Sydney. More cities are on the way.</p></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" aria-checked="true"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>${VENUES.length} rooftop bars</small></span></button>
         <button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>Melbourne</b><small>Coming soon</small></span></button>
         <button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>Brisbane</b><small>Coming soon</small></span></button>
       </div>`;
-    cta(`<button class="btn" id="obNext" type="button">Next</button>`,()=>$("obNext").onclick=()=>{S.ob=1;save();renderOb();$("v-ob").scrollTop=0});
+    cta(`<button class="btn" id="obNext" type="button">Let's go</button>`,()=>$("obNext").onclick=()=>{S.ob=2;save();go("home")});
     return;
   }
-  const n=Object.keys(S.been).length;
-  const tick=v=>`<button class="tick" type="button" data-id="${v.id}" aria-pressed="${!!S.been[v.id]}"><span>${esc(v.name)}</span><i></i></button>`;
-  body.innerHTML=`<div><h1 class="q">Been to any already?</h1><p class="sub" style="margin:6px 0 0">Tick the rooftops you've been to. When you set up a game you can skip them and try somewhere new.</p></div>
-    ${AREAS.map(a=>{const l=VENUES.filter(v=>areaOf(v)===a).sort((x,y)=>x.name.localeCompare(y.name));return l.length?`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a.name)}</div><div class="card" style="padding:2px 14px">${l.map(tick).join("")}</div></div>`:""}).join("")}`;
-  body.querySelectorAll(".tick").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(S.been[id])delete S.been[id];else S.been[id]=1;save();b.setAttribute("aria-pressed",String(!!S.been[id]));const k=Object.keys(S.been).length;$("obDone").textContent=k?`Done · ${k} ticked`:"Skip for now"});
-  cta(`<button class="btn" id="obDone" type="button">${n?`Done · ${n} ticked`:"Skip for now"}</button>`,()=>$("obDone").onclick=()=>{S.ob=2;save();go("home")});
 }
 
 /* ---------- home ---------- */
@@ -1770,7 +1771,10 @@ function renderQuick(){
     b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1><p class="sub" style="margin:6px 0 0">After your first bar, spins stay close to where you are.</p></div>
       <div class="opts">${opt("*","Anywhere","Any rooftop in Sydney",cnt({type:"all"}))}${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>`;
   }else{
+    const beenN=VENUES.filter(v=>!isNew(v.id)).length;
+    if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
     b.innerHTML=top+`<div><h1 class="q">Nudge us after…</h1><p class="sub" style="margin:6px 0 0">We'll check in after this long at each bar. Next time you open the app, we'll ask if you're ready for the next one.</p></div>
+      ${beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:""}
       <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=step-1;q.note=null;save();renderQuick()};
@@ -1779,6 +1783,7 @@ function renderQuick(){
   if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
   b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;save();renderQuick()});
   b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa;q.from=n==="*"?{type:"all",name:"Anywhere"}:{type:"region",name:n};q.step=2;save();renderQuick()});
+  if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();renderQuick()};
   b.querySelectorAll("[data-qn]").forEach(x=>x.onclick=()=>{q.nudge=+x.dataset.qn;save();startCruise()});
 }
 async function startCruise(){
@@ -1786,7 +1791,7 @@ async function startCruise(){
   let pos;try{pos=await getOnce()}catch(e){S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"?{lat:f.lat,lng:f.lng}:(()=>{const l=VENUES.filter(v=>f.type==="all"||areaOf(v).reg===f.name);return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
   const label=f.type==="me"?"Near you":f.type==="all"?"Anywhere":f.name;
-  S.game={id:"g"+now(),mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null},nudge:q.nudge||0,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:false,
+  S.game={id:"g"+now(),mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null},nudge:q.nudge||0,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:{lat:pos.lat,lng:pos.lng},areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
   S.quick=null;save();startWatch();buzz(30);go("play");
@@ -1852,24 +1857,26 @@ function renderWiz(){
   if(w.step===3){
     // Built once; leaving bars out only repaints the list, count and pins, so the map never reloads.
     const excl=w.excl||(w.excl=[]),MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
-    const hasHistory=Object.keys(col).length||Object.keys(S.been).length;
+    const hasHistory=Object.keys(col).length;
     body.innerHTML=`<div><h1 class="q">Your zone</h1>
         <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${rLabel(w.radius)}</button></div></div>
       <div class="map zmapwrap"><div id="zoneMap" style="height:240px"></div></div>
       <div class="zcount"><b id="zN"></b><span id="zNs"></span></div>
-      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch"><span class="t"><b>Skip bars I've been to</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
+      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch"><span class="t"><b>Skip bars from past games</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
       <div>
+        <button class="zreveal" type="button" id="zShow" aria-expanded="${!!w.showList}"><span>${w.showList?"Hide the bars":"See the bars in your zone"}</span><small>${w.showList?"":"Spoilers. Or keep it a surprise."}</small></button>
+        <div id="zListWrap" ${w.showList?"":"hidden"}>
         <div class="zhead"><h3>Rooftops in your zone</h3><span class="small" id="zOut"></span></div>
         <p class="note" style="margin:2px 0 10px">Everything ticked is in. Untick up to ${MAXOUT} to sit them out tonight. Tap a name for the details.</p>
-        <div class="card zlist" id="zList"></div>
+        <div class="card zlist" id="zList"></div></div>
       </div>`;
     const paint=()=>{
       const t=now(),open=openIn(c,w.radius,t,w.newOnly).filter(v=>!excl.includes(v.id));
       $("zN").textContent=open.length;$("zNs").textContent=`rooftop${open.length===1?"":"s"} your spins can land on`;
-      if($("newTog")){$("newTog").setAttribute("aria-checked",String(!!w.newOnly));$("newTogS").textContent=`${openIn(c,w.radius,t,true).length} of ${openIn(c,w.radius,t,false).length} open here are new to you`}
+      if($("newTog")){$("newTog").setAttribute("aria-checked",String(!!w.newOnly));$("newTogS").textContent=`${openIn(c,w.radius,t,true).length} of ${openIn(c,w.radius,t,false).length} open here you haven't played yet`}
       $("zOut").textContent=excl.length?`${excl.length}/${MAXOUT} sitting out`:"";
       const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
-      $("zList").innerHTML=sorted.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been,dim=out||skip||!o.open;
+      $("zList").innerHTML=sorted.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
         const status=out?"Sitting this one out":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
         const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
         return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></button>${tick}</div>`}).join("");
@@ -1882,6 +1889,7 @@ function renderWiz(){
     zonePaint=paint;
     body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();paint()};
+    $("zShow").onclick=()=>{w.showList=!w.showList;save();$("zListWrap").hidden=!w.showList;$("zShow").setAttribute("aria-expanded",String(w.showList));$("zShow").innerHTML=`<span>${w.showList?"Hide the bars":"See the bars in your zone"}</span><small>${w.showList?"":"Spoilers. Or keep it a surprise."}</small>`};
     paint();
     requestAnimationFrame(async()=>{
       if(zMap){zMap.remove();zMap=null}
@@ -1952,7 +1960,7 @@ const RR_AUTO=3*3600000; // R&R nights wrap up on their own after 3 hours
 // R&R: where spins can land. Near me = within your distance of where you are now.
 // A region or anywhere = that part of town, kept to bars within 2 km of you once you're out (if there are any).
 function cruiseSet(g){
-  const base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed),here_=fromPoint();
+  const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!g.newOnly||isNew(v.id,c_))),here_=fromPoint();
   if(g.cz.type==="me")return base.filter(v=>dist(here_,v)<=(g.cz.r||2)*1000);
   const reg=base.filter(v=>g.cz.type==="all"||areaOf(v).reg===g.cz.name);
   if(!g.visits.length)return reg;
@@ -2307,7 +2315,7 @@ function renderPlay(){
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
     const cp=cardPhoto(v),fs=g.freeSkips||0;
-    st.innerHTML=banner+ask+`<div class="bar${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
+    st.innerHTML=banner+ask+`<div class="bar${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}${collectedMap()[v.id]?"":`<button class="beenbtn" type="button" id="beenBtn" aria-pressed="${!!S.been[v.id]}">${S.been[v.id]?I.check+" Been here":"Been here?"}</button>`}</span><h2>${esc(v.name)}</h2>
       <a class="gmlink" href="${gmapsURL(v)}" target="_blank" rel="noopener">Info on Google Maps ›</a>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
@@ -2334,6 +2342,7 @@ function renderPlay(){
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
+  const bb_=$("beenBtn");if(bb_)bb_.onclick=()=>{const id=g.target;if(S.been[id])delete S.been[id];else S.been[id]=1;save();renderPlay()};
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();renderPlay()};
   else if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
