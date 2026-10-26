@@ -2076,6 +2076,17 @@ function doSpin(force,vel){
     $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
     reel=makeReel($("reelBox"),gameReelNames(),{});
   }
+  if(g.pick3){
+    reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,()=>{
+      const others=shuffle(P.filter(v=>v.id!==pick.id)).slice(0,2),opts=[pick,...others];g.pick3=false;spinning=false;save();
+      opts.forEach(v=>barPhoto(v));
+      const choose=v=>{closeSheet();g.target=v.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=v.id;rollWild(g,v.id);save();renderPlay();onLocation()};
+      sheet(`<h3>Pick from 3</h3><p class="note">Your wildcard. Choose where you're heading.</p><div class="acts">${opts.map(v=>{const o=openState(v,now());return `<button class="opt" type="button" data-p3="${v.id}"><span class="ic">${I.pin}</span><span class="t"><b>${esc(v.name)}</b><small>${walkMin(from,v)} min walk · ${mOrKm(dist(from,v))}${o.open?" · til "+clock12(o.closeAt):""}</small></span></button>`}).join("")}</div>`,
+        ()=>document.querySelectorAll("[data-p3]").forEach(b=>b.onclick=()=>choose(byId(b.dataset.p3))));
+      $("sheet").addEventListener("close",()=>{if(!g.target)choose(pick)},{once:true});  // closed without choosing: take the one it landed on
+    });
+    return;
+  }
   reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation()});
 }
 function boardHTML(names,live){
@@ -2259,6 +2270,7 @@ function confetti(){
   const app=$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
   for(let i=0;i<46;i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
 }
+const PICK3="Pick from 3. Your next spin lands on three rooftops and you choose.";
 const WILDS=[
  "Bartender's choice for the whole group.",
  "Order something none of you have tried before.",
@@ -2271,14 +2283,14 @@ const WILDS=[
  "Tiny glasses, all round. Bottoms up, together.",
  "Cheapest thing on the menu. No exceptions.",
  "Ask a stranger to pick your round.",
- "Whoever's been quietest tonight orders for everyone.",
  "Make a toast. Worst one buys the next round.",
  "Buffalo. Left hand only.",
- "Cheers with every person in the group. Eye contact or it doesn't count.",
- "Make friends with another group. Bonus if they follow you to the next bar.",
- "Swap drinks with the person on your right after one sip.",
- "Whoever's drink arrives last buys the next round.",
- "Order something you'd never be caught dead drinking."
+ "Order whatever the bartender just made for the last person. The whole group.",
+ "Order the house special. No questions.",
+ "Whoever's wearing the most black picks the round.",
+ "Everyone orders a drink starting with the first letter of their name.",
+ "Order in one word. Let the bartender work out the rest.",
+ PICK3
 ];
 // Wildcards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
 function rollWild(g,id){
@@ -2286,7 +2298,7 @@ function rollWild(g,id){
   if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(WILDS.map((_,i)=>i));g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
   const i=g.wdeck.shift(),w=WILDS[i];
   S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
-  g.wild={id,text:w};g.lastWild=w;if(w.startsWith("Free re-spin"))g.freeSkips=(g.freeSkips||0)+1;
+  g.wild={id,text:w};g.lastWild=w;if(w===PICK3)g.pick3=true;
 }
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
