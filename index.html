@@ -946,6 +946,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 
 #v-home{padding-top:calc(env(safe-area-inset-top,0px) + 14px)}
 .appbar{flex:none;display:flex;justify-content:flex-start;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;background:var(--bg);z-index:10}
+.logo.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.logo.tap:active{opacity:.6}
 .logo{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.06em;user-select:none}
 .logo span{color:var(--amber)}
 .ready{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;min-height:calc(100dvh - 300px);justify-content:center}
@@ -1640,6 +1642,7 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
 function go(route){S.route=route;save();render()}
 function render(){
+  if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
   if(!S.route)S.route=S.game?"play":"home";
   if(S.route==="play"&&!S.game)S.route="home";
@@ -1682,6 +1685,9 @@ function renderIntro(){
   $("introSkip").hidden=i===SLIDES.length-1;
 }
 $("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=0;go("ob")}};
+// The logo takes you home from setup (game setup, R&R setup, first-time setup). Your picks so far are kept.
+const SETUP_ROUTES=["wiz","quick","ob"];
+$("logo").onclick=()=>{if(SETUP_ROUTES.includes(S.route)){closeSheet();go("home")}};
 $("introSkip").onclick=()=>{S.onboarded=true;S.ob=0;go("ob")};
 (()=>{let x0=null;$("v-intro").addEventListener("touchstart",e=>x0=e.touches[0].clientX,{passive:true});$("v-intro").addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const i=S.intro||0;if(dx<0&&i<SLIDES.length-1)S.intro=i+1;else if(dx>0&&i>0)S.intro=i-1;else return;save();renderIntro()})})();
 
