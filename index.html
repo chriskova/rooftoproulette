@@ -2117,9 +2117,8 @@ function howSheet(){
   sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
-    ["Stay 3 minutes and it counts","Leave sooner and we'll ask if you had a drink."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
-    ["The last 30 minutes","Spins only pick bars you can reach before time's up. Get to your last one before zero and it counts."]])}</div>
+    ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
     <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet);
 }
 function openMenu(){
@@ -2200,7 +2199,7 @@ function renderPlay(){
   const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
-  if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> From now on, spins only pick bars you can reach before the clock runs out.</div>`;
+  if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
   const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
   if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
