@@ -677,6 +677,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 </style>
 <style>
 @font-face{font-family:"Big Shoulders Display";font-weight:500;font-display:swap;src:url(fonts/big-shoulders-display-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:normal;font-display:swap;src:url(fonts/instrument-serif-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Instrument Serif";font-weight:400;font-style:italic;font-display:swap;src:url(fonts/instrument-serif-latin-400-italic.woff2) format("woff2")}
 @font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:swap;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format("woff2")}
 :root{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;
@@ -684,6 +686,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.14);
   --green:#4ADE80;--green-soft:rgba(74,222,128,.12);--red:#FF5A4E;--blue:#5AA9FF;
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --cream:#F3EEE6;
   --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --r:18px;--tab:64px;
   color-scheme:dark;
@@ -941,8 +945,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .tip.soft.ok svg{color:var(--green)}
 
 #v-home{padding-top:calc(env(safe-area-inset-top,0px) + 14px)}
-.appbar{flex:none;display:flex;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;background:var(--bg);z-index:10}
-.logo{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:.16em;user-select:none}
+.appbar{flex:none;display:flex;justify-content:flex-start;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 6px;background:var(--bg);z-index:10}
+.logo{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.06em;user-select:none}
 .logo span{color:var(--amber)}
 .ready{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;min-height:calc(100dvh - 300px);justify-content:center}
 .mixline{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -1127,6 +1131,14 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes swipehint{0%{transform:translateY(-10px) scale(.8);opacity:0}15%{transform:translateY(0) scale(1);opacity:1}60%{transform:translateY(120px) scale(1);opacity:1}80%,100%{transform:translateY(140px) scale(.9);opacity:0}}
 @keyframes swipetrail{0%,15%{height:0}60%{height:110px}80%,100%{height:0}}
 .reelnote{text-align:center;margin:0}
+h1.q,h2.q{font-family:var(--serif);font-weight:400;font-size:clamp(34px,10vw,42px);line-height:1.02;letter-spacing:-.01em;color:var(--cream)}
+h1.q i,h2.q i{color:var(--amber)}
+.sheetbar{cursor:pointer;position:relative;margin-bottom:4px}
+.sheetbar.photo{min-height:230px}
+.sheetbar .gmgo{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;z-index:2}
+.sheetbar:not(.photo) .gmgo{background:rgba(36,24,3,.12);color:var(--amber-ink)}
+.sheetbar .gmgo svg{width:15px;height:15px}
+#v-quick .opts{display:flex;flex-direction:column;gap:10px}
 </style>
 </head>
 <body>
@@ -1153,7 +1165,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
       <button class="btn" id="newGame" type="button">Start a new game</button>
-      <button class="btn line" id="quickGo" type="button">Just pick one for us</button>
+      <button class="btn line" id="quickGo" type="button">Just the one</button>
     </div>
     <div class="card">
       <div class="eyebrow" style="margin-bottom:12px">How it works</div>
@@ -1506,6 +1518,12 @@ function fillPhotos(root){
 const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.parentNode.remove()"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
 function cardPhoto(v){const ph=phMem[v.id];if(!ph)return {cls:"",style:"",cr:""};
   return {cls:" photo",style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
+// The card at the top of a bar's sheet: same look as the game's bar card. Tap it to open the Google listing.
+function sheetCard(v,facts){const cp=cardPhoto(v);
+  return `<div class="bar sheetbar${cp.cls}"${cp.style} data-gm="${esc(gmapsURL(v))}" data-sc="${v.id}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">${esc(v.area)}</span><h2>${esc(v.name)}</h2><div class="facts">${facts}</div></div>`}
+function bindSheetCard(v,facts){const el=document.querySelector(`[data-sc="${v.id}"]`);if(!el)return;
+  el.onclick=e=>{if(e.target.closest("a"))return;window.open(el.dataset.gm,"_blank","noopener")};
+  if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{const cur=document.querySelector(`[data-sc="${v.id}"]`);if(ph&&cur&&$("sheet").open){cur.outerHTML=sheetCard(v,facts);bindSheetCard(v,facts)}})}
 const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||""}" data-ph="${v.id}" data-done="1">${phInner(v,ph)}</div>`:ph===null?"":`<div class="bph ${cls||""}" data-ph="${v.id}"></div>`};
 
 
@@ -1592,61 +1610,81 @@ function renderHome(){
   $("homeSteps").innerHTML=stepsHTML(RULES);
 }
 $("newGame").onclick=()=>startWizard();
-$("quickGo").onclick=()=>{S.quick={from:null,pick:null,seen:[]};go("quick")};
+$("quickGo").onclick=()=>{S.quick={step:0,from:null,pick:null,seen:[]};go("quick")};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 
 /* ---------- one-off spin: one random rooftop, no clock, no scorecard ---------- */
-const QR=1.5; // km around the start point
-function quickPool(q,t){
-  const f=q.from;if(!f)return [];
-  const ok=VENUES.filter(v=>!S.nfu[v.id]&&openOK(v,t));
-  let p=ok.filter(v=>dist(f,v)<=QR*1000);
-  if(!p.length)p=ok.slice().sort((a,b)=>dist(f,a)-dist(f,b)).slice(0,3).filter(v=>dist(f,v)<=8000);
-  const fresh=p.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:p;
+/* ---------- Just the one: where → how far / which area → spin. No clock, no scorecard. ---------- */
+const QR=1.5; // km around an area's centre
+const QDIST=[{r:1,t:"A short walk",s:"Within 1 km, about 12 minutes"},{r:2,t:"A decent walk",s:"Within 2 km, about 25 minutes"},{r:5,t:"Happy to Uber",s:"Within 5 km"}];
+function quickSet(q){ // every rooftop that could come up, open or not
+  if(!q||!q.from)return [];
+  const base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed);
+  if(q.from.type==="me")return base.filter(v=>dist(q.from,v)<=(q.r||1)*1000);
+  if(q.from.type==="all")return base.filter(v=>!FAR.has(v.id));
+  return base.filter(v=>!FAR.has(v.id)&&dist(q.from,v)<=QR*1000);
 }
+function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
+const quickLabel=q=>q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"All of inner Sydney":q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
-  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng}}
-  catch(e){q.note="Couldn't find you just now. Pick an area instead."}
-  q.pick=null;q.seen=[];save();renderQuick();
+  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};q.step=1}
+  catch(e){q.note="Couldn't find you just now. Pick Sydney and choose an area instead."}
+  save();renderQuick();
 }
 function renderQuick(){
-  const q=S.quick||(S.quick={from:null,pick:null,seen:[]}),b=$("v-quick"),t=now();
+  const q=S.quick||(S.quick={step:0,from:null,pick:null,seen:[]}),b=$("v-quick"),t=now();
   if(!S.game)$("stage").innerHTML="";
-  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div></div></div>`;
-  const chips=`<div class="chips qfrom"><button class="chip" type="button" id="qMe" aria-pressed="${!!(q.from&&q.from.type==="me")}">${I.pin} Near me</button>${AREAS.map(a=>`<button class="chip" type="button" data-qa="${esc(a.name)}" aria-pressed="${!!(q.from&&q.from.name===a.name)}">${esc(a.name)}</button>`).join("")}</div>`;
-  if(!q.from){
-    b.innerHTML=top+`<div><h1 class="q">Just one rooftop</h1><p class="sub" style="margin:6px 0 0">No clock, no game. We'll pick one open rooftop for you.</p></div>
-      <div class="eyebrow">Where are you?</div>${chips}${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
-  }else if(!q.pick){
-    const P=quickPool(q,t),nm=k=>P.length?P[(k+P.length*3)%P.length].name:"";
-    b.innerHTML=top+`<div><h1 class="q">Just one rooftop</h1></div>${chips}
-      <div class="ready" id="qStage">${P.length?`<div id="qReel"></div>`:""}
-      ${P.length?`<div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"} nearby</div><p class="note reelnote">${reelNote()}</p>`
-        :`<div class="alertbox">Nothing's open near here right now${nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t)?". First one opens at "+nextOpen(VENUES.filter(v=>dist(q.from,v)<=QR*1000),t):""}. Try another area.</div>`}</div>`;
+  const step=q.pick?3:(q.step||0);
+  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(Math.min(step,2)+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  if(step===0){
+    const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
+    b.innerHTML=top+`<div><h1 class="q">Just <i>the one</i></h1><p class="sub" style="margin:6px 0 0">No clock, no game. We'll pick one open rooftop for you.</p></div>
+      <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around where you are</small></span></button>
+      <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick an area</small></span></button>${soon}</div>
+      ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
+  }else if(step===1&&q.from&&q.from.type==="me"){
+    b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
+      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
+  }else if(step===1){
+    const all=VENUES.filter(v=>!FAR.has(v.id)&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t)).length;
+    const areas=AREAS.map(a=>({a,n:quickSet({from:{type:"area",name:a.name,lat:a.lat,lng:a.lng}}).filter(v=>openOK(v,t)).length})).sort((x,y)=>y.n-x.n);
+    b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1><p class="sub" style="margin:6px 0 0">Inner Sydney only, for now.</p></div>
+      <div class="opts"><button class="opt" type="button" data-qa="*"><span class="ic">${I.city}</span><span class="t"><b>All of inner Sydney</b><small>The city, east, inner west and North Sydney</small></span><span class="n"><b>${all}</b><small>open</small></span></button>
+      ${areas.map(o=>`<button class="opt" type="button" data-qa="${esc(o.a.name)}" ${o.n?"":"disabled"}><span class="ic">${I.pin}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span><span class="n">${o.n?`<b>${o.n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`).join("")}</div>`;
+  }else if(step===2){
+    const P=quickPool(q,t);
+    b.innerHTML=top+`<div class="ready" id="qStage"><div class="mixline"><span>${esc(quickLabel(q))}</span></div>
+      ${P.length?`<div id="qReel"></div><div class="poolnum"><b>${P.length}</b> open rooftop${P.length===1?"":"s"}</div><p class="note reelnote">${reelNote()}</p>`
+        :`<div class="alertbox">Nothing's open there right now${nextOpen(quickSet(q),t)?". First one opens at "+nextOpen(quickSet(q),t):""}. Go back and try somewhere else.</div>`}</div>`;
   }else{
     const v=byId(q.pick),o=openState(v,t),y=you()||(q.from.type==="me"?q.from:null),cp=cardPhoto(v);
-    b.innerHTML=top+`<div class="bar${cp.cls}${animateId===("q:"+v.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Your rooftop${isNew(v.id)?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
+    b.innerHTML=`<div class="bar${cp.cls}"${cp.style}>${cp.cr}<span class="eyebrow">Your rooftop${isNew(v.id)?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
         <a class="gmlink" href="${gmapsURL(v)}" target="_blank" rel="noopener">Info on Google Maps ›</a>
         <div class="facts">${y?`<span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dist(y,v))}</span>`:`<span>${I.pin} ${esc(v.area)}</span>`}${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
         <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       <button class="btn dark" type="button" id="qAgain">${I.redo} Spin again</button>
       ${barStatus(v,collectedMap())?"":`<button class="toggle" type="button" id="qBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>We went here</b><small>Ticks it off your rooftops.</small></span><span class="sw"></span></button>`}
       <div class="card qgame"><b>Got an hour?</b><span class="small">Turn this into a game and see how many rooftops you can hit.</span><button class="btn sm line" type="button" id="qGame">Start a game from here</button></div>`;
-    if(animateId===("q:"+v.id))animateId=null;
     if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph)afterReveal(()=>{if(S.route==="quick"&&S.quick&&S.quick.pick===v.id)renderQuick()})});
   }
-  $("qBack").onclick=()=>{if(q.pick){q.pick=null;save();renderQuick()}else{S.quick=null;go("home")}};
+  if($("qBack"))$("qBack").onclick=()=>{q.step=Math.max(0,(q.step||0)-1);q.note=null;save();if(q.step===0&&!q.from){S.quick=null;go("home")}else renderQuick()};
+  if($("qBack")&&step===0)$("qBack").onclick=()=>{S.quick=null;go("home")};
+  if($("qClose"))$("qClose").onclick=()=>{S.quick=null;go("home")};
   if($("qMe"))$("qMe").onclick=quickNearMe;
-  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const a=AREAS.find(z=>z.name===x.dataset.qa);q.from={type:"area",name:a.name,lat:a.lat,lng:a.lng};q.pick=null;q.seen=[];q.note=null;save();renderQuick()});
-  if($("qReel")){const P=quickPool(q,t);const nm=P.map(v=>v.name).concat(P.length<6?VENUES.filter(v=>!v.tempClosed&&dist(q.from,v)<=QR*1000).map(v=>v.name):[]);reel=makeReel($("qReel"),nm.length?nm:P.map(v=>v.name),{hint:true,onRelease:v=>quickSpin(v)})}
-  if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;save();renderQuick()};
+  if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
+  b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;q.seen=[];save();renderQuick()});
+  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa,a=AREAS.find(z=>z.name===n);
+    q.from=n==="*"?{type:"all",name:"All of inner Sydney",lat:-33.8732,lng:151.2069}:{type:"area",name:a.name,lat:a.lat,lng:a.lng};q.step=2;q.seen=[];save();renderQuick()});
+  if($("qReel")){const P=quickPool(q,t),nm=P.map(v=>v.name);if(nm.length<6)quickSet(q).forEach(v=>nm.push(v.name));reel=makeReel($("qReel"),nm,{hint:true,onRelease:v=>quickSpin(v)})}
+  if($("qAgain"))$("qAgain").onclick=()=>{q.pick=null;q.step=2;save();renderQuick()};
   if($("qBeen"))$("qBeen").onclick=()=>{if(S.been[q.pick])delete S.been[q.pick];else S.been[q.pick]=1;save();renderQuick()};
-  if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;
+  if($("qGame"))$("qGame").onclick=()=>{const f=q.from,len=S.last.len||60;S.quick=null;
+    if(f.type==="all"){startWizard();return}
     S.wiz={step:1,radius:null,len,newOnly:!!S.last.newOnly,start:f.type==="me"?{type:"me",name:"you",lat:f.lat,lng:f.lng,n:openIn(f,1.5).length,sub:"Near "+nearestArea(f)}:{type:"area",name:f.name,lat:f.lat,lng:f.lng}};
-    S.quick=null;go("wiz")};
+    go("wiz")};
 }
 function quickSpin(vel){
   const q=S.quick;if(spinning||!q||!q.from)return false;ac();
@@ -1736,9 +1774,10 @@ function renderWiz(){
 function zoneBarSheet(v){
   const w=S.wiz;if(!w){barSheet(v);return}
   const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
-  sheet(`${phBox(v,"sheetph")}<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</p>
-    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in the mix":"Leave it out tonight"}</button>`:""}<a class="btn dark" href="${gmapsURL(v)}" target="_blank" rel="noopener">${I.pin} Hours, menu &amp; reviews on Google</a><button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
-    $("zc").onclick=closeSheet;if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();renderWiz()}});
+  const zf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
+  sheet(`${sheetCard(v,zf)}
+    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in the mix":"Leave it out tonight"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
+    $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();renderWiz()}});
 }
 async function useMe(){
   const w=S.wiz;
@@ -2344,14 +2383,13 @@ $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.barsF
 function barSheet(v){
   const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
   if(bMap&&S.route==="bars")bMap.setView(v,16);
-  sheet(`${phBox(v,"sheetph")}<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${esc(v.address)}${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
-    <p class="note" style="color:${o.open?"var(--green)":"var(--muted)"};margin-top:6px">${o.open?"Open now til "+clock12(o.closeAt):o.opens!=null?"Opens today at "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</p>
+  const bf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>${y?`<span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}`;
+  sheet(`${sheetCard(v,bf)}
     ${c[v.id]?`<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> first on ${dateTxt(c[v.id])}</p>`:""}
     <div class="acts">
       ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in a spin.</small></span><span class="sw"></span></button>
-      <a class="btn dark" href="${gmapsURL(v)}" target="_blank" rel="noopener">${I.pin} Hours, menu &amp; reviews on Google</a>
-    </div>`,()=>{
+    </div>`,()=>{bindSheetCard(v,bf);
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else S.nfu[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
   });
