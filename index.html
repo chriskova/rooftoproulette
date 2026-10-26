@@ -1186,9 +1186,11 @@ h1.q.modename{font-size:46px}
 .mode .howlink{color:var(--muted);margin-top:-2px}
 #v-home{gap:12px}
 #v-home .hero{padding:16px 18px;gap:6px}
-#v-home .hero .brand{font-size:40px}
+#v-home .hero .brand{font-size:38px}
 #v-home .modehd{margin:4px 2px -4px}
-#v-home .card.mode{padding:14px 16px;gap:12px}
+#v-home .card.mode{padding:12px 16px 4px;gap:10px}
+#v-home .mode .btn{min-height:46px;height:46px}
+#v-home .mode .howlink{padding:4px 0 6px;margin-top:-4px;font-size:13.5px}
 #v-home .mode h2.q{font-size:32px;margin:0 0 4px}
 #v-home .mode .modeline{font-size:14px}
 #v-home .mode .mic{width:40px;height:40px}
@@ -1225,11 +1227,13 @@ h1.q.modename{font-size:46px}
     <div class="eyebrow modehd">Pick how you're playing</div>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin, get there, spin again. How many can you hit?</p></div></div>
-      <div class="mbtns"><button class="btn" id="newGame" type="button">Play Rush Hour</button><button class="mhow" id="homeHow" type="button">How it works</button></div>
+      <button class="btn" id="newGame" type="button">Play Rush Hour</button>
+      <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
     </div>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock. Stay as long as you like, spin when you're ready.</p></div></div>
-      <div class="mbtns"><button class="btn" id="quickGo" type="button">Play R&amp;R</button><button class="mhow" id="homeHowRR" type="button">How it works</button></div>
+      <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
+      <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
   </section>
