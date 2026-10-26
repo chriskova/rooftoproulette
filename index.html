@@ -1482,7 +1482,9 @@ function barPhoto(v){
       const ph=pl.photos&&pl.photos[0];if(!ph)return phMem[v.id]=null;
       const a=(ph.authorAttributions||[])[0]||{};
       phBump(v.id);
-      return phMem[v.id]={url:ph.getURI({maxWidth:900,maxHeight:600}),by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
+      const url=ph.getURI({maxWidth:800,maxHeight:560});
+      await new Promise(res=>{const im=new Image();const t=setTimeout(res,4000);im.onload=im.onerror=()=>{clearTimeout(t);res()};im.src=url;if(im.decode)im.decode().then(res,()=>{})});
+      return phMem[v.id]={url,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
     }catch(e){return null}finally{delete phWait[v.id]}
   })();
 }
@@ -1630,7 +1632,7 @@ function renderQuick(){
       ${barStatus(v,collectedMap())?"":`<button class="toggle" type="button" id="qBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>We went here</b><small>Ticks it off your rooftops.</small></span><span class="sw"></span></button>`}
       <div class="card qgame"><b>Got an hour?</b><span class="small">Turn this into a game and see how many rooftops you can hit.</span><button class="btn sm line" type="button" id="qGame">Start a game from here</button></div>`;
     if(animateId===("q:"+v.id))animateId=null;
-    if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&S.route==="quick"&&S.quick.pick===v.id){const im=new Image();im.onload=()=>renderQuick();im.src=ph.url}});
+    if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph)afterReveal(()=>{if(S.route==="quick"&&S.quick&&S.quick.pick===v.id)renderQuick()})});
   }
   $("qBack").onclick=()=>{if(q.pick){q.pick=null;save();renderQuick()}else{S.quick=null;go("home")}};
   if($("qMe"))$("qMe").onclick=quickNearMe;
@@ -1846,8 +1848,10 @@ function makeReel(el,names,o){
   }
   return R;
 }
+let revealEnd=0;
+const afterReveal=fn=>setTimeout(fn,Math.max(0,revealEnd-Date.now()));
 function reveal(info,scope){
-  if(!info)return;const card=scope.querySelector(".bar");if(!card||!card.animate)return;
+  if(!info)return;revealEnd=Date.now()+700;const card=scope.querySelector(".bar");if(!card||!card.animate)return;
   const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const hs=getComputedStyle(h2),kids=[...card.children].filter(x=>x!==h2),after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
   const E="cubic-bezier(.2,.85,.25,1)";
@@ -1862,6 +1866,7 @@ function reveal(info,scope){
   ghost.animate([{transform:"none",color:"#F5B83D"},{transform:`translate(${hr.left-nr.left}px,${hr.top-nr.top+(lh-nr.height*sc)/2}px) scale(${sc})`,color:hs.color}],{duration:440,easing:E,fill:"forwards"})
     .onfinish=()=>{h2.style.opacity="";ghost.remove()};
 }
+setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return S.tips.swipe?"Swipe down or tap to spin":"Swipe down to spin. Harder swipe, longer spin."}
 
 function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.length>=6)return P;return P.concat(inCircle(g.center,g.radius).filter(v=>!v.tempClosed).map(v=>v.name)).concat(P.length?[]:VENUES.slice(0,10).map(v=>v.name))}
@@ -2043,7 +2048,7 @@ function renderPlay(){
   }
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
-  if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;const im=new Image();im.onload=()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning)renderPlay()};im.src=ph.url});
+  if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{g.reelOpen=true;save();renderPlay()};
   if($("reelBack"))$("reelBack").onclick=()=>{g.reelOpen=false;save();renderPlay()};
   if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});
