@@ -1715,8 +1715,10 @@ function colCardHTML(){
 function renderHome(){
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
 }
-$("newGame").onclick=()=>{if(S.game){go("play");return}startWizard()};
-$("quickGo").onclick=()=>{if(S.game){go("play");return}S.quick={step:0,from:null};go("quick")};
+// The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
+function firstRules(k,show,start){S.seenHow=S.seenHow||{};if(S.seenHow[k]){start();return}S.seenHow[k]=1;save();show(start)}
+$("newGame").onclick=()=>{if(S.game){go("play");return}firstRules("rush",howSheet,startWizard)};
+$("quickGo").onclick=()=>{if(S.game){go("play");return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?I.glass:I.clock);
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
@@ -2167,8 +2169,9 @@ function openMove(free){
   });
 }
 /* "Give it a spin" in the rules: the real wheel and real rooftops, landing on a card. No game, nothing saved. */
-const demoBtns=()=>`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Give it a spin</button><button class="btn dark" type="button" id="howX">Got it</button></div>`;
-function bindDemoBtns(back){$("howX").onclick=closeSheet;$("demoGo").onclick=()=>demoSheet(back)}
+// next: set the first time someone taps Play for a mode, so the rules lead straight into setup.
+const demoBtns=next=>`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Give it a spin</button><button class="btn${next?"":" dark"}" type="button" id="howX">${next?"Let's play":"Got it"}</button></div>`;
+function bindDemoBtns(back,next){$("howX").onclick=()=>{closeSheet();if(next)next()};$("demoGo").onclick=()=>demoSheet(back)}
 function demoSheet(back){
   sheet(`<h3>Give it a spin</h3><p class="note">A real rooftop, no game. Flick it down.</p><div class="demo"><div id="demoBox"></div></div><button class="btn dark" type="button" id="demoBack" style="margin-top:14px">Back to the rules</button>`,
     ()=>{$("demoBack").onclick=back;bindDemo()});
@@ -2186,14 +2189,14 @@ function bindDemo(){
         bindSheetCard(v,facts);reveal(info,box);$("demoAgain").onclick=mk})}})};
   mk();
 }
-function howSheet(){
+function howSheet(next){next=typeof next==="function"?next:null;
   sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Watch out for wildcards","Some spins come with a little challenge for the next bar."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
-    ${demoBtns()}`,()=>bindDemoBtns(howSheet));
+    ${demoBtns(next)}`,()=>bindDemoBtns(()=>howSheet(next),next));
 }
 function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
@@ -2213,11 +2216,11 @@ function openMenu(){
 }
 $("pMenu").onclick=openMenu;
 
-function cruiseHow(){sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+function cruiseHow(next){next=typeof next==="function"?next:null;sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
   ["Spin when you're ready","One bar or five. End the night from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
-    ${demoBtns()}`,()=>bindDemoBtns(cruiseHow))}
+    ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
   if(!g.started){S.game=null;save();stopWatch();go("home");return}
@@ -2653,7 +2656,7 @@ $("testFab").onclick=()=>{
     $("tR").onclick=()=>{S.ff=0;save();closeSheet();render()};
     $("sheetBody").querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const [dd,mm]=b.dataset.to.split(",").map(Number),s0=sydAt(now());let d=((dd-s0.day+7)%7)*1440+(mm-s0.min);if(d<=0)d+=7*1440;S.ff=(S.ff||0)+d*60000;save();closeSheet();render()});
     $("tP").onclick=()=>{try{localStorage.removeItem("rr-ph");localStorage.removeItem("rr-ph-b")}catch(e){}for(const k in phMem)delete phMem[k];closeSheet();render()};
-    $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};save();closeSheet();go("intro")};
+    $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();closeSheet();go("intro")};
     $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY)}catch(e){}location.reload()};
     $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
   });
