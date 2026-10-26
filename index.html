@@ -1121,7 +1121,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
-.flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box}
+.flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
 .reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
 .reel .hint.off{opacity:0}
 .reel .hint i{position:absolute;top:22%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 8px rgba(255,255,255,.08);animation:swipehint 1.9s cubic-bezier(.5,0,.3,1) infinite}
@@ -1872,12 +1872,31 @@ function makeReel(el,names,o){
 let revealEnd=0;
 const afterReveal=fn=>setTimeout(fn,Math.max(0,revealEnd-Date.now()));
 function reveal(info,scope){
-  // Landing → card: the card simply opens in place, then the rest of the screen settles in.
+  /* Landing → card: the slot (as it looks, dark with the yellow outline) grows to the card's size and spot,
+     the landed name rides along into the title position, then the card fades in over the top. */
   const card=scope.querySelector(".bar");if(!card||!card.animate)return;
-  revealEnd=Date.now()+400;
-  card.animate([{opacity:0,transform:"scale(.96)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.2,.8,.2,1)"});
-  let n=card.nextElementSibling,i=0;
-  while(n){n.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:280,delay:80+i*50,easing:"ease-out",fill:"backwards"});n=n.nextElementSibling;i++}
+  if(!info){card.animate([{opacity:0},{opacity:1}],{duration:220});return}
+  revealEnd=Date.now()+760;
+  const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
+  const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
+  const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
+  const box=document.createElement("div");box.className="flybox";document.body.appendChild(box);
+  box.animate([
+    {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},
+    {left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",borderRadius:cs.borderTopLeftRadius}],{duration:D,easing:E,fill:"forwards"});
+  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=h2.textContent;
+  Object.assign(ghost.style,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,whiteSpace:"normal",color:info.ink||"#F5B83D"});
+  document.body.appendChild(ghost);
+  const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize),lines=Math.max(1,Math.round(gr.height/lh));
+  const sx=lines>1?nr.left+nr.width/2-gr.width*sc/2:nr.left,sy=nr.top+nr.height/2-gr.height*sc/2;
+  ghost.animate([{transform:`translate(${sx-hr.left}px,${sy-hr.top}px) scale(${sc})`},{transform:"none"}],{duration:D,easing:E,fill:"forwards"});
+  card.style.opacity="0";after.forEach(k=>k.style.opacity="0");
+  setTimeout(()=>{
+    card.style.opacity="";card.animate([{opacity:0},{opacity:1}],{duration:X,easing:"ease-out"});
+    ghost.animate([{opacity:1},{opacity:0}],{duration:X,fill:"forwards"}).onfinish=()=>ghost.remove();
+    box.animate([{opacity:1},{opacity:0}],{duration:X,fill:"forwards"}).onfinish=()=>box.remove();
+    after.forEach((k,i)=>{k.style.opacity="";k.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:280,delay:60+i*50,easing:"ease-out",fill:"backwards"})});
+  },D);
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return "Flick it down. Harder flick, longer spin."}
