@@ -2012,18 +2012,18 @@ function reveal(info,scope){
 setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return "Flick it down. Harder flick, longer spin."}
 
+// Leaving a bar inside 3 minutes: ask whether it counts before heading on.
+function askDrink(a0,then){const v=byId(a0.id);
+  sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><p class="note">You've been here under ${DWELL_MIN} minutes. It only counts if you had a drink.</p><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
+    $("dS").onclick=closeSheet;
+    $("dY").onclick=()=>{closeSheet();a0._ans=true;save();then()};
+    $("dN").onclick=()=>{closeSheet();a0._ans=false;save();then()};
+  })}
 function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.length>=6)return P;return P.concat(inCircle(g.center,g.radius).filter(v=>!v.tempClosed).map(v=>v.name)).concat(P.length?[]:VENUES.slice(0,10).map(v=>v.name))}
 function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
-  if(a0&&force!==true&&now()-a0.arrivedAt<DWELL_MIN*60000){
-    const v=byId(a0.id);
-    sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><p class="note">You've been here under ${DWELL_MIN} minutes. It only counts if you had a drink.</p><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
-      $("dS").onclick=closeSheet;
-      $("dY").onclick=()=>{closeSheet();a0._ans=true;doSpin(true)};
-      $("dN").onclick=()=>{closeSheet();a0._ans=false;doSpin(true)};
-    });return false;
-  }
+  if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
   if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
   const {pool:P}=spinPool();
@@ -2192,8 +2192,9 @@ function renderPlay(){
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
-  const sb=$("spinBtn");if(sb)sb.onclick=()=>{g.reelOpen=true;save();renderPlay()};
-  if($("reelBack"))$("reelBack").onclick=()=>{g.reelOpen=false;save();renderPlay()};
+  const sb=$("spinBtn");if(sb)sb.onclick=()=>{const open_=()=>{g.reelOpen=true;save();renderPlay()};
+    if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
+  if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
