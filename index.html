@@ -1184,16 +1184,19 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .mode h2.q{font-size:36px;margin:0 0 6px}
 h1.q.modename{font-size:46px}
 .mode .howlink{color:var(--muted);margin-top:-2px}
-#v-home{gap:12px}
-#v-home .hero{padding:16px 18px;gap:6px}
-#v-home .hero .brand{font-size:38px}
-#v-home .modehd{margin:4px 2px -4px}
-#v-home .card.mode{padding:12px 16px 4px;gap:10px}
-#v-home .mode .btn{min-height:46px;height:46px}
-#v-home .mode .howlink{padding:4px 0 6px;margin-top:-4px;font-size:13.5px}
-#v-home .mode h2.q{font-size:32px;margin:0 0 4px}
-#v-home .mode .modeline{font-size:14px}
-#v-home .mode .mic{width:40px;height:40px}
+/* home: the logo sits on the page with a warm glow at the top; the two modes share the rest of the screen */
+#v-home{gap:16px;min-height:100%;display:flex;flex-direction:column;background:radial-gradient(90% 38% at 85% 0%,rgba(245,184,61,.22),transparent 70%),radial-gradient(70% 30% at 0% 0%,rgba(245,184,61,.08),transparent 70%)}
+#v-home .hero{background:none;border:0;padding:14px 2px 6px;gap:6px;overflow:visible}
+#v-home .hero .brand{font-size:clamp(36px,10.6vw,46px);white-space:nowrap}
+#v-home .hero .sub{font-size:16px;opacity:.85}
+#v-home .card.mode{flex:1 0 auto;justify-content:flex-start;padding:20px 18px 8px;gap:14px}
+#v-home .mode .btn{margin-top:auto}
+#v-home .mode .mtop{gap:16px}
+#v-home .mode h2.q{font-size:36px;margin:2px 0 8px}
+#v-home .mode .modeline{font-size:15px;line-height:1.45}
+#v-home .mode .mic{width:46px;height:46px;border-radius:14px}
+#v-home .mode .mic svg{width:24px;height:24px}
+#v-home .mode .howlink{padding:6px 0 8px;margin-top:-6px;font-size:14px}
 .mbtns{display:flex;gap:10px;align-items:center}
 .mbtns .btn{flex:1}
 .mhow{appearance:none;flex:none;height:52px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--text);font-size:14.5px;font-weight:650;white-space:nowrap}
@@ -1221,17 +1224,16 @@ h1.q.modename{font-size:46px}
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
     <div class="hero">
-      <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
+      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
     </div>
-    <div class="eyebrow modehd">Pick how you're playing</div>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin, get there, spin again. How many can you hit?</p></div></div>
       <button class="btn" id="newGame" type="button">Play Rush Hour</button>
       <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
     </div>
     <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock. Stay as long as you like, spin when you're ready.</p></div></div>
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock, so stay as long as you like.</p></div></div>
       <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
       <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
     </div>
