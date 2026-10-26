@@ -1208,9 +1208,9 @@ h1.q.modename{font-size:46px}
 html.fl .app{visibility:hidden}
 .zopen{appearance:none;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:pointer}
 .zopen b{display:block;font-size:15px;font-weight:650}.zopen small{color:var(--muted);font-size:12.5px}
-.tickbtn{appearance:none;flex:none;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--line);background:none;display:grid;place-items:center;color:var(--amber-ink);transition:background .15s,border-color .15s}
-.tickbtn.on{background:var(--amber);border-color:var(--amber)}
-.tickbtn svg{width:16px;height:16px}
+.tickbtn{appearance:none;flex:none;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:none;display:grid;place-items:center;color:var(--amber);transition:background .15s,border-color .15s}
+.tickbtn.on{background:rgba(245,184,61,.12);border-color:rgba(245,184,61,.35)}
+.tickbtn svg{width:14px;height:14px}
 .tickbtn:disabled{opacity:.35}
 .zmapwrap{background:#0E1117}
 </style>
@@ -1843,7 +1843,7 @@ function renderWiz(){
       const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
       $("zList").innerHTML=sorted.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&been,dim=out||skip||!o.open;
         const status=out?"Sitting this one out":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
-        const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":I.check}</button>`;
+        const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
         return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></button>${tick}</div>`}).join("");
       $("zList").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();paint()});
       $("zList").querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z));b.onpointerdown=()=>barPhoto(byId(b.dataset.z),"browse")});
@@ -1865,6 +1865,7 @@ function renderWiz(){
   }
 }
 let zonePaint=null;
+const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 function zoneBarSheet(v){
   const w=S.wiz;if(!w){barSheet(v);return}
   const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
