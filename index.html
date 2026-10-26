@@ -1107,7 +1107,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 #v-quick[hidden]{display:none}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
-.reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
+.reel{position:relative;perspective:800px;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
 .reel .frame{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12);overflow:hidden;pointer-events:none}
 .reel .lens{position:absolute;inset:0}
 .reel .lens .row span{display:inline-block}
@@ -1116,7 +1116,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel.won .lens .row{color:var(--amber)}
 .reel .lens .row.long{font-size:clamp(24px,7.4vw,33px)}
 .reel .lens .row.ph{color:var(--amber);font-size:clamp(30px,9.6vw,42px);letter-spacing:0}
-.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
+.reel .row{backface-visibility:hidden;position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
 .reel .row.ph{color:var(--muted);font-size:clamp(18px,5.4vw,22px);letter-spacing:.12em}
@@ -1831,19 +1831,28 @@ function makeReel(el,names,o){
   const seven=()=>[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("");
   el.innerHTML=`${seven()}<div class="frame"><div class="lens">${seven()}</div></div>${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
   const rows=[...el.querySelectorAll(":scope > .row")],lens=[...el.querySelectorAll(".lens .row")],frame=el.querySelector(".frame");
-  let lastK=0,moved=false;
+  let lastK=0,moved=false,lastP=0,lastT=performance.now();
+  // Names sit on a drum: each row is a slice of a cylinder, so they curve away and squash towards the top and bottom.
+  const STEP=17*Math.PI/180,RAD=ROW/STEP;
   const draw=()=>{const b=Math.round(R.p);
+    const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
     const popK=b!==lastK;if(popK){lastK=b;tick(560+Math.random()*80);buzz(3)}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
     const fl=Math.floor(R.p);
     const set=(r,n)=>{const sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH)}};
-    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d);set(r,L[mod(k)]);
-      r.style.transform=`translateY(${d*ROW}px) scale(${Math.max(.62,.9-.1*Math.max(0,a-1))})`;r.style.opacity=Math.max(0,.85-.25*Math.max(0,a-1))*Math.min(1,Math.max(0,(a-.55)/.35))});
+    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
+      if(Math.abs(th)>1.45){r.style.opacity=0;return}
+      r.style.transform=`translateY(${RAD*Math.sin(th)}px) rotateX(${-th}rad) scale(.88)`;
+      r.style.opacity=.9*Math.pow(Math.cos(th),1.4)*Math.min(1,Math.max(0,(a-.55)/.35))});
     // Through the window the name is magnified: it swells as it slides to the middle, and pops as it lands in it.
-    lens.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d);set(r,L[mod(k)]);
-      r.style.transform=`translateY(${d*ROW}px) scale(${1-.2*Math.min(1,a*1.7)})`;r.style.opacity=Math.min(1,Math.max(0,(.55-a)/.3));r.classList.toggle("c",a<.5);
-      if(popK&&k===b&&r.firstChild.animate)r.firstChild.animate([{transform:"scale(.9)"},{transform:"scale(1.1)",offset:.5},{transform:"scale(.98)",offset:.8},{transform:"scale(1)"}],{duration:260,easing:"ease-out"})})};
+    // Inside the window the curve is exaggerated, like looking through a bubble of glass:
+    // a name bulges in from the edge, flattens out big in the middle, then bends away again.
+    lens.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
+      const q=Math.min(1,a*1.9);r.style.transform=`translateY(${RAD*Math.sin(th)}px) scale(${1-.1*q},${1-.5*q*q})`;
+      r.style.opacity=Math.min(1,Math.max(0,(.55-a)/.3));r.classList.toggle("c",a<.5);
+      // a quick press-and-release as each name clicks into the middle, once the reel is slow enough to see it
+      if(popK&&k===b&&spd<14&&r.firstChild.animate)r.firstChild.animate([{transform:"scale(.93)"},{transform:"scale(1.045)",offset:.45},{transform:"scale(1)"}],{duration:170,easing:"cubic-bezier(.3,1.4,.5,1)"})})};
   draw();
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
@@ -1857,7 +1866,8 @@ function makeReel(el,names,o){
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
       R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      const c=el.querySelector(".lens .row.c span"),fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
+      const c=el.querySelector(".lens .row.c span");if(c.getAnimations)c.getAnimations().forEach(x=>x.finish());
+      const fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
       const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name,ink:getComputedStyle(c).color};
       setTimeout(()=>{R.busy=false;done&&done(info)},240)});
   };
