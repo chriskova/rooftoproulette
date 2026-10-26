@@ -1357,7 +1357,7 @@ const AREAS=[
  {name:"Manly",reg:"North",d:"Northern beaches",lat:-33.7975,lng:151.2870,src:["Manly"]}
 ];
 const areaOf=v=>AREAS.find(a=>a.src.includes(v.area))||AREAS.slice().sort((a,b)=>dist(v,a)-dist(v,b))[0];
-const RADII=[1,1.5,2],LENS=[60,120],SKIPS=3;
+const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const $=id=>document.getElementById(id);
@@ -1783,7 +1783,8 @@ function quickSpin(vel){
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
 function startWizard(){S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
-const recRadius=len=>len===60?1:2;
+const recRadius=len=>len===60?0.5:2;
+const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}
@@ -1816,12 +1817,15 @@ function renderWiz(){
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=2;save();renderWiz()});
   }
   if(w.step===2){
-    const c=w.start,rec=recRadius(w.len);if(w.radius==null)w.radius=rec;
-    const rows=RADII.map(r=>{const o=openIn(c,r,t);return {r,n:o.length,hop:avgHop(o)}});
-    const desc={1:"Minimal steps. Maximum rooftops.",1.5:"More travel, better variety.",2:w.len===60?"Alright, Columbus.":"Go on, be that person."};
+    // 1 hour: 500 m to 2 km (1.5 and 2 km turn it into a 2-hour game). 2 hours: 1 to 2 km.
+    const c=w.start,radii=w.len===60?RADII:RADII.filter(r=>r>=1);
+    const rows=radii.map(r=>{const o=openIn(c,r,t),tot=playable(inCircle(c,r),false).length;return {r,n:o.length,tot,hop:avgHop(o),thin:r<1&&tot<4}});
+    let rec=recRadius(w.len);if(rec===0.5&&rows[0].thin)rec=1;
+    if(w.radius==null||!radii.includes(w.radius)||(w.radius===0.5&&rows[0].thin))w.radius=rec;
+    const desc={0.5:"Minimal steps. Maximum rooftops.",1:"A bit more ground. Still walkable.",1.5:"More travel, better variety.",2:w.len===60?"Alright, Columbus.":"Go on, be that person."};
     body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${o.r} km${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:o.r===2&&w.len===60?`<span class="finetag">2 hours recommended</span>`:""}</b><small>${desc[o.r]}</small>${o.hop?`<span class="hop">${I.walk} About ${km(o.hop).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}</div>`;
-    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
+      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:o.r>=1.5&&w.len===60?`<span class="finetag">Makes it a 2-hour game</span>`:""}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<1000?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>open</small>`}</span></button>`).join("")}</div>`;
+    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;if(w.radius>=1.5&&w.len===60)w.len=120;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
   }
   if(w.step===3){
@@ -1829,7 +1833,7 @@ function renderWiz(){
     const excl=w.excl||(w.excl=[]),MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
     const hasHistory=Object.keys(col).length||Object.keys(S.been).length;
     body.innerHTML=`<div><h1 class="q">Your zone</h1>
-        <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div></div>
+        <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${rLabel(w.radius)}</button></div></div>
       <div class="map zmapwrap"><div id="zoneMap" style="height:240px"></div></div>
       <div class="zcount"><b id="zN"></b><span id="zNs"></span></div>
       ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch"><span class="t"><b>Skip bars I've been to</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
@@ -1935,7 +1939,7 @@ function cruiseSet(g){
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
 const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"?` · ${g.cz.r} km`:""}</span><span>R&amp;R</span></div>`
-  :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${g.radius} km</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
+  :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
 const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
