@@ -1213,6 +1213,8 @@ html.fl .app{visibility:hidden}
 .tickbtn svg{width:14px;height:14px}
 .tickbtn:disabled{opacity:.35}
 .zmapwrap{background:#0E1117}
+.opt .t .hop{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;font-weight:700;color:var(--text);opacity:.8;white-space:nowrap}
+.opt .t .hop svg{width:13px;height:13px;color:var(--amber)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -1817,7 +1819,7 @@ function renderWiz(){
     const rows=RADII.map(r=>{const o=openIn(c,r,t);return {r,n:o.length,hop:avgHop(o)}});
     const desc={1:"Bars close together. Quickest to get around.",1.5:"A good mix of choice and distance.",2:"The most choice. Longer trips between bars."};
     body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${o.r} km${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:""}</b><small>${desc[o.r]}${o.hop?`<br>Average trip between bars: ${km(o.hop)}`:""}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}</div>`;
+      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${o.r} km${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:""}</b><small>${desc[o.r]}</small>${o.hop?`<span class="hop">${I.walk} About ${km(o.hop).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}</div>`;
     body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
   }
