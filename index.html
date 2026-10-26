@@ -1113,7 +1113,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel .lens .row{height:74px;margin-top:-37px;font-weight:800;font-size:clamp(30px,9.6vw,42px);color:#fff}
 .reel.won .lens .row{color:var(--amber)}
 .reel .lens .row.long{font-size:clamp(24px,7.4vw,33px)}
-.reel .lens .row.ph{color:var(--amber)}
+.reel .lens .row.ph{color:var(--amber);font-size:clamp(30px,9.6vw,42px);letter-spacing:0}
 .reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
@@ -1872,38 +1872,12 @@ function makeReel(el,names,o){
 let revealEnd=0;
 const afterReveal=fn=>setTimeout(fn,Math.max(0,revealEnd-Date.now()));
 function reveal(info,scope){
-  /* Landing → card, as one move:
-     a stand-in for the slot (same size, colour and outline) grows to the card's exact size and turns yellow,
-     the landed name rides on top and becomes the card title, then the real card takes over underneath
-     and the rest of the card fades in. Nothing on the real card is stretched or scaled. */
-  if(!info)return;const card=scope.querySelector(".bar");if(!card||!card.animate)return;
-  revealEnd=Date.now()+760;
-  const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
-  const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=480;
-  const kids=[...card.children].filter(x=>x!==h2),after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
-  // the stand-in
-  const box=document.createElement("div");box.className="flybox";document.body.appendChild(box);
-  box.animate([
-    {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px",background:"#1e1a13",borderColor:"rgba(245,184,61,1)"},
-    {background:"#F5B83D",borderColor:"rgba(245,184,61,1)",offset:.45},
-    {left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",borderRadius:cs.borderTopLeftRadius,background:"#F5B83D",borderColor:"rgba(245,184,61,0)"}],{duration:D,easing:E,fill:"forwards"});
-  // the name
-  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=h2.textContent;
-  Object.assign(ghost.style,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,whiteSpace:"normal"});
-  document.body.appendChild(ghost);
-  const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize),lines=Math.max(1,Math.round(gr.height/lh));
-  const sx=nr.left+nr.width/2-gr.width*sc/2, sy=nr.top+nr.height/2-gr.height*sc/2;   // centred where the name sat in the slot
-  const startX=lines>1?sx:nr.left;
-  ghost.animate([{transform:`translate(${startX-hr.left}px,${sy-hr.top}px) scale(${sc})`,color:info.ink||"#fff"},{color:"#2a1d05",offset:.5},{transform:"none",color:hs.color}],{duration:D,easing:E,fill:"forwards"});
-  // the real card waits underneath, then takes over
-  card.style.visibility="hidden";h2.style.visibility="hidden";
-  kids.forEach(k=>k.style.opacity="0");after.forEach(k=>k.style.opacity="0");
-  setTimeout(()=>{
-    card.style.visibility="";h2.style.visibility="";ghost.remove();
-    box.animate([{opacity:1},{opacity:0}],{duration:160,fill:"forwards"}).onfinish=()=>box.remove();
-    kids.forEach((k,i)=>{k.style.opacity="";k.animate([{opacity:0,transform:"translateY(5px)"},{opacity:1,transform:"none"}],{duration:240+i*40,easing:"ease-out"})});
-    after.forEach((k,i)=>{k.style.opacity="";k.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:300,delay:60+i*50,easing:"ease-out",fill:"backwards"})});
-  },D);
+  // Landing → card: the card simply opens in place, then the rest of the screen settles in.
+  const card=scope.querySelector(".bar");if(!card||!card.animate)return;
+  revealEnd=Date.now()+400;
+  card.animate([{opacity:0,transform:"scale(.96)"},{opacity:1,transform:"none"}],{duration:260,easing:"cubic-bezier(.2,.8,.2,1)"});
+  let n=card.nextElementSibling,i=0;
+  while(n){n.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:280,delay:80+i*50,easing:"ease-out",fill:"backwards"});n=n.nextElementSibling;i++}
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return "Flick it down. Harder flick, longer spin."}
