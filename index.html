@@ -1126,6 +1126,10 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel .row.ph .b{color:var(--amber)}
 .reel.won .row.c .b{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
+.demoacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.demo{margin-top:12px;min-height:290px}
+.demo .bar{margin:0}
+.demo #demoAgain{margin-top:10px;width:100%}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
 .reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
@@ -2069,13 +2073,14 @@ function reveal(info,scope){
   const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
-  const box=document.createElement("div");box.className="flybox";document.body.appendChild(box);
+  const host=scope.closest("dialog")||document.body;
+  const box=document.createElement("div");box.className="flybox";host.appendChild(box);
   box.animate([
     {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},
     {left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",borderRadius:cs.borderTopLeftRadius}],{duration:D,easing:E,fill:"forwards"});
   const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=h2.textContent;
   Object.assign(ghost.style,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,whiteSpace:"normal",color:info.ink||"#F5B83D"});
-  document.body.appendChild(ghost);
+  host.appendChild(ghost);
   const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize),lines=Math.max(1,Math.round(gr.height/lh));
   const sx=lines>1?nr.left+nr.width/2-gr.width*sc/2:nr.left,sy=nr.top+nr.height/2-gr.height*sc/2;
   ghost.animate([{transform:`translate(${sx-hr.left}px,${sy-hr.top}px) scale(${sc})`},{transform:"none"}],{duration:D,easing:E,fill:"forwards"});
@@ -2161,6 +2166,26 @@ function openMove(free){
     $("mvX").onclick=closeSheet;
   });
 }
+/* "Give it a spin" in the rules: the real wheel and real rooftops, landing on a card. No game, nothing saved. */
+const demoBtns=()=>`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Give it a spin</button><button class="btn dark" type="button" id="howX">Got it</button></div>`;
+function bindDemoBtns(back){$("howX").onclick=closeSheet;$("demoGo").onclick=()=>demoSheet(back)}
+function demoSheet(back){
+  sheet(`<h3>Give it a spin</h3><p class="note">A real rooftop, no game. Flick it down.</p><div class="demo"><div id="demoBox"></div></div><button class="btn dark" type="button" id="demoBack" style="margin-top:14px">Back to the rules</button>`,
+    ()=>{$("demoBack").onclick=back;bindDemo()});
+}
+function bindDemo(){
+  const box=$("demoBox");if(!box)return;
+  box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});   // flicking the wheel shouldn't drag the sheet shut
+  const pool=playable(VENUES,false).filter(v=>!v.tempClosed);
+  const mk=()=>{box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;
+    const R=makeReel($("demoReel"),pool.map(v=>v.name),{hint:true,onRelease:vel=>{
+      if(R.busy)return false;const v=pool[Math.floor(Math.random()*pool.length)];barPhoto(v,"browse");
+      R.spinTo(v.name,vel,info=>{const o=openState(v,now());
+        const facts=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>`;
+        box.innerHTML=sheetCard(v,facts)+`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`;
+        bindSheetCard(v,facts);reveal(info,box);$("demoAgain").onclick=mk})}})};
+  mk();
+}
 function howSheet(){
   sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
@@ -2168,7 +2193,7 @@ function howSheet(){
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Watch out for wildcards","Some spins come with a little challenge for the next bar."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
-    <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet);
+    ${demoBtns()}`,()=>bindDemoBtns(howSheet));
 }
 function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
@@ -2192,7 +2217,7 @@ function cruiseHow(){sheet(`<h3>How R&amp;R works</h3><div class="steps" style="
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
   ["Spin when you're ready","One bar or five. End the night from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
-    <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet)}
+    ${demoBtns()}`,()=>bindDemoBtns(cruiseHow))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
   if(!g.started){S.game=null;save();stopWatch();go("home");return}
