@@ -1678,7 +1678,7 @@ function renderIntro(){
   const i=S.intro||0,s=SLIDES[i];
   $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0">${s.p}</p>`;
   [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
-  $("introNext").textContent=i<SLIDES.length-1?"Next":"Set up my first game";
+  $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
   $("introSkip").hidden=i===SLIDES.length-1;
 }
 $("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=0;go("ob")}};
@@ -1703,7 +1703,7 @@ function renderOb(){
   body.innerHTML=`<div><h1 class="q">Been to any already?</h1><p class="sub" style="margin:6px 0 0">Tick the rooftops you've been to. When you set up a game you can skip them and try somewhere new.</p></div>
     ${AREAS.map(a=>{const l=VENUES.filter(v=>areaOf(v)===a).sort((x,y)=>x.name.localeCompare(y.name));return l.length?`<div><div class="eyebrow" style="margin:6px 0 6px">${esc(a.name)}</div><div class="card" style="padding:2px 14px">${l.map(tick).join("")}</div></div>`:""}).join("")}`;
   body.querySelectorAll(".tick").forEach(b=>b.onclick=()=>{const id=b.dataset.id;if(S.been[id])delete S.been[id];else S.been[id]=1;save();b.setAttribute("aria-pressed",String(!!S.been[id]));const k=Object.keys(S.been).length;$("obDone").textContent=k?`Done · ${k} ticked`:"Skip for now"});
-  cta(`<button class="btn" id="obDone" type="button">${n?`Done · ${n} ticked`:"Skip for now"}</button>`,()=>$("obDone").onclick=()=>{S.ob=2;save();startWizard()});
+  cta(`<button class="btn" id="obDone" type="button">${n?`Done · ${n} ticked`:"Skip for now"}</button>`,()=>$("obDone").onclick=()=>{S.ob=2;save();go("home")});
 }
 
 /* ---------- home ---------- */
