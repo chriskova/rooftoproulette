@@ -1184,6 +1184,18 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .mode h2.q{font-size:36px;margin:0 0 6px}
 h1.q.modename{font-size:46px}
 .mode .howlink{color:var(--muted);margin-top:-2px}
+#v-home{gap:12px}
+#v-home .hero{padding:16px 18px;gap:6px}
+#v-home .hero .brand{font-size:40px}
+#v-home .modehd{margin:4px 2px -4px}
+#v-home .card.mode{padding:14px 16px;gap:12px}
+#v-home .mode h2.q{font-size:32px;margin:0 0 4px}
+#v-home .mode .modeline{font-size:14px}
+#v-home .mode .mic{width:40px;height:40px}
+.mbtns{display:flex;gap:10px;align-items:center}
+.mbtns .btn{flex:1}
+.mhow{width:52px;height:52px;flex:none;font-size:20px;font-weight:800;color:var(--muted);border:1.5px solid var(--line);background:none}
+#v-home .city{display:none}
 </style>
 </head>
 <body>
@@ -1212,14 +1224,12 @@ h1.q.modename{font-size:46px}
     </div>
     <div class="eyebrow modehd">Pick how you're playing</div>
     <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin for a rooftop, get there, spin again. How many can you hit before time's up?</p></div></div>
-      <button class="btn" id="newGame" type="button">Play Rush Hour</button>
-      <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin, get there, spin again. How many can you hit?</p></div></div>
+      <div class="mbtns"><button class="btn" id="newGame" type="button">Play Rush Hour</button><button class="iconbtn mhow" id="homeHow" type="button" aria-label="How Rush Hour works">?</button></div>
     </div>
     <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock: spin for a rooftop, stay as long as you like, spin again when you're ready.</p></div></div>
-      <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
-      <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock. Stay as long as you like, spin when you're ready.</p></div></div>
+      <div class="mbtns"><button class="btn" id="quickGo" type="button">Play R&amp;R</button><button class="iconbtn mhow" id="homeHowRR" type="button" aria-label="How R&amp;R works">?</button></div>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
   </section>
@@ -2092,14 +2102,12 @@ function openMove(free){
   });
 }
 function howSheet(){
-  sheet(`<h3>How it works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
-    ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin. In the last 30 minutes, spins only pick bars you can reach in time."],
-    ["Get there","However you like. Your visit is logged in the app when you arrive (within about 75 m of the bar)."],
-    ["Stay 3 minutes and it counts","Spin sooner and we'll ask if you had a drink. Your last bar counts if you get there before zero."],
-    ["Skips",`Not feeling the bar? Skip it for ${SKIP_COST} minutes off the clock.`],
-    ["Can't get in?","If you get there and it's closed, full or not letting groups in, tap \"Can't get in?\" for a free re-spin."],
-    ["Location playing up?","If your visit isn't logging, an \"I'm here\" button appears so you can log it yourself."],
-    ["Change of scenery","Move your zone once per game from the ⋯ menu. If your zone runs dry, the move is free."]])}</div>
+  sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+    ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
+    ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
+    ["Stay 3 minutes and it counts","Leave sooner and we'll ask if you had a drink."],
+    ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
+    ["The last 30 minutes","Spins only pick bars you can reach before time's up. Get to your last one before zero and it counts."]])}</div>
     <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet);
 }
 function openMenu(){
@@ -2123,7 +2131,8 @@ $("pMenu").onclick=openMenu;
 function cruiseHow(){sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
-  ["Spin when you're ready","One bar or five. End the night from the menu and it's saved to History with your time at each bar."]])}</div>`)}
+  ["Spin when you're ready","One bar or five. End the night from the menu and it's saved to History with your time at each bar."]])}</div>
+    <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet)}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
   if(!g.started){S.game=null;save();stopWatch();go("home");return}
