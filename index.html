@@ -1109,13 +1109,13 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 .reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
 .reel .frame{position:absolute;left:10px;right:10px;top:50%;height:64px;margin-top:-32px;border:1.5px solid var(--amber);border-radius:12px;background:rgba(245,184,61,.06);pointer-events:none;transition:box-shadow .3s}
-.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:.03em;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
+.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
 .reel .row.c{color:var(--text)}
 .reel.won .row.c{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 5px rgba(245,184,61,.25),0 0 50px rgba(245,184,61,.35)}
-.flyname{position:fixed;z-index:60;pointer-events:none;white-space:nowrap;font-family:var(--display);font-weight:800;letter-spacing:.03em;text-transform:uppercase;transform-origin:0 0;color:var(--amber)}
+.flyname{position:fixed;z-index:60;pointer-events:none;transform-origin:0 0;margin:0}
 .reel .hint{position:absolute;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
 .reel .hint.off{opacity:0}
 .reel .hint i{position:absolute;top:22%;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.28);border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 8px rgba(255,255,255,.08);animation:swipehint 1.9s cubic-bezier(.5,0,.3,1) infinite}
@@ -1859,11 +1859,14 @@ function reveal(info,scope){
   card.animate([{transform:`translate(${fr.left-cr.left}px,${fr.top-cr.top}px) scale(${fr.width/cr.width},${fr.height/cr.height})`,opacity:.9},{transform:"none",opacity:1}],{duration:440,easing:E});
   kids.forEach((k,i)=>k.animate([{opacity:0,transform:"translateY(6px)"},{opacity:0,offset:.55},{opacity:1,transform:"none"}],{duration:560+i*50,easing:"ease-out"}));
   after.forEach((k,i)=>k.animate([{opacity:0,transform:"translateY(10px)"},{opacity:0,offset:.5},{opacity:1,transform:"none"}],{duration:620+i*60,easing:"ease-out"}));
-  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=info.name;
-  Object.assign(ghost.style,{left:nr.left+"px",top:nr.top+"px",fontSize:info.fs+"px",height:nr.height+"px",lineHeight:nr.height+"px"});
+  // The flying name is an exact copy of the card title, laid out where the title ends up,
+  // and starts scaled down over the reel's name. So the last frame matches the title pixel for pixel.
+  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=h2.textContent;
+  Object.assign(ghost.style,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,whiteSpace:"normal"});
   document.body.appendChild(ghost);h2.style.opacity="0";
-  const sc=parseFloat(hs.fontSize)/info.fs,lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize);
-  ghost.animate([{transform:"none",color:"#F5B83D"},{transform:`translate(${hr.left-nr.left}px,${hr.top-nr.top+(lh-nr.height*sc)/2}px) scale(${sc})`,color:hs.color}],{duration:440,easing:E,fill:"forwards"})
+  const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lines=Math.max(1,Math.round(gr.height/(parseFloat(hs.lineHeight)||parseFloat(hs.fontSize))));
+  const dy=lines>1?(nr.top-hr.top):(nr.top+nr.height/2-(hr.top+gr.height*sc/2));
+  ghost.animate([{transform:`translate(${nr.left-hr.left}px,${dy}px) scale(${sc})`,color:"#F5B83D"},{transform:"none",color:hs.color}],{duration:440,easing:E,fill:"forwards"})
     .onfinish=()=>{h2.style.opacity="";ghost.remove()};
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
