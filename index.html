@@ -1828,7 +1828,7 @@ function makeReel(el,names,o){
      Names are spread further apart near the middle so a big name never runs into its neighbours. */
   el.innerHTML=`<div class="frame"></div>${[...Array(7)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
   const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
-  let lastK=0,moved=false,lastP=0,lastT=performance.now();
+  let lastK=0,lastFl=0,moved=false,lastP=0,lastT=performance.now();
   const SIG=.62,OUT=.66,bump=d=>Math.exp(-(d/SIG)*(d/SIG));
   // where each name sits: spacing is wider near the middle (integrated once into a lookup table)
   const STEPD=.01,YT=[0];for(let i=1;i<=600;i++){const u=(i-.5)*STEPD;YT.push(YT[i-1]+(43+30*bump(u))*STEPD)}
@@ -1836,7 +1836,8 @@ function makeReel(el,names,o){
   const RAD=190;   // the drum the names sit on, so the far ones curve away
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
-    const popK=b!==lastK;if(popK){lastK=b;tick(560+Math.random()*80);buzz(3)}
+    const fNow=Math.floor(R.p),fPrev=Math.floor(lastFl),crossed=fNow!==fPrev?Math.max(fNow,fPrev):null;lastFl=R.p;
+    const popK=crossed!==null&&!R.landing;if(crossed!==null){tick(560+Math.random()*80);buzz(3)}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
     const fl=Math.floor(R.p);
@@ -1852,7 +1853,8 @@ function makeReel(el,names,o){
       t.style.scale=`${1+((r._wr||1)-1)*Math.min(1,g/.3)} 1`;
       r.classList.toggle("c",a<.5);
       // a quick press-and-release as each name clicks into the middle, once the reel is slow enough to see it
-      if(popK&&k===b&&spd<14&&r.animate)[t,bo].forEach(x=>x.animate([{transform:"scale(.93)"},{transform:"scale(1.045)",offset:.45},{transform:"scale(1)"}],{duration:170,easing:"cubic-bezier(.3,1.4,.5,1)"}))})};
+      // as a name reaches the apex of the bubble it zooms in for a beat, then settles
+      if(popK&&k===crossed&&spd<14&&r.animate)[t,bo].forEach(x=>x.animate([{transform:"scale(1)"},{transform:"scale(1.12)",offset:.4},{transform:"scale(1)"}],{duration:230,easing:"cubic-bezier(.25,1.3,.5,1)"}))})};
   draw();
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
@@ -1865,11 +1867,14 @@ function makeReel(el,names,o){
     const p0=R.p,dist=Math.abs(k-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=2*Dr/vs,T=Tc+Td;
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
-      R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      const c=el.querySelector(".row.c .b");if(c.getAnimations)c.getAnimations().forEach(x=>x.finish());
-      const fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
-      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name,ink:getComputedStyle(c).color};
-      setTimeout(()=>{R.busy=false;done&&done(info)},240)});
+      R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");ding();buzz(40);
+      // the winner zooms in at the apex and the card transition carries on from that zoomed name
+      const c=el.querySelector(".row.c .b");if(c.getAnimations)c.getAnimations().forEach(x=>x.cancel());
+      const Z=1.14,za=c.animate?c.animate([{transform:"scale(1)"},{transform:`scale(${Z})`}],{duration:170,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"}):null;
+      const go_=()=>{const fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
+        const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize)*(za?Z:1),name,ink:getComputedStyle(c).color};
+        setTimeout(()=>{R.busy=false;done&&done(info)},60)};
+      if(za)za.onfinish=go_;else go_()});
   };
   if(o.onRelease){
     let y0=0,pS=0,pts=[],down=false;
