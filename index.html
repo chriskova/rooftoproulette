@@ -1180,7 +1180,9 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .mode .mtop{display:flex;gap:14px;align-items:flex-start}
 .mode .mic{width:44px;height:44px;border-radius:12px;background:var(--s2);color:var(--amber);display:grid;place-items:center;flex:none}
 .mode .mic svg{width:22px;height:22px}
-.mode h2.q{font-size:26px;margin:0 0 4px}
+.mode h2.q,h1.q.modename{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:.95}
+.mode h2.q{font-size:36px;margin:0 0 6px}
+h1.q.modename{font-size:46px}
 .mode .howlink{color:var(--muted);margin-top:-2px}
 </style>
 </head>
@@ -1701,7 +1703,7 @@ function renderQuick(){
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   if(step===0){
     const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
-    b.innerHTML=top+`<div><h1 class="q">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
+    b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
       <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>
       <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick a part of town</small></span></button>${soon}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
