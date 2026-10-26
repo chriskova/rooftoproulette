@@ -1844,13 +1844,16 @@ function makeReel(el,names,o){
     rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
       if(Math.abs(th)>1.45){r.style.opacity=0;return}
       r.style.transform=`translateY(${RAD*Math.sin(th)}px) rotateX(${-th}rad) scale(.88)`;
-      r.style.opacity=.9*Math.pow(Math.cos(th),1.4)*Math.min(1,Math.max(0,(a-.55)/.35))});
+      r.style.opacity=.9*Math.pow(Math.cos(th),1.4)});
     // Through the window the name is magnified: it swells as it slides to the middle, and pops as it lands in it.
     // Inside the window the curve is exaggerated, like looking through a bubble of glass:
     // a name bulges in from the edge, flattens out big in the middle, then bends away again.
     lens.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
-      const q=Math.min(1,a*1.9);r.style.transform=`translateY(${RAD*Math.sin(th)}px) scale(${1-.1*q},${1-.5*q*q})`;
-      r.style.opacity=Math.min(1,Math.max(0,(.55-a)/.3));r.classList.toggle("c",a<.5);
+      // Through the glass names are magnified (bigger and further apart). At the edge a name is split:
+      // the part inside is stretched, as if the lens is hanging on to it, and the part outside is normal.
+      const q=Math.min(1,Math.max(0,(a-.15)/.4)),y=d*ROW*1.35;
+      r.style.transformOrigin=d>0?"50% 0%":"50% 100%";
+      r.style.transform=`translateY(${y}px) scale(${1-.06*q},${1+.45*q*q})`;r.style.opacity=a<1.2?1:0;r.classList.toggle("c",a<.5);
       // a quick press-and-release as each name clicks into the middle, once the reel is slow enough to see it
       if(popK&&k===b&&spd<14&&r.firstChild.animate)r.firstChild.animate([{transform:"scale(.93)"},{transform:"scale(1.045)",offset:.45},{transform:"scale(1)"}],{duration:170,easing:"cubic-bezier(.3,1.4,.5,1)"})})};
   draw();
