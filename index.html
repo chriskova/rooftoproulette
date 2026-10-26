@@ -1457,9 +1457,12 @@ function setMe(m){if(m)m.me(you())}
 
 const gmapsURL=v=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address)}${v.pid?"&query_place_id="+v.pid:""}`;
 /* bar photos: Google Place photo, fetched live, never stored. Capped per phone per day. */
-const PH_LIMIT=40,phMem={},phWait={};
-function phCount(){try{const d=JSON.parse(localStorage.getItem("rr-ph")||"{}");return d.k===new Date().toDateString()?d.n:0}catch(e){return 0}}
-function phBump(){try{localStorage.setItem("rr-ph",JSON.stringify({k:new Date().toDateString(),n:phCount()+1}))}catch(e){}}
+// Per phone, per day: photos for up to 40 different bars, and at most 120 photo loads in total.
+// Seeing the same bar again (after the app reloads) doesn't use up one of the 40.
+const PH_BARS=40,PH_LOADS=120,phMem={},phWait={};
+function phDay(){try{const d=JSON.parse(localStorage.getItem("rr-ph")||"{}");if(d.k===new Date().toDateString()&&Array.isArray(d.ids))return d}catch(e){}return {k:new Date().toDateString(),ids:[],n:0}}
+function phAllowed(id){const d=phDay();if(d.n>=PH_LOADS)return false;return d.ids.includes(id)||d.ids.length<PH_BARS}
+function phBump(id){try{const d=phDay();if(!d.ids.includes(id))d.ids.push(id);d.n++;localStorage.setItem("rr-ph",JSON.stringify(d))}catch(e){}}
 async function placeId(v){
   if(v.pid)return v.pid;S.pids=S.pids||{};if(S.pids[v.id])return S.pids[v.id];
   const {Place}=await google.maps.importLibrary("places");
@@ -1471,14 +1474,14 @@ function barPhoto(v){
   if(phWait[v.id])return phWait[v.id];
   return phWait[v.id]=(async()=>{
     try{
-      if(phCount()>=PH_LIMIT)return null;
+      if(!phAllowed(v.id))return null;
       await gload();if(gBad)return null;
       const id=await placeId(v);if(!id)return phMem[v.id]=null;
       const {Place}=await google.maps.importLibrary("places");
       const pl=new Place({id});await pl.fetchFields({fields:["photos"]});
       const ph=pl.photos&&pl.photos[0];if(!ph)return phMem[v.id]=null;
       const a=(ph.authorAttributions||[])[0]||{};
-      phBump();
+      phBump(v.id);
       return phMem[v.id]={url:ph.getURI({maxWidth:900,maxHeight:600}),by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
     }catch(e){return null}finally{delete phWait[v.id]}
   })();
@@ -2315,13 +2318,14 @@ $("testFab").onclick=()=>{
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>`:""}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
-   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
+   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
     if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();animateId="at:"+v.id;onLocation()};
     if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
     $("tJ").onchange=e=>{const v=byId(e.target.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();closeSheet();onLocation();render()}};
     $("tR").onclick=()=>{S.ff=0;save();closeSheet();render()};
     $("sheetBody").querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const [dd,mm]=b.dataset.to.split(",").map(Number),s0=sydAt(now());let d=((dd-s0.day+7)%7)*1440+(mm-s0.min);if(d<=0)d+=7*1440;S.ff=(S.ff||0)+d*60000;save();closeSheet();render()});
+    $("tP").onclick=()=>{try{localStorage.removeItem("rr-ph")}catch(e){}for(const k in phMem)delete phMem[k];closeSheet();render()};
     $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};save();closeSheet();go("intro")};
     $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY)}catch(e){}location.reload()};
     $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
