@@ -2289,13 +2289,23 @@ const WILDS=[
  "Whoever's wearing the most black picks the round.",
  PICK3
 ];
-// Wildcards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
+// Wildcards: a set number per game (1 hour: 2, 2 hours: 3 or 4), on random bars, never the first and never two in a row.
+// Cards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
+function planWilds(g){
+  const n=g.len===60?2:(Math.random()<.5?3:4),max=g.len===60?4:8;
+  for(let tries=0;tries<200;tries++){const legs=shuffle([...Array(max)].map((_,i)=>i+1)).slice(0,n).sort((a,b)=>a-b);
+    if(legs.every((x,i)=>!i||x-legs[i-1]>1))return legs}
+  return [1,3,5,7].slice(0,n);
+}
 function rollWild(g,id){
-  if(g.visits.length<1||Math.random()>.35){g.wild=null;return}
+  const leg=g.visits.length;   // how many bars you've been to before this one
+  if(!g.wplan)g.wplan=planWilds(g);
+  if(!g.wplan.includes(leg)){g.wild=null;return}
+  if(g.wild&&g.wild.leg===leg){g.wild.id=id;return}   // re-spun: the same wildcard moves to the new bar
   if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(WILDS.map((_,i)=>i));g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
   const i=g.wdeck.shift(),w=WILDS[i];
   S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
-  g.wild={id,text:w};g.lastWild=w;if(w===PICK3)g.pick3=true;
+  g.wild={id,text:w,leg};g.lastWild=w;if(w===PICK3)g.pick3=true;
 }
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
