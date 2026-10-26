@@ -1171,6 +1171,7 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .card.zlist .zrow{gap:12px}
 .card.zlist .zrow{padding:12px 0}
 .card.zlist .zrow:first-child{border-top:0}
+.howlink{align-self:center;margin-top:-4px;color:rgba(243,238,230,.7);font-size:14px;text-decoration:underline;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -1198,14 +1199,11 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
       <p class="modeline">The game: a rooftop crawl against the clock. Spin for a bar, get there, spin again.</p>
       <button class="btn" id="newGame" type="button">Start a new game</button>
+      <button class="txtbtn howlink" id="homeHow" type="button">How the game works</button>
     </div>
     <div class="card mode2">
       <div><h2 class="q">Just <i>the one</i></h2><p class="modeline">No game, no clock. We'll pick one open rooftop for you.</p></div>
       <button class="btn line" id="quickGo" type="button">Pick one for us</button>
-    </div>
-    <div class="card">
-      <div class="eyebrow" style="margin-bottom:12px">How it works</div>
-      <div class="steps" id="homeSteps"></div>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
   </section>
@@ -1654,7 +1652,7 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
-  $("homeSteps").innerHTML=stepsHTML(RULES);
+  $("homeHow").onclick=howSheet;
 }
 $("newGame").onclick=()=>startWizard();
 $("quickGo").onclick=()=>{S.quick={step:0,from:null,pick:null,seen:[]};go("quick")};
