@@ -1108,19 +1108,15 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 .reel{position:relative;perspective:800px;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
-.reel .frame{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12);overflow:hidden;pointer-events:none}
-.reel .lens{position:absolute;inset:0}
-.reel .lens .row span{display:inline-block}
-.reel .frame::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(rgba(255,255,255,.09),rgba(255,255,255,0) 46%,rgba(0,0,0,0) 70%,rgba(0,0,0,.25));box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -8px 16px rgba(0,0,0,.25);pointer-events:none}
-.reel .lens .row{height:74px;margin-top:-37px;font-weight:800;font-size:clamp(30px,9.6vw,42px);color:#fff}
-.reel.won .lens .row{color:var(--amber)}
-.reel .lens .row.long{font-size:clamp(24px,7.4vw,33px)}
-.reel .lens .row.ph{color:var(--amber);font-size:clamp(30px,9.6vw,42px);letter-spacing:0}
-.reel .row{backface-visibility:hidden;position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
-.reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
-.reel .row.long{font-size:clamp(19px,6vw,25px)}
-.reel .row.ph{color:var(--muted)}
 
+.reel .frame{position:absolute;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(rgba(245,184,61,.10),rgba(245,184,61,.03));box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12),inset 0 1px 0 rgba(255,255,255,.10),inset 0 -10px 18px rgba(0,0,0,.22);pointer-events:none}
+.reel .row{position:absolute;left:0;right:0;top:50%;height:74px;margin-top:-37px;display:grid;place-items:center;font-family:var(--display);text-transform:uppercase;font-size:clamp(30px,9.6vw,42px);letter-spacing:0;pointer-events:none;will-change:transform;backface-visibility:hidden}
+.reel .row span{grid-area:1/1;white-space:nowrap;display:inline-block}
+.reel .row .t{font-weight:500;color:var(--muted)}
+.reel .row .b{font-weight:800;color:#fff}
+.reel .row.long{font-size:clamp(24px,7.4vw,33px)}
+.reel .row.ph .b{color:var(--amber)}
+.reel.won .row.c .b{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
@@ -1826,43 +1822,37 @@ function makeReel(el,names,o){
   o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));L=[PH].concat(L);
   const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length;
   el.classList.add("reel");el.classList.remove("won");
-  // Two layers of the same names: dim ones outside, and big dark ones seen through the yellow centre slot,
-  // so a name grows and darkens exactly as it slides into the slot.
-  const seven=()=>[...Array(7)].map(()=>`<div class="row"><span></span></div>`).join("");
-  el.innerHTML=`${seven()}<div class="frame"><div class="lens">${seven()}</div></div>${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
-  const rows=[...el.querySelectorAll(":scope > .row")],lens=[...el.querySelectorAll(".lens .row")],frame=el.querySelector(".frame");
+  /* A bulging lens: one layer of names, never clipped. Each name grows smoothly as it nears the middle of the
+     window and is only full size dead centre. On the way in it's squashed top-to-bottom (the edge of a rounded
+     lens squeezes more in that direction), and it swaps from the fine weight to the bold one as it swells.
+     Names are spread further apart near the middle so a big name never runs into its neighbours. */
+  el.innerHTML=`<div class="frame"></div>${[...Array(7)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
+  const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
   let lastK=0,moved=false,lastP=0,lastT=performance.now();
-  // Names sit on a drum: each row is a slice of a cylinder, so they curve away and squash towards the top and bottom.
-  const STEP=17*Math.PI/180,RAD=ROW/STEP;
-  /* One shared track for both layers. Inside the window names are spread out (magnified, M×);
-     outside they carry on at normal spacing, starting exactly at the glass edge (H). So a name crossing
-     the edge is one continuous name: big half inside, small half outside, joined at the seam. */
-  const H=39,M=1.3,A0=H/(ROW*M);
-  const track=d=>{const a=Math.abs(d),sg=d<0?-1:1;return a<=A0?d*ROW*M:sg*(H+(a-A0)*ROW)};
-  let EDGE=.66;requestAnimationFrame(()=>{const b=rows[0].firstChild,l=lens[0].firstChild;const fb=parseFloat(getComputedStyle(b).fontSize),fl=parseFloat(getComputedStyle(l).fontSize);if(fb&&fl)EDGE=fb*.88/fl});
+  const SIG=.62,OUT=.66,bump=d=>Math.exp(-(d/SIG)*(d/SIG));
+  // where each name sits: spacing is wider near the middle (integrated once into a lookup table)
+  const STEPD=.01,YT=[0];for(let i=1;i<=600;i++){const u=(i-.5)*STEPD;YT.push(YT[i-1]+(43+30*bump(u))*STEPD)}
+  const yAt=d=>{const a=Math.min(5.99,Math.abs(d))/STEPD,i=Math.floor(a),f=a-i,y=YT[i]+(YT[i+1]-YT[i])*f;return d<0?-y:y};
+  const RAD=190;   // the drum the names sit on, so the far ones curve away
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
     const popK=b!==lastK;if(popK){lastK=b;tick(560+Math.random()*80);buzz(3)}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
     const fl=Math.floor(R.p);
-    const set=(r,n)=>{const sp=r.firstChild;if(sp.textContent!==n){sp.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH)}};
-    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
-      if(Math.abs(th)>1.45){r.style.opacity=0;return}
-      const yf=track(d),ang=yf/RAD;r.style.transform=`translateY(${RAD*Math.sin(ang)}px) rotateX(${-ang}rad) scale(.88)`;
-      r.style.opacity=.9*Math.pow(Math.cos(th),1.4)});
-    // Through the window the name is magnified: it swells as it slides to the middle, and pops as it lands in it.
-    // Inside the window the curve is exaggerated, like looking through a bubble of glass:
-    // a name bulges in from the edge, flattens out big in the middle, then bends away again.
-    lens.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),th=d*STEP;set(r,L[mod(k)]);
-      // Through the glass names are magnified. Heading for the edge they're pinched back down,
-      // and the part already outside carries on as the normal name on the wheel.
-      // pinched down to wheel size as it reaches the glass edge, so it meets its other half outside
-      const q=Math.min(1,Math.max(0,(a-.12)/(A0-.12))),sm=q*q*(3-2*q),sc=1-(1-EDGE)*sm;
-      r.style.transformOrigin="50% 50%";
-      r.style.transform=`translateY(${track(d)}px) scale(${sc},${sc*(1+.12*sm*(1-sm)*4)})`;r.style.opacity=a<A0+.6?1:0;r.classList.toggle("c",a<.5);
+    rows.forEach((r,i)=>{const k=fl-3+i,d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
+      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
+      const g=bump(d),y=yAt(d),ang=y/RAD;
+      if(Math.abs(ang)>1.4){r.style.opacity=0;return}
+      const sx=OUT+(1-OUT)*Math.pow(g,.75),sy=OUT+(1-OUT)*Math.pow(g,1.5);
+      r.style.transform=`translateY(${RAD*Math.sin(ang)}px) rotateX(${-ang}rad) scale(${sx},${sy})`;
+      r.style.opacity=Math.pow(Math.cos(ang),1.3);
+      const w=Math.min(1,Math.max(0,(g-.2)/.55));bo.style.opacity=w;t.style.opacity=1-w;
+      // the thin copy widens to match the bold one only as they swap, so the swap looks like one name getting bolder
+      t.style.scale=`${1+((r._wr||1)-1)*Math.min(1,g/.3)} 1`;
+      r.classList.toggle("c",a<.5);
       // a quick press-and-release as each name clicks into the middle, once the reel is slow enough to see it
-      if(popK&&k===b&&spd<14&&r.firstChild.animate)r.firstChild.animate([{transform:"scale(.93)"},{transform:"scale(1.045)",offset:.45},{transform:"scale(1)"}],{duration:170,easing:"cubic-bezier(.3,1.4,.5,1)"})})};
+      if(popK&&k===b&&spd<14&&r.animate)[t,bo].forEach(x=>x.animate([{transform:"scale(.93)"},{transform:"scale(1.045)",offset:.45},{transform:"scale(1)"}],{duration:170,easing:"cubic-bezier(.3,1.4,.5,1)"}))})};
   draw();
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
@@ -1876,7 +1866,7 @@ function makeReel(el,names,o){
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
       R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      const c=el.querySelector(".lens .row.c span");if(c.getAnimations)c.getAnimations().forEach(x=>x.finish());
+      const c=el.querySelector(".row.c .b");if(c.getAnimations)c.getAnimations().forEach(x=>x.finish());
       const fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
       const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name,ink:getComputedStyle(c).color};
       setTimeout(()=>{R.busy=false;done&&done(info)},240)});
