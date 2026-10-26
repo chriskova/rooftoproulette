@@ -1126,10 +1126,11 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel .row.ph .b{color:var(--amber)}
 .reel.won .row.c .b{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
+.demo .demoacts{margin-top:10px}
 .demoacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .demo{margin-top:12px;min-height:290px}
 .demo .bar{margin:0}
-.demo #demoAgain{margin-top:10px;width:100%}
+.demo>#demoBox>#demoAgain{margin-top:10px;width:100%}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
 .reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
@@ -1716,7 +1717,7 @@ function renderHome(){
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
 }
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
-function firstRules(k,show,start){S.seenHow=S.seenHow||{};if(S.seenHow[k]){start();return}S.seenHow[k]=1;save();show(start)}
+function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
 $("newGame").onclick=()=>{if(S.game){go("play");return}firstRules("rush",howSheet,startWizard)};
 $("quickGo").onclick=()=>{if(S.game){go("play");return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
@@ -2168,28 +2169,35 @@ function openMove(free){
     $("mvX").onclick=closeSheet;
   });
 }
-/* "Give it a spin" in the rules: the real wheel and real rooftops, landing on a card. No game, nothing saved. */
-// next: set the first time someone taps Play for a mode, so the rules lead straight into setup.
-const demoBtns=next=>`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Give it a spin</button><button class="btn${next?"":" dark"}" type="button" id="howX">${next?"Let's play":"Got it"}</button></div>`;
-function bindDemoBtns(back,next){$("howX").onclick=()=>{closeSheet();if(next)next()};$("demoGo").onclick=()=>demoSheet(back)}
-function demoSheet(back){
-  sheet(`<h3>Give it a spin</h3><p class="note">A real rooftop, no game. Flick it down.</p><div class="demo"><div id="demoBox"></div></div><button class="btn dark" type="button" id="demoBack" style="margin-top:14px">Back to the rules</button>`,
-    ()=>{$("demoBack").onclick=back;bindDemo()});
+/* Practice spin: the real wheel and real rooftops, landing on a card. No game, nothing saved.
+   First time someone taps Play for a mode: rules → Next → practice spin → "Got it, let's play" (or skip).
+   Any other time it hangs off the rules sheet. Opening either one counts as having seen that mode's intro. */
+const demoBtns=next=>next?`<button class="btn" type="button" id="howX" style="margin-top:16px">Next</button>`
+  :`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Practice spin</button><button class="btn dark" type="button" id="howX">Got it</button></div>`;
+function bindDemoBtns(back,next){if(next)$("howX").onclick=()=>demoSheet(back,next);else{$("howX").onclick=closeSheet;$("demoGo").onclick=()=>demoSheet(back)}}
+function demoSheet(back,next){
+  const play=()=>{closeSheet();next()};
+  sheet(`<h3>Practice spin</h3><p class="note">Just a practice. Real rooftops, no game, nothing saved. Flick it down.</p><div class="demo"><div id="demoBox"></div></div>
+    <button class="btn dark" type="button" id="demoBack" style="margin-top:14px">${next?"Skip, let's play":"Back to the rules"}</button>`,
+    ()=>{$("demoBack").onclick=next?play:back;
+      bindDemo(next?`<div class="demoacts"><button class="btn line" type="button" id="demoAgain">Spin again</button><button class="btn" type="button" id="demoPlay">Got it, let's play</button></div>`:null,
+        ()=>{if(!next)return;$("demoBack").hidden=true;$("demoPlay").onclick=play})});
 }
-function bindDemo(){
+function bindDemo(afterHTML,landed){
   const box=$("demoBox");if(!box)return;
   box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});   // flicking the wheel shouldn't drag the sheet shut
   const pool=playable(VENUES,false).filter(v=>!v.tempClosed);
-  const mk=()=>{box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;
+  const mk=()=>{box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;if($("demoBack"))$("demoBack").hidden=false;
     const R=makeReel($("demoReel"),pool.map(v=>v.name),{hint:true,onRelease:vel=>{
       if(R.busy)return false;const v=pool[Math.floor(Math.random()*pool.length)];barPhoto(v,"browse");
       R.spinTo(v.name,vel,info=>{const o=openState(v,now());
         const facts=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>`;
-        box.innerHTML=sheetCard(v,facts)+`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`;
-        bindSheetCard(v,facts);reveal(info,box);$("demoAgain").onclick=mk})}})};
+        box.innerHTML=sheetCard(v,facts)+(afterHTML||`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`);
+        bindSheetCard(v,facts);reveal(info,box);$("demoAgain").onclick=mk;if(landed)landed()})}})};
   mk();
 }
-function howSheet(next){next=typeof next==="function"?next:null;
+const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
+function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
   sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
@@ -2216,7 +2224,7 @@ function openMenu(){
 }
 $("pMenu").onclick=openMenu;
 
-function cruiseHow(next){next=typeof next==="function"?next:null;sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
   ["Spin when you're ready","One bar or five. End the night from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
