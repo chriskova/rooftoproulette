@@ -1108,12 +1108,13 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
 .reel{position:relative;width:100%;height:290px;overflow:hidden;border-radius:20px;background:#0E1117;border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;-webkit-mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent);mask-image:linear-gradient(transparent,#000 24%,#000 76%,transparent)}
-.reel .frame{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border-radius:14px;background:var(--amber);box-shadow:0 0 0 5px rgba(245,184,61,.16),0 0 34px rgba(245,184,61,.22);overflow:hidden;pointer-events:none}
+.reel .frame{position:absolute;z-index:2;left:8px;right:8px;top:50%;height:78px;margin-top:-39px;border:2px solid var(--amber);border-radius:14px;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12);overflow:hidden;pointer-events:none}
 .reel .lens{position:absolute;inset:0}
-.reel .lens .row{height:74px;margin-top:-37px;font-size:clamp(30px,9.6vw,42px);color:var(--amber-ink)}
+.reel .lens .row{height:74px;margin-top:-37px;font-weight:800;font-size:clamp(30px,9.6vw,42px);color:#fff}
+.reel.won .lens .row{color:var(--amber)}
 .reel .lens .row.long{font-size:clamp(24px,7.4vw,33px)}
-.reel .lens .row.ph{font-size:clamp(20px,6vw,25px);letter-spacing:.1em;color:var(--amber-ink)}
-.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
+.reel .lens .row.ph{font-size:clamp(20px,6vw,25px);letter-spacing:.1em;color:var(--amber)}
+.reel .row{position:absolute;left:0;right:0;top:50%;height:58px;margin-top:-29px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:500;font-size:clamp(24px,7.6vw,32px);letter-spacing:0;text-transform:uppercase;color:var(--muted);will-change:transform;pointer-events:none}
 .reel .row span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:88%}
 .reel .row.long{font-size:clamp(19px,6vw,25px)}
 .reel .row.ph{color:var(--muted);font-size:clamp(18px,5.4vw,22px);letter-spacing:.12em}
@@ -1851,7 +1852,7 @@ function makeReel(el,names,o){
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
       R.p=k;draw();el.classList.remove("going");el.classList.add("won");ding();buzz(40);
       const c=el.querySelector(".lens .row.c span"),fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
-      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name};
+      const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize),name,ink:getComputedStyle(c).color};
       setTimeout(()=>{R.busy=false;done&&done(info)},240)});
   };
   if(o.onRelease){
