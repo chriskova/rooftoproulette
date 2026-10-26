@@ -1201,6 +1201,10 @@ h1.q.modename{font-size:46px}
 .mbtns .btn{flex:1}
 .mhow{appearance:none;flex:none;height:52px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--text);font-size:14.5px;font-weight:650;white-space:nowrap}
 #v-home .city{display:none}
+.still{display:flex;flex-direction:column;gap:6px;background:var(--amber-soft);border:1.5px solid var(--amber);border-radius:var(--r);padding:14px 16px}
+.still b{font-family:var(--head);font-size:20px;letter-spacing:-.02em}
+.still span{color:var(--text);font-size:14px;line-height:1.4}
+.still .row2{margin-top:8px}
 </style>
 </head>
 <body>
@@ -1893,6 +1897,8 @@ const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
 const visited=id=>G().visits.some(v=>v.id===id);
 const remaining=()=>{const g=G();return g.started?g.endsAt-now():g.len*60000};
 const CR=g=>!!(g&&g.mode==="cruise");
+const RR_AUTO=3*3600000; // R&R nights wrap up on their own after 3 hours
+
 // R&R: where spins can land. Near me = within your distance of where you are now.
 // A region or anywhere = that part of town, kept to bars within 2 km of you once you're out (if there are any).
 function cruiseSet(g){
@@ -2060,7 +2066,7 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
-  if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();if(CR(g))noneLeft();else openMove(true);return false}
@@ -2137,7 +2143,7 @@ $("pMenu").onclick=openMenu;
 function cruiseHow(){sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
-  ["Spin when you're ready","One bar or five. End the night from the menu and it's saved to History with your time at each bar."]])}</div>
+  ["Spin when you're ready","One bar or five. End the night from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
     <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet)}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
@@ -2311,6 +2317,15 @@ function awards(r,st){
   if(!L.length)add(n?"Top Floor":"Ground Floor",n?`${n} rooftop${n===1?"":"s"}, ${km(st.total)}`:"The wheel will be kinder next time");
   return L;
 }
+// "Still going?": put an auto-ended R&R night back on, picking up where it left off.
+function resumeNight(r){
+  const i=H.findIndex(x=>x.id===r.id);if(i<0||S.game)return;H.splice(i,1);saveH();
+  const g=r;const last=g.visits[g.visits.length-1];
+  if(last&&last.leftAt===g.endedAt&&!last.cant){last.leftAt=null;last.counted=undefined}
+  delete g.ended;delete g.endedAt;delete g.early;delete g.missed;delete g.newIds;
+  g.autoEnded=false;g.endsAt=now()+24*3600000;g.autoAt=now()+RR_AUTO;g.resumed=(g.resumed||0)+1;
+  S.game=g;S.lastEnd=null;save();startWatch();buzz(30);go("play");
+}
 function cruiseAwards(r,st){
   const L=[],n=st.counted.length,nm=id=>esc(byId(id).name),add=(t,why)=>L.push({t,why});
   const stays=st.arrived.filter(v=>v.leftAt).map(v=>({id:v.id,ms:v.leftAt-v.arrivedAt})).sort((a,b)=>b.ms-a.ms);
@@ -2329,7 +2344,9 @@ function renderEnd(){
   const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours",aw=cr?cruiseAwards(r,st):awards(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
+  const still=cr&&r.autoEnded&&!r.stillAsked&&!S.game&&now()-r.endedAt<12*3600000;
   box.innerHTML=`
+    ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}${r.early&&!cr?` · ended at ${Math.round(st.dur/60000)} min`:""}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
@@ -2357,6 +2374,8 @@ function renderEnd(){
   const onPhoto=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,1080).then(d=>{r.photo=d;saveH();renderEnd()})};
   $("photoCam").onchange=onPhoto;$("photoLib").onchange=onPhoto;
   $("doneBtn").onclick=()=>go("home");
+  if($("stY"))$("stY").onclick=()=>resumeNight(r);
+  if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:3,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
   requestAnimationFrame(async()=>{
@@ -2549,6 +2568,7 @@ $("testFab").onclick=()=>{
 function loop(){
   const g=G();
   if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
+  if(CR(g)&&g.started&&!g.ended&&g.autoAt&&now()>=g.autoAt){g.autoEnded=true;endGame(g.autoAt);return}
   if(S.route==="play"&&g){
     renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=CR(g)&&now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);
     if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
