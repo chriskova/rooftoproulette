@@ -1822,9 +1822,9 @@ function renderWiz(){
     const rows=radii.map(r=>{const o=openIn(c,r,t),tot=playable(inCircle(c,r),false).length;return {r,n:o.length,tot,hop:avgHop(o),thin:r<1&&tot<4}});
     let rec=recRadius(w.len);if(rec===0.5&&rows[0].thin)rec=1;
     if(w.radius==null||!radii.includes(w.radius)||(w.radius===0.5&&rows[0].thin))w.radius=rec;
-    const desc={0.5:"Minimal steps. Maximum rooftops.",1:"A bit more ground. Still walkable.",1.5:"More travel, better variety.",2:"Go on, be that person."};
+    const desc={0.5:"Minimal steps. Maximum rooftops.",1:w.len===60?"More variety. More walking.":"Minimal steps. Maximum rooftops.",1.5:"More travel, better variety.",2:"Go on, be that person."};
     body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:""}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<1000?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>open</small>`}</span></button>`).join("")}</div>`;
+      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<1000?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>open</small>`}</span></button>`).join("")}</div>`;
     body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
   }
