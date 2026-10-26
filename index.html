@@ -1194,7 +1194,7 @@ h1.q.modename{font-size:46px}
 #v-home .mode .mic{width:40px;height:40px}
 .mbtns{display:flex;gap:10px;align-items:center}
 .mbtns .btn{flex:1}
-.mhow{width:52px;height:52px;flex:none;font-size:20px;font-weight:800;color:var(--muted);border:1.5px solid var(--line);background:none}
+.mhow{appearance:none;flex:none;height:52px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--text);font-size:14.5px;font-weight:650;white-space:nowrap}
 #v-home .city{display:none}
 </style>
 </head>
@@ -1225,11 +1225,11 @@ h1.q.modename{font-size:46px}
     <div class="eyebrow modehd">Pick how you're playing</div>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock. Spin, get there, spin again. How many can you hit?</p></div></div>
-      <div class="mbtns"><button class="btn" id="newGame" type="button">Play Rush Hour</button><button class="iconbtn mhow" id="homeHow" type="button" aria-label="How Rush Hour works">?</button></div>
+      <div class="mbtns"><button class="btn" id="newGame" type="button">Play Rush Hour</button><button class="mhow" id="homeHow" type="button">How it works</button></div>
     </div>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest and roulette. No clock. Stay as long as you like, spin when you're ready.</p></div></div>
-      <div class="mbtns"><button class="btn" id="quickGo" type="button">Play R&amp;R</button><button class="iconbtn mhow" id="homeHowRR" type="button" aria-label="How R&amp;R works">?</button></div>
+      <div class="mbtns"><button class="btn" id="quickGo" type="button">Play R&amp;R</button><button class="mhow" id="homeHowRR" type="button">How it works</button></div>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
   </section>
