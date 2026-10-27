@@ -1141,6 +1141,17 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jdim{position:fixed;inset:0;z-index:57;pointer-events:none;background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.25),rgba(0,0,0,.72) 70%)}
 .jbloom{position:fixed;z-index:58;pointer-events:none;width:380px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,61,.55),rgba(245,184,61,.18) 55%,rgba(245,184,61,0));filter:blur(8px)}
 .jring{position:fixed;z-index:59;pointer-events:none;width:200px;height:120px;border-radius:50%;border:1.5px solid rgba(255,226,150,.7)}
+.jpt{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 50% 42%,rgba(60,42,8,.82),rgba(5,6,10,.96) 70%);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0}
+.jpt-in{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:22px}
+.jpt-k{font-family:var(--display);font-weight:800;font-size:clamp(54px,18vw,84px);line-height:.9;letter-spacing:.02em;text-transform:uppercase;color:#F5B83D;text-shadow:0 0 34px rgba(245,184,61,.6),0 0 2px #FFE2A0}
+.jpt-lights{width:100%;padding:12px;border-radius:30px;background:radial-gradient(circle,#FFE2A0 0 2.2px,rgba(255,226,160,0) 3.2px) 0 0/16px 16px,linear-gradient(#2a1f0a,#16110a);box-shadow:0 0 0 1px rgba(245,184,61,.35),0 0 60px rgba(245,184,61,.25)}
+.jpt-lights.on{animation:chase .35s linear infinite}
+.jpt-lights.won{animation:chase .12s linear infinite;box-shadow:0 0 0 2px rgba(255,226,160,.7),0 0 110px rgba(245,184,61,.6)}
+@keyframes chase{to{background-position:16px 0,0 0}}
+.jpt .reel{border-color:rgba(245,184,61,.35);background:#0B0C10}
+.jpt-sub{min-height:44px;max-width:320px;text-align:center;color:var(--muted);font-size:15px;line-height:1.45;transition:color .3s}
+.jpt-sub.show{color:var(--text);font-weight:600}
+.jpt-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#FFF6DC,rgba(255,226,160,.4) 40%,rgba(245,184,61,0) 75%);pointer-events:none}
 .reel.gold .frame{border-color:#FFD27A;animation:goldpulse .45s ease-in-out infinite alternate}
 @keyframes goldpulse{from{box-shadow:0 0 0 4px rgba(245,184,61,.2),0 0 30px rgba(245,184,61,.25)}to{box-shadow:0 0 0 9px rgba(245,184,61,.45),0 0 80px rgba(245,184,61,.65)}}
 .reel.gold .row .b{color:#FFE2A0}
@@ -1522,6 +1533,15 @@ function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   const notes=[[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28],[1568,.35],[1046.5,.5],[1318.5,.5],[1568,.5],[2093,.5]];
   notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
     g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
+function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,out=a.createGain(),lp=a.createBiquadFilter();
+  lp.type="lowpass";lp.frequency.setValueAtTime(300,t);lp.frequency.exponentialRampToValueAtTime(6000,t+sec);out.gain.setValueAtTime(.0001,t);out.gain.exponentialRampToValueAtTime(.09,t+sec*.85);
+  lp.connect(out).connect(a.destination);const os=[0,7,12].map(d=>{const o=a.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(110*Math.pow(2,d/12),t);o.frequency.exponentialRampToValueAtTime(880*Math.pow(2,d/12),t+sec);o.connect(lp);o.start(t);return o});
+  const nb=a.createBuffer(1,a.sampleRate*sec,a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
+  const ns=a.createBufferSource(),bp=a.createBiquadFilter(),ng=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=1.2;bp.frequency.setValueAtTime(400,t);bp.frequency.exponentialRampToValueAtTime(8000,t+sec);
+  ng.gain.setValueAtTime(.0001,t);ng.gain.exponentialRampToValueAtTime(.05,t+sec);ns.connect(bp).connect(ng).connect(a.destination);ns.start(t);
+  return()=>{const n=a.currentTime;out.gain.cancelScheduledValues(n);out.gain.setValueAtTime(out.gain.value,n);out.gain.exponentialRampToValueAtTime(.0001,n+.08);ng.gain.cancelScheduledValues(n);ng.gain.setValueAtTime(ng.gain.value,n);ng.gain.exponentialRampToValueAtTime(.0001,n+.08);os.forEach(o=>o.stop(n+.1));ns.stop(n+.1)}}
+function boom(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(38,t+.7);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(a.destination);o.start(t);o.stop(t+1)}
 function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(a.destination);[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
@@ -2047,7 +2067,7 @@ function onLocation(){
 }
 let spinning=false,animateId=null,reel=null;
 /* ---------- the reel: swipe it like a slot reel; the swipe speed sets how far it runs ---------- */
-const ROW=58,PH="Spin to start";
+const ROW=58,PH0="Spin to start";
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 /* The reel behaves like a real one:
    - it follows your finger;
@@ -2055,6 +2075,7 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
    - flick it down and it carries on at the speed you flicked, then slows to a stop. Harder flick, longer spin.
    Speed on screen is capped so names never strobe backwards; anything harder than the cap just runs longer. */
 function makeReel(el,names,o){
+  const PH=(o&&o.ph)||PH0;
   o=o||{};
   // The list round the drum. No name sits within GAP rows of itself (7 rows show at once). Small pools can't
   // manage that, so they get as much space as they can. Before each spin, the stretch it's about to roll
@@ -2089,7 +2110,7 @@ function makeReel(el,names,o){
     // each name keeps the same element for as long as it's on screen, so its zoom state travels with it
     for(let k=fl-3;k<=fl+3;k++){const r=rows[((k%7)+7)%7],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
       if(r._k!==k){r._k=k;r._in=false;[t,bo].forEach(x=>{x.style.transition="none";x.style.transform=""})}
-      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("jp",n==="JACKPOT");r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
+      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
       const g=bump(d),y=yAt(d),ang=y/RAD;
       if(Math.abs(ang)>1.4){r.style.opacity=0;continue}
       const sx=OUT+(1-OUT)*Math.pow(g,.75),sy=OUT+(1-OUT)*Math.pow(g,1.5);
@@ -2123,7 +2144,7 @@ function makeReel(el,names,o){
         const ban=new Set();for(let d=1;d<=GAP;d++){ban.add(get(j+d));if(j-d<end)ban.add(L[mod(j-d)])}
         if(Math.abs(j-kk)<=GAP)ban.add(name);
         if(U.every(x=>ban.has(x)))fails++;
-        seq[j]=opt.jackpot&&j<top-3&&j>kk+GAP+2&&(top-j)%8===5?name:pickFrom(ban,get(j+1));   // jackpot: the symbol flashes past on the way
+        seq[j]=pickFrom(ban,get(j+1));
       }
       return {kk,seq,fails}};
     let best=null;for(let kk=k;kk>=k-3;kk--){const a=attempt(kk);if(!best||a.fails<best.fails)best=a;if(!a.fails)break}
@@ -2134,7 +2155,7 @@ function makeReel(el,names,o){
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     const land=()=>{
       R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");
-      if(opt.jackpot){fanfare();buzz([60,40,60,40,180])}else{ding();buzz([30,40,70])}
+      if(opt.jackpot){opt.onLand&&opt.onLand();boom();fanfare();buzz([60,40,60,40,220])}else{ding();buzz([30,40,70])}
       punchLand(el,frame,name,info=>{R.busy=false;done&&done(info)});
     };
     const ease=opt.jackpot?q=>1-Math.pow(1-q,3):q=>1-(1-q)*(1-q);
@@ -2162,7 +2183,7 @@ function makeReel(el,names,o){
    straight from there into its spot on the card, so it all reads as one move. */
 function punchLand(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
-  const host=el.closest("dialog")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const host=el.closest("dialog")||el.closest(".jpt")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";   // centred on the slot (very long names overflow the wheel lopsided)
   const P=document.createElement("div");P.className="punch";P.textContent=name;
   Object.assign(P.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
@@ -2278,16 +2299,37 @@ const JACKPOTS=[
   {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next bar. Or none at all.",go:"Pick it"}];
 function jackpotSpin(vel){
   const g=G(),opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(S.test&&S.forceJP&&JACKPOTS.find(x=>x.k===S.forceJP))||opts[Math.floor(Math.random()*opts.length)];
-  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;
-  spinning=true;g.finalBanner=false;save();renderPlay();
-  if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
-    $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum">&nbsp;</div></div>`;
-    reel=makeReel($("reelBox"),gameReelNames(),{});
-  }
-  $("reelBox").classList.add("gold");
-  reel.spinTo("JACKPOT",Math.min(-48,vel===undefined?-60:vel*1.5),()=>{
-    const row=$("reelBox")&&$("reelBox").querySelector(".row.c");if(row)row.style.visibility="";   // JACKPOT stays lit in the wheel behind the pop-up
-    spinning=false;save();confetti();jackpotSheet()},{jackpot:true});
+  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;spinning=true;save();
+  jackpotTheatre(j,()=>{spinning=false;save();renderPlay();jackpotSheet()});
+}
+/* Full-screen: the game fades into the dark, JACKPOT slams in, a gold wheel of the five rewards spins up while
+   the riser builds, it creeps, stops one short, clunks onto the reward, and the name punches out with a boom. */
+function jackpotTheatre(j,done){
+  closeSheet();ac();
+  const ov=document.createElement("div");ov.className="jpt";
+  ov.innerHTML=`<div class="jpt-in"><div class="jpt-k">Jackpot</div><div class="jpt-lights"><div id="jptReel"></div></div><div class="jpt-sub" id="jptSub">Spinning for your reward</div></div>`;
+  document.body.appendChild(ov);
+  const names=JACKPOTS.map(x=>x.t),R_=makeReel($("jptReel"),names,{ph:"Jackpot"});$("jptReel").classList.add("gold");
+  ov.animate([{opacity:0},{opacity:1}],{duration:380,easing:"ease-out",fill:"forwards"});
+  const k=ov.querySelector(".jpt-k");k.animate([{transform:"scale(2.6)",opacity:0,filter:"blur(8px)"},{transform:"scale(.94)",opacity:1,filter:"blur(0)",offset:.7},{transform:"scale(1)",opacity:1}],{duration:520,delay:200,easing:"cubic-bezier(.2,.9,.3,1)",fill:"backwards"});
+  setTimeout(()=>{boom();buzz(40)},380);
+  const lights=ov.querySelector(".jpt-lights");lights.animate([{transform:"scale(.85)",opacity:0},{transform:"scale(1)",opacity:1}],{duration:420,delay:420,easing:"cubic-bezier(.2,1.3,.4,1)",fill:"backwards"});
+  let stopRiser=()=>{};
+  setTimeout(()=>{
+    lights.classList.add("on");stopRiser=riser(4.6);
+    R_.spinTo(j.t,-72,()=>{
+      const sub=$("jptSub");sub.textContent=j.d;sub.classList.add("show");
+      const fl=document.createElement("div");fl.className="jpt-flash";ov.appendChild(fl);fl.animate([{opacity:.85},{opacity:0}],{duration:520,easing:"ease-out",fill:"forwards"});
+      confetti(ov);lights.classList.add("won");
+      const row=$("jptReel").querySelector(".row.c");if(row)row.style.visibility="";
+      setTimeout(()=>{ov.animate([{opacity:1},{opacity:0}],{duration:320,fill:"forwards"}).onfinish=()=>{ov.remove();done&&done()}},1700);
+    },{jackpot:true,onLand:()=>stopRiser()});
+  },950);
+}
+// test panel: the whole show, any time, with nothing at stake
+function jackpotDemo(){
+  const opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=opts[Math.floor(Math.random()*opts.length)];S.lastJP=j.k;save();
+  jackpotTheatre(j,()=>sheet(`<div class="jpbox"><div class="jpk">Jackpot</div><h3>${j.t}</h3><p class="note">${j.d}</p></div><div class="acts"><button class="btn" type="button" id="jdA">Play it again</button><button class="btn dark" type="button" id="jdX">Done</button></div>`,()=>{$("jdA").onclick=jackpotDemo;$("jdX").onclick=closeSheet}));
 }
 function jackpotSheet(){
   const g=G();if(!g||!g.jp||g.jp.claimed)return;const j=JACKPOTS.find(x=>x.k===g.jp.k);
@@ -2535,8 +2577,8 @@ function renderPlay(){
   else if(!here)gn.textContent="Finding you…";
   else gn.textContent=g.target?"Keep the app open on the way so your visit logs the moment you arrive.":"";
 }
-function confetti(){
-  const app=$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
+function confetti(host){
+  const app=host||$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
   for(let i=0;i<46;i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
 }
 const PICK3="Pick from 3. Your next spin lands on three rooftops and you choose.";
@@ -2854,9 +2896,10 @@ $("testFab").onclick=()=>{
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button></div>`:""}`:""}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
-   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
+   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
     if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();animateId="at:"+v.id;onLocation()};
+    $("tJD").onclick=()=>{closeSheet();setTimeout(jackpotDemo,250)};
     if($("tJP"))$("tJP").onclick=()=>{const g=G();delete g.jp;g.jpLeg=0;save();closeSheet();render()};   // jpLeg 0: the very next spin is the jackpot
     if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
     $("tJ").onchange=e=>{const v=byId(e.target.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();closeSheet();onLocation();render()}};
