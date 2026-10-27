@@ -1141,6 +1141,22 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jdim{position:fixed;inset:0;z-index:57;pointer-events:none;background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.25),rgba(0,0,0,.72) 70%)}
 .jbloom{position:fixed;z-index:58;pointer-events:none;width:380px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,61,.55),rgba(245,184,61,.18) 55%,rgba(245,184,61,0));filter:blur(8px)}
 .jring{position:fixed;z-index:59;pointer-events:none;width:200px;height:120px;border-radius:50%;border:1.5px solid rgba(255,226,150,.7)}
+.reel.gold .frame{border-color:#FFD27A;animation:goldpulse .45s ease-in-out infinite alternate}
+@keyframes goldpulse{from{box-shadow:0 0 0 4px rgba(245,184,61,.2),0 0 30px rgba(245,184,61,.25)}to{box-shadow:0 0 0 9px rgba(245,184,61,.45),0 0 80px rgba(245,184,61,.65)}}
+.reel.gold .row .b{color:#FFE2A0}
+.reel .row.jp .t,.reel .row.jp .b{color:#F5B83D;text-shadow:0 0 14px rgba(245,184,61,.7)}
+.jpbox{text-align:center;padding:6px 0 2px}
+.jpk{font-family:var(--display);font-weight:800;font-size:52px;line-height:1;letter-spacing:.03em;text-transform:uppercase;color:var(--amber);text-shadow:0 0 28px rgba(245,184,61,.55)}
+.jpbox h3{font-size:24px;margin:10px 0 4px}
+.jpbox .note{margin:0 auto 16px;max-width:320px}
+.jptimer{position:relative;height:28px;border-radius:14px;background:var(--s2);overflow:hidden;margin:4px 0 12px}
+.jptimer i{position:absolute;inset:0 auto 0 0;width:100%;background:linear-gradient(90deg,#F5B83D,#FFD27A);transition:width .2s linear}
+.jptimer b{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;color:#241803}
+.opt.dealt .t b{font-weight:600;font-size:15px;line-height:1.35}
+.jpchip{display:inline-flex;align-items:center;gap:6px;align-self:center;margin:-4px auto 2px;padding:6px 12px;border-radius:99px;background:rgba(245,184,61,.12);color:var(--amber);font-size:13px;font-weight:700}
+.jpchip svg{width:14px;height:14px}
+.clock.frozen b,.clock.frozen small{color:#8FD3FF}
+.tbar.frozen i{background:#8FD3FF}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
 .flyname .fw{display:inline-block;transform-origin:0 0;will-change:transform}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
@@ -1502,6 +1518,10 @@ function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext
 function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(a.destination);o.start(t);o.stop(t+.05)}
 function arriveSound(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,out=a.createGain();out.gain.value=.9;out.connect(a.destination);
   [[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28]].forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type="triangle";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i===4?.22:.16,st+.01);g.gain.exponentialRampToValueAtTime(.0001,st+(i===4?.7:.25));o.connect(g).connect(out);o.start(st);o.stop(st+.75)})}
+function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=4200;lp.connect(a.destination);
+  const notes=[[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28],[1568,.35],[1046.5,.5],[1318.5,.5],[1568,.5],[2093,.5]];
+  notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
+    g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
 function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(a.destination);[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
@@ -1977,7 +1997,12 @@ $("permGo").onclick=async()=>{
 const G=()=>S.game;
 const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
 const visited=id=>G().visits.some(v=>v.id===id);
-const remaining=()=>{const g=G();return g.started?g.endsAt-now():g.len*60000};
+// A freeze pushes the end back and holds the clock still until it runs out. A free trip (Your call) ends early
+// when you arrive or spin again, and hands back whatever it didn't use.
+const frozen=g=>!!(g&&g.frz&&now()<g.frz.until);
+const remaining=()=>{const g=G();return g.started?(frozen(g)?g.endsAt-g.frz.until:g.endsAt-now()):g.len*60000};
+function startFreeze(g,ms,trip){g.endsAt+=ms;g.frz={from:now(),until:now()+ms,trip:!!trip}}
+function endTripFreeze(g){if(g&&g.frz&&g.frz.trip&&now()<g.frz.until){g.endsAt-=g.frz.until-now();g.frz.until=now()}}
 const CR=g=>!!(g&&g.mode==="cruise");
 const RR_AUTO=3*3600000; // R&R nights wrap up on their own after 3 hours
 
@@ -2064,7 +2089,7 @@ function makeReel(el,names,o){
     // each name keeps the same element for as long as it's on screen, so its zoom state travels with it
     for(let k=fl-3;k<=fl+3;k++){const r=rows[((k%7)+7)%7],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
       if(r._k!==k){r._k=k;r._in=false;[t,bo].forEach(x=>{x.style.transition="none";x.style.transform=""})}
-      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
+      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("jp",n==="JACKPOT");r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
       const g=bump(d),y=yAt(d),ang=y/RAD;
       if(Math.abs(ang)>1.4){r.style.opacity=0;continue}
       const sx=OUT+(1-OUT)*Math.pow(g,.75),sy=OUT+(1-OUT)*Math.pow(g,1.5);
@@ -2083,8 +2108,8 @@ function makeReel(el,names,o){
   draw();
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
-  R.spinTo=(name,v,done)=>{
-    moved=true;const dir=-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
+  R.spinTo=(name,v,done,opt)=>{
+    opt=opt||{};moved=true;const dir=-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
     const extra=v0>VC?Math.min(30,(v0-VC)*.5):0, Dd=Math.max(7,vs*vs/24);   // 24 = 2 × friction (12 rows/s²)
     let k=Math.round(R.p+dir*(extra+Dd));
     // rewrite everything between just off-screen now and just past where it'll stop (all out of sight)
@@ -2098,16 +2123,25 @@ function makeReel(el,names,o){
         const ban=new Set();for(let d=1;d<=GAP;d++){ban.add(get(j+d));if(j-d<end)ban.add(L[mod(j-d)])}
         if(Math.abs(j-kk)<=GAP)ban.add(name);
         if(U.every(x=>ban.has(x)))fails++;
-        seq[j]=pickFrom(ban,get(j+1));
+        seq[j]=opt.jackpot&&j<top-3&&j>kk+GAP+2&&(top-j)%8===5?name:pickFrom(ban,get(j+1));   // jackpot: the symbol flashes past on the way
       }
       return {kk,seq,fails}};
     let best=null;for(let kk=k;kk>=k-3;kk--){const a=attempt(kk);if(!best||a.fails<best.fails)best=a;if(!a.fails)break}
     k=best.kk;for(const j in best.seq)L[mod(+j)]=best.seq[j];
-    const p0=R.p,dist=Math.abs(k-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=2*Dr/vs,T=Tc+Td;
+    // a jackpot stops one short (a near miss), waits a beat, then clunks on to it
+    const stop=opt.jackpot?k+1:k;
+    const p0=R.p,dist=Math.abs(stop-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=(opt.jackpot?2.5:2)*Dr/vs,T=Tc+Td;
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
-    anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
-      R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");ding();buzz([30,40,70]);
-      jackpot(el,frame,name,info=>{R.busy=false;done&&done(info)});
+    const land=()=>{
+      R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");
+      if(opt.jackpot){fanfare();buzz([60,40,60,40,180])}else{ding();buzz([30,40,70])}
+      punchLand(el,frame,name,info=>{R.busy=false;done&&done(info)});
+    };
+    const ease=opt.jackpot?q=>1-Math.pow(1-q,3):q=>1-(1-q)*(1-q);
+    anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*ease(q)}R.p=p0+dir*x},()=>{
+      if(!opt.jackpot){land();return}
+      R.p=stop;draw();
+      setTimeout(()=>{tick(420);anim(420,u=>{const c=2.4,x=u-1;R.p=stop-(1+(c+1)*x*x*x+c*x*x)},land)},380);
     });
   };
   if(o.onRelease){
@@ -2126,7 +2160,7 @@ function makeReel(el,names,o){
 /* The landing: the name punches out of the wheel, way bigger than the wheel can hold, and shakes like an
    earthquake while the rest of the screen drops back into shadow behind a soft gold bloom. Then it's pulled
    straight from there into its spot on the card, so it all reads as one move. */
-function jackpot(el,frame,name,done){
+function punchLand(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
   const host=el.closest("dialog")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";   // centred on the slot (very long names overflow the wheel lopsided)
@@ -2211,6 +2245,9 @@ function doSpin(force,vel){
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
   if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
+  endTripFreeze(g);
+  if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
+    if(g.visits.length>=g.jpLeg&&spinPool().pool.length){jackpotSpin(vel);return}}
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();if(CR(g))noneLeft();else openMove(true);return false}
   const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();barPhoto(pick);
@@ -2231,6 +2268,67 @@ function doSpin(force,vel){
     return;
   }
   reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation()});
+}
+/* ---------- the Jackpot: once a Rush Hour game, a longer gold spin that pays out one of five rewards ---------- */
+const JACKPOTS=[
+  {k:"call",t:"Your call",d:"Pick your next bar from three. You've got 20 seconds, and the trip there's on the house (up to 15 minutes).",go:"Show me"},
+  {k:"freeze",t:"Time freeze",d:"The clock's frozen for 10 minutes. Stay for another, or go somewhere further.",go:"Spin for your bar"},
+  {k:"spins",t:"Free spins",d:"Your next 3 re-spins don't cost a thing.",go:"Spin for your bar"},
+  {k:"short",t:"Shortcut",d:"Your next bar is the closest one that's open.",go:"Show me"},
+  {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next bar. Or none at all.",go:"Pick it"}];
+function jackpotSpin(vel){
+  const g=G(),opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(S.test&&S.forceJP&&JACKPOTS.find(x=>x.k===S.forceJP))||opts[Math.floor(Math.random()*opts.length)];
+  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;
+  spinning=true;g.finalBanner=false;save();renderPlay();
+  if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
+    $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum">&nbsp;</div></div>`;
+    reel=makeReel($("reelBox"),gameReelNames(),{});
+  }
+  $("reelBox").classList.add("gold");
+  reel.spinTo("JACKPOT",Math.min(-48,vel===undefined?-60:vel*1.5),()=>{
+    const row=$("reelBox")&&$("reelBox").querySelector(".row.c");if(row)row.style.visibility="";   // JACKPOT stays lit in the wheel behind the pop-up
+    spinning=false;save();confetti();jackpotSheet()},{jackpot:true});
+}
+function jackpotSheet(){
+  const g=G();if(!g||!g.jp||g.jp.claimed)return;const j=JACKPOTS.find(x=>x.k===g.jp.k);
+  if(!g.jp.applied){g.jp.applied=true;if(j.k==="freeze")startFreeze(g,10*60000,false);if(j.k==="spins")g.freeSkips=(g.freeSkips||0)+3;save();renderClock()}
+  let acted=false;const act=()=>{if(acted)return;acted=true;g.jp.claimed=true;save();
+    // Your call and Dealer's choice open their own pop-up in place, so this one doesn't close (its close would end theirs)
+    if(j.k!=="call"&&j.k!=="dealer")closeSheet();claimJackpot(j.k)};
+  sheet(`<div class="jpbox"><div class="jpk">Jackpot</div><h3>${j.t}</h3><p class="note">${j.d}</p></div><button class="btn" type="button" id="jpGo">${j.go}</button>`,
+    ()=>{$("jpGo").onclick=act;$("sheet").addEventListener("close",act,{once:true})});   // swiped away: carry on as if they'd tapped
+}
+function claimJackpot(k){
+  if(k==="call")return yourCall();
+  if(k==="short")return shortcut();
+  if(k==="dealer")return dealerChoice();
+  renderPlay();doSpin(true);
+}
+function setTarget(v,from){const g=G();g.target=v.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;rollWild(g,v.id)}
+function yourCall(){
+  const g=G(),from=fromPoint(),P=shuffle(spinPool().pool.slice()).slice(0,3);if(!P.length){renderPlay();return}
+  let timer=0;const SEC=20;
+  const choose=v=>{clearInterval(timer);if(g.target)return;setTarget(v,from);startFreeze(g,15*60000,true);animateId=v.id;save();closeSheet();renderPlay();onLocation()};
+  sheet(`<h3>Your call</h3><p class="note">Pick one. The trip there's on the house.</p><div class="jptimer"><i id="jpT"></i><b id="jpS">${SEC}</b></div>
+    <div class="acts">${P.map(v=>{const o=openState(v,now());return `<button class="opt" type="button" data-yc="${v.id}"><span class="ic">${I.pin}</span><span class="t"><b>${esc(v.name)}</b><small>${walkMin(from,v)} min walk · ${mOrKm(dist(from,v))}${o.open?" · til "+clock12(o.closeAt):""}</small></span></button>`}).join("")}</div>`,()=>{
+    document.querySelectorAll("[data-yc]").forEach(b=>b.onclick=()=>choose(byId(b.dataset.yc)));
+    const t0=Date.now();timer=setInterval(()=>{const r=SEC-(Date.now()-t0)/1000;if($("jpT"))$("jpT").style.width=Math.max(0,r/SEC*100)+"%";if($("jpS"))$("jpS").textContent=Math.max(0,Math.ceil(r));if(r<=0)choose(P[0])},200);
+    $("sheet").addEventListener("close",()=>{if(!g.target)choose(P[0])},{once:true});   // out of time or swiped away: the first one
+  });
+}
+function shortcut(){
+  const g=G(),from=fromPoint(),v=spinPool().pool.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];if(!v){renderPlay();return}
+  setTarget(v,from);animateId=v.id;save();renderPlay();onLocation();
+}
+function dealerChoice(){
+  const g=G(),cards=shuffle(WILDS.slice()).slice(0,3);let done=false;
+  const pick=text=>{if(done)return;done=true;g.dealt={leg:g.visits.length,text};save();closeSheet();renderPlay();doSpin(true)};
+  sheet(`<h3>Dealer's choice</h3><p class="note">Pick the wildcard for your next bar.</p>
+    <div class="acts">${cards.map((c,i)=>`<button class="opt dealt" type="button" data-dc="${i}"><span class="ic">${I.sparkle}</span><span class="t"><b>${esc(c)}</b></span></button>`).join("")}
+    <button class="btn dark" type="button" id="dcN">No wildcard</button></div>`,()=>{
+    document.querySelectorAll("[data-dc]").forEach(b=>b.onclick=()=>pick(cards[+b.dataset.dc]));
+    $("dcN").onclick=()=>pick(null);$("sheet").addEventListener("close",()=>pick(null),{once:true});
+  });
 }
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
@@ -2300,7 +2398,7 @@ function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
-    ["Watch out for wildcards","Some spins come with a little challenge for the next bar."],
+    ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, the wheel pays out."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>howSheet(next),next));
 }
@@ -2357,7 +2455,7 @@ function needManual(g){
   return now()-g.targetAt>(exp*1.5+5)*60000;
 }
 function logArrival(manual){
-  const g=G();if(!g||!g.target)return;const v=byId(g.target);
+  const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g);
   g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined,manual:!!manual});
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
@@ -2457,8 +2555,7 @@ const WILDS=[
  "Make a toast. Worst one buys the next round.",
  "Buffalo. Left hand only.",
  "Order whatever the bartender just made for the last person. The whole group.",
- "Whoever's wearing the most black picks the round.",
- PICK3
+ "Whoever's wearing the most black picks the round."
 ];
 // Wildcards: a set number per game (1 hour: 2, 2 hours: 3 or 4), on random bars, never the first and never two in a row.
 // Cards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
@@ -2470,6 +2567,7 @@ function planWilds(g){
 }
 function rollWild(g,id){
   const leg=g.visits.length;   // how many bars you've been to before this one
+  if(g.dealt&&g.dealt.leg===leg){g.wild=g.dealt.text?{id,text:g.dealt.text,leg}:null;if(g.wild)g.lastWild=g.wild.text;return}   // Dealer's choice
   if(!g.wplan)g.wplan=planWilds(g);
   if(!g.wplan.includes(leg)){g.wild=null;return}
   if(g.wild&&g.wild.leg===leg){g.wild.id=id;return}   // re-spun: the same wildcard moves to the new bar
@@ -2491,6 +2589,7 @@ function renderClock(){
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
+  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
 }
 
 /* ---------- stats + scorecard ---------- */
@@ -2556,6 +2655,7 @@ function renderEnd(){
       <div class="sc-top"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}${r.early&&!cr?` · ended at ${Math.round(st.dur/60000)} min`:""}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
       <div class="award"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div>
         ${aw.length>1?`<div class="aw-more">${aw.slice(1,3).map(a=>`<span>${a.t}</span>`).join("")}</div>`:""}</div>
+      ${r.jp&&!cr?`<div class="jpchip">${I.sparkle} Jackpot: ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</div>`:""}
       <div class="tri two"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div>${cr?`<div><b>${hmm(st.dur).replace(" min","<i>min</i>")}</b><small>out for</small></div>`:`<div><b>${(st.total/1000).toFixed(1)}<i>km</i></b><small>covered</small></div>`}</div>
       <div class="map"><div id="endMap" style="height:180px"></div></div>
       <div class="sc-bars">${st.arrived.map((v,i)=>`<span class="${v.counted===true?"":"x"}">${i+1}. ${esc(byId(v.id).name)}${r.barOfDay===v.id?" ★":""}</span>`).join("")||'<span class="x">No visits logged</span>'}</div>
@@ -2781,6 +2881,7 @@ function loop(){
     if(!spinning&&g.started&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
     if(g.started&&!spinning){const r=remaining();if(r>0&&r<=10000)tick(1200)}
     if(!spinning&&g.target&&needManual(g)!==!!g._man)renderPlay();
+    if(!CR(g)&&g.jp&&!g.jp.claimed&&!spinning&&!$("sheet").open)jackpotSheet();
   }
 }
 setInterval(loop,1000);
