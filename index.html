@@ -1269,7 +1269,7 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .sheetbar.photo{min-height:230px}
 .bar.tapmaps{position:relative;cursor:pointer}
 .bar.tapmaps .gmgo{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(36,24,3,.12);color:var(--amber-ink);z-index:2}
-.bar.tapmaps.photo .gmgo{background:rgba(0,0,0,.35);color:#fff}
+.bar.tapmaps.photo .gmgo{background:rgba(0,0,0,.35);color:#fff;right:auto;left:14px}
 .bar.tapmaps .gmgo svg{width:16px;height:16px}
 .sheetbar .gmgo{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;z-index:2}
 .sheetbar:not(.photo) .gmgo{background:rgba(36,24,3,.12);color:var(--amber-ink)}
@@ -2597,6 +2597,12 @@ function dealWild(delay){
     };
   },delay||0);
 }
+function fitPlay(){
+  const v=$("v-play");if(!v||v.hidden)return;v.scrollTop=0;
+  const card=$("stage").querySelector(".bar.photo");if(!card)return;card.style.minHeight="";
+  const over=v.scrollHeight-v.clientHeight;if(over>0)card.style.minHeight=Math.max(0,card.offsetHeight-over)+"px";
+}
+addEventListener("resize",()=>{if(S.route==="play")fitPlay()});
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
 }
@@ -2785,6 +2791,7 @@ function renderPlay(){
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
+  fitPlay();
   st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
