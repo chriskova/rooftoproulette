@@ -1225,6 +1225,7 @@ html.fl .app{visibility:hidden}
 .zmapwrap{background:#0E1117}
 .opt .t .hop{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;font-weight:700;color:var(--text);opacity:.8;white-space:nowrap}
 .opt .t .hop svg{width:13px;height:13px;color:var(--amber)}
+.opt.locked{opacity:.5}
 .finetag{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:8px;vertical-align:2px;letter-spacing:0}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
@@ -1838,17 +1839,22 @@ function renderWiz(){
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=2;save();renderWiz()});
   }
   if(w.step===2){
-    // 1 hour: 500 m or 1 km. 2 hours: 1 to 2 km.
-    const c=w.start,radii=w.len===60?RADII.filter(r=>r<=1):RADII.filter(r=>r>=1);
+    // 1 hour: 500 m or 1 km, with 1.5 and 2 km shown greyed ("2-hour games only"; tapping offers to switch).
+    // 2 hours: 1 to 2 km.
+    const c=w.start,radii=w.len===60?RADII:RADII.filter(r=>r>=1),locked=r=>w.len===60&&r>1;
     // Outside opening hours nothing is "open", but people still plan ahead or test, so count every rooftop instead.
     const shut=radii.every(r=>!openIn(c,r,t).length);
     const rows=radii.map(r=>{const all=playable(inCircle(c,r),false),o=shut?all:openIn(c,r,t);return {r,n:o.length,tot:all.length,hop:avgHop(o),thin:r<1&&all.length<4}});
     let rec=recRadius(w.len);if(rec===0.5&&rows[0].thin)rec=1;
-    if(w.radius==null||!radii.includes(w.radius)||(w.radius===0.5&&rows[0].thin))w.radius=rec;
+    if(w.radius==null||!radii.includes(w.radius)||locked(w.radius)||(w.radius===0.5&&rows[0].thin))w.radius=rec;
     const desc={0.5:"Minimal steps. Maximum rooftops.",1:w.len===60?"More variety. More walking.":"Minimal steps. Maximum rooftops.",1.5:"More travel, better variety.",2:"Go on, be that person."};
     body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.tot&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<975?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>${shut?"rooftops":"open"}</small>`}</span></button>`).join("")}</div>`;
-    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
+      <div class="opts">${rows.map(o=>`<button class="opt${locked(o.r)?" locked":""}" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.tot&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}${locked(o.r)?`<span class="finetag">2-hour games only</span>`:""}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<975?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>${shut?"rooftops":"open"}</small>`}</span></button>`).join("")}</div>`;
+    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const r=+b.dataset.r;
+      if(locked(r)){sheet(`<h3>Switch to a 2-hour game?</h3><p class="note">${rLabel(r)} is too much ground for an hour, so it's 2-hour games only. You can still end the game whenever you like, and your scorecard's saved either way.</p>
+        <div class="acts"><button class="btn" type="button" id="lkY">Switch to 2 hours</button><button class="btn dark" type="button" id="lkN">Stay at 1 hour</button></div>`,
+        ()=>{$("lkN").onclick=closeSheet;$("lkY").onclick=()=>{closeSheet();w.len=120;w.radius=r;save();renderWiz()}});return}
+      w.radius=r;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
   }
   if(w.step===3){
