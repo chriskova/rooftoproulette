@@ -1099,9 +1099,6 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .toggle[aria-checked="true"]{border-color:var(--amber)}
 .zlist{display:flex;flex-direction:column}
 .zlist .li{font-size:14.5px;padding:10px 0}
-.beenbtn{float:right;margin:-4px -4px 0 8px;height:26px;padding:0 10px;border-radius:13px;border:1.5px solid rgba(36,24,3,.28);background:none;color:inherit;font:inherit;font-size:11px;letter-spacing:.06em;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-.beenbtn[aria-pressed="true"]{background:rgba(36,24,3,.12);border-color:transparent}
-.beenbtn svg{width:13px;height:13px}
 .zreveal{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px;border:1.5px dashed var(--line);border-radius:16px;background:none;color:var(--text);font:inherit;font-weight:700;font-size:15px;cursor:pointer}
 .zreveal small{font-weight:500;font-size:12.5px;color:var(--muted)}
 .zreveal[aria-expanded="true"]{border-style:solid;margin-bottom:12px}
@@ -2315,7 +2312,7 @@ function renderPlay(){
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
     const cp=cardPhoto(v),fs=g.freeSkips||0;
-    st.innerHTML=banner+ask+`<div class="bar${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}${collectedMap()[v.id]?"":`<button class="beenbtn" type="button" id="beenBtn" aria-pressed="${!!S.been[v.id]}">${S.been[v.id]?I.check+" Been here":"Been here?"}</button>`}</span><h2>${esc(v.name)}</h2>
+    st.innerHTML=banner+ask+`<div class="bar${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
       <a class="gmlink" href="${gmapsURL(v)}" target="_blank" rel="noopener">Info on Google Maps ›</a>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
@@ -2342,7 +2339,6 @@ function renderPlay(){
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox"))reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
-  const bb_=$("beenBtn");if(bb_)bb_.onclick=()=>{const id=g.target;if(S.been[id])delete S.been[id];else S.been[id]=1;save();renderPlay()};
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();renderPlay()};
   else if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
