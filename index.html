@@ -1465,6 +1465,8 @@ html.fl .app{visibility:hidden}
 .poolnum.low{color:var(--amber)}
 #v-play:has(#stage .ready) #strip{display:none}   /* the wheel screen: tonight's bars live behind the counter */
 #reelBack{width:100%;height:48px}
+
+.bar.at h2{color:var(--amber)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2915,7 +2917,7 @@ function renderPlay(){
     st.innerHTML=ask+`<div class="bar at${cp.cls}${animateId===("at:"+a.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">${CR(g)?"You're here":"Visit logged"}${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
-      ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
+      ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"').replace(' data-pending="1"',''):""}</div>
       ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>${hmm(d)} at ${esc(v.name)}.</b> Ready for the next one? Spin whenever you like.</span></div>`:""}
       ${ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
