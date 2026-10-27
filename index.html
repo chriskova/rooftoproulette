@@ -1128,6 +1128,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel .row .t{font-weight:500;color:var(--muted)}
 .reel .row .b{font-weight:800;color:#fff}
 .reel .row.long{font-size:clamp(24px,7.4vw,33px)}
+.reel .row.xlong{font-size:clamp(18px,5.5vw,25px)}
 .reel .row.ph .b{color:var(--amber)}
 .reel.won .row.c .b{color:var(--amber)}
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
@@ -1136,11 +1137,12 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .demo{margin-top:12px;min-height:290px}
 .demo .bar{margin:0}
 .demo>#demoBox>#demoAgain{margin-top:10px;width:100%}
-.punch{position:fixed;z-index:62;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;text-transform:uppercase;line-height:1;margin:0}
+.punch{position:fixed;z-index:62;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;width:max-content;text-transform:uppercase;line-height:1;margin:0}
 .jdim{position:fixed;inset:0;z-index:57;pointer-events:none;background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.25),rgba(0,0,0,.72) 70%)}
 .jbloom{position:fixed;z-index:58;pointer-events:none;width:380px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,61,.55),rgba(245,184,61,.18) 55%,rgba(245,184,61,0));filter:blur(8px)}
 .jring{position:fixed;z-index:59;pointer-events:none;width:200px;height:120px;border-radius:50%;border:1.5px solid rgba(255,226,150,.7)}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
+.flyname .fw{display:inline-block;transform-origin:0 0;will-change:transform}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
 .reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
 .reel .hint.off{opacity:0}
@@ -2053,7 +2055,7 @@ function makeReel(el,names,o){
     // each name keeps the same element for as long as it's on screen, so its zoom state travels with it
     for(let k=fl-3;k<=fl+3;k++){const r=rows[((k%7)+7)%7],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
       if(r._k!==k){r._k=k;r._in=false;[t,bo].forEach(x=>{x.style.transition="none";x.style.transform=""})}
-      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
+      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
       const g=bump(d),y=yAt(d),ang=y/RAD;
       if(Math.abs(ang)>1.4){r.style.opacity=0;continue}
       const sx=OUT+(1-OUT)*Math.pow(g,.75),sy=OUT+(1-OUT)*Math.pow(g,1.5);
@@ -2104,15 +2106,15 @@ function makeReel(el,names,o){
 function jackpot(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
   const host=el.closest("dialog")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const cx=r0.left+r0.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";
+  const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";   // centred on the slot (very long names overflow the wheel lopsided)
   const P=document.createElement("div");P.className="punch";P.textContent=name;
   Object.assign(P.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
   host.appendChild(P);row.style.visibility="hidden";
-  const w0=P.offsetWidth||r0.width,big=Math.max(1.15,Math.min(2.3,innerWidth*.96/w0));
+  const w0=P.offsetWidth||r0.width,fit=innerWidth*.94/w0,big=Math.min(2.3,fit);   // as big as the screen allows (very long names shrink to fit)
   const T=(k,x=0,y=0,r=0)=>`translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${r}deg) scale(${k})`;
-  const HIT=170,QUAKE=calm?0:300,ALL=HIT+QUAKE;
+  const HIT=170,QUAKE=0,HOLD=200,ALL=HIT+HOLD;
   // punch in: fast, with a little overshoot, then hold big while it quakes (amplitude dies away)
-  const kf=[{transform:T(1),offset:0,textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:T(big*1.08),offset:HIT*.7/ALL,textShadow:"0 0 26px rgba(245,184,61,.9)"},{transform:T(big),offset:HIT/ALL,textShadow:"0 0 18px rgba(245,184,61,.7)"}];
+  const kf=[{transform:T(1),offset:0,textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:T(big*1.08),offset:HIT*.7/ALL,textShadow:"0 0 26px rgba(245,184,61,.9)"},{transform:T(big),offset:HIT/ALL,textShadow:"0 0 18px rgba(245,184,61,.7)"},{transform:T(big),offset:1,textShadow:"0 0 18px rgba(245,184,61,.7)"}];
   if(QUAKE){const n=8;for(let i=1;i<=n;i++){const d=1-i/n,amp=11*d*d+1.5*d,s=i%2?1:-1;
       kf.push({transform:T(big,s*amp*(.6+Math.random()*.4),(Math.random()-.5)*amp*.9,s*1.6*d),offset:(HIT+QUAKE*i/n)/ALL})}
     kf[kf.length-1].transform=T(big);kf[kf.length-1].textShadow="0 0 18px rgba(245,184,61,.7)"}
@@ -2125,11 +2127,9 @@ function jackpot(el,frame,name,done){
   const bloom=document.createElement("div");bloom.className="jbloom";Object.assign(bloom.style,{left:cx+"px",top:cy+"px"});fx.push(bloom);
   bloom.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:0},{transform:"translate(-50%,-50%) scale(1.05)",opacity:1,offset:.3},{transform:"translate(-50%,-50%) scale(1.15)",opacity:.75,offset:.7},{transform:"translate(-50%,-50%) scale(1.3)",opacity:0}],{duration:ALL+420,easing:"ease-out",fill:"forwards"});
   if(!calm){
-    // one clean shockwave, and the whole wheel rumbles with the name
+    // one clean shockwave
     const ring=document.createElement("div");ring.className="jring";Object.assign(ring.style,{left:cx+"px",top:cy+"px"});fx.push(ring);
     ring.animate([{transform:"translate(-50%,-50%) scale(.25)",opacity:.9},{transform:"translate(-50%,-50%) scale(3)",opacity:0}],{duration:700,easing:"cubic-bezier(.1,.7,.3,1)",fill:"forwards"});
-    const q=[{transform:"none"}];for(let i=1;i<8;i++){const d=1-i/8;q.push({transform:`translate(${(i%2?1:-1)*7*d}px,${(Math.random()-.5)*6*d}px)`})}q.push({transform:"none"});
-    el.animate(q,{duration:QUAKE,delay:HIT*.6,easing:"linear"});
   }
   fx.forEach(x=>host.appendChild(x));setTimeout(()=>fx.forEach(x=>x.remove()),ALL+700);
   // pulled from the big name straight into the card
@@ -2151,12 +2151,17 @@ function reveal(info,scope){
   box.animate([
     {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},
     {left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",borderRadius:cs.borderTopLeftRadius}],{duration:D,easing:E,fill:"forwards"});
-  const ghost=document.createElement("div");ghost.className="flyname";ghost.textContent=h2.textContent;
-  Object.assign(ghost.style,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,whiteSpace:"normal",color:info.ink||"#F5B83D"});
+  const font={fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,color:info.ink||"#F5B83D"};
+  const words=h2.textContent.trim().split(/\s+/).map(w=>`<span class="fw">${esc(w)}</span>`).join(" ");
+  const ghost=document.createElement("div");ghost.className="flyname";ghost.innerHTML=words;
+  Object.assign(ghost.style,font,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",whiteSpace:"normal"});
   host.appendChild(ghost);
-  const sc=info.fs/parseFloat(hs.fontSize),gr=ghost.getBoundingClientRect(),lh=parseFloat(hs.lineHeight)||parseFloat(hs.fontSize),lines=Math.max(1,Math.round(gr.height/lh));
-  const sx=lines>1?nr.left+nr.width/2-gr.width*sc/2:nr.left,sy=nr.top+nr.height/2-gr.height*sc/2;
-  ghost.animate([{transform:`translate(${sx-hr.left}px,${sy-hr.top}px) scale(${sc})`},{transform:"none"}],{duration:D,easing:E,fill:"forwards"});
+  const line=document.createElement("div");line.className="flyname";line.innerHTML=words;
+  Object.assign(line.style,font,{left:"0px",top:"0px",whiteSpace:"nowrap",visibility:"hidden"});host.appendChild(line);
+  const lr=line.getBoundingClientRect(),ls=[...line.children].map(x=>x.getBoundingClientRect());line.remove();
+  const sc=info.fs/parseFloat(hs.fontSize),x0=nr.left+nr.width/2-lr.width*sc/2,y0=nr.top+nr.height/2-lr.height*sc/2;
+  [...ghost.children].forEach((sp,i)=>{const f_=sp.getBoundingClientRect(),sx=x0+(ls[i].left-lr.left)*sc,sy=y0+(ls[i].top-lr.top)*sc;
+    sp.animate([{transform:`translate(${sx-f_.left}px,${sy-f_.top}px) scale(${sc})`},{transform:"none"}],{duration:D,easing:E,fill:"forwards"})});
   card.style.opacity="0";after.forEach(k=>k.style.opacity="0");
   setTimeout(()=>{
     card.style.opacity="";card.animate([{opacity:0},{opacity:1}],{duration:X,easing:"ease-out"});
@@ -2263,7 +2268,7 @@ function bindDemo(afterHTML,landed){
       R.spinTo(v.name,vel,info=>{const o=openState(v,now());
         const facts=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>`;
         box.innerHTML=sheetCard(v,facts)+(afterHTML||`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`);
-        bindSheetCard(v,facts);reveal(info,box);$("demoAgain").onclick=mk;if(landed)landed()})}})};
+        reveal(info,box);afterReveal(()=>bindSheetCard(v,facts));$("demoAgain").onclick=mk;if(landed)landed()})}})};   // photo swaps in after the reveal, not mid-flight
   mk();
 }
 const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
