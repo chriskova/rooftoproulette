@@ -1169,6 +1169,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bar.jpcard p{margin:0;font-size:15.5px;line-height:1.45;font-weight:500}
 .bar.jpcard .btn{margin-top:6px}
 .bar.jpcard .jv{margin:4px 0 2px}
+.bar.jpcard .jv-freeze{margin:6px auto 2px}
 /* Your call: three tiles flip from "?" to the bars, photo behind */
 .jv-call{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;perspective:700px}
 .jv-tile{position:relative;aspect-ratio:1/1.08;border:0;padding:0;background:none;cursor:pointer;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
@@ -1385,6 +1386,34 @@ html.fl .app{visibility:hidden}
 /* the wheel stays seamless (fades into the page top and bottom); a soft pool of light sits behind the middle */
 .reel{background:radial-gradient(ellipse 75% 42% at 50% 50%,rgba(245,184,61,.075),rgba(245,184,61,.025) 55%,rgba(245,184,61,0) 80%),#0E1117}
 .ready .poolnum{margin-top:-6px}
+
+.bar.jpcard{background:linear-gradient(170deg,#1d1a14,#13110d 70%);color:var(--text);box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.35),0 30px 90px rgba(0,0,0,.6),0 0 70px rgba(245,184,61,.18)}
+.bar.jpcard .eyebrow{color:var(--amber)}
+.bar.jpcard h2{color:var(--cream)}
+.bar.jpcard p{color:var(--muted)!important}
+.bar.jpcard .btn{background:var(--amber);color:var(--amber-ink);border:0}
+.bar.jpcard .btn#jvNone{background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+.jpcard .jv-tile .jv-f{background:#221b10;box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.45)}
+.jpcard .jv-tile .jv-b{background:#1a150c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.jpcard .jv-timer{background:rgba(255,255,255,.08)}
+.jpcard .jv-timer i{background:var(--amber)}
+.jpcard .jv-x{color:var(--amber)}
+.jpcard .jv-short{background:#0b0d12;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.jpcard .jv-card .jv-b{background:#1a150c;box-shadow:inset 0 0 0 1px rgba(245,184,61,.3)}
+/* freeze: frost creeps in from the rim, the digits ice over, a few glints */
+.jv-freeze{background:radial-gradient(circle at 50% 45%,#1d2733,#0b0f15 70%);box-shadow:inset 0 0 0 1px rgba(143,211,255,.15)}
+.jv-freeze .ice path{fill:none;stroke:rgba(220,242,255,.9);stroke-width:1.1;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 2px rgba(143,211,255,.9))}
+.jv-freeze.on .ice path{animation:icegrow .75s cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes icegrow{to{stroke-dashoffset:0}}
+.jv-freeze .jv-frost{transition:opacity .9s ease .15s,transform 1s cubic-bezier(.2,.8,.3,1) .15s}
+.jv-freeze b{transition:color .7s ease .25s,text-shadow .7s ease .25s,filter .7s ease .25s}
+.jv-freeze.on b{color:#D8F0FF;text-shadow:0 0 6px rgba(190,230,255,.9),0 0 22px rgba(143,211,255,.7);filter:saturate(.6)}
+.jv-freeze .spk{position:absolute;width:5px;height:5px;margin:-2.5px;border-radius:50%;background:#fff;box-shadow:0 0 6px 2px rgba(190,230,255,.9);opacity:0;transform:scale(.3)}
+.jv-freeze.on .spk{animation:glint .9s ease-out forwards}
+@keyframes glint{40%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.4)}}
+/* the real clock frosts over too while frozen */
+.clock.frozen b{text-shadow:0 0 8px rgba(190,230,255,.8),0 0 24px rgba(143,211,255,.5);animation:frostin 1s ease-out}
+@keyframes frostin{from{color:var(--cream);text-shadow:none;filter:blur(0)}50%{filter:blur(.6px)}to{filter:blur(0)}}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2450,6 +2479,7 @@ function jackpotSpin(vel){
   }
   // the card's button claims it straight from the jackpot layer
   const ctx=jackpotCtx();
+  ctx.onLand=()=>{if(j.k==="freeze"){applyJackpot(g,j);save();renderClock()}};   // the real clock freezes the moment it lands
   jackpotRun($("reelBox"),reel,vel,j,res=>{spinning=false;applyJackpot(g,j);g.jp.claimed=true;save();
     if(j.k==="call"&&res.bar){setTarget(res.bar,ctx.from);startFreeze(g,15*60000,true);animateId=res.bar.id;save();renderPlay();onLocation();dealWild(700);return}
     if(j.k==="short"&&ctx.nearest){setTarget(ctx.nearest,ctx.from);animateId=ctx.nearest.id;save();renderPlay();onLocation();dealWild(700);return}
@@ -2476,7 +2506,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
   let stopRiser=()=>{};
   const T=R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
-    ov.classList.add("won");confetti(ov);
+    ov.classList.add("won");confetti(ov);ctx.onLand&&ctx.onLand();
     const fl=document.createElement("i");fl.className="jpx-flash";ov.appendChild(fl);fl.animate([{opacity:.9},{opacity:0}],{duration:600,easing:"ease-out",fill:"forwards"}).onfinish=()=>fl.remove();
     // the card, in the middle of the screen, built the same way as a bar's card
     const wrap=document.createElement("div");wrap.className="jpcard-wrap";
@@ -2496,7 +2526,13 @@ function jackpotRun(box,R_,vel,j,done,ctx){
    Your call and Dealer's choice are the choice itself, made right there on the card. */
 function jvHTML(j,ctx){
   if(j.k==="call")return `<div class="jv jv-call">${ctx.bars.map((v,i)=>`<button class="jv-tile" type="button" data-i="${i}" disabled><span class="jv-f">?</span><span class="jv-b"><i class="jv-ph"></i><b>${esc(v.name)}</b><small>${ctx.from?walkMin(ctx.from,v)+" min walk":esc(v.area)}</small></span></button>`).join("")}</div><div class="jv-timer"><i></i></div>`;
-  if(j.k==="freeze")return `<div class="jv jv-freeze"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" class="trk"/><circle cx="60" cy="60" r="54" class="arc"/></svg><b>${mmss(ctx.clockMs)}</b><small>left</small><i class="jv-frost"></i></div>`;
+  if(j.k==="freeze"){
+    // frost: jagged crystals that grow in from the rim, each with a branch or two
+    let cr="";for(let i=0;i<16;i++){const a=(i/16)*Math.PI*2+Math.random()*.3,len=16+Math.random()*20;let x=60+Math.cos(a)*55,y=60+Math.sin(a)*55,d=`M${x.toFixed(1)} ${y.toFixed(1)}`;
+      const steps=4;for(let k=1;k<=steps;k++){const r=55-len*k/steps,j2=(Math.random()-.5)*.22;x=60+Math.cos(a+j2)*r;y=60+Math.sin(a+j2)*r;d+=` L${x.toFixed(1)} ${y.toFixed(1)}`;
+        if(k===2||k===3&&Math.random()<.6){const b2=a+(Math.random()<.5?.5:-.5),bl=4+Math.random()*5;d+=` M${x.toFixed(1)} ${y.toFixed(1)} l${(Math.cos(b2+Math.PI)*bl).toFixed(1)} ${(Math.sin(b2+Math.PI)*bl).toFixed(1)} M${x.toFixed(1)} ${y.toFixed(1)}`}}
+      cr+=`<path pathLength="1" d="${d}" style="animation-delay:${(Math.random()*.35).toFixed(2)}s"/>`}
+    return `<div class="jv jv-freeze"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" class="trk"/><circle cx="60" cy="60" r="54" class="arc"/><g class="ice">${cr}</g></svg><i class="jv-frost"></i><b>${mmss(ctx.clock())}</b><small>left</small>${[...Array(7)].map(()=>`<i class="spk" style="left:${15+Math.random()*70}%;top:${15+Math.random()*70}%;animation-delay:${(.4+Math.random()*.8).toFixed(2)}s"></i>`).join("")}</div>`}
   if(j.k==="spins")return `<div class="jv jv-spins">${[0,1,2].map(()=>`<i class="jv-tok">${I.redo}</i>`).join("")}<b class="jv-x">×3</b></div>`;
   if(j.k==="short"){const v=ctx.nearest;return `<div class="jv jv-short"><svg viewBox="0 0 300 96" preserveAspectRatio="none"><path class="grid" d="M0 24H300M0 56H300M0 84H300M48 0V96M122 0V96M196 0V96M262 0V96"/><path class="road" d="M30 70 C 90 70, 110 26, 170 30 S 250 40, 268 26"/></svg><i class="me"></i><i class="pin">${I.pin}</i><span class="lbl"><b>${esc(v.name)}</b> · ${ctx.from?walkMin(ctx.from,v)+" min walk":mOrKm(ctx.nearestM||0)}</span></div>`}
   if(j.k==="dealer")return `<div class="jv jv-deal">${ctx.wilds.map((w,i)=>`<button class="jv-card" type="button" data-i="${i}" disabled><span class="jv-f">${I.sparkle}</span><span class="jv-b">${esc(w)}</span></button>`).join("")}</div>`;
@@ -2512,7 +2548,7 @@ function jvRun(j,card,ctx,choose){
       const bar=card.querySelector(".jv-timer i"),t0=Date.now();card.classList.add("timing");
       const tm=setInterval(()=>{const r=1-(Date.now()-t0)/20000;bar.style.transform=`scaleX(${Math.max(0,r)})`;if(r<=0){clearInterval(tm);choose({bar:ctx.bars[0]})}},100);ctx.stop=()=>clearInterval(tm)},3*260+350);
   }
-  if(j.k==="freeze"){card.querySelector(".jv-freeze").classList.add("on");sfx("frost");buzz(20)}
+  if(j.k==="freeze"){const fz=card.querySelector(".jv-freeze");fz.querySelector("b").textContent=mmss(ctx.clock());fz.classList.add("on");sfx("frost");buzz(20)}
   if(j.k==="spins")q(".jv-tok").forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("clink");buzz(10);if(i===2)setTimeout(()=>card.querySelector(".jv-x").classList.add("on"),220)},i*240));
   if(j.k==="short"){card.querySelector(".jv-short").classList.add("on");sfx("path")}
   if(j.k==="dealer"){const cs=q(".jv-card");cs.forEach((c,i)=>setTimeout(()=>{c.classList.add("dealt");sfx("deal")},i*120));
@@ -2525,11 +2561,11 @@ const jvText=j=>j.k==="call"?"Pick one before the bar runs out. The trip there's
 const jvActs=j=>j.k==="call"?"":j.k==="dealer"?`<button class="btn dark" type="button" id="jvNone">No wildcard</button>`:`<button class="btn dark" type="button" id="jvGo">${j.go}</button>`;
 function jackpotCtx(){   // the real numbers, for a game in progress
   const g=G(),from=fromPoint(),P=spinPool().pool.slice(),near=P.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];
-  return {from,bars:shuffle(P).slice(0,3),nearest:near,clockMs:remaining(),wilds:shuffle(WILDS.slice()).slice(0,3)};
+  return {from,bars:shuffle(P).slice(0,3),nearest:near,clock:()=>remaining(),wilds:shuffle(WILDS.slice()).slice(0,3)};
 }
 function demoCtx(){      // stand-ins for the test jackpot
   const c=AREAS.find(a=>a.name==="The City")||AREAS[0],P=playable(inCircle(c,1),false).filter(v=>!v.tempClosed),near=P.slice().sort((a,b)=>dist(c,a)-dist(c,b))[0];
-  return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clockMs:37*60000+12000,wilds:shuffle(WILDS.slice()).slice(0,3)};
+  return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clock:()=>37*60000+12000,wilds:shuffle(WILDS.slice()).slice(0,3)};
 }
 function applyJackpot(g,j){if(g.jp.applied)return;g.jp.applied=true;if(j.k==="freeze")startFreeze(g,10*60000,false);if(j.k==="spins")g.freeSkips=(g.freeSkips||0)+3}
 // test panel: a stand-in wheel of real bars. Flick it and the jackpot takes over, same as in a game.
