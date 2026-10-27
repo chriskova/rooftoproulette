@@ -1451,6 +1451,20 @@ html.fl .app{visibility:hidden}
 .blist.want b{color:var(--amber)}.blist.nfu b{color:var(--dim)}
 .blist span{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .blist:active{transform:scale(.97)}
+.lsbar{display:flex;align-items:center;gap:10px}.lsbar .lsearch{flex:1;min-width:0}
+.lscancel{background:none;border:0;color:var(--amber);font:inherit;font-weight:700;font-size:15px;padding:8px 2px;cursor:pointer}
+.lspick{width:100%;background:none;border:0;border-bottom:1px solid var(--line);color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.lspick:disabled{opacity:.55}
+.lspick .pl{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--amber);color:var(--amber);display:grid;place-items:center;flex:none}
+.lspick .pl.on{background:var(--amber);color:var(--amber-ink)}
+.lspick .pl svg{width:16px;height:16px}
+.rgrow{display:flex;gap:8px;align-items:center}
+.dd{position:relative;flex:1;min-width:0;display:block}
+.dd select{appearance:none;-webkit-appearance:none;width:100%;background:var(--s1);border:1px solid var(--line);border-radius:12px;color:var(--text);font:inherit;font-size:15px;font-weight:700;padding:11px 38px 11px 14px}
+.dd svg{position:absolute;right:12px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+.rgrow .chip{flex:none;display:flex;align-items:center;gap:6px;color:var(--text);padding:11px 14px}
+.rgrow .chip svg{width:14px;height:14px}
+.rgrow .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
 .lsearch{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:0 12px}
 .lsearch svg{width:18px;height:18px;color:var(--muted);flex:none}
 .lsearch input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:16px;padding:13px 0}
@@ -2194,8 +2208,7 @@ function renderWiz(){
   if(w.step===3){
     // Built once; leaving bars out only repaints the list, count and pins, so the map never reloads.
     const MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
-    if(!w.excl){const ids=new Set(all.map(v=>v.id));w.excl=[...new Set([...(S.lastVeto||[]),...Object.keys(S.nfu)])].filter(id=>ids.has(id)).slice(0,MAXOUT);save()}
-    const excl=w.excl;
+    const excl=w.excl||(w.excl=[]);
     const hasHistory=Object.keys(col).length;
     body.innerHTML=`<div><h1 class="q">Your zone</h1>
 </div>
@@ -2268,7 +2281,7 @@ async function tryStart(){
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
   S.game={id:"g"+now(),started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,center:{lat:w.start.lat,lng:w.start.lng},
-    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(S.lastVeto=(w.excl||[]).slice()).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   S.wiz=null;save();startWatch();buzz(30);go("play");
 }
@@ -3344,7 +3357,7 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 
 /* ---------- rooftops tab ---------- */
 let bMap=null,bMapP=null,bMapFit=false;
-const regionChips=(rg,openOnly)=>`<div class="chips rgchips">${[["all","All"],...REGIONS.map(r=>[r.name,r.name])].map(([k,l])=>`<button class="chip" type="button" data-rg="${k}" aria-pressed="${k===rg}">${l}</button>`).join("")}<button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
+const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of Sydney">${[["all","All of Sydney"],...REGIONS.map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}<span class="chev">›</span></button>`}
@@ -3406,7 +3419,7 @@ function renderBars(){
     pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));fitTo=list;
   }
   $("barsIntro").innerHTML=f==="all"?`${extra}<p class="note" style="margin:10px 0 0">${intro}</p>`:`<p class="note" style="margin:0">${intro}</p>${extra}`;
-  $("barsIntro").querySelectorAll("[data-rg]").forEach(x=>x.onclick=()=>{S.barsRegion=x.dataset.rg;save();bMapFit=true;renderBars()});
+  if($("rgSel"))$("rgSel").onchange=e=>{S.barsRegion=e.target.value;save();bMapFit=true;renderBars()};
   if($("rgOpen"))$("rgOpen").onclick=()=>{S.barsOpen=!S.barsOpen;save();renderBars()};
   $("barsList").innerHTML=rows.join("");
   $("barsList").querySelectorAll("[data-id]").forEach(b=>{b.onclick=()=>barSheet(byId(b.dataset.id));warmOnHold(b,byId(b.dataset.id))});
@@ -3430,7 +3443,7 @@ function barSheet(v){
     <div class="acts">
       ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Want to try</b><small>On your shortlist for R&amp;R.</small></span><span class="sw"></span></button>
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in R&amp;R. Rush Hour vetoes it for you.</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in R&amp;R.</small></span><span class="sw"></span></button>
     </div>`,()=>{bindSheetCard(v,bf);
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
@@ -3444,30 +3457,39 @@ function listSheet(k,msg,after){
   const c=collectedMap();
   const L={want:{t:"Want to try",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Want to try list</b> and the wheel only spins these."},
     been:{t:"Been to",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
-    nfu:{t:"Not for us",d:"Bars you'd never go to. They never come up in R&amp;R, and Rush Hour uses them as your vetoes."}}[k];
+    nfu:{t:"Not for us",d:"Bars you'd never go to. These never come up in R&amp;R."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been")S.been[id]=1;else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
-  sheet(`<h3>${L.t}</h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
-    <div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Add a rooftop" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-    <div class="lsug" id="lsSug"></div>
+  let searching=false;
+  sheet(`<h3 tabindex="-1" autofocus style="outline:0">${L.t}</h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
+    <div class="lsbar"><div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Add a rooftop" autocomplete="off" autocapitalize="off" spellcheck="false"></div><button class="lscancel" type="button" id="lsCancel" hidden>Cancel</button></div>
     <div class="lsitems" id="lsItems"></div>
     <div class="acts"><button class="btn line" type="button" id="lsDone">Done</button></div>`,()=>{
     const q=$("lsQ"),t=now();
+    const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
     const paint=()=>{
+      $("lsCancel").hidden=!searching;
+      if(searching){
+        // every rooftop, narrowed as you type; tick to add, tick again to take off
+        const s_=fold(q.value.trim());
+        const m=VENUES.filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1)||a.name.localeCompare(b.name):a.name.localeCompare(b.name));
+        $("lsItems").innerHTML=m.length?m.map(v=>{const on=has(v.id),fixed=k==="been"&&c[v.id]&&!S.been[v.id];
+          return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${fixed?"Visited in a game":sub(v)}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
+          :`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
+        $("lsItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};b.onclick=()=>{const id=b.dataset.t;if(has(id))del(id);else add(id);paint();renderBars()}});
+        return;
+      }
       const items=VENUES.filter(v=>has(v.id)).sort((a,b)=>a.name.localeCompare(b.name));
-      $("lsItems").innerHTML=items.length?items.map(v=>{const o=openState(v,t),fixed=k==="been"&&c[v.id]&&!S.been[v.id];
-        return `<div class="lsrow"><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${fixed?"Visited in a game":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</small></span>${fixed?"":`<button class="lsx" type="button" data-d="${v.id}" aria-label="Take ${esc(v.name)} off">${I.x}</button>`}</div>`}).join("")
-        :`<div class="lsempty">Nothing on here yet. Start typing a bar's name above.</div>`;
-      $("lsItems").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{del(b.dataset.d);paint();sug();renderBars()});
+      $("lsItems").innerHTML=items.length?items.map(v=>{const fixed=k==="been"&&c[v.id]&&!S.been[v.id];
+        return `<div class="lsrow"><span class="t"><b>${esc(v.name)}</b><small>${fixed?esc(v.area)+" · Visited in a game":sub(v)}</small></span>${fixed?"":`<button class="lsx" type="button" data-d="${v.id}" aria-label="Take ${esc(v.name)} off">${I.x}</button>`}</div>`}).join("")
+        :`<div class="lsempty">Nothing on here yet. Tap the search box to add some.</div>`;
+      $("lsItems").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{del(b.dataset.d);paint();renderBars()});
     };
-    const sug=()=>{const s_=fold(q.value.trim());
-      if(!s_){$("lsSug").innerHTML="";return}
-      const m=VENUES.filter(v=>!has(v.id)&&(fold(v.name).includes(s_)||fold(v.area).startsWith(s_))).sort((a,b)=>(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1)||a.name.localeCompare(b.name)).slice(0,6);
-      $("lsSug").innerHTML=m.length?m.map(v=>`<button class="lsadd" type="button" data-a="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></span><span class="pl">${I.plus}</span></button>`).join(""):`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
-      $("lsSug").querySelectorAll("[data-a]").forEach(b=>{b.onpointerdown=e=>e.preventDefault();b.onclick=()=>{add(b.dataset.a);q.value="";sug();paint();renderBars();q.focus()}});
-    };
-    q.oninput=sug;paint();
+    q.onfocus=()=>{if(!searching){searching=true;paint()}};
+    q.oninput=paint;
+    $("lsCancel").onclick=()=>{searching=false;q.value="";q.blur();paint()};
+    paint();
     $("lsDone").onclick=()=>{closeSheet();if(after)after()};
   });
 }
