@@ -1170,6 +1170,8 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .sheetbar.loading .gmgo{background:rgba(255,255,255,.1);color:#fff}
 @keyframes shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
 .zsum{margin-top:12px}
+.picks{margin:-2px 0 14px}
+.picks .chip{padding:6px 12px;font-size:13px}
 .zsum .chip{display:flex;align-items:center;gap:6px;color:var(--text)}
 .zsum .chip svg{width:14px;height:14px;color:var(--amber)}
 .zcount{display:flex;align-items:baseline;gap:10px}
@@ -1277,6 +1279,7 @@ setTimeout(done,1200)})();</script>
       <div class="prog"><i id="wProg"></i></div>
       <button class="iconbtn" id="wClose" type="button" aria-label="Close"></button>
     </div>
+    <div class="chips zsum picks" id="wSum"></div>
     <div id="wBody" style="display:flex;flex-direction:column;gap:16px"></div>
   </section>
 
@@ -1753,7 +1756,11 @@ const NUDGES=[{m:20,t:"20 minutes",s:"Keep it moving"},{m:30,t:"30 minutes",s:"A
 function renderQuick(){
   const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0;
   if(!S.game)$("stage").innerHTML="";
-  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  let top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  const qp=[];
+  if(step>0&&q.from)qp.push([0,q.from.type==="me"?I.pin:I.city,q.from.type==="me"?"Near me":"Sydney"]);
+  if(step>1&&q.from)qp.push([1,q.from.type==="me"?I.walk:I.city,q.from.type==="me"?(QDIST.find(o=>o.r===q.r)||{t:""}).t:esc(q.from.name||"Anywhere")]);
+  top+=(qp.length?`<div class="chips zsum picks">${qp.map(([k,ic,txt])=>`<button class="chip" type="button" data-qs="${k}">${ic} ${txt}</button>`).join("")}</div>`:"");
   if(step===0){
     const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
     b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
@@ -1777,6 +1784,7 @@ function renderQuick(){
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=step-1;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
+  b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
   if($("qMe"))$("qMe").onclick=quickNearMe;
   if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
   b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;save();renderQuick()});
@@ -1813,6 +1821,14 @@ function renderWiz(){
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;
   $("wProg").style.width=((w.step+1)/4*100)+"%";
   const body=$("wBody"),t=now();
+  // Picks so far, under the progress bar. Tap one to jump back and change it.
+  const picks=[];
+  if(w.step>0&&w.start)picks.push([0,I.pin,esc(w.start.type==="me"?"Near me":w.start.name)]);
+  if(w.step>1)picks.push([1,I.clock,w.len===60?"1 hour":"2 hours"]);
+  if(w.step>2&&w.radius!=null)picks.push([2,I.ring,rLabel(w.radius)]);
+  $("wSum").innerHTML=picks.map(([k,ic,txt])=>`<button class="chip" type="button" data-s="${k}">${ic} ${txt}</button>`).join("");
+  $("wSum").hidden=!picks.length;
+  $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
     const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
     const anyOpen=areas.some(o=>o.n>0);
@@ -1862,7 +1878,7 @@ function renderWiz(){
     const excl=w.excl||(w.excl=[]),MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
     const hasHistory=Object.keys(col).length;
     body.innerHTML=`<div><h1 class="q">Your zone</h1>
-        <div class="chips zsum"><button class="chip" type="button" data-s="0">${I.pin} ${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${I.clock} ${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${rLabel(w.radius)}</button></div></div>
+</div>
       <div class="map zmapwrap"><div id="zoneMap" style="height:240px"></div></div>
       <div class="zcount"><b id="zN"></b><span id="zNs"></span></div>
       ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch"><span class="t"><b>Skip bars from past games</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
@@ -1890,7 +1906,6 @@ function renderWiz(){
       if(zMap){const openIds=new Set(open.map(v=>v.id));zMap.clear();zMap.circle(c,w.radius);all.forEach(v=>zMap.pin(v,openIds.has(v.id)?"":"off",()=>zoneBarSheet(v)));setMe(zMap)}
     };
     zonePaint=paint;
-    body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();paint()};
     $("zShow").onclick=()=>{w.showList=!w.showList;save();$("zListWrap").hidden=!w.showList;$("zShow").setAttribute("aria-expanded",String(w.showList));$("zShow").innerHTML=`<span>${w.showList?"Hide the bars":"See the bars in your zone"}</span><small>${w.showList?"":"Spoilers. Or keep it a surprise."}</small>`};
     paint();
