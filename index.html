@@ -1004,7 +1004,10 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bar.photo>*{position:relative;z-index:1}
 .bar.photo .eyebrow{color:var(--amber)}
 .bar.photo .btn{background:var(--amber);color:var(--amber-ink)}
-.bar.photo .wild{background:rgba(20,14,4,.82);border-color:rgba(245,184,61,.55);color:#FFF3D6}
+.bar.photo .wild{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.5);color:#fff}
+.bar.photo .wild svg{color:#fff!important}
+.wild.dark{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.35)!important;border-style:dashed!important;color:var(--text)!important}
+.wild.dark svg{color:var(--text)!important}
 .bar.photo .wild svg{color:var(--amber)}
 .bar.photo .small{color:rgba(255,255,255,.75)}
 .bar.at.photo{box-shadow:inset 0 0 0 2px var(--green)}
@@ -1043,9 +1046,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .sheetph{margin:-10px -18px 14px;border-radius:24px 24px 0 0}
 .sheetph.on{height:200px}
 
-.wild{position:relative;display:flex;gap:10px;align-items:flex-start;background:#241803;color:#FFF3D6;border:1.5px solid rgba(36,24,3,.9);border-radius:14px;padding:10px 12px;font-size:14.5px;font-weight:650;line-height:1.35}
-.wild svg{color:#F5B83D}
-.wild b{color:#F5B83D;opacity:1!important}
+.wild{position:relative;display:flex;gap:10px;align-items:flex-start;background:rgba(36,24,3,.08);color:var(--amber-ink);border:1.5px dashed rgba(36,24,3,.5);border-radius:14px;padding:10px 12px;font-size:14.5px;font-weight:650;line-height:1.35}
 .wild svg{width:22px;height:22px;flex:none}
 .wild b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
 .wild small{display:block;font-size:12px;font-weight:500;opacity:.7;margin-top:3px}
@@ -1232,7 +1233,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jd-pick{justify-content:center}
 .jd-pick .chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
 .wild[data-pending]{visibility:hidden}
-.wfly{position:fixed;z-index:2500;margin:0;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.45);backface-visibility:visible}
+.wfly{position:fixed;z-index:2500;margin:0;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.45);backface-visibility:visible;background:rgba(28,21,8,.92)!important;color:#fff!important;border-color:rgba(255,255,255,.55)!important}
+.wfly svg{color:#fff!important}
 .wild.fresh{animation:wildglow 2.2s ease-out}
 @keyframes wildglow{0%{box-shadow:0 0 0 3px rgba(245,184,61,.9),0 0 30px rgba(245,184,61,.6)}100%{box-shadow:0 0 0 0 rgba(245,184,61,0)}}
 .jpdemo{position:fixed;inset:0;z-index:2900;background:var(--bg);display:grid;place-items:center;padding:20px}
@@ -1369,8 +1371,10 @@ html.fl .app{visibility:hidden}
 #v-play .stage>.btn{height:52px}
 #v-play .links{margin-top:-4px}
 #v-play .links .btn{height:38px}
-.btn.again-btn{height:46px;background:transparent;border:1.5px solid rgba(245,184,61,.55);color:var(--amber)}
-.btn.again-btn svg{color:var(--amber)}
+.bar .btn.dir{background:transparent;border:1.5px solid rgba(36,24,3,.55);color:var(--amber-ink)}
+.bar.photo .btn.dir{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.55);color:#fff}
+#v-play .bar .btn.dir{height:44px}
+.btn.again-btn{height:54px;background:var(--amber);color:var(--amber-ink);border:0;font-size:17px}
 @media (max-height:720px){#v-play .bar h2{font-size:clamp(26px,7.8vw,34px)}#v-play .strip{margin:-2px 0}#v-play .reel{height:244px}}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
@@ -2773,7 +2777,7 @@ function renderPlay(){
     st.innerHTML=banner+ask+`<div class="bar tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
-      <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       <div class="again"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
