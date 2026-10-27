@@ -1467,10 +1467,16 @@ html.fl .app{visibility:hidden}
 #reelBack{width:100%;height:48px}
 
 
-.cdoor{position:fixed;z-index:901;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-weight:700;font-size:14px;transform-origin:0 50%;pointer-events:none;box-shadow:4px 0 10px rgba(0,0,0,.4)}
-.cdoor .cnudge{display:none}
-#pCount.opening{background:radial-gradient(circle at 40% 50%,rgba(255,214,130,.55),rgba(245,184,61,.15) 60%,#120d05);border-color:rgba(245,184,61,.6)}
-#pCount.opening>*{visibility:hidden}
+.cdim{z-index:900}
+.cpop{position:fixed;z-index:906;pointer-events:none;white-space:nowrap;margin:0;line-height:1;will-change:transform}
+.cbox{position:fixed;z-index:905;pointer-events:none;transform-origin:0 50%;perspective:150px;perspective-origin:0 50%;border-radius:99px}
+.chole{position:absolute;inset:0;border-radius:99px;border:1.5px solid rgba(245,184,61,.8);background:radial-gradient(ellipse 60% 70% at 62% 50%,rgba(255,236,190,.95) 0%,rgba(245,184,61,.75) 35%,#3a2406 72%,#0d0802 100%);box-shadow:inset 0 0 6px 2px rgba(0,0,0,.85);opacity:0}
+.cleaf{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--s1);border:1.5px solid rgba(245,184,61,.7);border-radius:99px;font-weight:700;font-size:14px;transform-origin:0 50%;box-shadow:3px 0 8px rgba(0,0,0,.5)}
+.cleaf svg{flex:none}.cleaf .cv{font-style:normal;display:inline-flex;opacity:.55;margin-left:-2px}.cleaf .cv svg{width:14px;height:14px}
+.codo{display:inline-block;height:1.2em;line-height:1.2em;overflow:hidden;vertical-align:middle}
+.codo>span{display:block;transition:transform .32s cubic-bezier(.3,1.5,.5,1)}
+.codo.go>span{transform:translateY(-100%)}
+#pCount.opening{visibility:hidden}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2738,38 +2744,63 @@ const countShown=g=>{const a=g.visits.find(v=>v.leftAt==null);return g.visits.fi
 /* When the bar you're at goes on the board (3 minutes in, or the first time the app's open after that):
    its name pops up off the card, the drinks counter swings open like a little door, the name gets sucked
    in, and the door snaps shut as the number ticks over. Once per bar. */
-function flyToCounter(){
-  const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a||a._flew||document.hidden||S.route!=="play")return;
+function flyToCounter(force){
+  const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a||(a._flew&&!force)||document.hidden||S.route!=="play")return;
   const h=$("stage")&&$("stage").querySelector(".bar.at h2"),pc=$("pCount");if(!h||!pc)return;
   a._flew=true;save();
+  const done=()=>{a._inCount=true;save();const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g)};
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){done();return}
   setTimeout(()=>{
-    const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h);
-    // the name, lifted off the card
-    const f=document.createElement("div");f.className="flyname";f.textContent=h.textContent;
-    Object.assign(f.style,{left:hr.left+"px",top:hr.top+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,lineHeight:cs.lineHeight,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:cs.color,whiteSpace:"nowrap",zIndex:900,transformOrigin:"50% 50%"});
-    document.body.appendChild(f);h.style.visibility="hidden";
-    const fr=f.getBoundingClientRect(),dx=pr.left+pr.width/2-(fr.left+fr.width/2),dy=pr.top+pr.height/2-(fr.top+fr.height/2);
-    // 1. pop
-    f.animate([{transform:"none",color:cs.color,textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:"translateY(-14px) scale(1.2)",color:"#F5B83D",textShadow:"0 0 22px rgba(245,184,61,.7)",offset:.55},{transform:"translateY(-10px) scale(1.12)",color:"#F5B83D",textShadow:"0 0 16px rgba(245,184,61,.6)"}],{duration:380,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"});
-    buzz(12);
-    // 2. the door: a copy of the pill swings open on its left edge, glow inside
-    const door=document.createElement("div");door.className="cdoor";door.innerHTML=pc.innerHTML;
-    Object.assign(door.style,{left:pr.left+"px",top:pr.top+"px",width:pr.width+"px",height:pr.height+"px"});
-    setTimeout(()=>{document.body.appendChild(door);pc.classList.add("opening");sfx("flip");
-      door.animate([{transform:"perspective(300px) rotateY(0)"},{transform:"perspective(300px) rotateY(-78deg)"}],{duration:230,easing:"cubic-bezier(.3,.7,.4,1)",fill:"forwards"})},300);
-    // 3. sucked in: speeds up, stretches, shrinks to nothing
+    const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h),INK="#F5B83D",fx=[];
+    const old=+(pc.querySelector("b")||{}).textContent||0,nw=a._inCount?old:old+1;
+    // the room dims, like the wheel landing
+    const dim=document.createElement("div");dim.className="jdim cdim";document.body.appendChild(dim);fx.push(dim);
+    dim.animate([{opacity:0},{opacity:1}],{duration:260,fill:"forwards"});
+    // 1. POP: the name punches off the card, big and amber, with a bloom behind it
+    const cx=hr.left+hr.width/2,cy=hr.top+hr.height/2;
+    const bloom=document.createElement("div");bloom.className="jbloom";Object.assign(bloom.style,{left:cx+"px",top:cy+"px",zIndex:904});document.body.appendChild(bloom);fx.push(bloom);
+    bloom.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:0},{transform:"translate(-50%,-50%) scale(1.05)",opacity:1,offset:.4},{transform:"translate(-50%,-50%) scale(1.2)",opacity:0}],{duration:900,easing:"ease-out",fill:"forwards"});
+    const f=document.createElement("div");f.className="cpop";f.textContent=h.textContent;
+    Object.assign(f.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:INK});
+    document.body.appendChild(f);h.style.visibility="hidden";fx.push(f);
+    const big=Math.min(1.7,innerWidth*.9/(f.offsetWidth||hr.width));
+    const T=(x,y,sx,sy=sx,r=0)=>`translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${r}deg) scale(${sx},${sy})`;
+    f.animate([{transform:T(0,0,1),textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:T(0,-18,big*1.1),textShadow:"0 0 26px rgba(245,184,61,.9)",offset:.6},{transform:T(0,-16,big),textShadow:"0 0 18px rgba(245,184,61,.7)"}],{duration:200,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"});
+    sfx("deal");buzz(18);
+    // 2. the pill grows and swings open like a little door, warm light inside
+    const box=document.createElement("div");box.className="cbox";
+    Object.assign(box.style,{left:pr.left+"px",top:pr.top+"px",width:pr.width+"px",height:pr.height+"px"});
+    box.innerHTML=`<div class="chole"></div><div class="cleaf">${pc.innerHTML}</div>`;
+    box.querySelectorAll(".cnudge").forEach(e=>e.remove());
+    document.body.appendChild(box);fx.push(box);pc.classList.add("opening");
+    const leaf=box.querySelector(".cleaf"),hole=box.querySelector(".chole"),GROW=1.8;
+    setTimeout(()=>box.animate([{transform:"scale(1)"},{transform:`scale(${GROW})`}],{duration:260,easing:"cubic-bezier(.3,1.4,.5,1)",fill:"forwards"}),380);
+    setTimeout(()=>{sfx("flip");
+      leaf.animate([{transform:"rotateY(0)"},{transform:"rotateY(-76deg)",offset:.75},{transform:"rotateY(-71deg)"}],{duration:340,easing:"cubic-bezier(.25,.8,.35,1)",fill:"forwards"});
+      hole.animate([{opacity:0},{opacity:1}],{duration:160,fill:"forwards"})},660);
+    // 3. vacuumed in: it gets dragged toward the door, stretches, and vanishes inside
     setTimeout(()=>{
-      f.animate([{transform:"translateY(-10px) scale(1.12)",opacity:1,filter:"blur(0)"},{transform:`translate(${dx*.35}px,${dy*.35-6}px) scale(.8,.7)`,opacity:1,offset:.4},{transform:`translate(${dx}px,${dy}px) scale(.04,.06)`,opacity:.6,filter:"blur(1px)"}],{duration:480,easing:"cubic-bezier(.55,0,.9,.4)",fill:"forwards"}).onfinish=()=>{
-        f.remove();h.style.visibility="";
-        // 4. door shuts, count ticks over
-        a._inCount=true;save();
-        door.animate([{transform:"perspective(300px) rotateY(-78deg)"},{transform:"perspective(300px) rotateY(6deg)",offset:.75},{transform:"perspective(300px) rotateY(0)"}],{duration:240,easing:"ease-in",fill:"forwards"}).onfinish=()=>{
-          door.remove();pc.classList.remove("opening");const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g);
-          pc.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"},{transform:"scale(1.18)",boxShadow:"0 0 0 8px rgba(245,184,61,.35)",offset:.35},{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"}],{duration:560,easing:"ease-out"});
-          sfx("thud");sfx("clink");buzz([30,40,40]);
-        };
+      const tx=pr.left+pr.width*GROW*.5,ty=pr.top+pr.height/2,dx=tx-cx,dy=ty-cy;
+      f.animate([{transform:T(0,-16,big),opacity:1},{transform:T(dx*.06,-26,big*1.05,big*1.05,-2),opacity:1,offset:.18},{transform:T(dx*.55,dy*.5,big*.55,big*.32,-8),opacity:1,offset:.65},{transform:T(dx,dy,.03,.05,-14),opacity:.2}],{duration:560,easing:"cubic-bezier(.6,0,.85,.35)",fill:"forwards"});
+      sfx("path");
+    },1000);
+    // 4. it lands inside: light flares, the door slams shut
+    setTimeout(()=>{f.remove();h.style.visibility="";h.animate([{opacity:0},{opacity:1}],{duration:400,delay:200,fill:"backwards"});
+      hole.animate([{filter:"brightness(1)"},{filter:"brightness(2.2)",offset:.3},{filter:"brightness(1)"}],{duration:320});
+      leaf.animate([{transform:"rotateY(-71deg)"},{transform:"rotateY(8deg)",offset:.7},{transform:"rotateY(-3deg)",offset:.85},{transform:"rotateY(0)"}],{duration:260,easing:"ease-in",fill:"forwards"}).onfinish=()=>{
+        sfx("thud");buzz([30,30,30]);
+        box.animate([{transform:`scale(${GROW})`},{transform:`scale(${GROW}) translateX(-3px)`,offset:.25},{transform:`scale(${GROW}) translateX(3px)`,offset:.5},{transform:`scale(${GROW})`}],{duration:180});
+        // 5. the count ticks over
+        const b=leaf.querySelector("b");
+        if(b&&nw!==old){b.innerHTML=`<span class="codo"><span>${old}</span><span>${nw}</span></span>`;
+          setTimeout(()=>{sfx("clink");b.querySelector(".codo").classList.add("go")},140)}
+        setTimeout(()=>{
+          box.animate([{transform:`scale(${GROW})`,boxShadow:"0 0 0 0 rgba(245,184,61,0)"},{transform:`scale(${GROW*1.08})`,boxShadow:"0 0 0 6px rgba(245,184,61,.35)",offset:.3},{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"}],{duration:520,easing:"ease-in-out",fill:"forwards"});
+          dim.animate([{opacity:1},{opacity:0}],{duration:420,fill:"forwards"});
+          setTimeout(()=>{fx.forEach(e=>e.remove());pc.classList.remove("opening");h.style.visibility="";done()},540);
+        },720);
       };
-    },560);
+    },1580);
   },650);
 }
 /* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
@@ -3335,13 +3366,14 @@ $("testFab").onclick=()=>{
   sheet(`<h3>Test mode</h3><p class="note">Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?` (+${Math.round(S.ff/60000)} min)`:""}. Tap the Rooftops map to move yourself.</p>
    <div class="eyebrow" style="margin:14px 0 8px">Time travel</div><div class="trow">${G()&&G().started?`<span class="note">Finish or end your game first.</span>`:`<button class="btn sm dark" type="button" data-to="4,1080">Friday 6pm</button><button class="btn sm dark" type="button" data-to="5,900">Saturday 3pm</button>`}</div>
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
-   ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
+   ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div><div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tCT">Play the "it counts" animation</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
    <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tSB">Wheel sandbox</button><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
     if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();animateId="at:"+v.id;onLocation()};
     $("tSB").onclick=()=>{closeSheet();setTimeout(wheelSandbox,250)};
     $("tJD").onclick=()=>{closeSheet();setTimeout(jackpotDemo,250)};
+    if($("tCT"))$("tCT").onclick=()=>{const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a)return;closeSheet();setTimeout(()=>flyToCounter(true),300)};
     if($("tWC"))$("tWC").onclick=()=>{const g=G();g.wplan=(g.wplan||[]).concat([g.visits.length]);g.wild=null;delete g.dealt;save();closeSheet();render()};
     if($("tJP"))$("tJP").onclick=()=>{const g=G();delete g.jp;g.jpLeg=0;save();closeSheet();render()};   // jpLeg 0: the very next spin is the jackpot
     if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
