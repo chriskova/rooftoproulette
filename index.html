@@ -1141,12 +1141,17 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jdim{position:fixed;inset:0;z-index:57;pointer-events:none;background:radial-gradient(circle at 50% 40%,rgba(0,0,0,.25),rgba(0,0,0,.72) 70%)}
 .jbloom{position:fixed;z-index:58;pointer-events:none;width:380px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,61,.55),rgba(245,184,61,.18) 55%,rgba(245,184,61,0));filter:blur(8px)}
 .jring{position:fixed;z-index:59;pointer-events:none;width:200px;height:120px;border-radius:50%;border:1.5px solid rgba(255,226,150,.7)}
-.jpx{position:fixed;inset:0;z-index:3000;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.55),rgba(3,4,7,.93) 62%);-webkit-backdrop-filter:blur(5px) saturate(.6);backdrop-filter:blur(5px) saturate(.6);opacity:0}
+.jpx{position:fixed;inset:0;z-index:3000;overflow:hidden}
+.jpx-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.6),rgba(3,4,7,.94) 62%);opacity:0}
+.jpx .jpx-glow,.jpx .jpx-streaks{opacity:0;transition:opacity .9s ease .25s}
+.jpx.live .jpx-glow{opacity:.5}.jpx.live .jpx-streaks{opacity:1}
+.reel.lifting .frame{transition:border-color .6s ease,box-shadow .6s ease}
+.reel.lifting{transition:box-shadow .7s ease;will-change:transform}
 .jpx-glow{position:absolute;top:8%;width:80vw;height:84vh;border-radius:50%;filter:blur(46px);opacity:.5;pointer-events:none}
 .jpx-glow.l{left:-58vw;background:radial-gradient(circle,rgba(245,184,61,.95),rgba(255,122,61,.35) 45%,rgba(255,122,61,0) 70%);animation:jgl 1.8s ease-in-out infinite alternate}
 .jpx-glow.r{right:-58vw;background:radial-gradient(circle,rgba(255,138,76,.9),rgba(245,184,61,.3) 45%,rgba(245,184,61,0) 70%);animation:jgr 1.5s ease-in-out infinite alternate}
 @keyframes jgl{to{transform:translate(10vw,5vh) scale(1.12)}}@keyframes jgr{to{transform:translate(-10vw,-4vh) scale(1.1)}}
-.jpx.won .jpx-glow{opacity:.95;animation-duration:.5s}
+.jpx.won .jpx-glow{opacity:.95;animation-duration:.5s;transition-delay:0s}
 .jpx-streaks i{position:absolute;bottom:-140px;width:2px;border-radius:2px;background:linear-gradient(rgba(255,226,160,0),rgba(255,226,160,.9));animation:jstreak .7s linear infinite}
 @keyframes jstreak{to{transform:translateY(-120vh)}}
 .jpx.won .jpx-streaks{opacity:0;transition:opacity .5s}
@@ -1543,16 +1548,18 @@ function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   const notes=[[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28],[1568,.35],[1046.5,.5],[1318.5,.5],[1568,.5],[2093,.5]];
   notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
     g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
-function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,out=a.createGain(),lp=a.createBiquadFilter();
-  lp.type="lowpass";lp.frequency.setValueAtTime(900,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
-  out.gain.setValueAtTime(.045,t);out.gain.linearRampToValueAtTime(.11,end);lp.connect(out).connect(a.destination);
-  // a pulse that quickens as it builds
+function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,M=a.createGain();M.gain.value=1;M.connect(a.destination);
+  const out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(900,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
+  out.gain.setValueAtTime(.045,t);out.gain.linearRampToValueAtTime(.11,end);lp.connect(out).connect(M);
   const lfo=a.createOscillator(),lg=a.createGain();lfo.type="sine";lfo.frequency.setValueAtTime(3,t);lfo.frequency.exponentialRampToValueAtTime(16,end);lg.gain.value=.03;lfo.connect(lg).connect(out.gain);lfo.start(t);
   const os=[0,7,12,19].map(d=>{const o=a.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(196*Math.pow(2,d/12),t);o.frequency.exponentialRampToValueAtTime(784*Math.pow(2,d/12),end);o.detune.value=(Math.random()-.5)*14;o.connect(lp);o.start(t);return o});
   const nb=a.createBuffer(1,Math.ceil(a.sampleRate*sec),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
   const ns=a.createBufferSource(),bp=a.createBiquadFilter(),ng=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=1.1;bp.frequency.setValueAtTime(700,t);bp.frequency.exponentialRampToValueAtTime(9000,end);
-  ng.gain.setValueAtTime(.02,t);ng.gain.linearRampToValueAtTime(.07,end);ns.connect(bp).connect(ng).connect(a.destination);ns.start(t);
-  return()=>{const n=a.currentTime;[out,ng].forEach(g=>{g.gain.cancelScheduledValues(n);g.gain.setValueAtTime(g.gain.value,n);g.gain.exponentialRampToValueAtTime(.0001,n+.06)});os.concat([lfo]).forEach(o=>o.stop(n+.08));ns.stop(n+.08)}}
+  ng.gain.setValueAtTime(.02,t);ng.gain.linearRampToValueAtTime(.07,end);ns.connect(bp).connect(ng).connect(M);ns.start(t);
+  let done=false;const kill=()=>{if(done)return;done=true;const n=a.currentTime;M.gain.cancelScheduledValues(n);M.gain.setTargetAtTime(0,n,.015);
+    setTimeout(()=>{try{os.concat([lfo,ns]).forEach(o=>o.stop());M.disconnect()}catch(e){}},120)};
+  setTimeout(kill,(sec+.4)*1000);   // never outlives the spin, even if something goes wrong
+  return kill}
 function whoosh(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,len=.6,nb=a.createBuffer(1,a.sampleRate*len,a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
   const ns=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(3000,t+len);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(a.destination);ns.start(t)}
@@ -2329,16 +2336,16 @@ function jackpotRun(box,R_,vel,j,done){
   ac();
   const r=box.getBoundingClientRect(),calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ov=document.createElement("div");ov.className="jpx";
-  ov.innerHTML=`<i class="jpx-glow l"></i><i class="jpx-glow r"></i><div class="jpx-streaks"></div>`;
+  ov.innerHTML=`<i class="jpx-bg"></i><i class="jpx-glow l"></i><i class="jpx-glow r"></i><div class="jpx-streaks"></div>`;
   document.body.appendChild(ov);
   if(!calm){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<18;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
     Object.assign(e.style,{left:left+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.25+Math.random()*.5});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
   const tx=innerWidth/2-(r.left+r.width/2),ty=innerHeight*.42-(r.top+r.height/2),SC=Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
-  box.classList.add("gold","jpbig");
-  box.animate([{transform:"perspective(900px) translate(0,0) scale(1) rotateX(0)"},{transform:`perspective(900px) translate(${tx}px,${ty}px) scale(${SC*1.03}) rotateX(9deg)`,offset:.55},{transform:`perspective(900px) translate(${tx}px,${ty}px) scale(${SC}) rotateX(4deg)`}],{duration:650,easing:"cubic-bezier(.2,.9,.25,1)",fill:"forwards"});
-  ov.animate([{opacity:0},{opacity:1}],{duration:420,easing:"ease-out",fill:"forwards"});
+  box.classList.add("lifting");requestAnimationFrame(()=>{box.classList.add("gold","jpbig");ov.classList.add("live")});
+  box.animate([{transform:"translate(0,0) scale(1)"},{transform:`translate(${tx}px,${ty}px) scale(${SC})`}],{duration:900,easing:"cubic-bezier(.33,0,.15,1)",fill:"forwards"});
+  ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
   const DUR=6.5,stopRiser=riser(DUR);whoosh();
   R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
     ov.classList.add("won");confetti(ov);
