@@ -1240,7 +1240,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .wd-card.on .wd-b{transform:none}
 .wd-card b,.wd-m b{font-family:var(--head);font-weight:800;font-size:clamp(20px,6vw,24px);line-height:1.2;letter-spacing:-.015em;color:#FFF3D6}
 .wd-m{position:fixed;display:grid;place-items:center;padding:20px;text-align:center;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(245,184,61,.7)}
-.wd-on #stage .bar .wild{visibility:hidden}
+.wd-on #stage .bar .wild,.wild.pending{visibility:hidden}
 .wd-t{position:relative;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;pointer-events:none}
 .wd-t small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#F5B83D}
 .wd-t small svg{width:15px;height:15px}
@@ -2566,9 +2566,10 @@ function dealerChoice(){
    show the rule, holds just long enough to read, then shrinks and morphs into the wildcard box on the bar card
    (the way the wheel's slot grows into the bar card). Once per wildcard. */
 function dealWild(delay){
-  const g=G();if(!g||!g.wild||g.wild.shown||g.wild.id!==g.target)return;g.wild.shown=true;save();
+  const g=G();if(!g||!g.wild||g.wild.shown||g.wild.dealing||g.wild.id!==g.target)return;g.wild.dealing=true;
   setTimeout(()=>{
-    let slot=$("stage")&&$("stage").querySelector(".bar .wild");if(!slot)return;
+    let slot=$("stage")&&$("stage").querySelector(".bar .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
+    g.wild.shown=true;delete g.wild.dealing;save();
     const lay=document.createElement("div");lay.className="wd";
     lay.innerHTML=`<i class="wd-dim"></i><div class="wd-card"><span class="wd-f">${I.sparkle}</span><span class="wd-b"><b>${esc(g.wild.text)}</b></span></div>`;
     document.body.appendChild(lay);document.body.classList.add("wd-on");   // the card's own copy stays hidden until this lands in it
@@ -2589,7 +2590,7 @@ function dealWild(delay){
                  {left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px",borderRadius:"14px",background:onPhoto?"rgba(60,45,15,.9)":"#E2A733"}],{duration:420,easing:"cubic-bezier(.3,.75,.2,1)",fill:"forwards"});
       m.querySelector("b").animate([{opacity:1,transform:"none"},{opacity:0,transform:"scale(.6)"}],{duration:260,easing:"ease-in",fill:"forwards"});
       dim.animate([{opacity:1},{opacity:0}],{duration:380,fill:"forwards"});
-      setTimeout(()=>{lay.remove();document.body.classList.remove("wd-on");slot=($("stage")&&$("stage").querySelector(".bar .wild"))||slot;
+      setTimeout(()=>{lay.remove();document.body.classList.remove("wd-on");$("stage").querySelectorAll(".wild.pending").forEach(x=>x.classList.remove("pending"));slot=($("stage")&&$("stage").querySelector(".bar .wild"))||slot;
         slot.animate([{opacity:0},{opacity:1}],{duration:160});slot.classList.add("fresh");setTimeout(()=>slot.classList.remove("fresh"),2600)},420)};
     lay.onclick=away;setTimeout(away,260+400+hold);
   },delay||0);
@@ -2745,7 +2746,7 @@ function renderPlay(){
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
-  const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
+  const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild${g.wild.shown?"":" pending"}">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
   if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
     const cp=cardPhoto(v);
@@ -3149,6 +3150,7 @@ function loop(){
     if(g.started&&!spinning){const r=remaining();if(r>0&&r<=10000)tick(1200)}
     if(!spinning&&g.target&&needManual(g)!==!!g._man)renderPlay();
     if(!CR(g)&&g.jp&&!g.jp.claimed&&!spinning&&!$("sheet").open)jackpotSheet();
+    if(g.wild&&!g.wild.shown&&!g.wild.dealing&&g.target===g.wild.id&&!spinning&&Date.now()>revealEnd&&!document.querySelector(".jpx,.wd"))dealWild(0);
   }
 }
 setInterval(loop,1000);
