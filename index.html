@@ -1466,6 +1466,11 @@ html.fl .app{visibility:hidden}
 #v-play:has(#stage .ready) #strip{display:none}   /* the wheel screen: tonight's bars live behind the counter */
 #reelBack{width:100%;height:48px}
 
+
+.cdoor{position:fixed;z-index:901;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-weight:700;font-size:14px;transform-origin:0 50%;pointer-events:none;box-shadow:4px 0 10px rgba(0,0,0,.4)}
+.cdoor .cnudge{display:none}
+#pCount.opening{background:radial-gradient(circle at 40% 50%,rgba(255,214,130,.55),rgba(245,184,61,.15) 60%,#120d05);border-color:rgba(245,184,61,.6)}
+#pCount.opening>*{visibility:hidden}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2730,24 +2735,41 @@ function fitPlay(){
 }
 addEventListener("resize",()=>{if(S.route==="play")fitPlay()});
 const countShown=g=>{const a=g.visits.find(v=>v.leftAt==null);return g.visits.filter(v=>v.counted===true).length+(a&&a._inCount&&a.counted!==true?1:0)};
-/* When the bar you're at goes on the board (3 minutes in, or the first time the app's open after that), its name
-   flies up into the drinks counter, which ticks over with a bump and a clink. Once per bar. */
+/* When the bar you're at goes on the board (3 minutes in, or the first time the app's open after that):
+   its name pops up off the card, the drinks counter swings open like a little door, the name gets sucked
+   in, and the door snaps shut as the number ticks over. Once per bar. */
 function flyToCounter(){
   const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a||a._flew||document.hidden||S.route!=="play")return;
   const h=$("stage")&&$("stage").querySelector(".bar.at h2"),pc=$("pCount");if(!h||!pc)return;
   a._flew=true;save();
   setTimeout(()=>{
     const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h);
+    // the name, lifted off the card
     const f=document.createElement("div");f.className="flyname";f.textContent=h.textContent;
-    Object.assign(f.style,{left:hr.left+"px",top:hr.top+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,lineHeight:cs.lineHeight,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:cs.color,whiteSpace:"nowrap",zIndex:900});
-    document.body.appendChild(f);
-    const fr=f.getBoundingClientRect(),dx=pr.left+pr.width/2-(fr.left+fr.width/2),dy=pr.top+pr.height/2-(fr.top+fr.height/2),k=Math.min(.5,pr.height/fr.height*.6);
-    f.animate([{transform:"none",opacity:1,color:cs.color},{transform:`translate(${dx*.45}px,${dy*.55-40}px) scale(${(1+k)/2})`,opacity:1,color:"#F5B83D",offset:.45},{transform:`translate(${dx}px,${dy}px) scale(${k*.5})`,opacity:.2,color:"#F5B83D"}],{duration:720,easing:"cubic-bezier(.5,0,.3,1)",fill:"forwards"}).onfinish=()=>{
-      f.remove();a._inCount=true;save();
-      const b=pc.querySelector("b");if(b)b.textContent=countShown(g);
-      pc.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"},{transform:"scale(1.22)",boxShadow:"0 0 0 8px rgba(245,184,61,.35)",offset:.35},{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"}],{duration:620,easing:"ease-out"});
-      sfx("clink");buzz([20,40,30]);
-    };
+    Object.assign(f.style,{left:hr.left+"px",top:hr.top+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,lineHeight:cs.lineHeight,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:cs.color,whiteSpace:"nowrap",zIndex:900,transformOrigin:"50% 50%"});
+    document.body.appendChild(f);h.style.visibility="hidden";
+    const fr=f.getBoundingClientRect(),dx=pr.left+pr.width/2-(fr.left+fr.width/2),dy=pr.top+pr.height/2-(fr.top+fr.height/2);
+    // 1. pop
+    f.animate([{transform:"none",color:cs.color,textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:"translateY(-14px) scale(1.2)",color:"#F5B83D",textShadow:"0 0 22px rgba(245,184,61,.7)",offset:.55},{transform:"translateY(-10px) scale(1.12)",color:"#F5B83D",textShadow:"0 0 16px rgba(245,184,61,.6)"}],{duration:380,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"});
+    buzz(12);
+    // 2. the door: a copy of the pill swings open on its left edge, glow inside
+    const door=document.createElement("div");door.className="cdoor";door.innerHTML=pc.innerHTML;
+    Object.assign(door.style,{left:pr.left+"px",top:pr.top+"px",width:pr.width+"px",height:pr.height+"px"});
+    setTimeout(()=>{document.body.appendChild(door);pc.classList.add("opening");sfx("flip");
+      door.animate([{transform:"perspective(300px) rotateY(0)"},{transform:"perspective(300px) rotateY(-78deg)"}],{duration:230,easing:"cubic-bezier(.3,.7,.4,1)",fill:"forwards"})},300);
+    // 3. sucked in: speeds up, stretches, shrinks to nothing
+    setTimeout(()=>{
+      f.animate([{transform:"translateY(-10px) scale(1.12)",opacity:1,filter:"blur(0)"},{transform:`translate(${dx*.35}px,${dy*.35-6}px) scale(.8,.7)`,opacity:1,offset:.4},{transform:`translate(${dx}px,${dy}px) scale(.04,.06)`,opacity:.6,filter:"blur(1px)"}],{duration:480,easing:"cubic-bezier(.55,0,.9,.4)",fill:"forwards"}).onfinish=()=>{
+        f.remove();h.style.visibility="";
+        // 4. door shuts, count ticks over
+        a._inCount=true;save();
+        door.animate([{transform:"perspective(300px) rotateY(-78deg)"},{transform:"perspective(300px) rotateY(6deg)",offset:.75},{transform:"perspective(300px) rotateY(0)"}],{duration:240,easing:"ease-in",fill:"forwards"}).onfinish=()=>{
+          door.remove();pc.classList.remove("opening");const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g);
+          pc.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"},{transform:"scale(1.18)",boxShadow:"0 0 0 8px rgba(245,184,61,.35)",offset:.35},{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"}],{duration:560,easing:"ease-out"});
+          sfx("thud");sfx("clink");buzz([30,40,40]);
+        };
+      };
+    },560);
   },650);
 }
 /* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
