@@ -2030,7 +2030,16 @@ function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor
    - flick it down and it carries on at the speed you flicked, then slows to a stop. Harder flick, longer spin.
    Speed on screen is capped so names never strobe backwards; anything harder than the cap just runs longer. */
 function makeReel(el,names,o){
-  o=o||{};let L=shuffle([...new Set(names)]);while(L.length<14)L=L.concat(shuffle(L));L=[PH].concat(L);
+  o=o||{};
+  // The list round the drum. No name sits within GAP rows of itself (7 rows show at once). Small pools can't
+  // manage that, so they get as much space as they can. Before each spin, the stretch it's about to roll
+  // through is rewritten the same way, with the winner dropped in where it'll stop.
+  const U=[...new Set(names)],GAP=Math.max(1,Math.min(6,U.length-2)),LEN=Math.max(120,U.length+1);
+  const clash=(A,i,nm)=>{for(let d=1;d<=GAP;d++){if(A[(i-d+A.length)%A.length]===nm||A[(i+d)%A.length]===nm)return true}return false};
+  const pickFrom=(ban,fallback)=>{let c=U.filter(x=>!ban.has(x));if(!c.length)c=U.filter(x=>x!==fallback);if(!c.length)c=U;return c[Math.floor(Math.random()*c.length)]};
+  let L=[PH];while(L.length<LEN)L.push(pickFrom(new Set(L.slice(-GAP)),L[L.length-1]));
+  const swapIn=i=>{const c=shuffle(U.filter(x=>x!==L[i]&&!clash(L,i,x)));if(c.length)L[i]=c[0]};
+  for(let i=LEN-GAP;i<LEN;i++)if(clash(L,i,L[i]))swapIn(i);
   const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length;
   el.classList.add("reel");el.classList.remove("won");
   /* A bulging lens: one layer of names, never clipped. Each name grows smoothly as it nears the middle of the
@@ -2050,7 +2059,7 @@ function makeReel(el,names,o){
     const fNow=Math.floor(R.p),fPrev=Math.floor(lastFl),crossed=fNow!==fPrev?Math.max(fNow,fPrev):null;lastFl=R.p;
     if(crossed!==null){tick(560+Math.random()*80);buzz(3)}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
-    if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4)L[0]=L[1+Math.floor(Math.random()*(L.length-1))];
+    if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4){L[0]=U[0];swapIn(0)}
     const fl=Math.floor(R.p);
     // each name keeps the same element for as long as it's on screen, so its zoom state travels with it
     for(let k=fl-3;k<=fl+3;k++){const r=rows[((k%7)+7)%7],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
@@ -2077,9 +2086,23 @@ function makeReel(el,names,o){
   R.spinTo=(name,v,done)=>{
     moved=true;const dir=-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
     const extra=v0>VC?Math.min(30,(v0-VC)*.5):0, Dd=Math.max(7,vs*vs/24);   // 24 = 2 × friction (12 rows/s²)
-    let k=Math.round(R.p+dir*(extra+Dd)),n=0;
-    for(;n<4&&L[mod(k)]!==name;n++)k+=dir;
-    if(L[mod(k)]!==name){k-=dir*n;L[mod(k)]=name}
+    let k=Math.round(R.p+dir*(extra+Dd));
+    // rewrite everything between just off-screen now and just past where it'll stop (all out of sight)
+    const top=Math.round(R.p)-5;
+    // on a short spin the rows still on screen sit close to the stop: if the winner's among them, roll a bit further
+    for(let guard=0;guard<GAP+2;guard++){let near=false;for(let j=top+1;j<=k+GAP;j++)if(L[mod(j)]===name)near=true;if(!near)break;k--}
+    // try stopping a row or two further if that lets every name keep its distance (matters for tiny pools)
+    const attempt=kk=>{const end=kk-4-2*GAP,seq={},get=j=>seq[j]!==undefined?seq[j]:L[mod(j)];let fails=0;
+      for(let j=top;j>=end;j--){
+        if(j===kk){seq[j]=name;if([...Array(GAP)].some((_,d)=>get(j+d+1)===name))fails++;continue}
+        const ban=new Set();for(let d=1;d<=GAP;d++){ban.add(get(j+d));if(j-d<end)ban.add(L[mod(j-d)])}
+        if(Math.abs(j-kk)<=GAP)ban.add(name);
+        if(U.every(x=>ban.has(x)))fails++;
+        seq[j]=pickFrom(ban,get(j+1));
+      }
+      return {kk,seq,fails}};
+    let best=null;for(let kk=k;kk>=k-3;kk--){const a=attempt(kk);if(!best||a.fails<best.fails)best=a;if(!a.fails)break}
+    k=best.kk;for(const j in best.seq)L[mod(+j)]=best.seq[j];
     const p0=R.p,dist=Math.abs(k-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=2*Dr/vs,T=Tc+Td;
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
