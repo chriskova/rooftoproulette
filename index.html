@@ -1165,6 +1165,70 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bar.jpcard{width:100%;max-width:400px;gap:12px;padding:22px;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 80px rgba(245,184,61,.35)}
 .bar.jpcard p{margin:0;font-size:15.5px;line-height:1.45;font-weight:500}
 .bar.jpcard .btn{margin-top:6px}
+.bar.jpcard .jv{margin:4px 0 2px}
+/* Your call: three tiles flip from "?" to the bars, photo behind */
+.jv-call{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;perspective:700px}
+.jv-tile{position:relative;aspect-ratio:1/1.08;border:0;padding:0;background:none;cursor:pointer;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.jv-tile .jv-f,.jv-tile .jv-b{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.jv-tile .jv-f{display:grid;place-items:center;background:#241803;color:#F5B83D;font-family:var(--display);font-weight:800;font-size:40px;box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.5)}
+.jv-tile .jv-b{transform:rotateY(180deg);background:#1a1308;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;padding:8px;text-align:left;color:#fff}
+.jv-tile .jv-ph{position:absolute;inset:0;background:#2a2010 center/cover no-repeat;opacity:.75}
+.jv-tile .jv-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(10,8,4,.05),rgba(10,8,4,.88) 70%)}
+.jv-tile b,.jv-tile small{position:relative;font-family:var(--display);text-transform:uppercase;line-height:1.02}
+.jv-tile b{font-weight:800;font-size:15px;letter-spacing:.01em}
+.jv-tile small{font-family:inherit;text-transform:none;font-size:11px;color:#F5D9A0;font-weight:600}
+.jv-tile.on{transform:rotateY(180deg)}
+.jv-tile:not(:disabled):active{transform:rotateY(180deg) scale(.95)}
+.jv-timer{height:6px;border-radius:3px;background:rgba(36,24,3,.18);overflow:hidden;margin-top:10px;opacity:0;transition:opacity .3s}
+.jv-timer i{display:block;height:100%;background:#241803;transform-origin:0 50%;transition:transform .1s linear}
+.jpcard.timing .jv-timer{opacity:1}
+/* Time freeze: the clock frosts over and locks */
+.jv-freeze{position:relative;width:150px;height:150px;margin:6px auto 2px;display:grid;place-content:center;text-align:center;border-radius:50%;background:#16120a;overflow:hidden}
+.jv-freeze svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.jv-freeze .trk{fill:none;stroke:rgba(255,255,255,.08);stroke-width:5}
+.jv-freeze .arc{fill:none;stroke:#8FD3FF;stroke-width:5;stroke-linecap:round;stroke-dasharray:340;stroke-dashoffset:340;transition:stroke-dashoffset 1.2s cubic-bezier(.3,.8,.3,1) .2s}
+.jv-freeze b{position:relative;font-family:var(--display);font-weight:800;font-size:40px;line-height:1;color:#F5B83D;transition:color .8s ease .2s,text-shadow .8s ease .2s}
+.jv-freeze small{position:relative;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-top:4px}
+.jv-frost{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(143,211,255,0) 38%,rgba(190,230,255,.35) 62%,rgba(230,246,255,.75) 100%);opacity:0;transform:scale(1.25);transition:opacity 1s ease,transform 1.1s cubic-bezier(.2,.8,.3,1)}
+.jv-freeze.on .jv-frost{opacity:1;transform:none}
+.jv-freeze.on b{color:#BFE6FF;text-shadow:0 0 18px rgba(143,211,255,.8)}
+.jv-freeze.on .arc{stroke-dashoffset:0}
+/* Free spins: three tokens drop in, then ×3 */
+.jv-spins{display:flex;align-items:center;justify-content:center;gap:10px;height:84px}
+.jv-tok{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#FFE9B0,#F5B83D 55%,#B9801A);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 6px 14px rgba(0,0,0,.3);color:#241803;opacity:0;transform:translateY(-60px) scale(.6)}
+.jv-tok svg{width:24px;height:24px}
+.jv-tok.on{animation:tokdrop .5s cubic-bezier(.3,1.5,.5,1) forwards}
+@keyframes tokdrop{to{opacity:1;transform:none}}
+.jv-x{font-family:var(--display);font-weight:800;font-size:36px;margin-left:4px;opacity:0;transform:scale(1.8)}
+.jv-x.on{animation:xpop .4s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes xpop{to{opacity:1;transform:none}}
+/* Shortcut: a path draws itself to the closest bar */
+.jv-short{position:relative;height:110px;border-radius:14px;background:#16120a;overflow:hidden}
+.jv-short svg{position:absolute;inset:0;width:100%;height:96px}
+.jv-short .grid{stroke:rgba(255,255,255,.06);stroke-width:1;fill:none}
+.jv-short .road{fill:none;stroke:#F5B83D;stroke-width:3;stroke-linecap:round;stroke-dasharray:6 7;stroke-dashoffset:0;clip-path:inset(0 100% 0 0);transition:clip-path 1.1s cubic-bezier(.4,0,.2,1) .15s}
+.jv-short.on .road{clip-path:inset(0 0 0 0)}
+.jv-short .me{position:absolute;left:10%;top:73%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#4AA3FF;box-shadow:0 0 0 4px rgba(74,163,255,.25)}
+.jv-short .pin{position:absolute;left:89.3%;top:27%;width:26px;height:26px;margin:-24px -13px;color:#F5B83D;opacity:0;transform:translateY(-14px)}
+.jv-short .pin svg{width:26px;height:26px}
+.jv-short.on .pin{animation:pindrop .45s cubic-bezier(.3,1.6,.5,1) 1.1s forwards}
+@keyframes pindrop{to{opacity:1;transform:none}}
+.jv-short .lbl{position:absolute;left:12px;right:12px;bottom:8px;font-size:13px;color:rgba(255,255,255,.85);opacity:0;transform:translateY(6px);transition:opacity .35s ease 1.3s,transform .35s ease 1.3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jv-short .lbl b{color:#fff}
+.jv-short.on .lbl{opacity:1;transform:none}
+/* Dealer's choice: three cards are dealt face down, then flip */
+.jv-deal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;perspective:800px;min-height:150px}
+.jv-card{position:relative;min-height:150px;border:0;padding:0;background:none;cursor:pointer;transform-style:preserve-3d;opacity:0;transform:translateY(40px) rotate(var(--r,0deg)) scale(.8);transition:transform .55s cubic-bezier(.3,1.3,.5,1),opacity .25s}
+.jv-card:nth-child(1){--r:-6deg}.jv-card:nth-child(3){--r:6deg}
+.jv-card.dealt{opacity:1;transform:rotate(var(--r,0deg))}
+.jv-card.on{transform:rotateY(180deg)}
+.jv-card .jv-f,.jv-card .jv-b{position:absolute;inset:0;border-radius:12px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.jv-card .jv-f{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#2a1f0a 0 6px,#241803 6px 12px);color:#F5B83D;box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.5)}
+.jv-card .jv-f svg{width:26px;height:26px}
+.jv-card .jv-b{transform:rotateY(180deg);background:#241803;color:#FFF3D6;padding:9px;font-size:12px;line-height:1.35;font-weight:600;text-align:left;display:flex;align-items:center}
+.jv-card:not(:disabled):active{transform:rotateY(180deg) scale(.95)}
+.jd-pick{justify-content:center}
+.jd-pick .chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
 .jpdemo{position:fixed;inset:0;z-index:2900;background:var(--bg);display:grid;place-items:center;padding:20px}
 .jpdemo-in{width:100%;max-width:440px;display:flex;flex-direction:column;gap:18px;text-align:center}
 .reel.gold .frame{border-color:#FFD27A;animation:goldpulse .45s ease-in-out infinite alternate}
@@ -1549,13 +1613,13 @@ function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
     g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
 function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,M=a.createGain();M.gain.value=1;M.connect(a.destination);
-  const out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(900,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
-  out.gain.setValueAtTime(.045,t);out.gain.linearRampToValueAtTime(.11,end);lp.connect(out).connect(M);
+  const out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(1600,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
+  out.gain.setValueAtTime(.09,t);out.gain.linearRampToValueAtTime(.15,end);lp.connect(out).connect(M);
   const lfo=a.createOscillator(),lg=a.createGain();lfo.type="sine";lfo.frequency.setValueAtTime(3,t);lfo.frequency.exponentialRampToValueAtTime(16,end);lg.gain.value=.03;lfo.connect(lg).connect(out.gain);lfo.start(t);
   const os=[0,7,12,19].map(d=>{const o=a.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(196*Math.pow(2,d/12),t);o.frequency.exponentialRampToValueAtTime(784*Math.pow(2,d/12),end);o.detune.value=(Math.random()-.5)*14;o.connect(lp);o.start(t);return o});
   const nb=a.createBuffer(1,Math.ceil(a.sampleRate*sec),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
   const ns=a.createBufferSource(),bp=a.createBiquadFilter(),ng=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=1.1;bp.frequency.setValueAtTime(700,t);bp.frequency.exponentialRampToValueAtTime(9000,end);
-  ng.gain.setValueAtTime(.02,t);ng.gain.linearRampToValueAtTime(.07,end);ns.connect(bp).connect(ng).connect(M);ns.start(t);
+  ng.gain.setValueAtTime(.035,t);ng.gain.linearRampToValueAtTime(.08,end);ns.connect(bp).connect(ng).connect(M);ns.start(t);
   let done=false;const kill=()=>{if(done)return;done=true;const n=a.currentTime;M.gain.cancelScheduledValues(n);M.gain.setTargetAtTime(0,n,.015);
     setTimeout(()=>{try{os.concat([lfo,ns]).forEach(o=>o.stop());M.disconnect()}catch(e){}},120)};
   setTimeout(kill,(sec+.4)*1000);   // never outlives the spin, even if something goes wrong
@@ -1563,6 +1627,17 @@ function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};con
 function whoosh(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,len=.6,nb=a.createBuffer(1,a.sampleRate*len,a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
   const ns=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(3000,t+len);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(a.destination);ns.start(t)}
+function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime;
+  const noise=(len,f0,f1,q,vol,type)=>{const nb=a.createBuffer(1,Math.ceil(a.sampleRate*len),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
+    const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=nb;f.type=type||"bandpass";f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+len);
+    g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+len);n.connect(f).connect(g).connect(a.destination);n.start(t)};
+  const tone=(hz,dt,len,vol,type)=>{const o=a.createOscillator(),g=a.createGain();o.type=type||"sine";o.frequency.value=hz;g.gain.setValueAtTime(.0001,t+dt);g.gain.exponentialRampToValueAtTime(vol,t+dt+.006);g.gain.exponentialRampToValueAtTime(.0001,t+dt+len);o.connect(g).connect(a.destination);o.start(t+dt);o.stop(t+dt+len+.05)};
+  if(kind==="flip")noise(.09,1200,5000,1.5,.25);
+  if(kind==="clink"){tone(2637,0,.35,.09);tone(3951,.012,.28,.05);tone(5274,.02,.18,.03)}
+  if(kind==="frost"){noise(.7,6000,9000,.7,.08,"highpass");tone(1568,.05,1.1,.05,"triangle");tone(2349,.12,1,.035,"triangle")}
+  if(kind==="path")noise(.5,500,2600,1,.15);
+  if(kind==="deal")noise(.07,2000,4000,1.2,.2);
+}
 function boom(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(38,t+.7);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(a.destination);o.start(t);o.stop(t+1)}
 function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(a.destination);[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
@@ -2326,13 +2401,18 @@ function jackpotSpin(vel){
     reel=makeReel($("reelBox"),gameReelNames(),{});
   }
   // the card's button claims it straight from the jackpot layer
-  jackpotRun($("reelBox"),reel,vel,j,()=>{spinning=false;applyJackpot(g,j);g.jp.claimed=true;save();renderPlay();claimJackpot(j.k)});
+  const ctx=jackpotCtx();
+  jackpotRun($("reelBox"),reel,vel,j,res=>{spinning=false;applyJackpot(g,j);g.jp.claimed=true;save();
+    if(j.k==="call"&&res.bar){setTarget(res.bar,ctx.from);startFreeze(g,15*60000,true);animateId=res.bar.id;save();renderPlay();onLocation();return}
+    if(j.k==="short"&&ctx.nearest){setTarget(ctx.nearest,ctx.from);animateId=ctx.nearest.id;save();renderPlay();onLocation();return}
+    if(j.k==="dealer"){g.dealt={leg:g.visits.length,text:res.wild||null};save();renderPlay();doSpin(true);return}
+    renderPlay();doSpin(true)},ctx);
 }
 /* The takeover. The moment the wheel's flicked it lifts out of the page (bigger, tilted, gold), the rest drops
    into the dark, warm light swells in from the sides, streaks race past, and the riser builds from the first
    moment to the last. The bars spin as normal, for longer; it lands on the reward, which punches out like a bar
    name does and then flies into a card in the middle of the screen. The card's button carries on the game. */
-function jackpotRun(box,R_,vel,j,done){
+function jackpotRun(box,R_,vel,j,done,ctx){
   ac();
   const r=box.getBoundingClientRect(),calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ov=document.createElement("div");ov.className="jpx";
@@ -2346,30 +2426,77 @@ function jackpotRun(box,R_,vel,j,done){
   box.classList.add("lifting");requestAnimationFrame(()=>{box.classList.add("gold","jpbig");ov.classList.add("live")});
   box.animate([{transform:"translate(0,0) scale(1)"},{transform:`translate(${tx}px,${ty}px) scale(${SC})`}],{duration:900,easing:"cubic-bezier(.33,0,.15,1)",fill:"forwards"});
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
-  const DUR=6.5,stopRiser=riser(DUR);whoosh();
-  R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
+  let stopRiser=()=>{};
+  const T=R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
     ov.classList.add("won");confetti(ov);
     const fl=document.createElement("i");fl.className="jpx-flash";ov.appendChild(fl);fl.animate([{opacity:.9},{opacity:0}],{duration:600,easing:"ease-out",fill:"forwards"}).onfinish=()=>fl.remove();
     // the card, in the middle of the screen, built the same way as a bar's card
     const wrap=document.createElement("div");wrap.className="jpcard-wrap";
-    wrap.innerHTML=`<div class="bar jpcard"><span class="eyebrow">Jackpot</span><h2>${esc(j.t)}</h2><p>${esc(j.d)}</p><button class="btn dark" type="button">${j.go}</button></div>`;
+    wrap.innerHTML=`<div class="bar jpcard jc-${j.k}"><span class="eyebrow">Jackpot</span><h2>${esc(j.t)}</h2>${jvHTML(j,ctx)}<p>${esc(jvText(j))}</p>${jvActs(j)}</div>`;
     ov.appendChild(wrap);
     box.animate([{opacity:1},{opacity:0}],{duration:260,delay:120,fill:"forwards"});
     reveal(info,wrap);
-    let gone=false;wrap.querySelector("button").onclick=()=>{if(gone)return;gone=true;
-      ov.animate([{opacity:1},{opacity:0}],{duration:300,fill:"forwards"}).onfinish=()=>{ov.remove();ph.remove();done&&done()}};
-  },{jackpot:true,dur:DUR,onLand:()=>stopRiser()});
+    const card=wrap.querySelector(".jpcard");let gone=false;
+    const choose=res=>{if(gone)return;gone=true;ctx.stop&&ctx.stop();
+      ov.animate([{opacity:1},{opacity:0}],{duration:300,fill:"forwards"}).onfinish=()=>{ov.remove();ph.remove();done&&done(res||{})}};
+    const go=card.querySelector("#jvGo");if(go)go.onclick=()=>choose({});
+    setTimeout(()=>jvRun(j,card,ctx,choose),680);   // once the card's settled
+  },{jackpot:true,dur:6.5,onLand:()=>stopRiser()});
+  stopRiser=riser(T);whoosh();   // timed to this exact spin, so it peaks and cuts as the wheel stops
+}
+/* What sits in the middle of each jackpot card: a little graphic that plays once the card lands.
+   Your call and Dealer's choice are the choice itself, made right there on the card. */
+function jvHTML(j,ctx){
+  if(j.k==="call")return `<div class="jv jv-call">${ctx.bars.map((v,i)=>`<button class="jv-tile" type="button" data-i="${i}" disabled><span class="jv-f">?</span><span class="jv-b"><i class="jv-ph"></i><b>${esc(v.name)}</b><small>${ctx.from?walkMin(ctx.from,v)+" min walk":esc(v.area)}</small></span></button>`).join("")}</div><div class="jv-timer"><i></i></div>`;
+  if(j.k==="freeze")return `<div class="jv jv-freeze"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" class="trk"/><circle cx="60" cy="60" r="54" class="arc"/></svg><b>${mmss(ctx.clockMs)}</b><small>left</small><i class="jv-frost"></i></div>`;
+  if(j.k==="spins")return `<div class="jv jv-spins">${[0,1,2].map(()=>`<i class="jv-tok">${I.redo}</i>`).join("")}<b class="jv-x">×3</b></div>`;
+  if(j.k==="short"){const v=ctx.nearest;return `<div class="jv jv-short"><svg viewBox="0 0 300 96" preserveAspectRatio="none"><path class="grid" d="M0 24H300M0 56H300M0 84H300M48 0V96M122 0V96M196 0V96M262 0V96"/><path class="road" d="M30 70 C 90 70, 110 26, 170 30 S 250 40, 268 26"/></svg><i class="me"></i><i class="pin">${I.pin}</i><span class="lbl"><b>${esc(v.name)}</b> · ${ctx.from?walkMin(ctx.from,v)+" min walk":mOrKm(ctx.nearestM||0)}</span></div>`}
+  if(j.k==="dealer")return `<div class="jv jv-deal">${ctx.wilds.map((w,i)=>`<button class="jv-card" type="button" data-i="${i}" disabled><span class="jv-f">${I.sparkle}</span><span class="jv-b">${esc(w)}</span></button>`).join("")}</div>`;
+  return "";
+}
+function jvRun(j,card,ctx,choose){
+  const q=sel=>[...card.querySelectorAll(sel)];
+  if(j.k==="call"){
+    const tiles=q(".jv-tile");
+    ctx.bars.forEach((v,i)=>barPhoto(v).then(ph=>{if(ph)tiles[i].querySelector(".jv-ph").style.backgroundImage=`url("${ph.url}")`}));
+    tiles.forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("flip");buzz(8)},i*260));
+    setTimeout(()=>{tiles.forEach(t=>{t.disabled=false;t.onclick=()=>choose({bar:ctx.bars[+t.dataset.i]})});
+      const bar=card.querySelector(".jv-timer i"),t0=Date.now();card.classList.add("timing");
+      const tm=setInterval(()=>{const r=1-(Date.now()-t0)/20000;bar.style.transform=`scaleX(${Math.max(0,r)})`;if(r<=0){clearInterval(tm);choose({bar:ctx.bars[0]})}},100);ctx.stop=()=>clearInterval(tm)},3*260+350);
+  }
+  if(j.k==="freeze"){card.querySelector(".jv-freeze").classList.add("on");sfx("frost");buzz(20)}
+  if(j.k==="spins")q(".jv-tok").forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("clink");buzz(10);if(i===2)setTimeout(()=>card.querySelector(".jv-x").classList.add("on"),220)},i*240));
+  if(j.k==="short"){card.querySelector(".jv-short").classList.add("on");sfx("path")}
+  if(j.k==="dealer"){const cs=q(".jv-card");cs.forEach((c,i)=>setTimeout(()=>{c.classList.add("dealt");sfx("deal")},i*120));
+    cs.forEach((c,i)=>setTimeout(()=>{c.classList.add("on");sfx("flip")},500+i*260));
+    setTimeout(()=>cs.forEach(c=>{c.disabled=false;c.onclick=()=>choose({wild:ctx.wilds[+c.dataset.i]})}),500+3*260+200);
+    const no=card.querySelector("#jvNone");if(no)no.onclick=()=>choose({wild:null})}
+}
+// what the card says under the graphic, and its button
+const jvText=j=>j.k==="call"?"Pick one before the bar runs out. The trip there's on the house.":j.k==="dealer"?"Pick the wildcard for your next bar.":j.d;
+const jvActs=j=>j.k==="call"?"":j.k==="dealer"?`<button class="btn dark" type="button" id="jvNone">No wildcard</button>`:`<button class="btn dark" type="button" id="jvGo">${j.go}</button>`;
+function jackpotCtx(){   // the real numbers, for a game in progress
+  const g=G(),from=fromPoint(),P=spinPool().pool.slice(),near=P.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];
+  return {from,bars:shuffle(P).slice(0,3),nearest:near,clockMs:remaining(),wilds:shuffle(WILDS.slice()).slice(0,3)};
+}
+function demoCtx(){      // stand-ins for the test jackpot
+  const c=AREAS.find(a=>a.name==="The City")||AREAS[0],P=playable(inCircle(c,1),false).filter(v=>!v.tempClosed),near=P.slice().sort((a,b)=>dist(c,a)-dist(c,b))[0];
+  return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clockMs:37*60000+12000,wilds:shuffle(WILDS.slice()).slice(0,3)};
 }
 function applyJackpot(g,j){if(g.jp.applied)return;g.jp.applied=true;if(j.k==="freeze")startFreeze(g,10*60000,false);if(j.k==="spins")g.freeSkips=(g.freeSkips||0)+3}
 // test panel: a stand-in wheel of real bars. Flick it and the jackpot takes over, same as in a game.
-function jackpotDemo(){
-  const opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=opts[Math.floor(Math.random()*opts.length)];S.lastJP=j.k;save();
+function jackpotDemo(k){
+  const opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(k&&JACKPOTS.find(x=>x.k===k))||opts[Math.floor(Math.random()*opts.length)];S.lastJP=j.k;save();
   const ov=document.createElement("div");ov.className="jpdemo";
-  ov.innerHTML=`<div class="jpdemo-in"><p class="note">Test jackpot. Flick the wheel like a normal spin.</p><div id="jdReel"></div><div class="acts"><button class="btn dark" type="button" id="jdA" hidden>Play it again</button><button class="btn line" type="button" id="jdX">Close</button></div></div>`;
+  ov.innerHTML=`<div class="jpdemo-in"><p class="note">Test jackpot: <b>${j.t}</b>. Flick the wheel like a normal spin.</p>
+    <div class="chips jd-pick">${JACKPOTS.map(x=>`<button class="chip" type="button" data-k="${x.k}" aria-pressed="${x.k===j.k}">${x.t}</button>`).join("")}</div>
+    <div id="jdReel"></div><button class="btn line" type="button" id="jdX">Close</button></div>`;
   document.body.appendChild(ov);
   const pool=playable(VENUES,false).filter(v=>!v.tempClosed).map(v=>v.name);
   const R_=makeReel($("jdReel"),pool,{hint:true,onRelease:vel=>{if(R_.busy)return false;$("jdX").hidden=true;
-    jackpotRun($("jdReel"),R_,vel,j,()=>{ov.remove();jackpotDemo()})}});
+    ov.querySelector(".jd-pick").style.visibility="hidden";
+    jackpotRun($("jdReel"),R_,vel,j,res=>{ov.remove();jackpotDemo(j.k)},demoCtx())}});
+  ov.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ov.remove();jackpotDemo(b.dataset.k)});
   $("jdX").onclick=()=>ov.remove();
 }
 function jackpotSheet(){
