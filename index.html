@@ -1450,6 +1450,21 @@ html.fl .app{visibility:hidden}
 
 .sandbox .demo .reel{height:min(46vh,420px)}
 .sandbox .jpdemo-in{gap:14px}
+
+#pCount{cursor:pointer;position:relative;display:inline-flex;align-items:center;gap:6px}
+#pCount .cv{font-style:normal;display:inline-flex;opacity:.55;margin-left:-2px}
+#pCount .cv svg{width:14px;height:14px}
+#pCount.nudge{animation:cpulse 1.8s ease-in-out infinite}
+@keyframes cpulse{0%,100%{box-shadow:0 0 0 0 rgba(245,184,61,0)}50%{box-shadow:0 0 0 6px rgba(245,184,61,.22)}}
+#pCount .cnudge{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);white-space:nowrap;font-size:11.5px;font-weight:700;color:var(--amber-ink);background:var(--amber);padding:4px 9px;border-radius:8px;pointer-events:none;z-index:5}
+#pCount .cnudge::before{content:"";position:absolute;left:50%;top:-4px;margin-left:-5px;border:5px solid transparent;border-top:0;border-bottom-color:var(--amber)}
+.nightzone{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.nightzone span{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--s2);font-size:13.5px;font-weight:600}
+.nightzone svg{width:14px;height:14px;color:var(--amber)}
+.list .li .ok{color:var(--green)}
+.poolnum.low{color:var(--amber)}
+#v-play:has(#stage .ready) #strip{display:none}   /* the wheel screen: tonight's bars live behind the counter */
+#reelBack{width:100%;height:48px}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2708,11 +2723,24 @@ function fitPlay(){
     // free space = the bottom of the usable area minus the bottom of the last thing on screen
     const vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0,limit=vr.top+v.clientHeight-pb;
     const last=Math.max(...[...v.querySelectorAll("#stage>:not(.ready),#stage .ready>*")].map(x=>x.getBoundingClientRect().bottom));
-    const h=Math.round(Math.max(230,Math.min(430,rb.offsetHeight+(limit-last)-14)));rb.style.height=h+"px";if(reel&&reel.redraw)reel.redraw()}
+    const h=Math.round(Math.max(230,Math.min(540,rb.offsetHeight+(limit-last)-14)));rb.style.height=h+"px";if(reel&&reel.redraw)reel.redraw()}
   const card=$("stage").querySelector(".bar.photo");if(!card)return;card.style.minHeight="";
   const over=v.scrollHeight-v.clientHeight;if(over>0)card.style.minHeight=Math.max(0,card.offsetHeight-over)+"px";
 }
 addEventListener("resize",()=>{if(S.route==="play")fitPlay()});
+/* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
+function nightSheet(){
+  const g=G();if(!g)return;if(!S.tips.night){S.tips.night=1;save();renderPlay()}
+  const t=now(),left=basePool().length,cr=CR(g),c=g.visits.filter(v=>v.counted===true).length;
+  const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?"You're here":v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
+    return `<div class="li"><span>${i+1}. ${esc(b.name)}</span><span class="small ${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</span></div>`}).join("");
+  sheet(`<h3>Your night</h3>
+    <div class="nightzone"><span>${I.pin} ${esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
+    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber)">${c}</b> rooftop${c===1?"":"s"} so far · <b style="color:var(--amber)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
+    ${rows?`<div class="card" style="padding:4px 16px"><div class="list">${rows}</div></div>`:`<p class="note">No bars yet. Get spinning.</p>`}
+    <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>$("ngX").onclick=closeSheet);
+}
+$("pCount").onclick=nightSheet;
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
 }
@@ -2868,9 +2896,10 @@ function renderPlay(){
   const g=G();if(!g)return;
   $("pMenu").innerHTML=I.more;
   const counted=g.visits.filter(v=>v.counted===true).length;
-  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b>`;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your night</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=!g.visits.length;
+  $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
   renderClock();
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
@@ -2908,11 +2937,11 @@ function renderPlay(){
   }else{
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
-      ${mixlineHTML(g)}
+      ${g.started?"":mixlineHTML(g)}
       <div id="reelBox"></div>
-      <div class="poolnum"><b>${pool}</b> ${CR(g)?`open rooftop${pool===1?"":"s"} nearby`:`rooftop${pool===1?"":"s"} in the mix`}</div>
+      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}</div>`:""}
       ${g.visits.length>=2?"":`<p class="note reelnote">${reelNote()}${g.started||CR(g)?"":"<br>The clock starts when you spin."}</p>`}
-      ${a?`<button class="txtbtn" type="button" id="reelBack">Not yet, stay at ${esc(byId(a.id).name)}</button>`:""}</div>`;
+      ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
