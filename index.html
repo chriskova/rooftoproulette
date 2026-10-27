@@ -1376,6 +1376,11 @@ html.fl .app{visibility:hidden}
 #v-play .bar .btn.dir{height:44px}
 .btn.again-btn{height:54px;background:var(--amber);color:var(--amber-ink);border:0;font-size:17px}
 @media (max-height:720px){#v-play .bar h2{font-size:clamp(26px,7.8vw,34px)}#v-play .strip{margin:-2px 0}#v-play .reel{height:244px}}
+
+#v-wiz .zcount b{font-size:34px}
+#v-wiz .toggle{padding:12px 14px}
+#v-wiz .toggle small{font-size:13px;line-height:1.35}
+#v-wiz .zreveal{padding:11px}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -2086,9 +2091,11 @@ function renderWiz(){
       if(zMap){const openIds=new Set(open.map(v=>v.id));zMap.clear();zMap.circle(c,w.radius);all.forEach(v=>zMap.pin(v,openIds.has(v.id)?"":"off",()=>zoneBarSheet(v)));setMe(zMap)}
     };
     zonePaint=paint;
+    // everything above the button fits on screen: the map gives up height first
+    const fitZone=()=>{const v=$("v-wiz"),el=$("zoneMap");if(!v||!el||w.showList)return;el.style.height="240px";const over=v.scrollHeight-v.clientHeight;if(over>0)el.style.height=Math.max(120,240-over)+"px"};
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();paint()};
     $("zShow").onclick=()=>{w.showList=!w.showList;save();$("zListWrap").hidden=!w.showList;$("zShow").setAttribute("aria-expanded",String(w.showList));$("zShow").innerHTML=`<span>${w.showList?"Hide the bars":"See the bars in your zone"}</span><small>${w.showList?"":"Spoilers. Or keep it a surprise."}</small>`};
-    paint();
+    paint();fitZone();
     requestAnimationFrame(async()=>{
       if(zMap){zMap.remove();zMap=null}
       const el=$("zoneMap");el.style.opacity="0";
