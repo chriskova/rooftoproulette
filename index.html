@@ -1004,8 +1004,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bar.photo>*{position:relative;z-index:1}
 .bar.photo .eyebrow{color:var(--amber)}
 .bar.photo .btn{background:var(--amber);color:var(--amber-ink)}
-.bar.photo .wild{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.5);color:#fff}
-.bar.photo .wild svg{color:#fff!important}
+.bar.photo .wild{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.32);color:rgba(255,255,255,.9)}
+.bar.photo .wild svg,.bar.photo .wild b{color:var(--amber)!important}
 .wild.dark{background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.35)!important;border-style:dashed!important;color:var(--text)!important}
 .wild.dark svg{color:var(--text)!important}
 .bar.photo .wild svg{color:var(--amber)}
@@ -1372,7 +1372,7 @@ html.fl .app{visibility:hidden}
 #v-play .links{margin-top:-4px}
 #v-play .links .btn{height:38px}
 .bar .btn.dir{background:transparent;border:1.5px solid rgba(36,24,3,.55);color:var(--amber-ink)}
-.bar.photo .btn.dir{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.55);color:#fff}
+.bar.photo .btn.dir{background:rgba(0,0,0,.25);border-color:rgba(245,184,61,.7);color:var(--amber)}
 #v-play .bar .btn.dir{height:44px}
 .btn.again-btn{height:54px;background:var(--amber);color:var(--amber-ink);border:0;font-size:17px}
 @media (max-height:720px){#v-play .bar h2{font-size:clamp(26px,7.8vw,34px)}#v-play .strip{margin:-2px 0}#v-play .reel{height:244px}}
@@ -2587,14 +2587,14 @@ function dealWild(delay){
     const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");
     Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
     const calm=matchMedia("(prefers-reduced-motion: reduce)").matches,dy=-(b.top+b.height+80),dx=innerWidth*.35;
-    sfx("deal");
+    sfx("deal");buzz(20);
     fly.animate(calm?[{opacity:0},{opacity:1}]:[
       {transform:`perspective(700px) translate(${dx}px,${dy}px) rotateY(-540deg) rotateZ(-25deg) scale(1.35)`,opacity:1},
       {transform:`perspective(700px) translate(${dx*.25}px,${dy*.18}px) rotateY(-150deg) rotateZ(-8deg) scale(1.2)`,offset:.6},
       {transform:"perspective(700px) translate(0,0) rotateY(0) rotateZ(0) scale(1)",opacity:1}],{duration:calm?200:620,easing:"cubic-bezier(.45,0,.75,.6)",fill:"forwards"}).onfinish=()=>{
       fly.remove();g.wild.landed=true;delete g.wild.flying;save();slot.removeAttribute("data-pending");
       const cur=($("stage")&&$("stage").querySelector(".bar .wild"))||slot;cur.removeAttribute("data-pending");
-      sfx("thud");buzz([40,30,70]);
+      sfx("thud");buzz([90,50,140]);
       cur.animate([{transform:"scale(1.12,.86)"},{transform:"scale(.96,1.05)",offset:.4},{transform:"scale(1.02,.99)",offset:.7},{transform:"none"}],{duration:420,easing:"ease-out"});
       const card=cur.closest(".bar");if(card&&!calm)card.animate([{transform:"none"},{transform:"translate(-5px,3px) rotate(-.6deg)"},{transform:"translate(4px,-2px) rotate(.5deg)"},{transform:"translate(-3px,1px)"},{transform:"translate(2px,0)"},{transform:"none"}],{duration:380,easing:"ease-out"});
       cur.classList.add("fresh");setTimeout(()=>cur.classList.remove("fresh"),2200);
