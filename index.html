@@ -2942,7 +2942,7 @@ function renderPlay(){
       ${g.started?"":mixlineHTML(g)}
       <div id="reelBox"></div>
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}</div>`:""}
-      ${g.visits.length>=2?"":`<p class="note reelnote">${reelNote()}${g.started||CR(g)?"":"<br>The clock starts when you spin."}</p>`}
+      ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   g._man=g.target?needManual(g):false;
