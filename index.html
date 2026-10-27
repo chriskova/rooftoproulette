@@ -3487,6 +3487,10 @@ function listSheet(k,msg,after){
       $("lsItems").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{del(b.dataset.d);paint();renderBars()});
     };
     q.onfocus=()=>{if(!searching){searching=true;paint()}};
+    // start scrolling and the keyboard gets out of the way (the search stays as typed)
+    {let y0=null;const it=$("lsItems");
+      it.addEventListener("touchstart",e=>{y0=e.touches[0].clientY},{passive:true});
+      it.addEventListener("touchmove",e=>{if(y0!==null&&Math.abs(e.touches[0].clientY-y0)>8&&document.activeElement===q){q.blur();y0=null}},{passive:true});}
     q.oninput=paint;
     $("lsCancel").onclick=()=>{searching=false;q.value="";q.blur();paint()};
     paint();
