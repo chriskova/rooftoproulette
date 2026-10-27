@@ -1004,7 +1004,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bar.photo>*{position:relative;z-index:1}
 .bar.photo .eyebrow{color:var(--amber)}
 .bar.photo .btn{background:var(--amber);color:var(--amber-ink)}
-.bar.photo .wild{background:rgba(245,184,61,.16);border-color:rgba(245,184,61,.55);color:#fff}
+.bar.photo .wild{background:rgba(20,14,4,.82);border-color:rgba(245,184,61,.55);color:#FFF3D6}
 .bar.photo .wild svg{color:var(--amber)}
 .bar.photo .small{color:rgba(255,255,255,.75)}
 .bar.at.photo{box-shadow:inset 0 0 0 2px var(--green)}
@@ -1043,7 +1043,9 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .sheetph{margin:-10px -18px 14px;border-radius:24px 24px 0 0}
 .sheetph.on{height:200px}
 
-.wild{position:relative;will-change:transform;display:flex;gap:10px;align-items:flex-start;background:rgba(36,24,3,.12);border:1.5px dashed rgba(36,24,3,.45);border-radius:14px;padding:11px 12px;font-size:15px;font-weight:650;line-height:1.35}
+.wild{position:relative;display:flex;gap:10px;align-items:flex-start;background:#241803;color:#FFF3D6;border:1.5px solid rgba(36,24,3,.9);border-radius:14px;padding:10px 12px;font-size:14.5px;font-weight:650;line-height:1.35}
+.wild svg{color:#F5B83D}
+.wild b{color:#F5B83D;opacity:1!important}
 .wild svg{width:22px;height:22px;flex:none}
 .wild b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:2px}
 .wild small{display:block;font-size:12px;font-weight:500;opacity:.7;margin-top:3px}
@@ -1229,7 +1231,9 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jv-card:not(:disabled):active{transform:rotateY(180deg) scale(.95)}
 .jd-pick{justify-content:center}
 .jd-pick .chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
-.wild.fresh{animation:wildglow 2.6s ease-out}
+.wild[data-pending]{visibility:hidden}
+.wfly{position:fixed;z-index:2500;margin:0;pointer-events:none;box-shadow:0 18px 40px rgba(0,0,0,.45);backface-visibility:visible}
+.wild.fresh{animation:wildglow 2.2s ease-out}
 @keyframes wildglow{0%{box-shadow:0 0 0 3px rgba(245,184,61,.9),0 0 30px rgba(245,184,61,.6)}100%{box-shadow:0 0 0 0 rgba(245,184,61,0)}}
 .jpdemo{position:fixed;inset:0;z-index:2900;background:var(--bg);display:grid;place-items:center;padding:20px}
 .jpdemo-in{width:100%;max-width:440px;display:flex;flex-direction:column;gap:18px;text-align:center}
@@ -1347,6 +1351,27 @@ html.fl .app{visibility:hidden}
 .opt .t .hop svg{width:13px;height:13px;color:var(--amber)}
 .opt.locked{opacity:.5}
 .finetag{font-size:11.5px;font-weight:600;color:var(--muted);margin-left:8px;vertical-align:2px;letter-spacing:0}
+
+/* ---- gameplay fits on one screen: everything from the clock to "Can't get in?" without scrolling ---- */
+#v-play{gap:10px}
+.app.has-tabs #v-play{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 8px)}
+#v-play .stage{gap:10px;padding:4px 0 0}
+#v-play .bar{padding:15px 16px;gap:8px}
+#v-play .bar h2{font-size:clamp(28px,8.8vw,40px)}
+#v-play .bar .facts{font-size:14px}
+#v-play .bar .btn{height:48px}
+#v-play .bar .wild{padding:9px 11px;font-size:14px}
+#v-play .bar .wild svg{width:19px;height:19px}
+#v-play .dwell{font-size:30px}
+#v-play .tip{padding:9px 12px;font-size:13.5px;line-height:1.38}
+#v-play .again{gap:3px}
+#v-play .again .fine{font-size:12.5px}
+#v-play .stage>.btn{height:52px}
+#v-play .links{margin-top:-4px}
+#v-play .links .btn{height:38px}
+.btn.again-btn{height:46px;background:transparent;border:1.5px solid rgba(245,184,61,.55);color:var(--amber)}
+.btn.again-btn svg{color:var(--amber)}
+@media (max-height:720px){#v-play .bar h2{font-size:clamp(26px,7.8vw,34px)}#v-play .strip{margin:-2px 0}#v-play .reel{height:244px}}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -1643,6 +1668,7 @@ function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   if(kind==="frost"){noise(.7,6000,9000,.7,.08,"highpass");tone(1568,.05,1.1,.05,"triangle");tone(2349,.12,1,.035,"triangle")}
   if(kind==="path")noise(.5,500,2600,1,.15);
   if(kind==="deal")noise(.07,2000,4000,1.2,.2);
+  if(kind==="thud"){tone(110,0,.22,.35);noise(.12,300,120,.8,.35,"lowpass")}
 }
 function boom(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(38,t+.7);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(a.destination);o.start(t);o.stop(t+1)}
@@ -2546,26 +2572,30 @@ function dealerChoice(){
     $("dcN").onclick=()=>pick(null);$("sheet").addEventListener("close",()=>pick(null),{once:true});
   });
 }
-/* A new wildcard just asks for attention: a moment after the card lands, the wildcard box lifts off the card
-   and gives a little shake, then settles. It does it three times (people often look up a beat late), and
-   stops as soon as it's tapped. Once per wildcard. */
+/* A new wildcard flies in: a copy of the wildcard box comes tumbling in from above the screen, flipping as it
+   falls, and crashes into its spot on the bar card. On impact the box squashes, the whole card jolts and the
+   phone thuds. The box on the card stays empty until then. Once per wildcard. */
 function dealWild(delay){
   const g=G();if(!g||!g.wild||g.wild.shown||g.wild.dealing||g.wild.id!==g.target)return;g.wild.dealing=true;
-  let stop=false;const at=[delay||0,(delay||0)+2600,(delay||0)+5600];
-  const nudge=i=>{if(stop)return;const el=$("stage")&&$("stage").querySelector(".bar .wild");if(!el||G()!==g||g.target!==g.wild.id)return;
-    if(i===0){g.wild.shown=true;delete g.wild.dealing;save();sfx("deal")}
-    buzz(i?10:[14,40,14]);el.onclick=()=>{stop=true};
-    el.animate([
-      {transform:"none",boxShadow:"0 0 0 0 rgba(0,0,0,0)"},
-      {transform:"translateY(-6px) scale(1.07)",boxShadow:"0 14px 30px rgba(0,0,0,.35),0 0 0 2px rgba(245,184,61,.9)",offset:.2},
-      {transform:"translateY(-6px) scale(1.07) rotate(-2.5deg)",offset:.32},
-      {transform:"translateY(-6px) scale(1.07) rotate(2.5deg)",offset:.44},
-      {transform:"translateY(-6px) scale(1.07) rotate(-2deg)",offset:.56},
-      {transform:"translateY(-6px) scale(1.07) rotate(1.5deg)",offset:.66},
-      {transform:"translateY(-6px) scale(1.07)",boxShadow:"0 14px 30px rgba(0,0,0,.35),0 0 0 2px rgba(245,184,61,.9)",offset:.76},
-      {transform:"none",boxShadow:"0 0 0 0 rgba(0,0,0,0)"}],{duration:950,easing:"ease-in-out"});
-  };
-  at.forEach((t,i)=>setTimeout(()=>nudge(i),t));
+  setTimeout(()=>{
+    const slot=$("stage")&&$("stage").querySelector(".bar .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
+    g.wild.shown=true;g.wild.flying=true;delete g.wild.dealing;save();
+    const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");
+    Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
+    const calm=matchMedia("(prefers-reduced-motion: reduce)").matches,dy=-(b.top+b.height+80),dx=innerWidth*.35;
+    sfx("deal");
+    fly.animate(calm?[{opacity:0},{opacity:1}]:[
+      {transform:`perspective(700px) translate(${dx}px,${dy}px) rotateY(-540deg) rotateZ(-25deg) scale(1.35)`,opacity:1},
+      {transform:`perspective(700px) translate(${dx*.25}px,${dy*.18}px) rotateY(-150deg) rotateZ(-8deg) scale(1.2)`,offset:.6},
+      {transform:"perspective(700px) translate(0,0) rotateY(0) rotateZ(0) scale(1)",opacity:1}],{duration:calm?200:620,easing:"cubic-bezier(.45,0,.75,.6)",fill:"forwards"}).onfinish=()=>{
+      fly.remove();g.wild.landed=true;delete g.wild.flying;save();slot.removeAttribute("data-pending");
+      const cur=($("stage")&&$("stage").querySelector(".bar .wild"))||slot;cur.removeAttribute("data-pending");
+      sfx("thud");buzz([40,30,70]);
+      cur.animate([{transform:"scale(1.12,.86)"},{transform:"scale(.96,1.05)",offset:.4},{transform:"scale(1.02,.99)",offset:.7},{transform:"none"}],{duration:420,easing:"ease-out"});
+      const card=cur.closest(".bar");if(card&&!calm)card.animate([{transform:"none"},{transform:"translate(-5px,3px) rotate(-.6deg)"},{transform:"translate(4px,-2px) rotate(.5deg)"},{transform:"translate(-3px,1px)"},{transform:"translate(2px,0)"},{transform:"none"}],{duration:380,easing:"ease-out"});
+      cur.classList.add("fresh");setTimeout(()=>cur.classList.remove("fresh"),2200);
+    };
+  },delay||0);
 }
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
@@ -2718,7 +2748,7 @@ function renderPlay(){
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
-  const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild">${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
+  const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
   if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
     const cp=cardPhoto(v);
@@ -2738,7 +2768,7 @@ function renderPlay(){
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
-      <div class="again"><button class="btn" type="button" id="skipBtn">${I.redo} Spin again</button><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
+      <div class="again"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
       ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;
@@ -2755,7 +2785,7 @@ function renderPlay(){
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
-  st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button"))return;window.open(c.dataset.gm,"_blank","noopener")});
+  st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
