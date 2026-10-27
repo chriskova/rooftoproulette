@@ -1136,6 +1136,13 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .demo{margin-top:12px;min-height:290px}
 .demo .bar{margin:0}
 .demo>#demoBox>#demoAgain{margin-top:10px;width:100%}
+.punch{position:fixed;z-index:62;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap;text-transform:uppercase;line-height:1;margin:0}
+.jrays{position:fixed;z-index:58;pointer-events:none;width:560px;height:560px;border-radius:50%;
+  background:repeating-conic-gradient(rgba(245,184,61,.42) 0 7deg,rgba(245,184,61,0) 7deg 22deg);
+  -webkit-mask-image:radial-gradient(circle,#000 0,#000 18%,transparent 66%);mask-image:radial-gradient(circle,#000 0,#000 18%,transparent 66%)}
+.jring{position:fixed;z-index:59;pointer-events:none;width:180px;height:180px;border-radius:50%;border:3px solid rgba(255,226,150,.9);box-shadow:0 0 24px rgba(245,184,61,.8)}
+.jspark{position:fixed;z-index:63;pointer-events:none;width:7px;height:7px;border-radius:50%;background:#F5B83D;box-shadow:0 0 10px 2px rgba(245,184,61,.85)}
+.jspark.w{background:#fff;box-shadow:0 0 10px 2px rgba(255,255,255,.8)}
 .flyname{position:fixed;z-index:61;pointer-events:none;transform-origin:0 0;margin:0}
 .flybox{position:fixed;z-index:60;pointer-events:none;border:2px solid var(--amber);box-sizing:border-box;background:linear-gradient(#221d14,#17140f);box-shadow:0 0 0 4px rgba(245,184,61,.12),0 0 30px rgba(245,184,61,.12)}
 .reel .hint{position:absolute;z-index:3;inset:0;display:flex;justify-content:center;pointer-events:none;transition:opacity .2s}
@@ -2011,7 +2018,8 @@ function onLocation(){
     const v=byId(g.target);
     if(dist(y,v)-slack<=CHECKIN_M){logArrival(false);return}
   }
-  if(S.route==="play")renderPlay();
+  // don't redraw the screen mid-reveal (it would wipe the card transition); catch up once it's done
+  if(S.route==="play"){if(Date.now()<revealEnd)afterReveal(()=>{if(S.route==="play"&&!spinning)renderPlay()});else renderPlay()}
 }
 let spinning=false,animateId=null,reel=null;
 /* ---------- the reel: swipe it like a slot reel; the swipe speed sets how far it runs ---------- */
@@ -2076,13 +2084,9 @@ function makeReel(el,names,o){
     const p0=R.p,dist=Math.abs(k-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=2*Dr/vs,T=Tc+Td;
     R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
     anim(T*1000,u=>{const s=u*T;let x;if(s<Tc)x=vs*s;else{const q=(s-Tc)/Td;x=Dc+Dr*(1-(1-q)*(1-q))}R.p=p0+dir*x},()=>{
-      R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");ding();buzz(40);
-      // the winner zooms in at the apex and the card transition carries on from that zoomed name
-      const c=el.querySelector(".row.c .b"),Z=1.16;
-      [c,c.previousElementSibling].forEach(x=>{x.style.transition="transform .17s cubic-bezier(.2,.9,.3,1.2)";x.style.transform=`scale(${Z})`});
-      setTimeout(()=>{const fr=frame.getBoundingClientRect(),nr=c.getBoundingClientRect();
-        const info={fr,nr,fs:parseFloat(getComputedStyle(c).fontSize)*Z,name,ink:getComputedStyle(c).color};
-        R.busy=false;done&&done(info)},230)});
+      R.landing=true;R.p=k;draw();R.landing=false;el.classList.remove("going");el.classList.add("won");ding();buzz([30,40,70]);
+      jackpot(el,frame,name,info=>{R.busy=false;done&&done(info)});
+    });
   };
   if(o.onRelease){
     let y0=0,pS=0,pts=[],down=false;
@@ -2097,6 +2101,40 @@ function makeReel(el,names,o){
   }
   return R;
 }
+/* The landing, pokies style: the name punches out of the wheel (bigger than the wheel can hold), light rays
+   and sparks burst behind it, the wheel kicks, and the frame flashes. Then the card transition carries on
+   from the punched-out name, so it all reads as one move. */
+function jackpot(el,frame,name,done){
+  const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
+  const host=el.closest("dialog")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const cx=fr.left+fr.width/2,cy=fr.top+fr.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";
+  // the name, lifted out of the wheel so it can grow past the edges
+  const P=document.createElement("div");P.className="punch";P.textContent=name;
+  Object.assign(P.style,{left:(r0.left+r0.width/2)+"px",top:(r0.top+r0.height/2)+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
+  host.appendChild(P);row.style.visibility="hidden";
+  const w0=P.offsetWidth||r0.width,peak=Math.min(1.75,innerWidth*.94/w0),rest=Math.min(1.36,peak*.86),T=(k,extra)=>`translate(-50%,-50%) scale(${k})`;
+  P.animate([
+    {transform:T(1),textShadow:"0 0 0 rgba(245,184,61,0)"},
+    {transform:T(peak),textShadow:"0 0 30px rgba(245,184,61,.95), 0 0 2px #fff",offset:.32},
+    {transform:T(rest*.94),offset:.56},
+    {transform:T(rest*1.04),offset:.78},
+    {transform:T(rest),textShadow:"0 0 16px rgba(245,184,61,.55)"}],{duration:560,easing:"cubic-bezier(.2,.8,.3,1)",fill:"forwards"});
+  frame.animate([{boxShadow:"0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)"},{boxShadow:"0 0 0 14px rgba(245,184,61,.5),0 0 120px rgba(245,184,61,.9)",background:"rgba(245,184,61,.22)"},{boxShadow:"0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)"}],{duration:520,easing:"ease-out"});
+  if(!calm){
+    el.animate([{transform:"none"},{transform:"translate(-7px,2px)"},{transform:"translate(6px,-2px)"},{transform:"translate(-4px,1px)"},{transform:"translate(2px,0)"},{transform:"none"}],{duration:300,easing:"ease-out"});
+    const fx=[];
+    const rays=document.createElement("div");rays.className="jrays";Object.assign(rays.style,{left:cx+"px",top:cy+"px"});fx.push(rays);
+    rays.animate([{transform:"translate(-50%,-50%) scale(.3) rotate(0deg)",opacity:0},{transform:"translate(-50%,-50%) scale(1) rotate(25deg)",opacity:1,offset:.25},{transform:"translate(-50%,-50%) scale(1.25) rotate(70deg)",opacity:0}],{duration:1300,easing:"ease-out",fill:"forwards"});
+    const ring=document.createElement("div");ring.className="jring";Object.assign(ring.style,{left:cx+"px",top:cy+"px"});fx.push(ring);
+    ring.animate([{transform:"translate(-50%,-50%) scale(.2)",opacity:1},{transform:"translate(-50%,-50%) scale(2.6)",opacity:0}],{duration:650,easing:"cubic-bezier(.1,.7,.3,1)",fill:"forwards"});
+    for(let i=0;i<22;i++){const sp=document.createElement("i");sp.className="jspark"+(i%3?"":" w");Object.assign(sp.style,{left:cx+"px",top:cy+"px"});fx.push(sp);
+      const a=Math.random()*Math.PI*2,d=90+Math.random()*130,dx=Math.cos(a)*d,dy=Math.sin(a)*d*.75,z=.6+Math.random()*.9;
+      sp.animate([{transform:`translate(-50%,-50%) scale(${z})`,opacity:1},{transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy+30}px)) scale(${z*.3})`,opacity:0}],{duration:600+Math.random()*450,easing:"cubic-bezier(.15,.7,.4,1)",fill:"forwards"})}
+    fx.forEach(x=>host.appendChild(x));setTimeout(()=>fx.forEach(x=>x.remove()),1400);
+  }
+  // hand over to the card: the transition starts from exactly where the punched name sits
+  setTimeout(()=>{const nr=P.getBoundingClientRect();P.remove();done({fr,nr,fs:fs*rest,name,ink:INK})},600);
+}
 let revealEnd=0;
 const afterReveal=fn=>setTimeout(fn,Math.max(0,revealEnd-Date.now()));
 function reveal(info,scope){
@@ -2104,7 +2142,7 @@ function reveal(info,scope){
      the landed name rides along into the title position, then the card fades in over the top. */
   const card=scope.querySelector(".bar");if(!card||!card.animate)return;
   if(!info){card.animate([{opacity:0},{opacity:1}],{duration:220});return}
-  revealEnd=Date.now()+760;
+  revealEnd=Date.now()+960;
   const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
