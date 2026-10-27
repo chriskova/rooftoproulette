@@ -2767,7 +2767,7 @@ function renderPlay(){
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"'):""}</div>
       ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>${hmm(d)} at ${esc(v.name)}.</b> Ready for the next one? Spin whenever you like.</span></div>`:""}
-      <div class="tip nob soft${ok?" ok":""}">${ok?I.check:I.clock}<span>${ok?"<b>This rooftop's on the board.</b> Spin whenever you're ready.":`Hang around ${DWELL_MIN} minutes and this rooftop goes on the board.`}</span></div>
+      ${ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
       ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
     if(animateId===("at:"+a.id))animateId=null;
