@@ -2729,11 +2729,32 @@ function fitPlay(){
   const over=v.scrollHeight-v.clientHeight;if(over>0)card.style.minHeight=Math.max(0,card.offsetHeight-over)+"px";
 }
 addEventListener("resize",()=>{if(S.route==="play")fitPlay()});
+const countShown=g=>{const a=g.visits.find(v=>v.leftAt==null);return g.visits.filter(v=>v.counted===true).length+(a&&a._inCount&&a.counted!==true?1:0)};
+/* When the bar you're at goes on the board (3 minutes in, or the first time the app's open after that), its name
+   flies up into the drinks counter, which ticks over with a bump and a clink. Once per bar. */
+function flyToCounter(){
+  const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a||a._flew||document.hidden||S.route!=="play")return;
+  const h=$("stage")&&$("stage").querySelector(".bar.at h2"),pc=$("pCount");if(!h||!pc)return;
+  a._flew=true;save();
+  setTimeout(()=>{
+    const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h);
+    const f=document.createElement("div");f.className="flyname";f.textContent=h.textContent;
+    Object.assign(f.style,{left:hr.left+"px",top:hr.top+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,lineHeight:cs.lineHeight,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:cs.color,whiteSpace:"nowrap",zIndex:900});
+    document.body.appendChild(f);
+    const fr=f.getBoundingClientRect(),dx=pr.left+pr.width/2-(fr.left+fr.width/2),dy=pr.top+pr.height/2-(fr.top+fr.height/2),k=Math.min(.5,pr.height/fr.height*.6);
+    f.animate([{transform:"none",opacity:1,color:cs.color},{transform:`translate(${dx*.45}px,${dy*.55-40}px) scale(${(1+k)/2})`,opacity:1,color:"#F5B83D",offset:.45},{transform:`translate(${dx}px,${dy}px) scale(${k*.5})`,opacity:.2,color:"#F5B83D"}],{duration:720,easing:"cubic-bezier(.5,0,.3,1)",fill:"forwards"}).onfinish=()=>{
+      f.remove();a._inCount=true;save();
+      const b=pc.querySelector("b");if(b)b.textContent=countShown(g);
+      pc.animate([{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"},{transform:"scale(1.22)",boxShadow:"0 0 0 8px rgba(245,184,61,.35)",offset:.35},{transform:"scale(1)",boxShadow:"0 0 0 0 rgba(245,184,61,0)"}],{duration:620,easing:"ease-out"});
+      sfx("clink");buzz([20,40,30]);
+    };
+  },650);
+}
 /* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
 function nightSheet(){
   const g=G();if(!g)return;if(!S.tips.night){S.tips.night=1;save();renderPlay()}
-  const t=now(),left=basePool().length,cr=CR(g),c=g.visits.filter(v=>v.counted===true).length;
-  const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?"You're here":v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
+  const t=now(),left=basePool().length,cr=CR(g),c=countShown(g);
+  const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
     return `<div class="li"><span>${i+1}. ${esc(b.name)}</span><span class="small ${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</span></div>`}).join("");
   sheet(`<h3>Your night</h3>
     <div class="nightzone"><span>${I.pin} ${esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
@@ -2896,7 +2917,7 @@ function celebrate(id){
 function renderPlay(){
   const g=G();if(!g)return;
   $("pMenu").innerHTML=I.more;
-  const counted=g.visits.filter(v=>v.counted===true).length;
+  const counted=countShown(g);
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your night</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
@@ -3320,6 +3341,7 @@ function loop(){
   if(S.route==="play"&&g){
     renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=CR(g)&&now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);
     if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
+    if(a&&!spinning&&!a._flew&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!$("sheet").open&&!g.reelOpen)flyToCounter();
     if(CR(g)&&g.nudge&&a&&!a._nudged&&!document.hidden&&now()-a.arrivedAt>=g.nudge*60000){a._nudged=1;save();ding();buzz([80,60,80]);if(!spinning)renderPlay()}
     if(a&&!spinning&&(now()-a.arrivedAt)<DWELL_MIN*60000&&$("cantBtn")===null&&false)renderPlay();
     if(!spinning&&g.started&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
