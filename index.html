@@ -1148,9 +1148,9 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jpx-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.6),rgba(3,4,7,.94) 62%);opacity:0}
 .jpx .jpx-glow,.jpx .jpx-streaks{opacity:0;transition:opacity .9s ease .25s}
 .jpx.live .jpx-glow{opacity:.5}.jpx.live .jpx-streaks{opacity:1}
-.reel.lifting .frame{transition:border-color .6s ease,box-shadow .6s ease}
-.reel.lifting{transition:box-shadow .7s ease;will-change:transform}
-.jpx-glow{position:absolute;top:8%;width:80vw;height:84vh;border-radius:50%;filter:blur(46px);opacity:.5;pointer-events:none}
+.reel.lifting .frame{transition:border-color .6s ease}
+.reel.lifting{will-change:transform}
+.jpx-glow{position:absolute;top:8%;width:80vw;height:84vh;border-radius:50%;opacity:.5;pointer-events:none;will-change:transform}
 .jpx-glow.l{left:-58vw;background:radial-gradient(circle,rgba(245,184,61,.95),rgba(255,122,61,.35) 45%,rgba(255,122,61,0) 70%);animation:jgl 1.8s ease-in-out infinite alternate}
 .jpx-glow.r{right:-58vw;background:radial-gradient(circle,rgba(255,138,76,.9),rgba(245,184,61,.3) 45%,rgba(245,184,61,0) 70%);animation:jgr 1.5s ease-in-out infinite alternate}
 @keyframes jgl{to{transform:translate(10vw,5vh) scale(1.12)}}@keyframes jgr{to{transform:translate(-10vw,-4vh) scale(1.1)}}
@@ -1414,6 +1414,42 @@ html.fl .app{visibility:hidden}
 /* the real clock frosts over too while frozen */
 .clock.frozen b{text-shadow:0 0 8px rgba(190,230,255,.8),0 0 24px rgba(143,211,255,.5);animation:frostin 1s ease-out}
 @keyframes frostin{from{color:var(--cream);text-shadow:none;filter:blur(0)}50%{filter:blur(.6px)}to{filter:blur(0)}}
+
+#v-home{overflow:hidden}
+
+.mv.on>.opt{border-color:var(--amber)}
+.mvx{padding:10px 2px 6px;display:flex;flex-direction:column;gap:10px}
+.mvmap{height:170px;border-radius:14px;overflow:hidden;background:#0E1117}
+.mvx .note{margin:0}
+
+/* next-rooftop card: dark like the rest; the landed name stays yellow, the label goes white */
+.bar.photo.blank{background:linear-gradient(170deg,#1d1a14,#13110d 75%);min-height:0}
+.bar.photo.blank::before{display:none}
+.bar.tapmaps.photo.blank .gmgo{left:auto;right:14px;background:rgba(255,255,255,.08)}
+.bar.tapmaps.photo.blank .eyebrow{padding-right:40px}
+.bar.photo.loading{min-height:340px;background:#14161c}
+.bar.photo.loading::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.07) 50%,transparent 70%);background-size:220% 100%;animation:shimmer 1.2s linear infinite;pointer-events:none}
+.bar.tgt h2{color:var(--amber)}
+.bar.tgt .eyebrow{color:#fff}
+/* wildcard: yellow dashed edge, see-through but a shade darker than the card */
+.bar .wild,.bar.photo .wild{background:rgba(0,0,0,.28);border:1.5px dashed rgba(245,184,61,.75);color:rgba(255,255,255,.92);cursor:pointer}
+.bar .wild svg,.bar .wild b{color:var(--amber)!important}
+.wild.wexplain{background:rgba(245,184,61,.06);border:1.5px dashed rgba(245,184,61,.75);color:var(--text);margin-top:12px}
+.wild.wexplain svg,.wild.wexplain b{color:var(--amber)}
+
+.jv-count{position:absolute;top:18px;right:20px;display:flex;flex-direction:column;align-items:center;line-height:1;opacity:0;transition:opacity .3s}
+.jpcard.counting .jv-count{opacity:1}
+.jv-count b{font-family:var(--display);font-weight:800;font-size:46px;color:var(--amber);font-variant-numeric:tabular-nums}
+.jv-count b.hot{color:#FF6B5B}
+.jv-count small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.bar.jpcard{position:relative}
+
+.fchips{gap:8px}
+.fchips .chip{padding:9px 16px;font-size:14.5px;font-weight:700;color:var(--muted)}
+.fchips .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
+
+.sandbox .demo .reel{height:min(46vh,420px)}
+.sandbox .jpdemo-in{gap:14px}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -1502,7 +1538,7 @@ setTimeout(done,1200)})();</script>
   <!-- ROOFTOPS TAB -->
   <section class="view" id="v-bars" hidden>
     <h1 class="q">Rooftops</h1>
-    <div class="seg" id="barsSeg"></div>
+    <div class="chips fchips" id="barsSeg"></div>
     <div id="barsIntro"></div>
     <div class="map"><div id="barsMap" style="height:30vh;min-height:200px"></div></div>
     <div class="list card" id="barsList" style="padding:4px 16px"></div>
@@ -1685,21 +1721,22 @@ function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   const notes=[[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28],[1568,.35],[1046.5,.5],[1318.5,.5],[1568,.5],[2093,.5]];
   notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
     g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
+let NB=null;function noiseBuf(){const a=ac();if(!a)return null;if(NB&&NB.sampleRate===a.sampleRate)return NB;NB=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const ch=NB.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;return NB}
+const prewarmAudio=()=>{try{(window.requestIdleCallback||setTimeout)(()=>noiseBuf(),{timeout:1500})}catch(e){}};
 function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,M=a.createGain();M.gain.value=1;M.connect(a.destination);
   const out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(1600,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
   out.gain.setValueAtTime(.09,t);out.gain.linearRampToValueAtTime(.15,end);lp.connect(out).connect(M);
   const lfo=a.createOscillator(),lg=a.createGain();lfo.type="sine";lfo.frequency.setValueAtTime(3,t);lfo.frequency.exponentialRampToValueAtTime(16,end);lg.gain.value=.03;lfo.connect(lg).connect(out.gain);lfo.start(t);
   const os=[0,7,12,19].map(d=>{const o=a.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(196*Math.pow(2,d/12),t);o.frequency.exponentialRampToValueAtTime(784*Math.pow(2,d/12),end);o.detune.value=(Math.random()-.5)*14;o.connect(lp);o.start(t);return o});
-  const nb=a.createBuffer(1,Math.ceil(a.sampleRate*sec),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
-  const ns=a.createBufferSource(),bp=a.createBiquadFilter(),ng=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=1.1;bp.frequency.setValueAtTime(700,t);bp.frequency.exponentialRampToValueAtTime(9000,end);
+  const ns=a.createBufferSource(),bp=a.createBiquadFilter(),ng=a.createGain();ns.buffer=noiseBuf();ns.loop=true;bp.type="bandpass";bp.Q.value=1.1;bp.frequency.setValueAtTime(700,t);bp.frequency.exponentialRampToValueAtTime(9000,end);
   ng.gain.setValueAtTime(.035,t);ng.gain.linearRampToValueAtTime(.08,end);ns.connect(bp).connect(ng).connect(M);ns.start(t);
   let done=false;const kill=()=>{if(done)return;done=true;const n=a.currentTime;M.gain.cancelScheduledValues(n);M.gain.setTargetAtTime(0,n,.015);
     setTimeout(()=>{try{os.concat([lfo,ns]).forEach(o=>o.stop());M.disconnect()}catch(e){}},120)};
   setTimeout(kill,(sec+.4)*1000);   // never outlives the spin, even if something goes wrong
   return kill}
-function whoosh(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,len=.6,nb=a.createBuffer(1,a.sampleRate*len,a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
-  const ns=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();ns.buffer=nb;bp.type="bandpass";bp.Q.value=.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(3000,t+len);
-  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(a.destination);ns.start(t)}
+function whoosh(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,len=.6;
+  const ns=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();ns.buffer=noiseBuf();bp.type="bandpass";bp.Q.value=.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(3000,t+len);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(a.destination);ns.start(t);ns.stop(t+len)}
 function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime;
   const noise=(len,f0,f1,q,vol,type)=>{const nb=a.createBuffer(1,Math.ceil(a.sampleRate*len),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
     const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=nb;f.type=type||"bandpass";f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+len);
@@ -1941,6 +1978,7 @@ function colCardHTML(){
 }
 function renderHome(){
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
+  const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your night":"Play R&R";
 }
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
@@ -2051,11 +2089,14 @@ function renderWiz(){
     const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
     const anyOpen=areas.some(o=>o.n>0);
     const meSel=w.start&&w.start.type==="me";
-    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">Rush Hour</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
+    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">Rush Hour</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Stuck somewhere quiet later? You can move it once a game.</p></div>
       <div class="opts">
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
+        
         ${REGIONS.map(r=>{const l=areas.filter(o=>o.a.reg===r.name);return l.length?`<div class="eyebrow" style="margin-top:10px">${r.name}</div>`+l.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`).join(""):""}).join("")}
+        <div class="eyebrow" style="margin-top:10px">Other cities</div>
+        ${["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("")}
       </div>`;
     if(!anyOpen)body.insertAdjacentHTML("afterbegin",`<div class="banner"><b>It's early.</b> Most rooftops open later in the day. You can set up now and start once they're open.</div>`);
     body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
@@ -2196,7 +2237,7 @@ const visited=id=>G().visits.some(v=>v.id===id);
 const frozen=g=>!!(g&&g.frz&&now()<g.frz.until);
 const remaining=()=>{const g=G();return g.started?(frozen(g)?g.endsAt-g.frz.until:g.endsAt-now()):g.len*60000};
 function startFreeze(g,ms,trip){g.endsAt+=ms;g.frz={from:now(),until:now()+ms,trip:!!trip}}
-function endTripFreeze(g){if(g&&g.frz&&g.frz.trip&&now()<g.frz.until){g.endsAt-=g.frz.until-now();g.frz.until=now()}}
+function endTripFreeze(g,arrived){if(g&&g.frz&&g.frz.trip&&now()<g.frz.until&&(!g.frz.zone||arrived)){g.endsAt-=g.frz.until-now();g.frz.until=now()}}
 const CR=g=>!!(g&&g.mode==="cruise");
 const RR_AUTO=3*3600000; // R&R nights wrap up on their own after 3 hours
 
@@ -2355,7 +2396,7 @@ function makeReel(el,names,o){
    straight from there into its spot on the card, so it all reads as one move. */
 function punchLand(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
-  const host=el.closest("dialog")||el.closest(".jpx")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const host=el.closest("dialog")||el.closest(".jpx,.jpdemo")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";   // centred on the slot (very long names overflow the wheel lopsided)
   const P=document.createElement("div");P.className="punch";P.textContent=name;
   Object.assign(P.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
@@ -2397,7 +2438,7 @@ function reveal(info,scope){
   const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
-  const host=scope.closest("dialog")||scope.closest(".jpx")||document.body;
+  const host=scope.closest("dialog")||scope.closest(".jpx,.jpdemo")||document.body;
   const box=document.createElement("div");box.className="flybox";host.appendChild(box);
   box.animate([
     {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},
@@ -2437,7 +2478,7 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
-  if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  if(!g.started){prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
   endTripFreeze(g);
   if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
@@ -2521,11 +2562,12 @@ function jackpotRun(box,R_,vel,j,done,ctx){
     setTimeout(()=>jvRun(j,card,ctx,choose),680);   // once the card's settled
   },{jackpot:true,dur:6.5,onLand:()=>stopRiser()});
   stopRiser=riser(T);whoosh();   // timed to this exact spin, so it peaks and cuts as the wheel stops
+  (()=>{const pat=[];let t=0;const end=T*1000-120;while(t<end){const q=t/end,on=Math.round(10+q*32),off=Math.round(380-q*330);pat.push(on,off);t+=on+off}buzz(pat)})();
 }
 /* What sits in the middle of each jackpot card: a little graphic that plays once the card lands.
    Your call and Dealer's choice are the choice itself, made right there on the card. */
 function jvHTML(j,ctx){
-  if(j.k==="call")return `<div class="jv jv-call">${ctx.bars.map((v,i)=>`<button class="jv-tile" type="button" data-i="${i}" disabled><span class="jv-f">?</span><span class="jv-b"><i class="jv-ph"></i><b>${esc(v.name)}</b><small>${ctx.from?walkMin(ctx.from,v)+" min walk":esc(v.area)}</small></span></button>`).join("")}</div><div class="jv-timer"><i></i></div>`;
+  if(j.k==="call")return `<div class="jv-count"><b id="jvSec">20</b><small>seconds</small></div><div class="jv jv-call">${ctx.bars.map((v,i)=>`<button class="jv-tile" type="button" data-i="${i}" disabled><span class="jv-f">?</span><span class="jv-b"><i class="jv-ph"></i><b>${esc(v.name)}</b><small>${ctx.from?walkMin(ctx.from,v)+" min walk":esc(v.area)}</small></span></button>`).join("")}</div><div class="jv-timer"><i></i></div>`;
   if(j.k==="freeze"){
     // frost: jagged crystals that grow in from the rim, each with a branch or two
     let cr="";for(let i=0;i<16;i++){const a=(i/16)*Math.PI*2+Math.random()*.3,len=16+Math.random()*20;let x=60+Math.cos(a)*55,y=60+Math.sin(a)*55,d=`M${x.toFixed(1)} ${y.toFixed(1)}`;
@@ -2546,7 +2588,10 @@ function jvRun(j,card,ctx,choose){
     tiles.forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("flip");buzz(8)},i*260));
     setTimeout(()=>{tiles.forEach(t=>{t.disabled=false;t.onclick=()=>choose({bar:ctx.bars[+t.dataset.i]})});
       const bar=card.querySelector(".jv-timer i"),t0=Date.now();card.classList.add("timing");
-      const tm=setInterval(()=>{const r=1-(Date.now()-t0)/20000;bar.style.transform=`scaleX(${Math.max(0,r)})`;if(r<=0){clearInterval(tm);choose({bar:ctx.bars[0]})}},100);ctx.stop=()=>clearInterval(tm)},3*260+350);
+      const sec=card.querySelector("#jvSec");let lastS=20;card.classList.add("counting");
+      const tm=setInterval(()=>{const r=1-(Date.now()-t0)/20000,left=Math.max(0,Math.ceil(r*20));bar.style.transform=`scaleX(${Math.max(0,r)})`;
+        if(left!==lastS){lastS=left;sec.textContent=left;sec.animate([{transform:"scale(1.25)"},{transform:"none"}],{duration:220,easing:"ease-out"});if(left<=5&&left>0){tick(left<=3?1300:1000);buzz(12);sec.classList.add("hot")}}
+        if(r<=0){clearInterval(tm);choose({bar:ctx.bars[0]})}},100);ctx.stop=()=>clearInterval(tm)},3*260+350);
   }
   if(j.k==="freeze"){const fz=card.querySelector(".jv-freeze");fz.querySelector("b").textContent=mmss(ctx.clock());fz.classList.add("on");sfx("frost");buzz(20)}
   if(j.k==="spins")q(".jv-tok").forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("clink");buzz(10);if(i===2)setTimeout(()=>card.querySelector(".jv-x").classList.add("on"),220)},i*240));
@@ -2568,8 +2613,15 @@ function demoCtx(){      // stand-ins for the test jackpot
   return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clock:()=>37*60000+12000,wilds:shuffle(WILDS.slice()).slice(0,3)};
 }
 function applyJackpot(g,j){if(g.jp.applied)return;g.jp.applied=true;if(j.k==="freeze")startFreeze(g,10*60000,false);if(j.k==="spins")g.freeSkips=(g.freeSkips||0)+3}
+// test panel: an endless wheel of every bar. Flick, land, spin again. No game, no clock, nothing saved.
+function wheelSandbox(){
+  const ov=document.createElement("div");ov.className="jpdemo sandbox";
+  ov.innerHTML=`<div class="jpdemo-in"><p class="note">Wheel sandbox. No game, nothing saved.</p><div class="demo"><div id="sbBox"></div></div><button class="btn line" type="button" id="sbX">Close</button></div>`;
+  document.body.appendChild(ov);$("sbX").onclick=()=>ov.remove();
+  bindDemo(null,null,$("sbBox"));
+}
 // test panel: a stand-in wheel of real bars. Flick it and the jackpot takes over, same as in a game.
-function jackpotDemo(k){
+function jackpotDemo(k){prewarmAudio();
   const opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(k&&JACKPOTS.find(x=>x.k===k))||opts[Math.floor(Math.random()*opts.length)];S.lastJP=j.k;save();
   const ov=document.createElement("div");ov.className="jpdemo";
   ov.innerHTML=`<div class="jpdemo-in"><p class="note">Test jackpot: <b>${j.t}</b>. Flick the wheel like a normal spin.</p>
@@ -2686,13 +2738,26 @@ function moveOptions(){
   return GAME_AREAS().filter(a=>dist(a,g.center)>500).map(a=>({a,open:playable(inCircle(a,g.radius),g.newOnly).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
    .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
 }
+let mvMaps=[];
 function openMove(free){
   const g=G(),opts=moveOptions();
   sheet(`<h3>${free?"Your zone's run dry":"Change of scenery?"}</h3>
-    <p class="note">${free?"Fewer than two bars are left open here, so this move is free.":"You can move your zone once per game. Spins land in the new area from now on."}</p>
-    <div class="opts">${opts.length?opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${mOrKm(o.m)} away</small></span><span class="n"><b>${o.open}</b><small>open</small></span></button>`).join(""):`<p class="note">No other area has two or more rooftops open right now.</p>`}</div>
+    <p class="note">${free?"Nothing else is open in your zone, so this move is free.":"You can move your zone once a game. Going far? The clock waits till you reach your first bar there."}</p>
+    <div class="opts mvlist">${opts.length?opts.map((o,i)=>`<div class="mv" data-i="${i}"><button class="opt" type="button" data-mv="${i}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${mOrKm(o.m)} away</small></span><span class="n"><b>${o.open}</b><small>open</small></span></button>
+      <div class="mvx" hidden><div class="mvmap" id="mvmap${i}"></div><p class="note">${o.m>1500?`It's ${km(o.m)} away, so the clock waits till you reach your first bar there (up to 20 minutes).`:`${mOrKm(o.m)} away. Close enough that the clock keeps running.`}</p><button class="btn" type="button" data-go="${i}">Move here</button></div></div>`).join(""):`<p class="note">No other area has two or more rooftops open right now.</p>`}</div>
     <button class="btn dark" type="button" id="mvX" style="margin-top:14px">${free?"Close":"Stay here"}</button>`,()=>{
-    $("sheetBody").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);g.moves.push({at:now(),to:o.a.name,free:!!free});if(!free)g.voluntaryUsed=true;save();closeSheet();renderPlay()});
+    const clear=()=>{mvMaps.forEach(m=>{try{m.remove()}catch(e){}});mvMaps=[]};clear();
+    $("sheet").addEventListener("close",clear,{once:true});
+    $("sheetBody").querySelectorAll("[data-mv]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.mv,o=opts[i],box=b.parentElement,x=box.querySelector(".mvx"),open=!x.hidden;
+      $("sheetBody").querySelectorAll(".mvx").forEach(e=>e.hidden=true);$("sheetBody").querySelectorAll(".mv").forEach(e=>e.classList.remove("on"));
+      if(open)return;x.hidden=false;box.classList.add("on");box.scrollIntoView({block:"nearest",behavior:"smooth"});
+      if(box.dataset.map)return;box.dataset.map=1;
+      const m=await makeMap("mvmap"+i);if(!m)return;mvMaps.push(m);const t=now();
+      m.circle(o.a,g.radius);playable(inCircle(o.a,g.radius),g.newOnly).forEach(v=>m.pin(v,openOK(v,t)&&!visited(v.id)?"":"off"));setMe(m);m.fitZone(o.a,g.radius)});
+    $("sheetBody").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.go];
+      g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);g.moves.push({at:now(),to:o.a.name,free:!!free,m:Math.round(o.m)});if(!free)g.voluntaryUsed=true;
+      if(o.m>1500){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
+      g.target=null;g.reelOpen=false;save();closeSheet();renderPlay();renderClock()});
     $("mvX").onclick=closeSheet;
   });
 }
@@ -2710,8 +2775,8 @@ function demoSheet(back,next){
       bindDemo(next?`<div class="demoacts"><button class="btn line" type="button" id="demoAgain">Spin again</button><button class="btn" type="button" id="demoPlay">Got it, let's play</button></div>`:null,
         ()=>{if(!next)return;$("demoBack").hidden=true;$("demoPlay").onclick=play})});
 }
-function bindDemo(afterHTML,landed){
-  const box=$("demoBox");if(!box)return;
+function bindDemo(afterHTML,landed,boxEl){
+  const box=boxEl||$("demoBox");if(!box)return;
   box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});   // flicking the wheel shouldn't drag the sheet shut
   const pool=playable(VENUES,false).filter(v=>!v.tempClosed);
   const mk=()=>{box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;if($("demoBack"))$("demoBack").hidden=false;
@@ -2727,7 +2792,7 @@ const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()
 function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
   sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
-    ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive."],
+    ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive. Stuck somewhere quiet? Move your zone once a game, and if it's far, the clock waits."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, the wheel pays out."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
@@ -2738,11 +2803,13 @@ function openMenu(){
   const cr=CR(g);
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
+    <button type="button" id="mHome">${I.back}<span>Home<small>${cr?"Your night":"The game"} keeps going. Tap Play to come back</small></span></button>
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};
+    $("mHome").onclick=()=>{closeSheet();go("home")};
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     $("mEnd").onclick=()=>sheet(`<h3>${cr?"Call it a night?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
@@ -2786,7 +2853,7 @@ function needManual(g){
   return now()-g.targetAt>(exp*1.5+5)*60000;
 }
 function logArrival(manual){
-  const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g);
+  const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
   g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined,manual:!!manual});
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
@@ -2827,8 +2894,9 @@ function renderPlay(){
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
-    const cp=cardPhoto(v),fs=g.freeSkips||0;
-    st.innerHTML=banner+ask+`<div class="bar tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
+    const cp0=cardPhoto(v),fs=g.freeSkips||0,coming=!cp0.cls&&phMem[v.id]===undefined&&phAllowed(v.id,"play")&&!gBad;
+    const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
+    st.innerHTML=banner+ask+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>
       <div class="facts"><span>${I.walk} ${walkMin(y,v)} min walk</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -2848,16 +2916,18 @@ function renderPlay(){
   }
   g._man=g.target?needManual(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
-  if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph)return;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
+  if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(phMem[pv.id]===undefined)phMem[pv.id]=ph||null;afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
   fitPlay();
+  st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.querySelector("span").lastChild.textContent;
+    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
   st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
-  const sb=$("spinBtn");if(sb)sb.onclick=()=>{const open_=()=>{g.reelOpen=true;save();renderPlay()};
+  const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay()}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();renderPlay()};
-  else if(sk)sk.onclick=()=>{const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
+  else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
@@ -3091,9 +3161,11 @@ const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"
 function rowHTML(v,o,s,y){return `<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}<span class="chev">›</span></button>`}
 function renderBars(){
   const t=now(),y=you(),c=collectedMap(),g=G();
-  const tabs=g?[["zone",CR(g)?"Nearby":"My zone"],["other","Explore"],["been","Been"],["nfu","Not for us"]]:[["all","Explore"],["been","Been"],["nfu","Not for us"]];
+  // one list, filtered: everything, the ones you've been to, the ones you've hidden (and your zone, mid-game)
+  const tabs=g?[["zone",CR(g)?"Nearby":"My zone"],["all","All"],["been","Been"],["nfu","Not for us"]]:[["all","All"],["been","Been"],["nfu","Not for us"]];
+  if(g&&S.barsFilterGame!==g.id){S.barsFilter="zone";S.barsFilterGame=g.id;save()}   // a new game opens on your zone
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
-  $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
+  $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
   const os=v=>openState(v,t);
   let intro="",rows=[],pins=[],extra="",fitTo=null;
@@ -3108,6 +3180,8 @@ function renderBars(){
       ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
       ...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
     pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
+    if(!CR(g)){const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
+      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this game.</p>`}
   }else if(f==="other"){
     const zIds=new Set((CR(g)?cruiseSet(g):inCircle(g.center,g.radius)).map(v=>v.id));
     const others=VENUES.filter(v=>!zIds.has(v.id)&&!S.nfu[v.id]).sort(sortD);
@@ -3124,7 +3198,7 @@ function renderBars(){
     pins=list.map(v=>({v,cls:"done"}));
   }else if(f==="nfu"){
     const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
-    intro=`Rooftops your crew would never go to. These never come up in a spin. Tap one to bring it back.`;
+    intro=`Rooftops you'd never go to. These never come up in a spin. Tap one to bring it back.`;
     rows=list.map(v=>rowHTML(v,os(v),"nfu",y));
     if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
@@ -3190,9 +3264,10 @@ $("testFab").onclick=()=>{
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
-   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
+   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tSB">Wheel sandbox</button><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
     if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();animateId="at:"+v.id;onLocation()};
+    $("tSB").onclick=()=>{closeSheet();setTimeout(wheelSandbox,250)};
     $("tJD").onclick=()=>{closeSheet();setTimeout(jackpotDemo,250)};
     if($("tWC"))$("tWC").onclick=()=>{const g=G();g.wplan=(g.wplan||[]).concat([g.visits.length]);g.wild=null;delete g.dealt;save();closeSheet();render()};
     if($("tJP"))$("tJP").onclick=()=>{const g=G();delete g.jp;g.jpLeg=0;save();closeSheet();render()};   // jpLeg 0: the very next spin is the jackpot
