@@ -2134,8 +2134,8 @@ function renderQuick(){
     const opt=(key,title,sub,n)=>`<button class="opt" type="button" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
     b.innerHTML=top+`<div><div class="cityrow"><h1 class="q modename">R<i>&amp;</i>R</h1>${cityBtn()}</div><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are we spinning?</p></div>
       <div class="opts">${apWrap("__me",`<button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>`)}
-      ${listOpt(t)}
-      ${opt("*","Anywhere in "+S.city,"Any rooftop in "+S.city,cnt({type:"all"}))}
+      ${apWrap("__want",listOpt(t))}
+      ${apWrap("*",opt("*","Anywhere in "+S.city,"Any rooftop in "+S.city,cnt({type:"all"})))}
       <div class="eyebrow" style="margin-top:8px">Or pick a part of ${esc(S.city)}</div>
       ${REGIONS.map(r=>apWrap(r.name,opt(r.name,r.name,r.d,cnt({type:"region",name:r.name})))).join("")}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
@@ -2150,7 +2150,7 @@ function renderQuick(){
       <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
   let meP=null;
-  if(step===0)apBind(b,async k=>{if(k==="__me"){meP=await getOnce();return quickSet({from:{type:"me",lat:meP.lat,lng:meP.lng},r:2})}return quickSet({from:{type:"region",name:k}})},k=>k==="__me"?{c:meP,r:2}:null);else apClear();
+  if(step===0)apBind(b,async k=>{if(k==="__me"){meP=await getOnce();return quickSet({from:{type:"me",lat:meP.lat,lng:meP.lng},r:2})}if(k==="__want")return wantList();if(k==="*")return quickSet({from:{type:"all"}});return quickSet({from:{type:"region",name:k}})},k=>k==="__me"?{c:meP,r:2}:null);else apClear();
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=me?step-1:0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
   b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
@@ -2988,7 +2988,7 @@ async function apToggle(ap,k,getList,getGeo,force){
   if(apOpen!==k)return;
   const t=now(),L=L0.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||a.name.localeCompare(b.name)),id="apm"+(++apN);
   const st=v=>{const o=openState(v,t);return o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")};
-  body.innerHTML=`<div class="apmap" id="${id}"></div>${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">No rooftops this close. Try a part of town instead.</p>`}
+  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap My Want to try list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
     <div class="aplist" hidden>${L.map(v=>`<button class="aprow2${openOK(v,t)?"":" off"}" type="button" data-v="${v.id}"><span class="dot${openOK(v,t)?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${st(v)}</small></span><span class="chev">›</span></button>`).join("")}</div>`;
   body.hidden=false;
   const lb=body.querySelector(".apl"),ll=body.querySelector(".aplist");
