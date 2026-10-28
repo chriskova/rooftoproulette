@@ -1445,11 +1445,15 @@ html.fl .app{visibility:hidden}
 .bar.jpcard{position:relative}
 
 .fchips{gap:8px}
-.blists{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px;color:var(--muted);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
+.toast.on{transform:none;opacity:1;pointer-events:auto}
+.toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}
+.toast button{flex:none;background:none;border:1px solid rgba(245,184,61,.6);color:var(--amber);font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
+.blists{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.nfulink{grid-column:1/-1;justify-self:start;padding:2px 2px 0;font-size:13.5px}
 .blist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--s1);border:1px solid var(--line);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font:inherit}
 .blist b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1}
 .blist.want b{color:var(--amber)}
-.blist .bico{display:flex;height:24px;align-items:center;color:var(--dim)}.blist .bico svg{width:22px;height:22px}
 .blist span{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .blist:active{transform:scale(.97)}
 .lsbar{display:flex;align-items:center;gap:10px}.lsbar .lsearch{flex:1;min-width:0}
@@ -1971,7 +1975,7 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 
 /* ---------- router ---------- */
 const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
-function go(route){S.route=route;save();render()}
+function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();S.route=route;save();render()}
 function render(){
   if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
@@ -3128,7 +3132,7 @@ function renderPlay(){
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay()}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
-  const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();renderPlay()};
+  const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{const id=g.target;(g.skipped=g.skipped||[]).push(id);g.target=null;save();renderPlay();skipToast(id)};
   else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
@@ -3371,7 +3375,7 @@ function renderBars(){
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
   $("barsSeg").hidden=tabs.length<2;
   const nWant=Object.keys(S.want).filter(id=>byId(id)).length,nBeen=VENUES.filter(v=>c[v.id]||S.been[v.id]).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
-  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen],["nfu","Not for us",nNfu]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}">${k==="nfu"?`<i class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></i>`:`<b>${n}</b>`}<span>${l}</span></button>`).join("");
+  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
   $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
@@ -3452,6 +3456,15 @@ function barSheet(v){
   });
 }
 
+/* After an R&R skip: a quiet offer to put the bar on Not for us (gone after a few seconds) */
+let toastT=null;
+function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t)}
+  clearTimeout(toastT);t.innerHTML=html;t.classList.add("on");if(bind)bind(t);toastT=setTimeout(()=>t.classList.remove("on"),ms)}
+const hideToast=()=>{const t=$("toast");if(t)t.classList.remove("on");clearTimeout(toastT)};
+function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
+  toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Not for us</button>`,6000,()=>$("tNfu").onclick=()=>{
+    S.nfu[id]=1;const w=!!S.want[id];delete S.want[id];save();buzz(15);
+    toast(`<span><b>${esc(v.name)}</b> won't come up again</span><button type="button" id="tUndo">Undo</button>`,4500,()=>$("tUndo").onclick=()=>{delete S.nfu[id];if(w)S.want[id]=1;save();hideToast()})})}
 /* One of your lists: search to add (suggests as you type), ✕ to take one off */
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
