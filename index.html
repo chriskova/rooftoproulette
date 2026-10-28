@@ -850,6 +850,12 @@ dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;max-width:480px;width
 dialog.sheet.full{height:92dvh;max-height:92dvh;padding-bottom:0}
 .lshead{position:sticky;top:-10px;z-index:2;background:var(--s1);padding-top:10px;margin-top:-10px;padding-bottom:8px}
 .lsfoot{position:sticky;bottom:0;background:linear-gradient(rgba(20,24,32,0),var(--s1) 30%);padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));margin-top:4px}
+.cityrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.citybtn{display:inline-flex;align-items:center;gap:4px;background:var(--s1);border:1px solid var(--line);border-radius:99px;color:var(--text);font:inherit;font-size:14px;font-weight:700;padding:7px 10px 7px 13px;cursor:pointer;flex:none}
+.citybtn svg{width:15px;height:15px;color:var(--muted)}
+.lscity{color:var(--muted);font-weight:600}
+.lsalso{font-size:13px;color:var(--muted);margin-top:8px}.lsalso:empty{display:none}
+.lsalso button{background:none;border:0;color:var(--amber);font:inherit;font-weight:700;padding:2px;cursor:pointer}
 .lsclr{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
 .lsclr svg{width:12px;height:12px}
 dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
@@ -1611,7 +1617,7 @@ setTimeout(done,1200)})();</script>
 
   <!-- ROOFTOPS TAB -->
   <section class="view" id="v-bars" hidden>
-    <h1 class="q">Rooftops</h1>
+    <div class="cityrow"><h1 class="q">Rooftops</h1><span id="barsCity"></span></div>
     <div class="chips fchips" id="barsSeg"></div>
     <div class="blists" id="barsLists"></div>
     <div id="barsIntro"></div>
@@ -1712,7 +1718,7 @@ const tabIcons={play:I.dice,bars:I.pin,hist:I.trophy};
 /* ---------- state ---------- */
 let S={route:null,onboarded:false,intro:0,wiz:null,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null,tips:{},barsFilter:"all",last:{radius:1.5,len:60,newOnly:false},been:{},nfu:{},reports:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
-S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.reports=S.reports||[];
+S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.city=S.city||"Sydney";S.reports=S.reports||[];
 if(/[?&]test\b/.test(location.search))S.test=true;
 let H=[];try{H=JSON.parse(localStorage.getItem(HKEY)||"[]")||[]}catch(e){H=[]}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -1756,6 +1762,15 @@ function collectedMap(){ // id -> first date collected in a game
   if(S.game)S.game.visits.forEach(v=>add(v,v.arrivedAt));
   return m;
 }
+/* Cities: picked up from where you are, changeable from "Sydney ▾". Your lists are per bar, so per city. */
+const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631},{name:"Brisbane",lat:-27.4698,lng:153.0251},{name:"Perth",lat:-31.9523,lng:115.8613}];
+const cityOf=v=>v.city||"Sydney";
+function pickCity(p){if(!p||S.cityManual)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
+const cityBtn=()=>`<button class="citybtn" type="button" data-city>${esc(S.city)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
+function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a night somewhere else.</p>
+  <div class="opts">${CITIES.map(c=>`<button class="opt" type="button" data-c="${c.name}" ${c.live?"":"disabled"} role="radio" aria-checked="${S.city===c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?(S.city===c.name?"You're here":"Rooftops ready to spin"):"Coming soon"}</small></span></button>`).join("")}</div>`,
+  ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;save();closeSheet();render()}))}
+document.addEventListener("click",e=>{if(e.target.closest("[data-city]"))citySheet()});
 const listed=()=>VENUES.filter(v=>!S.nfu[v.id]);
 function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
 const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
@@ -1783,7 +1798,7 @@ function getOnce(){
   if(S.test)return Promise.resolve(S.fake||{lat:-33.8732,lng:151.2069});
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej({code:-1});
-    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
   });
 }
 async function permState(){if(S.test)return "granted";try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
@@ -2079,8 +2094,8 @@ function quickSet(q){ // every rooftop that could come up, open or not
   return base.filter(v=>areaOf(v).reg===q.from.name);
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
-const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed);
-const listOpt=t=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?"Only spin the Sydney bars on your shortlist":"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
+const listOpt=t=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Want to try":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in Sydney":q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -2090,29 +2105,27 @@ async function quickNearMe(){
 }
 const NUDGES=[{m:20,t:"20 minutes",s:"Keep it moving"},{m:30,t:"30 minutes",s:"A drink and a chat"},{m:45,t:"45 minutes",s:"Settle in"},{m:0,t:"Don't nudge us",s:"We'll spin when we're ready"}];
 function renderQuick(){
-  const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0;
+  const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0,me=q.from&&q.from.type==="me";
   if(!S.game)$("stage").innerHTML="";
-  let top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  let top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(me?(step+1)/3:step===0?1/2:1)*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   const qp=[];
-  const f0=q.from&&q.from.type==="list"?q.base||{type:"city"}:q.from;
-  if(step>0&&q.from)qp.push([0,f0.type==="me"?I.pin:I.city,f0.type==="me"?"Near me":"Sydney"]);
-  if(step>1&&q.from&&q.from.type==="list")qp.push([1,I.sparkle,"Want to try"]);
-  else if(step>1&&q.from)qp.push([1,q.from.type==="me"?I.walk:I.city,q.from.type==="me"?(QDIST.find(o=>o.r===q.r)||{t:""}).t:esc(q.from.name||"Anywhere")]);
+  if(step>0&&q.from)qp.push([0,me?I.pin:q.from.type==="list"?I.sparkle:I.city,me?"Near me":q.from.type==="list"?"Want to try":esc(q.from.name||"Anywhere")]);
+  if(step>1&&me)qp.push([1,I.walk,(QDIST.find(o=>o.r===q.r)||{t:""}).t]);
   top+=(qp.length?`<div class="chips zsum picks">${qp.map(([k,ic,txt])=>`<button class="chip" type="button" data-qs="${k}">${ic} ${txt}</button>`).join("")}</div>`:"");
   if(step===0){
-    const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
-    b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
-      <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>
-      <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick a part of town</small></span></button>${soon}</div>
-      ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
-  }else if(step===1&&q.from&&q.from.type==="me"){
-    b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1><p class="sub" style="margin:6px 0 0">Measured from wherever you are when you spin.</p></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
-      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}${listOpt(t)}</div>`;
-  }else if(step===1){
+    // one screen: near you, your list, or a part of town (the city's picked up from where you are)
     const cnt=from=>quickSet({from}).filter(v=>openOK(v,t)).length;
     const opt=(key,title,sub,n)=>`<button class="opt" type="button" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
-    b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1><p class="sub" style="margin:6px 0 0">After your first bar, spins stay close to where you are.</p></div>
-      <div class="opts">${listOpt(t)}${opt("*","Anywhere","Any rooftop in Sydney",cnt({type:"all"}))}${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>`;
+    b.innerHTML=top+`<div><div class="cityrow"><h1 class="q modename">R<i>&amp;</i>R</h1>${cityBtn()}</div><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are we spinning?</p></div>
+      <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>
+      ${listOpt(t)}
+      ${opt("*","Anywhere in "+S.city,"Any rooftop in "+S.city,cnt({type:"all"}))}
+      <div class="eyebrow" style="margin-top:8px">Or pick a part of ${esc(S.city)}</div>
+      ${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>
+      ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
+  }else if(step===1&&me){
+    b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1><p class="sub" style="margin:6px 0 0">Measured from wherever you are when you spin.</p></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
+      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
   }else{
     const beenN=q.from&&q.from.type==="list"?0:VENUES.filter(v=>!isNew(v.id)).length;
     if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
@@ -2120,14 +2133,13 @@ function renderQuick(){
       ${beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:""}
       <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
-  $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}if(q.from&&q.from.type==="list"&&step===2){q.from=q.base||{type:"city"};q.step=1}else q.step=step-1;q.note=null;save();renderQuick()};
+  $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=me?step-1:0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
-  b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;if(q.from&&q.from.type==="list"&&q.step<2)q.from=q.base||{type:"city"};q.note=null;save();renderQuick()});
+  b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
   if($("qMe"))$("qMe").onclick=quickNearMe;
   if($("qList"))$("qList").onclick=()=>{const o=wantList().filter(v=>openOK(v,now())).length;
-    if(o>=2){q.base=q.from;q.from={type:"list",name:"Want to try"};q.newOnly=false;q.step=2;q.note=null;save();renderQuick();return}
+    if(o>=2){q.from={type:"list",name:"Want to try"};q.newOnly=false;q.step=2;q.note=null;save();renderQuick();return}
     listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",renderQuick)};
-  if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
   b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;save();renderQuick()});
   b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa;q.from=n==="*"?{type:"all",name:"Anywhere"}:{type:"region",name:n};q.step=2;save();renderQuick()});
   if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();renderQuick()};
@@ -2174,7 +2186,7 @@ function renderWiz(){
     const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
     const anyOpen=areas.some(o=>o.n>0);
     const meSel=w.start&&w.start.type==="me";
-    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">Rush Hour</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Stuck somewhere quiet later? You can move it once a game.</p></div>
+    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">Rush Hour</div>${cityBtn()}</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Stuck somewhere quiet later? You can move it once a game.</p></div>
       <div class="opts">
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
@@ -3380,8 +3392,8 @@ function renderBars(){
   const tabs=g?[["zone",CR(g)?(g.cz.type==="list"?"Your list":"Nearby"):"My zone"],["all","All"]]:[["all","All"]];
   if(g&&S.barsFilterGame!==g.id){S.barsFilter="zone";S.barsFilterGame=g.id;save()}   // a new game opens on your zone
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
-  $("barsSeg").hidden=tabs.length<2;
-  const nWant=Object.keys(S.want).filter(id=>byId(id)).length,nBeen=VENUES.filter(v=>c[v.id]||S.been[v.id]).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
+  $("barsSeg").hidden=tabs.length<2;$("barsCity").innerHTML=cityBtn();
+  const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
   $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
   $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
@@ -3484,8 +3496,9 @@ function listSheet(k,msg,after){
   const del=id=>{delete S[k][id];save()};
   // opens full height on every rooftop: the ones on your list ticked at the top, the rest underneath.
   // Tap to tick or untick. Typing narrows it. The order holds while you tick, so nothing jumps.
-  sheet(`<div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${L.t}</h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
-    <div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Search rooftops" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div></div>
+  let city=S.city;
+  sheet(`<div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${L.t} <span class="lscity" id="lsCity">· ${esc(city)}</span></h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
+    <div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Search rooftops" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div><div class="lsalso" id="lsAlso"></div></div>
     <div class="lsitems" id="lsItems"></div>
     <div class="lsfoot"><button class="btn" type="button" id="lsDone">Done</button></div>`,()=>{
     $("sheet").classList.add("full");
@@ -3493,9 +3506,12 @@ function listSheet(k,msg,after){
     const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
     let order=[];
     const sortNow=()=>{const s_=fold(q.value.trim());
-      order=VENUES.filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||(s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1):0)||a.name.localeCompare(b.name))};
+      order=VENUES.filter(v=>cityOf(v)===city).filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||(s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1):0)||a.name.localeCompare(b.name))};
     const paint=()=>{
-      $("lsClr").hidden=!q.value;
+      $("lsClr").hidden=!q.value;$("lsCity").textContent="· "+city;
+      const also=CITIES.map(x=>({x,n:VENUES.filter(v=>cityOf(v)===x.name&&has(v.id)).length})).filter(o=>o.x.name!==city&&o.n);
+      $("lsAlso").innerHTML=also.length?`Also saved: ${also.map(o=>`<button type="button" data-cy="${o.x.name}">${o.x.name} ${o.n} ›</button>`).join(" ")}`:"";
+      $("lsAlso").querySelectorAll("[data-cy]").forEach(b=>b.onclick=()=>{city=b.dataset.cy;q.value="";sortNow();paint();$("sheet").scrollTop=0});
       $("lsItems").innerHTML=order.length?order.map(v=>{const on=has(v.id),fixed=k==="been"&&c[v.id]&&!S.been[v.id];
         return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${fixed?esc(v.area)+" · Visited in a game":sub(v)}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
         :`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
