@@ -2080,6 +2080,7 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed);
+const listOpt=t=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?"Only spin the Sydney bars on your shortlist":"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Want to try":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in Sydney":q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -2093,24 +2094,25 @@ function renderQuick(){
   if(!S.game)$("stage").innerHTML="";
   let top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${(step+1)/3*100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   const qp=[];
-  if(step>0&&q.from)qp.push([0,q.from.type==="me"?I.pin:q.from.type==="list"?I.sparkle:I.city,q.from.type==="me"?"Near me":q.from.type==="list"?"Want to try":"Sydney"]);
-  if(step>1&&q.from&&q.from.type!=="list")qp.push([1,q.from.type==="me"?I.walk:I.city,q.from.type==="me"?(QDIST.find(o=>o.r===q.r)||{t:""}).t:esc(q.from.name||"Anywhere")]);
+  const f0=q.from&&q.from.type==="list"?q.base||{type:"city"}:q.from;
+  if(step>0&&q.from)qp.push([0,f0.type==="me"?I.pin:I.city,f0.type==="me"?"Near me":"Sydney"]);
+  if(step>1&&q.from&&q.from.type==="list")qp.push([1,I.sparkle,"Want to try"]);
+  else if(step>1&&q.from)qp.push([1,q.from.type==="me"?I.walk:I.city,q.from.type==="me"?(QDIST.find(o=>o.r===q.r)||{t:""}).t:esc(q.from.name||"Anywhere")]);
   top+=(qp.length?`<div class="chips zsum picks">${qp.map(([k,ic,txt])=>`<button class="chip" type="button" data-qs="${k}">${ic} ${txt}</button>`).join("")}</div>`:"");
   if(step===0){
     const soon=["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("");
     b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are you?</p></div>
       <div class="opts"><button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>
-      <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick a part of town</small></span></button>
-      ${(()=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?"Only spin the bars on your shortlist":"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`})()}${soon}</div>
+      <button class="opt" type="button" id="qSyd"><span class="ic">${I.city}</span><span class="t"><b>Sydney</b><small>Pick a part of town</small></span></button>${soon}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
   }else if(step===1&&q.from&&q.from.type==="me"){
     b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1><p class="sub" style="margin:6px 0 0">Measured from wherever you are when you spin.</p></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
-      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
+      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}${listOpt(t)}</div>`;
   }else if(step===1){
     const cnt=from=>quickSet({from}).filter(v=>openOK(v,t)).length;
     const opt=(key,title,sub,n)=>`<button class="opt" type="button" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
     b.innerHTML=top+`<div><h1 class="q">Which part of Sydney?</h1><p class="sub" style="margin:6px 0 0">After your first bar, spins stay close to where you are.</p></div>
-      <div class="opts">${opt("*","Anywhere","Any rooftop in Sydney",cnt({type:"all"}))}${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>`;
+      <div class="opts">${listOpt(t)}${opt("*","Anywhere","Any rooftop in Sydney",cnt({type:"all"}))}${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>`;
   }else{
     const beenN=q.from&&q.from.type==="list"?0:VENUES.filter(v=>!isNew(v.id)).length;
     if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
@@ -2118,12 +2120,12 @@ function renderQuick(){
       ${beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:""}
       <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
-  $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=q.from&&q.from.type==="list"?0:step-1;q.note=null;save();renderQuick()};
+  $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}if(q.from&&q.from.type==="list"&&step===2){q.from=q.base||{type:"city"};q.step=1}else q.step=step-1;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
-  b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
+  b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;if(q.from&&q.from.type==="list"&&q.step<2)q.from=q.base||{type:"city"};q.note=null;save();renderQuick()});
   if($("qMe"))$("qMe").onclick=quickNearMe;
   if($("qList"))$("qList").onclick=()=>{const o=wantList().filter(v=>openOK(v,now())).length;
-    if(o>=2){q.from={type:"list",name:"Want to try"};q.newOnly=false;q.step=2;q.note=null;save();renderQuick();return}
+    if(o>=2){q.base=q.from;q.from={type:"list",name:"Want to try"};q.newOnly=false;q.step=2;q.note=null;save();renderQuick();return}
     listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",renderQuick)};
   if($("qSyd"))$("qSyd").onclick=()=>{q.from={type:"city"};q.step=1;q.note=null;save();renderQuick()};
   b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;save();renderQuick()});
