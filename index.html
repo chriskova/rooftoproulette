@@ -1448,7 +1448,8 @@ html.fl .app{visibility:hidden}
 .blists{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .blist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--s1);border:1px solid var(--line);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font:inherit}
 .blist b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1}
-.blist.want b{color:var(--amber)}.blist.nfu b{color:var(--dim)}
+.blist.want b{color:var(--amber)}
+.blist .bico{display:flex;height:24px;align-items:center;color:var(--dim)}.blist .bico svg{width:22px;height:22px}
 .blist span{font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
 .blist:active{transform:scale(.97)}
 .lsbar{display:flex;align-items:center;gap:10px}.lsbar .lsearch{flex:1;min-width:0}
@@ -3370,7 +3371,7 @@ function renderBars(){
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
   $("barsSeg").hidden=tabs.length<2;
   const nWant=Object.keys(S.want).filter(id=>byId(id)).length,nBeen=VENUES.filter(v=>c[v.id]||S.been[v.id]).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
-  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen],["nfu","Not for us",nNfu]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("");
+  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen],["nfu","Not for us",nNfu]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}">${k==="nfu"?`<i class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></i>`:`<b>${n}</b>`}<span>${l}</span></button>`).join("");
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
   $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
