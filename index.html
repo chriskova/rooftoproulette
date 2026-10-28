@@ -847,6 +847,11 @@ a.btn{text-decoration:none}
 
 /* sheets */
 dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;max-width:480px;width:100%;border:0;border-radius:24px 24px 0 0;background:var(--s1);color:var(--text);padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85dvh;overflow-y:auto}
+dialog.sheet.full{height:92dvh;max-height:92dvh;padding-bottom:0}
+.lshead{position:sticky;top:-10px;z-index:2;background:var(--s1);padding-top:10px;margin-top:-10px;padding-bottom:8px}
+.lsfoot{position:sticky;bottom:0;background:linear-gradient(rgba(20,24,32,0),var(--s1) 30%);padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));margin-top:4px}
+.lsclr{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
+.lsclr svg{width:12px;height:12px}
 dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
 dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes up{from{transform:translateY(40%)}to{transform:none}}
@@ -1481,7 +1486,7 @@ html.fl .app{visibility:hidden}
 .lsadd b,.lsrow b{font-size:15px}.lsadd small,.lsrow small{font-size:12.5px;color:var(--muted)}
 .lsadd .pl{width:30px;height:30px;border-radius:50%;background:var(--amber);color:var(--amber-ink);display:grid;place-items:center;flex:none}
 .lsadd .pl svg{width:16px;height:16px}
-.lsitems{margin-top:14px}
+.lsitems{margin-top:4px}
 .lsrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .lsrow:last-child{border-bottom:0}
 .lsx{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--muted);display:grid;place-items:center;flex:none;cursor:pointer}
@@ -2918,7 +2923,7 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){$("sheet").classList.remove("full");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
@@ -3475,39 +3480,32 @@ function listSheet(k,msg,after){
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been")S.been[id]=1;else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
-  let searching=false;
-  sheet(`<h3 tabindex="-1" autofocus style="outline:0">${L.t}</h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
-    <div class="lsbar"><div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Add a rooftop" autocomplete="off" autocapitalize="off" spellcheck="false"></div><button class="lscancel" type="button" id="lsCancel" hidden>Cancel</button></div>
+  // opens full height on every rooftop: the ones on your list ticked at the top, the rest underneath.
+  // Tap to tick or untick. Typing narrows it. The order holds while you tick, so nothing jumps.
+  sheet(`<div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${L.t}</h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
+    <div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Search rooftops" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div></div>
     <div class="lsitems" id="lsItems"></div>
-    <div class="acts"><button class="btn line" type="button" id="lsDone">Done</button></div>`,()=>{
+    <div class="lsfoot"><button class="btn" type="button" id="lsDone">Done</button></div>`,()=>{
+    $("sheet").classList.add("full");
     const q=$("lsQ"),t=now();
     const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
+    let order=[];
+    const sortNow=()=>{const s_=fold(q.value.trim());
+      order=VENUES.filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||(s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1):0)||a.name.localeCompare(b.name))};
     const paint=()=>{
-      $("lsCancel").hidden=!searching;
-      if(searching){
-        // every rooftop, narrowed as you type; tick to add, tick again to take off
-        const s_=fold(q.value.trim());
-        const m=VENUES.filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1)||a.name.localeCompare(b.name):a.name.localeCompare(b.name));
-        $("lsItems").innerHTML=m.length?m.map(v=>{const on=has(v.id),fixed=k==="been"&&c[v.id]&&!S.been[v.id];
-          return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${fixed?"Visited in a game":sub(v)}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
-          :`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
-        $("lsItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};b.onclick=()=>{const id=b.dataset.t;if(has(id))del(id);else add(id);paint();renderBars()}});
-        return;
-      }
-      const items=VENUES.filter(v=>has(v.id)).sort((a,b)=>a.name.localeCompare(b.name));
-      $("lsItems").innerHTML=items.length?items.map(v=>{const fixed=k==="been"&&c[v.id]&&!S.been[v.id];
-        return `<div class="lsrow"><span class="t"><b>${esc(v.name)}</b><small>${fixed?esc(v.area)+" · Visited in a game":sub(v)}</small></span>${fixed?"":`<button class="lsx" type="button" data-d="${v.id}" aria-label="Take ${esc(v.name)} off">${I.x}</button>`}</div>`}).join("")
-        :`<div class="lsempty">Nothing on here yet. Tap the search box to add some.</div>`;
-      $("lsItems").querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{del(b.dataset.d);paint();renderBars()});
+      $("lsClr").hidden=!q.value;
+      $("lsItems").innerHTML=order.length?order.map(v=>{const on=has(v.id),fixed=k==="been"&&c[v.id]&&!S.been[v.id];
+        return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${fixed?esc(v.area)+" · Visited in a game":sub(v)}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
+        :`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
+      $("lsItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};b.onclick=()=>{const id=b.dataset.t;if(has(id))del(id);else add(id);paint();renderBars()}});
     };
-    q.onfocus=()=>{if(!searching){searching=true;paint()}};
+    q.oninput=()=>{sortNow();paint();$("sheet").scrollTop=0};
+    $("lsClr").onclick=()=>{q.value="";sortNow();paint();q.blur()};
     // start scrolling and the keyboard gets out of the way (the search stays as typed)
     {let y0=null;const it=$("lsItems");
       it.addEventListener("touchstart",e=>{y0=e.touches[0].clientY},{passive:true});
       it.addEventListener("touchmove",e=>{if(y0!==null&&Math.abs(e.touches[0].clientY-y0)>8&&document.activeElement===q){q.blur();y0=null}},{passive:true});}
-    q.oninput=paint;
-    $("lsCancel").onclick=()=>{searching=false;q.value="";q.blur();paint()};
-    paint();
+    sortNow();paint();
     $("lsDone").onclick=()=>{closeSheet();if(after)after()};
   });
 }
