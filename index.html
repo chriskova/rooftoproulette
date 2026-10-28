@@ -1429,6 +1429,22 @@ html.fl .app{visibility:hidden}
 #v-home{overflow:hidden}
 
 .mv.on>.opt{border-color:var(--amber)}
+.ap{background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);overflow:hidden;transition:border-color .12s}
+.ap:has(.opt[aria-checked="true"]){border-color:var(--amber);background:var(--amber-soft)}
+.ap.open{border-color:#3a4150}
+.aprow{display:flex;align-items:stretch}
+.ap .opt{border:0;background:none;border-radius:0;flex:1;min-width:0;padding-right:10px}
+.ap .opt[aria-checked="true"]{background:none}
+.apx{flex:none;width:46px;background:none;border:0;border-left:1px solid var(--line);color:var(--muted);display:grid;place-items:center;cursor:pointer}
+.apx svg{width:20px;height:20px;transition:transform .2s}
+.apx[aria-expanded="true"] svg{transform:rotate(180deg);color:var(--amber)}
+.apbody{padding:0 12px 10px;border-top:1px solid var(--line)}
+.apmap{height:190px;border-radius:12px;overflow:hidden;background:#0E1117;margin-top:12px}
+.apl{padding:10px 2px 2px;color:var(--amber)}
+.aplist{display:flex;flex-direction:column}
+.aprow2{display:flex;align-items:center;gap:10px;padding:10px 2px;background:none;border:0;border-top:1px solid var(--line);color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.aprow2 .t{flex:1;min-width:0;display:flex;flex-direction:column}.aprow2 b{font-size:14.5px}.aprow2 small{font-size:12.5px;color:var(--muted)}
+.aprow2.off b{color:var(--muted)}.aprow2 .chev{color:var(--dim)}
 .mvx{padding:10px 2px 6px;display:flex;flex-direction:column;gap:10px}
 .mvmap{height:170px;border-radius:14px;overflow:hidden;background:#0E1117}
 .mvx .note{margin:0}
@@ -2121,7 +2137,7 @@ function renderQuick(){
       ${listOpt(t)}
       ${opt("*","Anywhere in "+S.city,"Any rooftop in "+S.city,cnt({type:"all"}))}
       <div class="eyebrow" style="margin-top:8px">Or pick a part of ${esc(S.city)}</div>
-      ${REGIONS.map(r=>opt(r.name,r.name,r.d,cnt({type:"region",name:r.name}))).join("")}</div>
+      ${REGIONS.map(r=>apWrap(r.name,opt(r.name,r.name,r.d,cnt({type:"region",name:r.name})))).join("")}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
   }else if(step===1&&me){
     b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1><p class="sub" style="margin:6px 0 0">Measured from wherever you are when you spin.</p></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
@@ -2133,6 +2149,7 @@ function renderQuick(){
       ${beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:""}
       <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
+  if(step===0)apBind(b,k=>quickSet({from:{type:"region",name:k}}),()=>null);else apClear();
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=me?step-1:0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
   b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
@@ -2191,11 +2208,10 @@ function renderWiz(){
         <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
         <div class="note" id="meNote" hidden></div>
         
-        ${REGIONS.map(r=>{const l=areas.filter(o=>o.a.reg===r.name);return l.length?`<div class="eyebrow" style="margin-top:10px">${r.name}</div>`+l.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`).join(""):""}).join("")}
-        <div class="eyebrow" style="margin-top:10px">Other cities</div>
-        ${["Melbourne","Brisbane","Perth"].map(c=>`<button class="opt" type="button" disabled><span class="ic">${I.city}</span><span class="t"><b>${c}</b><small>Coming soon</small></span></button>`).join("")}
+        ${REGIONS.map(r=>{const l=areas.filter(o=>o.a.reg===r.name);return l.length?`<div class="eyebrow" style="margin-top:10px">${r.name}</div>`+l.map(o=>apWrap(o.a.name,`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`)).join(""):""}).join("")}
       </div>`;
     if(!anyOpen)body.insertAdjacentHTML("afterbegin",`<div class="banner"><b>It's early.</b> Most rooftops open later in the day. You can set up now and start once they're open.</div>`);
+    apBind(body,k=>playable(inCircle(AREAS.find(x=>x.name===k),1.5),false),k=>({c:AREAS.find(x=>x.name===k),r:1.5}));
     body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
     $("optMe").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
     if(w.meNote){$("meNote").hidden=false;$("meNote").innerHTML=w.meNote}
@@ -2950,6 +2966,31 @@ function moveOptions(){
   const g=G(),t=now(),from=fromPoint();
   return GAME_AREAS().filter(a=>dist(a,g.center)>500).map(a=>({a,open:playable(inCircle(a,g.radius),g.newOnly).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
    .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
+}
+/* Peek at an area before you pick it: a chevron on the option opens a map of its bars (tap a pin
+   for the bar), with the full list a tap away. One open at a time. */
+let apMaps=[],apOpen=null,apN=0;
+const apClear=()=>{apMaps.forEach(m=>{try{m.remove()}catch(e){}});apMaps=[]};
+const apWrap=(key,opt)=>`<div class="ap" data-apk="${esc(key)}"><div class="aprow">${opt}<button class="apx" type="button" aria-label="See the bars here" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="apbody" hidden></div></div>`;
+function apBind(root,getList,getGeo){apClear();root.querySelectorAll(".ap").forEach(ap=>{const k=ap.dataset.apk;ap.querySelector(".apx").onclick=()=>apToggle(ap,k,getList,getGeo);if(apOpen===k)apToggle(ap,k,getList,getGeo,true)})}
+async function apToggle(ap,k,getList,getGeo,force){
+  const body=ap.querySelector(".apbody"),btn=ap.querySelector(".apx");
+  if(!body.hidden&&!force){body.hidden=true;btn.setAttribute("aria-expanded","false");ap.classList.remove("open");apOpen=null;return}
+  const host=ap.closest(".opts")||document;
+  host.querySelectorAll(".ap.open").forEach(o=>{if(o!==ap){o.classList.remove("open");o.querySelector(".apbody").hidden=true;o.querySelector(".apx").setAttribute("aria-expanded","false")}});
+  apOpen=k;ap.classList.add("open");btn.setAttribute("aria-expanded","true");
+  const t=now(),L=getList(k).slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||a.name.localeCompare(b.name)),id="apm"+(++apN);
+  const st=v=>{const o=openState(v,t);return o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")};
+  body.innerHTML=`<div class="apmap" id="${id}"></div><button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>
+    <div class="aplist" hidden>${L.map(v=>`<button class="aprow2${openOK(v,t)?"":" off"}" type="button" data-v="${v.id}"><span class="dot${openOK(v,t)?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${st(v)}</small></span><span class="chev">›</span></button>`).join("")}</div>`;
+  body.hidden=false;
+  const lb=body.querySelector(".apl"),ll=body.querySelector(".aplist");
+  lb.onclick=()=>{ll.hidden=!ll.hidden;lb.textContent=ll.hidden?`Show the ${L.length} bars as a list`:"Hide the list";lb.setAttribute("aria-expanded",String(!ll.hidden))};
+  body.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.v)));
+  if(!force)setTimeout(()=>ap.scrollIntoView({block:"nearest",behavior:"smooth"}),60);
+  const m=await makeMap(id);if(!m)return;apMaps.push(m);const g_=getGeo(k);
+  if(g_&&g_.r){m.circle(g_.c,g_.r);m.fitZone(g_.c,g_.r)}else if(L.length)m.fitPts(L,15);
+  L.forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
 }
 let mvMaps=[];
 function openMove(free){
