@@ -1863,7 +1863,7 @@ const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 // rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
 const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
 // Rush Hour: "skip" only leaves out bars you've been to in a past game (your own Been list doesn't count here).
-function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!FAR.has(v.id)&&(!newOnly||!c[v.id]))}   // Rush Hour: Not for us doesn't apply, you get 3 vetoes instead
+function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!FAR.has(v.id)&&(!newOnly||!c[v.id]))}   // Rush Hour: Pass doesn't apply, you get 3 vetoes instead
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
 function nextOpen(list,t){ // earliest opening time later today among closed bars
@@ -2183,12 +2183,12 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
-const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
-const quickLabel=q=>q.from.type==="list"?"Want to try":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
   try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000)q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};q.step=1}
-  catch(e){q.note="Couldn't find you just now. Try again, or spin from your Want to try list."}
+  catch(e){q.note="Couldn't find you just now. Try again, or spin from your Hit list."}
   save();renderQuick();
 }
 // smooth distance slider: 0–970 = 500 m to 15 km (finer at the short end), the last bit = the whole city (r 0)
@@ -2224,21 +2224,21 @@ function rrZoneBind(z,me,newOnly,onPaint){
     m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
     m.onIdle(()=>{if(lock||!z.r)return;save();paint(true)})});
 }
-/* mid-game: move or resize where an R&R night spins, or switch to the Want to try list */
+/* mid-game: move or resize where an R&R night spins, or switch to the Hit list list */
 function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
   const me=you()||fromPoint(),cz=g.cz,m=mode||(cz.type==="list"?"list":"map");
   const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
   const L=wantList(),lo=L.filter(v=>openOK(v,now())).length;
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
   sheet(`<div class="rzsheet"><h3>Spin zone</h3>
-    <div class="seg" style="margin:10px 0 12px"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Want to try</button></div>
+    <div class="seg" style="margin:10px 0 12px"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list</button></div>
     ${m==="map"?rrZoneHTML():`<div class="rzlist"><b>${L.length} bar${L.length===1?"":"s"}</b> on your list · ${lo} open now<p class="note" style="margin:6px 0 0">${lo>=2?"Every spin lands on one of these.":"Add a couple more that are open now and the wheel spins these."}</p><button class="btn line" type="button" id="rzEdit" style="margin-top:12px">Edit the list</button></div>`}
     <div class="acts"><button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
     document.querySelectorAll(".rzsheet [data-m]").forEach(b=>b.onclick=()=>{if(b.dataset.m!==m)rrZoneSheet(b.dataset.m)});
     if(m==="map"){rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(!b)return;b.disabled=!P.open.length;
       b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
         apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}})}
-    else{$("rzOk").disabled=lo<2;$("rzOk").onclick=()=>apply({type:"list",name:"Want to try",r:null},"Want to try");
+    else{$("rzOk").disabled=lo<2;$("rzOk").onclick=()=>apply({type:"list",name:"Hit list",r:null},"Hit list");
       $("rzEdit").onclick=()=>listSheet("want","",()=>rrZoneSheet("list"))}
   });
 }
@@ -2259,7 +2259,7 @@ function renderQuick(){
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
     apBind(b,async k=>wantList(),()=>null);
     cta(`<button class="btn" id="qNext" type="button">${q.sel==="__want"?"Let's go":"Next"}</button>`,()=>$("qNext").onclick=async()=>{
-      if(q.sel==="__want"){q.from={type:"list",name:"Want to try"};q.newOnly=false;save();startCruise();return}
+      if(q.sel==="__want"){q.from={type:"list",name:"Hit list"};q.newOnly=false;save();startCruise();return}
       if(!S.test){const st=await permState();if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
       quickNearMe()});
   }else{
@@ -2281,7 +2281,7 @@ async function startCruise(){
   ac();const q=S.quick;
   let pos;try{pos=await getOnce()}catch(e){S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"||f.type==="spot"?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
-  const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Want to try":f.name;
+  const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
   S.game={id:"g"+now(),city:S.city,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"?f.lat:null,lng:f.type==="spot"?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:{lat:pos.lat,lng:pos.lng},areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
@@ -3104,7 +3104,7 @@ async function apToggle(ap,k,getList,getGeo,force){
   if(apOpen!==k)return;
   const t=now(),L=L0.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||a.name.localeCompare(b.name)),id="apm"+(++apN);
   const st=v=>{const o=openState(v,t);return o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")};
-  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap My Want to try list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
+  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap My Hit list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
     <div class="aplist" hidden>${L.map(v=>`<button class="aprow2${openOK(v,t)?"":" off"}" type="button" data-v="${v.id}"><span class="dot${openOK(v,t)?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${st(v)}</small></span><span class="chev">›</span></button>`).join("")}</div>`;
   body.hidden=false;
   const lb=body.querySelector(".apl"),ll=body.querySelector(".aplist");
@@ -3179,7 +3179,7 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
-    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${esc(g.cz.type==="list"?"Your Want to try list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
+    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${esc(g.cz.type==="list"?"Your Hit list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
@@ -3549,9 +3549,9 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 let bMap=null,bMapP=null,bMapFit=false;
 const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of town">${[["all","All of "+S.city],...REG().map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
-const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
+const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Pass</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
-const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
+const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Add to Hit list">${HEART}</button>`;
 function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${esc(v.vibe||v.area)}</small></span><span class="rt">${o.open?(y&&dist(y,v)<50000?mOrKm(dist(y,v)):""):o.temp?"Temp. closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
@@ -3560,7 +3560,7 @@ function bindRows(root){
 }
 function paintLists(){
   const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length;
-  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
+  $("barsLists").innerHTML=[["want","Hit list",nWant],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
 function sfield(el){if(!el||el._sf)return el;el._sf=1;
@@ -3626,7 +3626,7 @@ function renderBars(){
   $("barsCity").innerHTML=cityBtn();
   const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
   paintLists();
-  if(false)$("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
+  if(false)$("barsLists").innerHTML=[["want","Hit list",nWant],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   const today=new Date().toDateString(),ct=sydAt(t,TZ[S.city]);
   const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
@@ -3643,7 +3643,7 @@ function renderBars(){
     const live=inZ.filter(v=>!tonight.includes(v.id)&&os(v).open).sort(sortD);
     if(g.target){const i=live.findIndex(v=>v.id===g.target);if(i>0)live.unshift(live.splice(i,1)[0])}
     const closed=openOnly?[]:inZ.filter(v=>!tonight.includes(v.id)&&!os(v).open).sort(sortD);
-    intro=`${CR(g)?(g.cz.type==="list"?"Your Want to try list. Your spins only land on these.":g.cz.type==="spot"?"Rooftops your next spin could land on, "+esc(g.cz.name.toLowerCase().replace(/^around /,"around "))+".":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
+    intro=`${CR(g)?(g.cz.type==="list"?"Your Hit list. Your spins only land on these.":g.cz.type==="spot"?"Rooftops your next spin could land on, "+esc(g.cz.name.toLowerCase().replace(/^around /,"around "))+".":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
     rows=[...live.map(v=>rowHTML(v,os(v),v.id===g.target?"next":barStatus(v,c),y)),
       ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
       ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
@@ -3668,7 +3668,7 @@ function renderBars(){
     const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
     intro=`Rooftops you'd never go to. These never come up in a spin. Tap one to bring it back.`;
     rows=list.map(v=>rowHTML(v,os(v),"nfu",y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Pass".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
     const rg=S.barsRegion||"all";
@@ -3720,8 +3720,8 @@ function barSheet(v){
     ${visitsHTML(v)}
     <div class="acts">
       ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
-      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Want to try</b><small>On your shortlist for R&amp;R.</small></span><span class="sw"></span></button>
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in R&amp;R.</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>On your shortlist for R&amp;R.</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Never comes up in R&amp;R.</small></span><span class="sw"></span></button>
     </div>`,()=>{bindSheetCard(v,bf);bindVisits();
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
@@ -3729,7 +3729,7 @@ function barSheet(v){
   });
 }
 
-/* After an R&R skip: a quiet offer to put the bar on Not for us (gone after a few seconds) */
+/* After an R&R skip: a quiet offer to put the bar on Pass (gone after a few seconds) */
 let toastT=null;
 function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t);swipeAway(t)}
   t.style.transition="";t.style.translate="";
@@ -3744,16 +3744,16 @@ function swipeAway(t){let x0=null,y0=0,dx=0,dy=0;
   t.addEventListener("pointerup",end);t.addEventListener("pointercancel",end);t.style.touchAction="none"}
 const hideToast=()=>{const t=$("toast");if(t)t.classList.remove("on");clearTimeout(toastT)};
 function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
-  toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Not for us</button>`,6000,()=>$("tNfu").onclick=()=>{
+  toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Pass</button>`,6000,()=>$("tNfu").onclick=()=>{
     S.nfu[id]=1;const w=!!S.want[id];delete S.want[id];save();buzz(15);
     toast(`<span><b>${esc(v.name)}</b> won't come up again</span><button type="button" id="tUndo">Undo</button>`,4500,()=>$("tUndo").onclick=()=>{delete S.nfu[id];if(w)S.want[id]=1;save();hideToast()})})}
 /* One of your lists: search to add (suggests as you type), ✕ to take one off */
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
-  const L={want:{t:"Want to try",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Want to try list</b> and the wheel only spins these."},
-    been:{t:"Been to",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
-    nfu:{t:"Not for us",d:"Bars you'd never go to. These never come up in R&amp;R."}}[k];
+  const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Hit list</b> and the wheel only spins these."},
+    been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
+    nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been")S.been[id]=1;else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
