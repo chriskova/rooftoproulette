@@ -805,7 +805,7 @@ a.btn{text-decoration:none}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
-.rzsheet #rrMap{height:clamp(150px,calc(85dvh - 420px),300px)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
+.rzsheet #rrMap{height:clamp(150px,calc(85dvh - 430px),300px)}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
@@ -2224,17 +2224,22 @@ function rrZoneBind(z,me,newOnly,onPaint){
     m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
     m.onIdle(()=>{if(lock||!z.r)return;save();paint(true)})});
 }
-/* mid-game: move or resize where an R&R night spins */
-function rrZoneSheet(){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
-  const me=you()||fromPoint(),cz=g.cz,z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
-  sheet(`<div class="rzsheet"><h3>Where are we spinning?</h3><p class="note" style="margin:2px 0 10px">Drag the map or change the distance.</p>${rrZoneHTML()}
-    <div class="acts">${cz.type==="list"?"":`<button class="btn line" type="button" id="rzList">Spin my Want to try list instead</button>`}<button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
-    rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(b)b.disabled=!P.open.length;
-      $("rzOk").onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
-        g.cz=zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null};
-        g.radius=zz.r||g.radius;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()}});
-    if($("rzList"))$("rzList").onclick=()=>{if(wantList().filter(v=>openOK(v,now())).length<2){listSheet("want","Add at least 2 and the wheel only spins these.",rrZoneSheet);return}
-      g.cz={type:"list",name:"Want to try",r:null};if(g.areas[g.areas.length-1]!=="Want to try")g.areas.push("Want to try");save();closeSheet();renderPlay()};
+/* mid-game: move or resize where an R&R night spins, or switch to the Want to try list */
+function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
+  const me=you()||fromPoint(),cz=g.cz,m=mode||(cz.type==="list"?"list":"map");
+  const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
+  const L=wantList(),lo=L.filter(v=>openOK(v,now())).length;
+  const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
+  sheet(`<div class="rzsheet"><h3>Spin zone</h3>
+    <div class="seg" style="margin:10px 0 12px"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Want to try</button></div>
+    ${m==="map"?rrZoneHTML():`<div class="rzlist"><b>${L.length} bar${L.length===1?"":"s"}</b> on your list · ${lo} open now<p class="note" style="margin:6px 0 0">${lo>=2?"Every spin lands on one of these.":"Add a couple more that are open now and the wheel spins these."}</p><button class="btn line" type="button" id="rzEdit" style="margin-top:12px">Edit the list</button></div>`}
+    <div class="acts"><button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
+    document.querySelectorAll(".rzsheet [data-m]").forEach(b=>b.onclick=()=>{if(b.dataset.m!==m)rrZoneSheet(b.dataset.m)});
+    if(m==="map"){rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(!b)return;b.disabled=!P.open.length;
+      b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
+        apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}})}
+    else{$("rzOk").disabled=lo<2;$("rzOk").onclick=()=>apply({type:"list",name:"Want to try",r:null},"Want to try");
+      $("rzEdit").onclick=()=>listSheet("want","",()=>rrZoneSheet("list"))}
   });
 }
 function renderQuick(){
@@ -3174,7 +3179,7 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
-    ${cr?`<button type="button" id="mZone">${I.move}<span>Where we're spinning<small>${esc(g.cz.type==="list"?"Your Want to try list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
+    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${esc(g.cz.type==="list"?"Your Want to try list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
