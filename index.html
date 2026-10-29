@@ -2203,24 +2203,29 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 let rrMap=null;
-const rrZoneHTML=()=>`<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
+// a smooth range lo..hi km (log scale); R&R adds "All" at the end
+const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true};
+  const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*20)/20,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
+  return {toR,toX,ticks:o.ticks,all:false}};
+const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
       <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
       <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
-      <div class="rrticks">${[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([r,l])=>`<span style="left:${rrToX(r)/RRMAX*100}%">${l}</span>`).join("")}<span style="left:100%;transform:translateX(-100%)">All</span></div></div>
-      <button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>`;
-function rrZoneBind(z,me,newOnly,onPaint){
-  $("rrR").value=rrToX(z.r);
+      <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/RRMAX*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
+      ${o&&o.note?`<p class="note" style="margin:2px 0 0">${o.note}</p>`:""}
+      <div style="display:flex;gap:18px"><button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>${o&&o.locate?`<button class="txtbtn" type="button" id="rrLocate">Use my location</button>`:""}</div>`};
+function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
+  $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
-  const paint=full=>{if(!$("rrLbl"))return;const P=rrPool(z,now(),newOnly());
+  const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
     $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!me||!z.r||!moved();$("rrPin").hidden=!z.r;
     onPaint(P,z,moved());
     if(!rrMap)return;
-    if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off"))}
+    if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off"))}
     rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
   const fit=()=>{if(!rrMap)return;if(z.r)rrMap.fitZone(z,z.r);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-  $("rrR").oninput=()=>{z.r=rrToR(+$("rrR").value);paint(false)};
+  $("rrR").oninput=()=>{z.r=Z.toR(+$("rrR").value);paint(false)};
   $("rrR").onchange=()=>{save();paint(true);fit()};
   $("rrHome").onclick=()=>{z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
   paint(true);
@@ -2322,65 +2327,43 @@ const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}
-  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;
-  $("wProg").style.width=((w.step+1)/4*100)+"%";
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}
+  $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
   // Picks so far, under the progress bar. Tap one to jump back and change it.
   const picks=[];
-  if(w.step>0&&w.start)picks.push([0,I.pin,esc(w.start.type==="me"?"Near me":w.start.name)]);
-  if(w.step>1)picks.push([1,I.clock,w.len===60?"1 hour":"2 hours"]);
-  if(w.step>2&&w.radius!=null)picks.push([2,I.ring,rLabel(w.radius)]);
+  if(w.step>0)picks.push([0,I.clock,w.len===60?"1 hour":"2 hours"]);
+  if(w.step>1&&w.start)picks.push([1,I.pin,(w.start.type==="me"?"Near me":esc(w.start.name))+" · "+kmTxt(w.radius)]);
   $("wSum").innerHTML=picks.map(([k,ic,txt])=>`<button class="chip" type="button" data-s="${k}">${ic} ${txt}</button>`).join("");
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
-    const areas=GAME_AREAS().map(a=>{const all=playable(inCircle(a,1.5),false);return {a,n:all.filter(v=>openOK(v,t)).length,tot:all.length,opens:nextOpen(all,t)}}).filter(o=>o.tot>=3);
-    const anyOpen=areas.some(o=>o.n>0);
-    const meSel=w.start&&w.start.type==="me";
-    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">Rush Hour</div>${cityBtn()}</div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Stuck somewhere quiet later? You can move it once a game.</p></div>
-      <div class="opts">
-        ${apWrap("__me",`<button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>`)}
-        <div class="note" id="meNote" hidden></div>
-        
-        ${REG().map(r=>{const l=areas.filter(o=>o.a.reg===r.name);return l.length?`<div class="eyebrow" style="margin-top:10px">${r.name}</div>`+l.map(o=>apWrap(o.a.name,`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span>${o.n?`<span class="n"><b>${o.n}</b><small>open</small></span>`:`<span class="n"><small>${o.opens?"Opens "+o.opens:"Closed"}</small></span>`}</button>`)).join(""):""}).join("")}
-      </div>`;
-    if(!anyOpen)body.insertAdjacentHTML("afterbegin",`<div class="banner"><b>It's early.</b> Most rooftops open later in the day. You can set up now and start once they're open.</div>`);
-    let meP=null;
-    apBind(body,async k=>{if(k==="__me"){meP=await getOnce();return playable(inCircle(meP,1.5),false)}return playable(inCircle(AREAS.find(x=>x.name===k),1.5),false)},k=>k==="__me"?{c:meP,r:1.5}:{c:AREAS.find(x=>x.name===k),r:1.5});
-    body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
-    $("optMe").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
-    if(w.meNote){$("meNote").hidden=false;$("meNote").innerHTML=w.meNote}
-    cta(`<button class="btn" id="wNext" type="button" ${w.start?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
-  }
-  if(w.step===1){
-    body.innerHTML=`<div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
+    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">Rush Hour</div>${cityBtn()}</div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.bolt}</span><span class="t"><b>1 hour</b><small>Quick-fire. Keep it moving.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.hour2}</span><span class="t"><b>2 hours</b><small>More time, more rooftops. Room for a slower drink.</small></span></button>
       </div>`;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;w.radius=null;save();renderWiz()});
-    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=2;save();renderWiz()});
+    cta(`<button class="btn" id="wNext" type="button" ${w.len?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
+  }
+  if(w.step===1){
+    // drag the circle where you're starting; the size slides within what this game length allows
+    const R1=w.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]],note:"1-hour games go up to 1 km. Need more room? Pick 2 hours."}:{lo:1,hi:2,ticks:[[1,"1 km"],[1.5,"1.5 km"],[2,"2 km"]]};
+    const me=w.me||null;
+    if(!me&&!w._loc){w._loc=1;permState().then(st=>{if(st==="granted"&&S.route==="wiz"&&S.wiz===w&&w.step===1)useMe()})}
+    if(!w.z){const c0=me&&GAME_AREAS().some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
+    if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
+    body.innerHTML=`<div><h1 class="q">Where's your zone?</h1><p class="sub" style="margin:6px 0 0">Drag the map to where you're starting. Every spin lands inside the circle.</p></div>${rrZoneHTML(Object.assign({locate:!me},R1))}`;
+    const pool=(z,t)=>{const all=playable(inCircle(z,z.r),false);return {all,open:all.filter(v=>openOK(v,t))}};
+    rrZoneBind(w.z,me,()=>false,(P,z,moved)=>{
+      const shut=!P.all.some(v=>openState(v,now()).open);   // outside opening hours: count every rooftop so people can still plan ahead
+      $("rrN").textContent=shut?`${P.all.length} rooftops`:P.open.length?`${P.open.length} open`:"None open";
+      w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
+      const n=shut?P.all.length:P.open.length;
+      cta(`<button class="btn" id="wNext" type="button" ${n>=2?"":"disabled"}>${n>=2?"Next":"Not enough rooftops here. Drag or widen"}</button>`,()=>$("wNext").onclick=()=>{w.step=2;w.radius=z.r;save();renderWiz()})},Object.assign({pool},R1));
+    if($("rrLocate"))$("rrLocate").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
   }
   if(w.step===2){
-    // 1 hour: 500 m or 1 km, with 1.5 and 2 km shown greyed ("2-hour games only"; tapping offers to switch).
-    // 2 hours: 1 to 2 km.
-    const c=w.start,radii=w.len===60?RADII:RADII.filter(r=>r>=1),locked=r=>w.len===60&&r>1;
-    // Outside opening hours nothing is "open", but people still plan ahead or test, so count every rooftop instead.
-    const shut=radii.every(r=>!openIn(c,r,t).length);
-    const rows=radii.map(r=>{const all=playable(inCircle(c,r),false),o=shut?all:openIn(c,r,t);return {r,n:o.length,tot:all.length,hop:avgHop(o),thin:r<1&&all.length<4}});
-    let rec=recRadius(w.len);if(rec===0.5&&rows[0].thin)rec=1;
-    if(w.radius==null||!radii.includes(w.radius)||locked(w.radius)||(w.radius===0.5&&rows[0].thin))w.radius=rec;
-    const desc={0.5:"Minimal steps. Maximum rooftops.",1:w.len===60?"More variety. More walking.":"Minimal steps. Maximum rooftops.",1.5:"More travel, better variety.",2:"Go on, be that person."};
-    body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
-      <div class="opts">${rows.map(o=>`<button class="opt${locked(o.r)?" locked":""}" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.tot&&!o.thin?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${rLabel(o.r)}${locked(o.r)?`<span class="finetag">2-hour games only</span>`:""}</b><small>${o.thin?"Not enough rooftops around here.":desc[o.r]}</small>${o.hop&&!o.thin?`<span class="hop">${I.walk} About ${(o.hop<975?Math.round(o.hop/50)*50+" m":km(o.hop)).replace(" ","&nbsp;")} between bars</span>`:""}</span><span class="n">${o.thin?"":`<b>${o.n}</b><small>${shut?"rooftops":"open"}</small>`}</span></button>`).join("")}</div>`;
-    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{const r=+b.dataset.r;
-      if(locked(r)){sheet(`<h3>Switch to a 2-hour game?</h3><p class="note">${rLabel(r)} is too much ground for an hour, so it's 2-hour games only. You can still end the game whenever you like, and your scorecard's saved either way.</p>
-        <div class="acts"><button class="btn" type="button" id="lkY">Switch to 2 hours</button><button class="btn dark" type="button" id="lkN">Stay at 1 hour</button></div>`,
-        ()=>{$("lkN").onclick=closeSheet;$("lkY").onclick=()=>{closeSheet();w.len=120;w.radius=r;save();renderWiz()}});return}
-      w.radius=r;save();renderWiz()});
-    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
-  }
-  if(w.step===3){
     // Built once; leaving bars out only repaints the list, count and pins, so the map never reloads.
     const MAXOUT=3,c=w.start,col=collectedMap(),all=playable(inCircle(c,w.radius),false);
     const excl=w.excl||(w.excl=[]);
@@ -2436,15 +2419,14 @@ function zoneBarSheet(v){
   const zf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
   sheet(`${sheetCard(v,zf)}
     <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in":"Sit this one out tonight"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
-    $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();if(zonePaint&&w.step===3)zonePaint();else renderWiz()}});
+    $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();if(zonePaint&&w.step===2)zonePaint();else renderWiz()}});
 }
 async function useMe(){
   const w=S.wiz;
   try{
     const p=await getOnce();const n=openIn(p,1.5).length,tot=playable(inCircle(p,1.5),false).length;
-    if(tot<3){const near=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];w.start=null;w.meNote=`There aren't any rooftops near you (the nearest is ${km(dist(p,near))} away). Pick an area below and start from there.`}
-    else{w.start={type:"me",name:"you",lat:p.lat,lng:p.lng,n,sub:"Near "+nearestArea(p)};w.meNote=null}
-  }catch(e){w.meNote="Couldn't find you just now. Pick an area below instead."}
+    w.me={lat:p.lat,lng:p.lng};if(tot>=3)w.z={lat:p.lat,lng:p.lng,r:w.z?w.z.r:null};w.meNote=null;
+  }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }
 $("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
@@ -3505,7 +3487,7 @@ function renderEnd(){
   $("doneBtn").onclick=()=>go("home");
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
-  $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:3,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
+  $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
   if(S.rackEnd===r.id){delete S.rackEnd;save();if(n){const nb=box.querySelector(".tri>div b");if(nb)nb.textContent="0";setTimeout(()=>rackUp(box,n),700)}}
   requestAnimationFrame(async()=>{
