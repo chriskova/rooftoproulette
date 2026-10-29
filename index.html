@@ -3517,10 +3517,10 @@ function awards(r,st){
   if(st.longest&&st.longest.d>=1500)add("Long Haul",`${km(st.longest.d)} to ${nm(st.longest.to.id)}`);
   const longStay=st.arrived.filter(v=>v.leftAt&&v.leftAt-v.arrivedAt>=30*60000).sort((a,b)=>(b.leftAt-b.arrivedAt)-(a.leftAt-a.arrivedAt))[0];
   if(longStay)add("Settled In",`${hmm(longStay.leftAt-longStay.arrivedAt)} at ${nm(longStay.id)}`);
-  if((r.skipCost||0)>=6)add("Fussy Bunch",`${r.skipCost} minutes spent re-spinning`);
+  if((r.skipCost||0)>=6)add("Picky Lot",`${r.skipCost} minutes spent re-spinning`);
   const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
   if(r.areas.length>1)add("Change of Scenery",esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ")));
-  if(!r.skipCost&&!(r.skipped||[]).length&&n>=2)add("No Regrets","Took every spin the wheel gave you");
+  if(!r.skipCost&&!(r.skipped||[]).length&&n>=2)add("Trust the Wheel","Took every spin the wheel gave you");
   if(!L.length)add(n?"Top Floor":"Ground Floor",n?`${n} rooftop${n===1?"":"s"}, ${km(st.total)}`:"The wheel will be kinder next time");
   return L;
 }
