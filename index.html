@@ -805,7 +805,8 @@ a.btn{text-decoration:none}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
-.rzsheet #rrMap{height:clamp(150px,calc(85dvh - 430px),300px)}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
+.rzsheet #rrMap{height:max(200px,calc(92dvh - 380px))}.rzsheet .seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
+.segdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;vertical-align:middle;margin-left:4px;opacity:.8}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
@@ -2224,22 +2225,35 @@ function rrZoneBind(z,me,newOnly,onPaint){
     m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
     m.onIdle(()=>{if(lock||!z.r)return;save();paint(true)})});
 }
-/* mid-game: move or resize where an R&R night spins, or switch to the Hit list list */
+/* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
 function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
-  const me=you()||fromPoint(),cz=g.cz,m=mode||(cz.type==="list"?"list":"map");
+  const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode||cur;
   const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
-  const L=wantList(),lo=L.filter(v=>openOK(v,now())).length;
+  const nowTxt=cz.type==="list"?"your Hit list":esc(g.areas[g.areas.length-1])+(cz.r?" · "+kmTxt(cz.r):"");
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
-  sheet(`<div class="rzsheet"><h3>Spin zone</h3>
-    <div class="seg" style="margin:10px 0 12px"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list</button></div>
-    ${m==="map"?rrZoneHTML():`<div class="rzlist"><b>${L.length} bar${L.length===1?"":"s"}</b> on your list · ${lo} open now<p class="note" style="margin:6px 0 0">${lo>=2?"Every spin lands on one of these.":"Add a couple more that are open now and the wheel spins these."}</p><button class="btn line" type="button" id="rzEdit" style="margin-top:12px">Edit the list</button></div>`}
-    <div class="acts"><button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
+  sheet(`<div class="rzsheet rz-${m}"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Spin zone</h3><p class="note" style="margin:2px 0 10px">Now spinning: <b style="color:var(--text)">${nowTxt}</b></p>
+    <div class="seg"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me${cur==="map"?' <i class="segdot"></i>':""}</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list${cur==="list"?' <i class="segdot"></i>':""}</button></div>
+    ${m==="list"?`<p class="note" id="rzCount" style="margin:10px 0 8px"></p><div class="lsearch">${I.search}<div id="lsQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search rooftops"></div><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div>`:""}</div>
+    ${m==="map"?`<div style="margin-top:12px">${rrZoneHTML()}</div>`:`<div class="lsitems" id="lsItems"></div>`}
+    <div class="lsfoot"><button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;requestAnimationFrame(()=>{$("sheet").scrollTop=0;if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".rzsheet"))document.activeElement.blur()});
     document.querySelectorAll(".rzsheet [data-m]").forEach(b=>b.onclick=()=>{if(b.dataset.m!==m)rrZoneSheet(b.dataset.m)});
     if(m==="map"){rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(!b)return;b.disabled=!P.open.length;
       b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
-        apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}})}
-    else{$("rzOk").disabled=lo<2;$("rzOk").onclick=()=>apply({type:"list",name:"Hit list",r:null},"Hit list");
-      $("rzEdit").onclick=()=>listSheet("want","",()=>rrZoneSheet("list"))}
+        apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}});return}
+    // Hit list, right here: yours ticked at the top, tap to add or take off, search narrows
+    const q=sfield($("lsQ")),t=now();let order=[];
+    const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
+    const sortNow=()=>{const s_=fold(q.value.trim());order=VENUES.filter(v=>cityOf(v)===S.city).filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(S.want[a.id]?0:1)-(S.want[b.id]?0:1)||a.name.localeCompare(b.name))};
+    const paint=()=>{const L=wantList(),lo=L.filter(v=>openOK(v,now())).length;
+      $("rzCount").innerHTML=`<b style="color:var(--text)">${L.length} on your Hit list</b> · ${lo} open now${lo<2?". Add a couple that are open now and the wheel spins these.":""}`;
+      $("lsClr").hidden=!q.value;$("rzOk").disabled=lo<2;
+      $("lsItems").innerHTML=order.length?order.map(v=>{const on=!!S.want[v.id];return `<button class="lsrow lspick" type="button" data-t="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${sub(v)}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join(""):`<div class="lsempty">No rooftops match "${esc(q.value.trim())}".</div>`;
+      $("lsItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};b.onclick=()=>{const id=b.dataset.t;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();paint()}})};
+    q.oninput=()=>{sortNow();paint()};$("lsClr").onclick=()=>{q.value="";sortNow();paint();q.blur()};
+    {let y0=null;const it=$("lsItems");it.addEventListener("touchstart",e=>{y0=e.touches[0].clientY},{passive:true});it.addEventListener("touchmove",e=>{if(y0!==null&&Math.abs(e.touches[0].clientY-y0)>8&&document.activeElement===q){q.blur();y0=null}},{passive:true})}
+    sortNow();paint();
+    $("rzOk").onclick=()=>apply({type:"list",name:"Hit list",r:null},"Hit list");
   });
 }
 function renderQuick(){
