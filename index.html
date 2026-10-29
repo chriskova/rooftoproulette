@@ -1513,7 +1513,11 @@ html.fl .app{visibility:hidden}
 .rgrow .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
 .lsearch{display:flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--line);border-radius:12px;padding:0 12px}
 .lsearch svg{width:18px;height:18px;color:var(--muted);flex:none}
-.lsearch input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:16px;padding:13px 0}
+.lsearch input,.sfield{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--text);font:inherit;font-size:16px;padding:13px 0;white-space:nowrap;overflow:hidden;line-height:1.3;cursor:text;-webkit-user-modify:read-write-plaintext-only}
+.sfield:empty::before{content:attr(data-hint);color:var(--muted);pointer-events:none}
+.app.searching #appbar,.app.searching #v-bars .cityrow{display:none}
+.app.kb #tabs{display:none}
+.app.kb .view{padding-bottom:24px}
 .lsearch:focus-within{border-color:var(--amber)}
 .lsug{display:flex;flex-direction:column;margin-top:6px}
 .lsug:empty{display:none}
@@ -1648,7 +1652,7 @@ setTimeout(done,1200)})();</script>
   <!-- ROOFTOPS TAB -->
   <section class="view" id="v-bars" hidden>
     <div class="cityrow"><h1 class="q">Rooftops</h1><span id="barsCity"></span></div>
-    <div class="bsearch"><div class="lsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="bQ" type="text" inputmode="search" placeholder="Search rooftops or suburbs" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="lsclr" type="button" id="bQclr" hidden aria-label="Clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><button class="lscancel" type="button" id="bQx" hidden>Cancel</button></div>
+    <div class="bsearch"><div class="lsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><div id="bQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search rooftops or suburbs"></div><button class="lsclr" type="button" id="bQclr" hidden aria-label="Clear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><button class="lscancel" type="button" id="bQx" hidden>Cancel</button></div>
     <div id="barsMain" class="bmain">
     <div class="chips fchips" id="barsSeg"></div>
     <div class="blists" id="barsLists"></div>
@@ -2043,7 +2047,7 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 
 /* ---------- router ---------- */
 const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
-function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
@@ -3476,6 +3480,12 @@ function paintLists(){
   $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
+function sfield(el){if(!el||el._sf)return el;el._sf=1;
+  Object.defineProperty(el,"value",{get(){return (this.textContent||"").replace(/\n/g," ")},set(v){this.textContent=v}});
+  el.addEventListener("input",()=>{if(!el.textContent.trim()&&el.innerHTML)el.innerHTML=""});
+  el.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();el.blur()}});
+  el.addEventListener("focus",()=>$("app").classList.add("kb"));el.addEventListener("blur",()=>$("app").classList.remove("kb"));
+  return el}
 /* Search: every rooftop in your city by name or suburb; matches in other cities underneath */
 let bSearching=false;
 function rememberQ(){const q=$("bQ").value.trim();if(q.length<2)return;S.recentQ=[q,...(S.recentQ||[]).filter(x=>fold(x)!==fold(q))].slice(0,5);save()}
@@ -3499,9 +3509,10 @@ function paintSearch(){
   bindRows(box);
 }
 function setSearching(on){
-  bSearching=on;$("barsMain").hidden=on;$("barsResults").hidden=!on;$("bQx").hidden=!on;$("bView").hidden=on;
+  bSearching=on;$("app").classList.toggle("searching",on);$("barsMain").hidden=on;$("barsResults").hidden=!on;$("bQx").hidden=!on;$("bView").hidden=on;
   if(on)paintSearch();else{$("bQ").value="";$("bQclr").hidden=true;$("bQ").blur();renderBars()}
 }
+sfield($("bQ"));
 $("bQ").onfocus=()=>{if(!bSearching)setSearching(true)};
 $("bQ").oninput=()=>{paintSearch();$("v-bars").scrollTop=0};
 $("bQclr").onclick=()=>{$("bQ").value="";paintSearch();$("bQ").focus()};
@@ -3630,11 +3641,11 @@ function listSheet(k,msg,after){
   // Tap to tick or untick. Typing narrows it. The order holds while you tick, so nothing jumps.
   let city=S.city;
   sheet(`<div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${L.t} <span class="lscity" id="lsCity">· ${esc(city)}</span></h3><p class="note" style="margin:4px 0 12px">${L.d}</p>${msg?`<div class="alertbox" style="margin:0 0 12px">${esc(msg)}</div>`:""}
-    <div class="lsearch">${I.search}<input id="lsQ" type="text" inputmode="search" placeholder="Search rooftops" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div><div class="lsalso" id="lsAlso"></div></div>
+    <div class="lsearch">${I.search}<div id="lsQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search rooftops"></div><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div><div class="lsalso" id="lsAlso"></div></div>
     <div class="lsitems" id="lsItems"></div>
     <div class="lsfoot"><button class="btn" type="button" id="lsDone">Done</button></div>`,()=>{
     $("sheet").classList.add("full");
-    const q=$("lsQ"),t=now();
+    const q=sfield($("lsQ")),t=now();
     const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
     let order=[];
     const sortNow=()=>{const s_=fold(q.value.trim());
