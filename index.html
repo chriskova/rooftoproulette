@@ -805,6 +805,7 @@ a.btn{text-decoration:none}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 @media (max-height:680px){.msub,.rrnote{display:none}}
+.sczone{display:flex;align-items:center;gap:6px;justify-content:center;color:var(--muted);font-size:13.5px;font-weight:600;margin:-4px 0 2px}.sczone svg{width:15px;height:15px;color:var(--amber)}
 .rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
 .rzsheet #rrMap{height:max(200px,calc(92dvh - 380px))}.rzsheet .seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
@@ -2212,11 +2213,11 @@ function fitMap(v){const el=$("rrMap");if(!v||!el)return;el.style.height="200px"
 window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route))});
 // a smooth range lo..hi km (log scale); R&R adds "All" at the end
 const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true};
-  const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*20)/20,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
+  const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
   return {toR,toX,ticks:o.ticks,all:false}};
 const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button></div>
       <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
-      <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
+      <div class="rrslide"${o&&o.fixed?" hidden":""}><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/RRMAX*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
 `};
@@ -2443,8 +2444,8 @@ async function tryStart(){
   let pos;try{pos=await getOnce()}catch(e){S.permNext="start";go("perm");return}
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
-  S.game={id:"g"+now(),city:S.city,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,center:{lat:w.start.lat,lng:w.start.lng},
-    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
+  S.game={id:"g"+now(),city:S.city,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   S.wiz=null;save();startWatch();buzz(30);go("play");
 }
@@ -3133,24 +3134,19 @@ async function apToggle(ap,k,getList,getGeo,force){
 }
 let mvMaps=[];
 function openMove(free){
-  const g=G(),opts=moveOptions();
-  sheet(`<h3>${free?"Your zone's run dry":"Change of scenery?"}</h3>
-    <p class="note">${free?"Nothing else is open in your zone, so this move is free.":"You can move your zone once a game. Going far? The clock waits till you reach your first bar there."}</p>
-    <div class="opts mvlist">${opts.length?opts.map((o,i)=>`<div class="mv" data-i="${i}"><button class="opt" type="button" data-mv="${i}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${mOrKm(o.m)} away</small></span><span class="n"><b>${o.open}</b><small>open</small></span></button>
-      <div class="mvx" hidden><div class="mvmap" id="mvmap${i}"></div><p class="note">${o.m>1500?`It's ${km(o.m)} away, so the clock waits till you reach your first bar there (up to 20 minutes).`:`${mOrKm(o.m)} away. Close enough that the clock keeps running.`}</p><button class="btn" type="button" data-go="${i}">Move here</button></div></div>`).join(""):`<p class="note">No other area has two or more rooftops open right now.</p>`}</div>
-    <button class="btn dark" type="button" id="mvX" style="margin-top:14px">${free?"Close":"Stay here"}</button>`,()=>{
-    const clear=()=>{mvMaps.forEach(m=>{try{m.remove()}catch(e){}});mvMaps=[]};clear();
-    $("sheet").addEventListener("close",clear,{once:true});
-    $("sheetBody").querySelectorAll("[data-mv]").forEach(b=>b.onclick=async()=>{const i=+b.dataset.mv,o=opts[i],box=b.parentElement,x=box.querySelector(".mvx"),open=!x.hidden;
-      $("sheetBody").querySelectorAll(".mvx").forEach(e=>e.hidden=true);$("sheetBody").querySelectorAll(".mv").forEach(e=>e.classList.remove("on"));
-      if(open)return;x.hidden=false;box.classList.add("on");box.scrollIntoView({block:"nearest",behavior:"smooth"});
-      if(box.dataset.map)return;box.dataset.map=1;
-      const m=await makeMap("mvmap"+i);if(!m)return;mvMaps.push(m);const t=now();
-      m.circle(o.a,g.radius);playable(inCircle(o.a,g.radius),g.newOnly).forEach(v=>m.pin(v,openOK(v,t)&&!visited(v.id)?"":"off"));setMe(m);m.fitZone(o.a,g.radius)});
-    $("sheetBody").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.go];
-      g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);g.moves.push({at:now(),to:o.a.name,free:!!free,m:Math.round(o.m)});if(!free)g.voluntaryUsed=true;
-      if(o.m>1500){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
-      g.target=null;g.reelOpen=false;save();closeSheet();renderPlay();renderClock()});
+  const g=G(),me=you()||fromPoint(),z={lat:g.center.lat,lng:g.center.lng,r:g.radius};
+  sheet(`<div class="rzsheet"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
+    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a game. Drag the circle somewhere new. Same size."}</p></div>
+    <div style="margin-top:4px">${rrZoneHTML({fixed:true,lo:g.radius,hi:g.radius,ticks:[]})}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
+    <div class="lsfoot"><button class="btn" type="button" id="mvGo">Move here</button><button class="btn dark" type="button" id="mvX" style="margin-top:10px">${free?"Close":"Stay here"}</button></div></div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;
+    const pool=(zz,t)=>{const all=playable(inCircle(zz,g.radius),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
+    rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{const m=me?dist(me,zz):0,far=m>1500,same=dist(zz,g.center)<300;
+      $("mvNote").textContent=same?"That's where you are now. Drag the map to move.":far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
+      const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Move here";
+      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
+        if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
+        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{fixed:true,lo:g.radius,hi:g.radius+0.0001,ticks:[],pool});
     $("mvX").onclick=closeSheet;
   });
 }
@@ -3470,6 +3466,7 @@ function renderEnd(){
         ${aw.length>1?`<div class="aw-more">${aw.slice(1,3).map(a=>`<span>${a.t}</span>`).join("")}</div>`:""}</div>
       ${r.jp&&!cr?`<div class="jpchip">${I.sparkle} Jackpot: ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</div>`:""}
       <div class="tri two"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div>${cr?`<div><b>${hmm(st.dur).replace(" min","<i>min</i>")}</b><small>out for</small></div>`:`<div><b>${(st.total/1000).toFixed(1)}<i>km</i></b><small>covered</small></div>`}</div>
+      ${cr?"":`<div class="sczone">${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)} zone${r.zoneN&&r.areas.length<2?` · ${r.zoneN} bars in it`:""}</div>`}
       <div class="map"><div id="endMap" style="height:180px"></div></div>
       <div class="sc-bars">${st.arrived.map((v,i)=>`<span class="${v.counted===true?"":"x"}">${i+1}. ${esc(byId(v.id).name)}${r.barOfDay===v.id?" ★":""}</span>`).join("")||'<span class="x">No visits logged</span>'}</div>
       ${cr?(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0,avg=stays.length?stays.reduce((a,b)=>a+b,0)/stays.length:0;
