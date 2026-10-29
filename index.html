@@ -805,6 +805,7 @@ a.btn{text-decoration:none}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
+.rzsheet #rrMap{height:clamp(150px,calc(85dvh - 420px),300px)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
@@ -2226,8 +2227,8 @@ function rrZoneBind(z,me,newOnly,onPaint){
 /* mid-game: move or resize where an R&R night spins */
 function rrZoneSheet(){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
   const me=you()||fromPoint(),cz=g.cz,z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
-  sheet(`<h3>Where are we spinning?</h3><p class="note" style="margin:2px 0 12px">Drag the map or change the distance. Your next spin uses this.</p>${rrZoneHTML()}
-    <div class="acts"><button class="btn" type="button" id="rzOk">Done</button>${cz.type==="list"?"":`<button class="btn line" type="button" id="rzList">Spin my Want to try list instead</button>`}</div>`,()=>{
+  sheet(`<div class="rzsheet"><h3>Where are we spinning?</h3><p class="note" style="margin:2px 0 10px">Drag the map or change the distance.</p>${rrZoneHTML()}
+    <div class="acts">${cz.type==="list"?"":`<button class="btn line" type="button" id="rzList">Spin my Want to try list instead</button>`}<button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
     rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(b)b.disabled=!P.open.length;
       $("rzOk").onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
         g.cz=zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null};
@@ -3725,8 +3726,17 @@ function barSheet(v){
 
 /* After an R&R skip: a quiet offer to put the bar on Not for us (gone after a few seconds) */
 let toastT=null;
-function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t)}
+function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t);swipeAway(t)}
+  t.style.transition="";t.style.translate="";
   clearTimeout(toastT);t.innerHTML=html;t.classList.add("on");if(bind)bind(t);toastT=setTimeout(()=>t.classList.remove("on"),ms)}
+// drag a toast sideways (or down) to get rid of it
+function swipeAway(t){let x0=null,y0=0,dx=0,dy=0;
+  t.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;y0=e.clientY;dx=dy=0;t.style.transition="none";t.setPointerCapture(e.pointerId)});
+  t.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;dy=Math.max(0,e.clientY-y0);t.style.translate=Math.abs(dx)>dy?`${dx}px 0`:`0 ${dy}px`;t.style.opacity=String(1-Math.min(.8,Math.max(Math.abs(dx),dy)/220))});
+  const end=()=>{if(x0===null)return;x0=null;t.style.transition="translate .2s ease, opacity .2s ease";
+    if(Math.abs(dx)>70||dy>40){t.style.translate=Math.abs(dx)>dy?`${dx>0?"110%":"-110%"} 0`:"0 120%";t.style.opacity="0";clearTimeout(toastT);setTimeout(()=>{t.classList.remove("on");t.style.translate="";t.style.opacity=""},220)}
+    else{t.style.translate="";t.style.opacity=""}};
+  t.addEventListener("pointerup",end);t.addEventListener("pointercancel",end);t.style.touchAction="none"}
 const hideToast=()=>{const t=$("toast");if(t)t.classList.remove("on");clearTimeout(toastT)};
 function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
   toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Not for us</button>`,6000,()=>$("tNfu").onclick=()=>{
