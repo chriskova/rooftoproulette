@@ -804,6 +804,8 @@ a.btn{text-decoration:none}
 .clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
+@media (max-height:680px){.msub,.rrnote{display:none}}
+.rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
 .rzsheet #rrMap{height:max(200px,calc(92dvh - 380px))}.rzsheet .seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
 .segdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;vertical-align:middle;margin-left:4px;opacity:.8}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
@@ -2203,23 +2205,28 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 let rrMap=null;
+function fitMap(v){const el=$("rrMap");if(!v||!el)return;el.style.height="200px";
+  const vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0,limit=vr.top+v.clientHeight-pb;
+  const last=Math.max(...[...v.children].filter(x=>x.offsetParent!==null).map(x=>x.getBoundingClientRect().bottom));
+  el.style.height=Math.round(Math.max(150,Math.min(520,200+(limit-last)-6)))+"px";if(rrMap)rrMap.resize()}
+window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route))});
 // a smooth range lo..hi km (log scale); R&R adds "All" at the end
 const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true};
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*20)/20,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
   return {toR,toX,ticks:o.ticks,all:false}};
-const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
+const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button></div>
       <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
       <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/RRMAX*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
-      ${o&&o.note?`<p class="note" style="margin:2px 0 0">${o.note}</p>`:""}
-      <div style="display:flex;gap:18px"><button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>${o&&o.locate?`<button class="txtbtn" type="button" id="rrLocate">Use my location</button>`:""}</div>`};
+      ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
+`};
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
     $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
-    $("rrHome").hidden=!me||!z.r||!moved();$("rrPin").hidden=!z.r;
+    $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
     onPaint(P,z,moved());
     if(!rrMap)return;
     if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off"))}
@@ -2227,7 +2234,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const fit=()=>{if(!rrMap)return;if(z.r)rrMap.fitZone(z,z.r);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
   $("rrR").oninput=()=>{z.r=Z.toR(+$("rrR").value);paint(false)};
   $("rrR").onchange=()=>{save();paint(true);fit()};
-  $("rrHome").onclick=()=>{z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
+  $("rrHome").onclick=()=>{if(!me){if(o&&o.locate)o.locate();return}z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
   paint(true);
   requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
     const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;fit();paint(true);
@@ -2290,8 +2297,8 @@ function renderQuick(){
     apClear();
     const me=q.from&&q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;if(!me){q.step=0;save();renderQuick();return}
     if(!q.z)q.z={lat:me.lat,lng:me.lng,r:2};
-    b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
-    rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));
+    b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
+    rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));fitMap(b);
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
@@ -2353,15 +2360,14 @@ function renderWiz(){
     if(!me&&!w._loc){w._loc=1;permState().then(st=>{if(st==="granted"&&S.route==="wiz"&&S.wiz===w&&w.step===1)useMe()})}
     if(!w.z){const c0=me&&GAME_AREAS().some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
-    body.innerHTML=`<div><h1 class="q">Where's your zone?</h1><p class="sub" style="margin:6px 0 0">Drag the map to where you're starting. Every spin lands inside the circle.</p></div>${rrZoneHTML(Object.assign({locate:!me},R1))}`;
+    body.innerHTML=`<div><h1 class="q">Where's your zone?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to where you're starting. Every spin lands inside the circle.</p></div>${rrZoneHTML(R1)}`;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),false);return {all,open:all.filter(v=>openOK(v,t))}};
     rrZoneBind(w.z,me,()=>false,(P,z,moved)=>{
       const shut=!P.all.some(v=>openState(v,now()).open);   // outside opening hours: count every rooftop so people can still plan ahead
       $("rrN").textContent=shut?`${P.all.length} rooftops`:P.open.length?`${P.open.length} open`:"None open";
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       const n=shut?P.all.length:P.open.length;
-      cta(`<button class="btn" id="wNext" type="button" ${n>=2?"":"disabled"}>${n>=2?"Next":"Not enough rooftops here. Drag or widen"}</button>`,()=>$("wNext").onclick=()=>{w.step=2;w.radius=z.r;save();renderWiz()})},Object.assign({pool},R1));
-    if($("rrLocate"))$("rrLocate").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
+      cta(`<button class="btn" id="wNext" type="button" ${n>=2?"":"disabled"}>${n>=2?"Next":"Not enough rooftops here. Drag or widen"}</button>`,()=>$("wNext").onclick=()=>{w.step=2;w.radius=z.r;save();renderWiz()})},Object.assign({pool,locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));fitMap($("v-wiz"));
   }
   if(w.step===2){
     // Built once; leaving bars out only repaints the list, count and pins, so the map never reloads.
