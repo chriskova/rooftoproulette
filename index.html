@@ -821,6 +821,26 @@ body.mapq .view{padding-bottom:12px!important}
 .mlr button{appearance:none;display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}.mlr button.off{opacity:.5}
 .mlr .t{flex:1;min-width:0}.mlr .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlr .t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlr .d{color:var(--muted);font-size:13px}
 .rtag{font-size:12.5px;font-weight:600;color:var(--muted);margin-left:6px;white-space:nowrap}.pbtag{font-size:12.5px;font-weight:700;color:var(--amber);margin-left:8px;white-space:nowrap}
+.scmap{position:relative;border-radius:18px;overflow:hidden;margin:2px -4px 0}#endMap{height:300px}
+.scov{position:absolute;left:0;right:0;bottom:0;z-index:900;padding:60px 14px 12px;background:linear-gradient(rgba(11,13,18,0),rgba(11,13,18,.82) 45%,rgba(11,13,18,.95));display:flex;align-items:flex-end;gap:12px;pointer-events:none}
+.scov .tri{display:block}.scov .tri div{background:none;padding:0;text-align:left}.scov .tri b{font-size:56px;line-height:.9}.scov .tri small{font-size:12px;color:var(--text);opacity:.8;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.srow{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:right}.srow b{display:block;font-size:16px;font-weight:750;white-space:nowrap}.srow small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-top:2px;white-space:nowrap}
+.scmeta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;flex-wrap:wrap}.scmeta svg{width:14px;height:14px;color:var(--amber)}
+.jpmini{margin-left:auto;display:inline-flex;align-items:center;gap:4px;color:var(--amber);font-size:12px;font-weight:700}.jpmini svg{width:12px;height:12px}
+.sc-bars{display:flex;flex-direction:column;gap:0;font-size:14.5px}
+.sc-bars .br{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.sc-bars .br:first-child{border-top:0}
+.sc-bars .br i{flex:none;width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--amber-ink);font-style:normal;font-size:12px;font-weight:800;display:grid;place-items:center}
+.sc-bars .br .nm{flex:1;min-width:0;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sc-bars .br .tm{color:var(--muted);font-size:13px;white-space:nowrap}.sc-bars .star{color:var(--amber)}
+.sc-bars .br.x{opacity:.45;text-decoration:none}.sc-bars .br.x i{background:var(--s3);color:var(--muted)}
+.bodpick{display:flex;flex-direction:column;gap:18px;padding-top:6px}
+.bodgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bodt{appearance:none;position:relative;aspect-ratio:1/1.05;border-radius:18px;border:1.5px solid var(--line);background:var(--s1) center/cover no-repeat;color:#fff;font:inherit;text-align:left;padding:12px;display:flex;align-items:flex-end;overflow:hidden;cursor:pointer}
+.bodt::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 35%,rgba(0,0,0,.8))}
+.bodt b{position:relative;font-family:var(--display);font-weight:800;font-size:24px;line-height:.95;text-transform:uppercase}
+.bodt:active{transform:scale(.97)}
+.snap{display:flex;align-items:center;gap:10px;background:var(--s1);border:1.5px solid var(--amber);border-radius:16px;padding:10px 10px 10px 14px}.snap>svg{width:20px;height:20px;color:var(--amber);flex:none}.snap span{flex:1;font-size:14px;line-height:1.3}.snap .btn.sm{width:auto;padding:0 14px;height:38px}
+.snapx{appearance:none;background:none;border:0;color:var(--muted);width:30px;height:30px;display:grid;place-items:center;cursor:pointer}.snapx svg{width:16px;height:16px}
+.pthumbs{display:flex;gap:8px}.pthumbs button{appearance:none;border:2px solid var(--line);border-radius:12px;padding:0;overflow:hidden;width:64px;height:64px;background:none;cursor:pointer}.pthumbs button[aria-pressed="true"]{border-color:var(--amber)}.pthumbs img{width:100%;height:100%;object-fit:cover;display:block}
 .mcard{position:absolute;left:10px;right:10px;bottom:28px;z-index:1000;appearance:none;display:flex;align-items:center;gap:10px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:11px 14px;color:var(--text);font:inherit;box-shadow:0 8px 20px rgba(0,0,0,.5);cursor:pointer}
 .mcard .t{flex:1;min-width:0}.mcard b{display:block;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard .chev{color:var(--amber);font-size:22px;line-height:1}
 .rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
@@ -2009,6 +2029,8 @@ function gWrap(el,o){
     pin(v,cls,onClick){ov.push(mk(v,`<div class="pin ${cls||""}"></div>`,cls==="big"?500:0,onClick,v.name))},
     num(p,n,x,title){ov.push(mk(p,`<div class="num sm${x?" x":""}">${n}</div>`,300,null,title))},
     dot(p){ov.push(mk(p,'<div class="me"></div>',1000))},
+    route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
+      ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:.18,strokeWeight:8,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:3,clickable:false}))},
     line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#0B0D12",strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
     fitZone(c,r,extra){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.08}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,4);f();google.maps.event.addListenerOnce(map,"idle",f);setTimeout(f,400)},
     fitPts(pts,maxZoom){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
@@ -2028,6 +2050,8 @@ function lWrap(el){
     pin(v,cls,onClick){const mm=L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:0}).addTo(ov);if(onClick)mm.on("click",onClick);mm.bindTooltip(v.name,{direction:"top",offset:[0,-10]})},
     num(p,n,x,title){const mm=L.marker([p.lat,p.lng],{icon:numIcon(n,x)}).addTo(ov);if(title)mm.bindTooltip(title)},
     dot(p){L.marker([p.lat,p.lng],{icon:meIcon}).addTo(ov)},
+    route(pts,dashed){const ll=pts.map(p=>[p.lat,p.lng]);if(dashed){L.polyline(ll,{color:"#F5B83D",weight:2,opacity:.35,dashArray:"2 7",lineCap:"round"}).addTo(ov);return}
+      L.polyline(ll,{color:"#F5B83D",weight:8,opacity:.18,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:3,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
     line(pts){const ll=pts.map(p=>[p.lat,p.lng]);L.polyline(ll,{color:"#0B0D12",weight:9,opacity:.85,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:5,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
     fitZone(c,r,extra){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)))},
     fitPts(pts,maxZoom){m.fitBounds(L.latLngBounds(pts.map(p=>[p.lat,p.lng])).pad(.3),{animate:false,maxZoom:maxZoom||16})},
@@ -2577,6 +2601,7 @@ function onLocation(){
   const g=G();[bMap,zMap].forEach(setMe);
   if(!g||g.ended)return;
   const y=you();if(!y)return;
+  if(g.started&&(!here||!here.acc||here.acc<60)){const T=g.trail||(g.trail=[]),l=T[T.length-1];if(!l||dist({lat:l[0],lng:l[1]},y)>=25){T.push([+y.lat.toFixed(5),+y.lng.toFixed(5)]);if(T.length>3000)T.splice(0,T.length-3000)}}
   const slack=Math.min(y.acc||0,40),a=atVisit();
   if(a){if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()}}
   else if(g.target&&g.started&&now()<g.endsAt){
@@ -3083,7 +3108,7 @@ function flyToCounter(force,lead){
    number, the door shuts, and the count racks up. Any tap skips to the end. */
 function rackUp(box,n){
   const cell=box.querySelector(".tri>div"),num=cell&&cell.querySelector("b");if(!cell||!num)return;
-  const chips=[...box.querySelectorAll(".sc-bars span:not(.x)")];
+  const chips=[...box.querySelectorAll(".sc-bars .br:not(.x) .nm")];
   const tm=[],fx=[];let over=false;
   const at=(ms,f)=>tm.push(setTimeout(()=>{if(!over)f()},ms));
   const finish=()=>{if(over)return;over=true;tm.forEach(clearTimeout);fx.forEach(e=>e.remove());cell.style.visibility="";chips.forEach(c=>c.style.opacity="");num.textContent=n;
@@ -3347,7 +3372,9 @@ function renderPlay(){
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"').replace(' data-pending="1"',''):""}</div>
       ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>Keen to try another bar?</b> Spin whenever you're ready.</span></div>`:""}
-      ${ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
+      ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap">${I.camera}<span><b>Snap the crew.</b> It goes on tonight's story card.</span><label class="btn sm">Camera<input type="file" accept="image/*" capture="user" id="snapIn" hidden></label><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div>`
+        :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Crew photo saved.</b> It'll be on your story card.</span></div>`
+        :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
       ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
     if(animateId===("at:"+a.id))animateId=null;
@@ -3382,6 +3409,8 @@ function renderPlay(){
   st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
+  if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
+  if($("snapIn"))$("snapIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;shrink(f,1080).then(d=>{(g.photos=g.photos||[]).push(d);if(g.photos.length>3)g.photos.shift();g.snapAsk=1;try{save()}catch(x){g.photos.pop()}renderPlay();setTimeout(()=>{g.snapSeen=1;save();if(S.route==="play")renderPlay()},4000)})};
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay();requestAnimationFrame(()=>{if(!spinning)fitPlay()});setTimeout(()=>{if(!spinning)fitPlay()},400)}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
@@ -3513,21 +3542,30 @@ function renderEnd(){
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
   const still=cr&&r.autoEnded&&!r.stillAsked&&!S.game&&now()-r.endedAt<12*3600000;
+  if(!r.photo&&r.photos&&r.photos.length){r.photo=r.photos[r.photos.length-1];saveH()}
+  // just finished, 2+ bars, no pick yet: ask for bar of the day before the scorecard rolls in
+  if(S.rackEnd===r.id&&n>=2&&!r.barOfDay&&!r.bodDone){
+    box.innerHTML=`<div class="bodpick"><div><div class="eyebrow">${n} rooftops tonight</div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">It gets the star on your story.</p></div>
+      <div class="bodgrid">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div>
+      <button class="txtbtn" type="button" id="bodSkip" style="align-self:center">Skip</button></div>`;
+    box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;saveH();buzz(15);renderEnd()});
+    $("bodSkip").onclick=()=>{r.bodDone=true;saveH();renderEnd()};
+    st.counted.forEach(v=>{const b=byId(v.id);if(phMem[b.id]===undefined&&phAllowed(b.id,"play"))barPhoto(b).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;const t=box.querySelector(`[data-bp="${b.id}"]`);if(t&&ph){t.classList.add("photo");t.style.backgroundImage=`url('${ph.url}')`}})});
+    return}
   box.innerHTML=`
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}${r.early&&!cr?` · ended at ${Math.round(st.dur/60000)} min`:""}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
-      <div class="award"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div>
-        ${aw.length>1?`<div class="aw-more">${aw.slice(1,3).map(a=>`<span>${a.t}</span>`).join("")}</div>`:""}</div>
-      ${r.jp&&!cr?`<div class="jpchip">${I.sparkle} Jackpot: ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</div>`:""}
-      <div class="tri two"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div>${cr?`<div><b>${hmm(st.dur).replace(" min","<i>min</i>")}</b><small>out for</small></div>`:`<div><b>${(st.total/1000).toFixed(1)}<i>km</i></b><small>covered</small></div>`}</div>
-      ${cr?"":`<div class="sczone">${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)} zone${r.zoneN&&r.areas.length<2?` · ${r.zoneN} bars in it`:""}</div>`}
-      <div class="map"><div id="endMap" style="height:180px"></div></div>
-      <div class="sc-bars">${st.arrived.map((v,i)=>`<span class="${v.counted===true?"":"x"}">${i+1}. ${esc(byId(v.id).name)}${r.barOfDay===v.id?" ★":""}</span>`).join("")||'<span class="x">No visits logged</span>'}</div>
-      ${cr?(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0,avg=stays.length?stays.reduce((a,b)=>a+b,0)/stays.length:0;
-        return `<div class="quad"><div><small>At the bars</small><b>${hmm(atBars)}</b></div><div><small>Longest stay</small><b>${lng?hmm(lng):"—"}</b></div><div><small>Average stay</small><b>${avg?hmm(avg):"—"}</b></div><div><small>Walked</small><b>${km(st.total)}</b></div></div>`})()
-      :`<div class="quad"><div><small>At the bars</small><b>${hmm(atBars)}</b></div><div><small>Getting there</small><b>${hmm(moving)}</b></div><div><small>Longest trip</small><b>${st.longest?km(st.longest.d):"—"}</b></div><div><small>Quickest turnaround</small><b>${st.quick?hmm(st.quick.ms):"—"}</b></div></div>`}
+      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
+      <div class="award"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div></div>
+      <div class="scmap"><div id="endMap"></div>
+        <div class="scov"><div class="tri"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div></div>
+          <div class="srow">${(cr?[[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[km(st.total),"Distance"]]:[[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"]]).map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div></div></div>
+      <div class="scmeta">${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}</div>
+      <div class="sc-bars">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt);return `<div class="br${v.counted===true?"":" x"}"><i>${i+1}</i><span class="nm">${esc(byId(v.id).name)}${r.barOfDay===v.id?' <span class="star">★</span>':""}</span>${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}<span class="tm">${v.cant?"Couldn't get in":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
+      ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
+        const L=cr?[["Longest stay",lng?hmm(lng):"—"],["Average stay",stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—"]]:[["Fastest leg",st.quick?hmm(st.quick.ms):"—"],["Longest stay",lng?hmm(lng):"—"]];
+        return `<div class="quad">${L.map(([l,v])=>`<div><small>${l}</small><b>${v}</b></div>`).join("")}</div>`})()}
     </div>
     <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
     ${r.photo&&r.barOfDay?"":`<p class="note" style="text-align:center;margin:-6px 0 0">${!r.barOfDay&&n?"Pick a bar of the day":""}${!r.barOfDay&&n&&!r.photo?" and add ":!r.photo?"Add ":""}${!r.photo?"a crew photo":""} below to put ${!r.photo&&(!r.barOfDay&&n)?"them":"it"} on your story.</p>`}
@@ -3535,14 +3573,16 @@ function renderEnd(){
       <div class="bod">${st.counted.map(v=>`<button type="button" data-b="${v.id}" aria-pressed="${r.barOfDay===v.id}"><span>${esc(byId(v.id).name)}</span><i></i></button>`).join("")}</div></div>`:""}
     <div class="prompt${r.photo?" done":""}"><div class="pt">${r.photo?"Crew photo":"Add a crew photo"}</div><div class="ps">It becomes the cover of this night in your History and the hero of your story. Saved on this phone only.</div>
       ${r.photo?`<img src="${r.photo}" alt="Crew photo" class="crew">`:`<div class="camzone">${I.camera}<span>No photo yet</span></div>`}
+      ${r.photos&&r.photos.length>1?`<div class="pthumbs">${r.photos.map((p,i)=>`<button type="button" data-pt="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:""}
       <div class="row2"><label class="btn sm">${I.camera} ${r.photo?"Retake":"Take photo"}<input type="file" accept="image/*" capture="environment" id="photoCam" hidden></label><label class="btn sm dark">Choose photo<input type="file" accept="image/*" id="photoLib" hidden></label></div></div>
-    <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}${v.cant?' <span class="small">(couldn\'t get in)</span>':v.counted===false?' <span class="small">(didn\'t count)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No visits logged this time.</span></div>`}</div></div>`;
+    `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{r.barOfDay=r.barOfDay===b.dataset.b?null:b.dataset.b;saveH();renderEnd()});
   const onPhoto=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,1080).then(d=>{r.photo=d;saveH();renderEnd()})};
   $("photoCam").onchange=onPhoto;$("photoLib").onchange=onPhoto;
+  box.querySelectorAll("[data-pt]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.pt];saveH();renderEnd()});
   $("doneBtn").onclick=()=>go("home");
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
@@ -3552,10 +3592,12 @@ function renderEnd(){
   requestAnimationFrame(async()=>{
     if(eMap){eMap.remove();eMap=null}
     const el=$("endMap"),m=await makeMap("endMap");if(!m||!document.contains(el))return;eMap=m;
-    const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))];
-    m.line(pts);m.dot(r.startPos);
+    const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))],tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]}));
+    m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts);m.dot(r.startPos);
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
-    m.fitPts(pts,16);
+    // leave room under the route for the stats laid over the bottom of the map
+    const all=pts.concat(tr).filter(Boolean),la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mn=Math.min(...la),mx=Math.max(...la),sp=Math.max(mx-mn,.004);
+    m.fitPts(all.concat([{lat:mn-sp*.75,lng:(Math.min(...lo)+Math.max(...lo))/2}]),16);
   });
 }
 async function shareStory(r){
