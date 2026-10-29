@@ -1496,18 +1496,14 @@ html.fl .app{visibility:hidden}
 .fchips{gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.fchips::-webkit-scrollbar{display:none}
 .fchips .chip{flex:none;display:flex;align-items:center;gap:6px}.fchips .chip svg{width:14px;height:14px}
 .fchips .chip.opn[aria-pressed="true"]{background:var(--green-soft);border-color:rgba(74,222,128,.55);color:var(--green)}
-.barrow .t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nw{white-space:nowrap}.beent{color:var(--text);font-weight:600}
+.barrow .t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nw{white-space:nowrap}.beenic{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--dim)}.beenic svg{width:15px;height:15px}
 .barrow.shut{opacity:.5}
 .shuthd{color:var(--muted)}
 .toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px;color:var(--muted);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
 .toast.on{transform:none;opacity:1;pointer-events:auto}
 .toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}
 .toast button{flex:none;background:none;border:1px solid rgba(245,184,61,.6);color:var(--amber);font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
-.blists{display:flex;align-items:center;gap:6px;margin-top:-4px}
-.blists button{display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--muted);font:inherit;font-size:14px;font-weight:650;padding:4px 10px 4px 0;cursor:pointer;white-space:nowrap}
-.blists button+button{border-left:1px solid var(--line);padding-left:12px}
-.blists button svg{width:16px;height:16px;color:var(--amber)}.blists button[data-l="been"] svg{color:var(--green)}
-.blists button b{color:var(--text);font-weight:750}
+.blists{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .nfulink{grid-column:1/-1;justify-self:start;padding:2px 2px 0;font-size:13.5px}
 .blist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--s1);border:1px solid var(--line);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font:inherit}
 .blist b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1}
@@ -3486,7 +3482,7 @@ function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S
 const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
-function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${s==="col"||s==="been"?'<span class="beent">✓ Been</span> · ':""}${o.open?`Closes ${clock12(o.closeAt)}`:o.temp?"Temporarily closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"} ${y&&dist(y,v)<50000?`· <span class="nw">${mOrKm(dist(y,v))}</span> `:""}· ${esc(v.area)}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
+function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${o.open?`Closes ${clock12(o.closeAt)}`:o.temp?"Temporarily closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"} ${y&&dist(y,v)<50000?`· <span class="nw">${mOrKm(dist(y,v))}</span> `:""}· ${esc(v.area)}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
@@ -3494,7 +3490,7 @@ function bindRows(root){
 }
 function paintLists(){
   const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length;
-  $("barsLists").innerHTML=`<button type="button" data-l="want">${HEART}<span>Want to try</span><b>${nWant}</b></button><button type="button" data-l="been">${TICK}<span>Been to</span><b>${nBeen}</b></button><button type="button" data-l="nfu"><span>Not for us</span></button>`;
+  $("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
 function sfield(el){if(!el||el._sf)return el;el._sf=1;
