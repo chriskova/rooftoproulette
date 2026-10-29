@@ -805,7 +805,7 @@ a.btn{text-decoration:none}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
-.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
+.sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber)}
@@ -2196,6 +2196,46 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 let rrMap=null;
+const rrZoneHTML=()=>`<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
+      <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
+      <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
+      <div class="rrticks">${[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([r,l])=>`<span style="left:${rrToX(r)/RRMAX*100}%">${l}</span>`).join("")}<span style="left:100%;transform:translateX(-100%)">All</span></div></div>
+      <button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>`;
+function rrZoneBind(z,me,newOnly,onPaint){
+  $("rrR").value=rrToX(z.r);
+  const moved=()=>!!me&&dist(z,me)>150;
+  const paint=full=>{if(!$("rrLbl"))return;const P=rrPool(z,now(),newOnly());
+    $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestArea(z):"you"}`:`All of ${S.city}`;
+    $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
+    $("rrHome").hidden=!me||!z.r||!moved();$("rrPin").hidden=!z.r;
+    onPaint(P,z,moved());
+    if(!rrMap)return;
+    if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off"))}
+    rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
+  const fit=()=>{if(!rrMap)return;if(z.r)rrMap.fitZone(z,z.r);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
+  $("rrR").oninput=()=>{z.r=rrToR(+$("rrR").value);paint(false)};
+  $("rrR").onchange=()=>{save();paint(true);fit()};
+  $("rrHome").onclick=()=>{z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
+  paint(true);
+  requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
+    const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;fit();paint(true);
+    let lock=true;setTimeout(()=>lock=false,900); // ignore the moves from fitting the map
+    m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
+    m.onIdle(()=>{if(lock||!z.r)return;save();paint(true)})});
+}
+/* mid-game: move or resize where an R&R night spins */
+function rrZoneSheet(){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
+  const me=you()||fromPoint(),cz=g.cz,z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
+  sheet(`<h3>Where are we spinning?</h3><p class="note" style="margin:2px 0 12px">Drag the map or change the distance. Your next spin uses this.</p>${rrZoneHTML()}
+    <div class="acts"><button class="btn" type="button" id="rzOk">Done</button>${cz.type==="list"?"":`<button class="btn line" type="button" id="rzList">Spin my Want to try list instead</button>`}</div>`,()=>{
+    rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(b)b.disabled=!P.open.length;
+      $("rzOk").onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
+        g.cz=zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null};
+        g.radius=zz.r||g.radius;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()}});
+    if($("rzList"))$("rzList").onclick=()=>{if(wantList().filter(v=>openOK(v,now())).length<2){listSheet("want","Add at least 2 and the wheel only spins these.",rrZoneSheet);return}
+      g.cz={type:"list",name:"Want to try",r:null};if(g.areas[g.areas.length-1]!=="Want to try")g.areas.push("Want to try");save();closeSheet();renderPlay()};
+  });
+}
 function renderQuick(){
   const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0;
   if(!S.game)$("stage").innerHTML="";
@@ -2220,32 +2260,8 @@ function renderQuick(){
     apClear();
     const me=q.from&&q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;if(!me){q.step=0;save();renderQuick();return}
     if(!q.z)q.z={lat:me.lat,lng:me.lng,r:2};
-    b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>
-      <div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
-      <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
-      <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" value="${rrToX(q.z.r)}" aria-label="How far">
-      <div class="rrticks">${[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([r,l])=>`<span style="left:${rrToX(r)/RRMAX*100}%">${l}</span>`).join("")}<span style="left:100%;transform:translateX(-100%)">All</span></div></div>
-      <button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>
-      ${newTog}`;
-    const moved=()=>dist(q.z,me)>150;
-    const paint=(full)=>{const z=q.z,P=rrPool(z,now(),q.newOnly);
-      $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()?nearestArea(z):"you"}`:`All of ${S.city}`;
-      $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
-      $("rrHome").hidden=!z.r||!moved();$("rrPin").hidden=!z.r;
-      cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved()?{type:"spot",name:"Around "+nearestArea(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()});
-      if(!rrMap)return;
-      if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>barSheet(v)))}
-      rrMap.ring(z.r?z:null,z.r);rrMap.me(me)};
-    const fit=()=>{if(!rrMap)return;const z=q.z;if(z.r)rrMap.fitZone(z,z.r);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-    $("rrR").oninput=()=>{q.z.r=rrToR(+$("rrR").value);paint(false)};
-    $("rrR").onchange=()=>{save();paint(true);fit()};
-    $("rrHome").onclick=()=>{q.z.lat=me.lat;q.z.lng=me.lng;save();paint(true);fit()};
-    paint(true);
-    requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
-      const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;fit();paint(true);
-      let lock=true;setTimeout(()=>lock=false,900); // ignore the moves from fitting the map
-      m.onMove(()=>{if(lock||!q.z.r)return;const c=m.center();q.z.lat=c.lat;q.z.lng=c.lng;rrMap.ring(q.z,q.z.r)});
-      m.onIdle(()=>{if(lock||!q.z.r)return;save();paint(true)})});
+    b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
+    rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestArea(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
@@ -2462,7 +2478,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span><span>R&amp;R</span></div>`
+const mixlineHTML=g=>CR(g)?`<div class="mixline" id="mixZone" role="button" tabindex="0" style="cursor:pointer"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span><span>R&amp;R</span></div>`
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
@@ -3157,13 +3173,14 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
+    ${cr?`<button type="button" id="mZone">${I.move}<span>Where we're spinning<small>${esc(g.cz.type==="list"?"Your Want to try list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
-    $("mMove").onclick=()=>{if(canMove)openMove(free)};
+    $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=rrZoneSheet;
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
@@ -3172,6 +3189,7 @@ function openMenu(){
   });
 }
 $("pMenu").onclick=openMenu;
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
