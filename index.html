@@ -3504,10 +3504,12 @@ function paintSearch(){
     const rec=((S.recentB||{})[S.city]||[]).map(byId).filter(Boolean).slice(0,5),subs=[...new Set(VENUES.filter(inCityNow).map(v=>v.area))].sort();
     const rrow=v=>`<div class="barrow rrow" role="button" tabindex="0" data-id="${v.id}"><span class="rclock">${I.clock}</span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></span><button class="rmx" type="button" data-rm="${v.id}" aria-label="Remove ${esc(v.name)}">${I.x}</button></div>`;
     // suburbs first as one swipeable row (always above the keyboard), then recent
-    box.innerHTML=`<div class="chips subrow">${subs.map(a=>`<button class="chip" type="button" data-q="${esc(a)}">${I.pin} ${esc(a)}</button>`).join("")}</div>
+    // the label also keeps the suburbs clear of the text cursor's drag handle, which hangs below the search box
+    box.innerHTML=`<div class="shd" style="margin-top:14px">Suburbs</div><div class="chips subrow" id="subRow">${subs.map(a=>`<button class="chip" type="button" data-q="${esc(a)}">${I.pin} ${esc(a)}</button>`).join("")}</div>
       ${rec.length?`<div class="shd">Recent</div><div class="rlist">${rec.map(rrow).join("")}</div>`:""}`;
     box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{q.value=b.dataset.q;paintSearch()});
     bindRows(box);
+    $("subRow").addEventListener("touchstart",()=>{if(document.activeElement===q)q.blur()},{passive:true});
     box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.recentB[S.city]=(S.recentB[S.city]||[]).filter(x=>x!==b.dataset.rm);save();paintSearch()});return;
   }
   const hit=v=>fold(v.name).includes(s_)||fold(v.area).includes(s_)||fold(areaOf(v).name).includes(s_);
