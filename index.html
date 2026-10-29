@@ -2232,7 +2232,7 @@ function rrZoneBind(z,me,newOnly,onPaint){
 function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
   const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode==="map"||mode==="list"?mode:cur;
   const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
-  const nowTxt=cz.type==="list"?"your Hit list":esc(g.areas[g.areas.length-1])+(cz.r?" · "+kmTxt(cz.r):"");
+  const nowTxt=cz.type==="list"?"your Hit list":zoneTxt(g);
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
   sheet(`<div class="rzsheet rz-${m}"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Spin zone</h3><p class="note" style="margin:2px 0 10px">Now spinning: <b style="color:var(--text)">${nowTxt}</b></p>
     <div class="seg"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me${cur==="map"?' <i class="segdot"></i>':""}</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list${cur==="list"?' <i class="segdot"></i>':""}</button></div>
@@ -2501,7 +2501,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const zoneTxt=g=>g.cz.type==="list"?"Hit list":esc(g.areas[g.areas.length-1])+(g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:"");
+const zoneTxt=g=>g.cz.type==="list"?"Hit list":g.cz.type==="spot"&&g.cz.lat!=null?"Around "+esc(nearestSuburb(g.cz))+` · ${kmTxt(g.cz.r)}`:esc(g.areas[g.areas.length-1])+(g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:"");
 const mixlineHTML=g=>CR(g)?""
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
@@ -3072,7 +3072,7 @@ function nightSheet(){
   const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
     return `<div class="li"><span>${i+1}. ${esc(b.name)}</span><span class="small ${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</span></div>`}).join("");
   sheet(`<h3>Your night</h3>
-    <div class="nightzone"><span>${I.pin} ${esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
+    <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
     <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber)">${c}</b> rooftop${c===1?"":"s"} so far · <b style="color:var(--amber)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
     ${rows?`<div class="card" style="padding:4px 16px"><div class="list">${rows}</div></div>`:`<p class="note">No bars yet. Get spinning.</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>$("ngX").onclick=closeSheet);
@@ -3197,7 +3197,7 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
-    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${esc(g.cz.type==="list"?"Your Hit list":g.areas[g.areas.length-1]+(g.cz.r?" · "+kmTxt(g.cz.r):""))}</small></span></button>`:""}
+    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
