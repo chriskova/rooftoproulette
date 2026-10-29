@@ -3643,13 +3643,14 @@ function renderBars(){
 $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
   if(b.hasAttribute("data-open")){S.barsOpen=b.getAttribute("aria-pressed")!=="true";S.barsOpenDay=new Date().toDateString();save();renderBars();return}
   const w=b.dataset.w;if(w==="zone")S.barsFilter="zone";else{S.barsFilter="all";S.barsRegion=w;bMapFit=true}save();renderBars()};
-function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:x.arrivedAt})};
+function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:x.arrivedAt,d:Math.max(0,(x.leftAt||r.endedAt||now())-x.arrivedAt)})};
   H.forEach(add);if(S.game&&!S.game.ended)add(S.game);return out.sort((a,b)=>b.t-a.t)}
-const gameLbl=r=>r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr";
+const stayTxt=ms=>{const m=Math.max(1,Math.round(ms/60000));if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" hr"+(r?" "+r:"")};
+const gameLbl=x=>(x.r.mode==="cruise"?"R&amp;R":"Rush Hour")+" · "+stayTxt(x.d);
 function visitsHTML(v){const vs=visitsOf(v.id);if(!vs.length)return "";
-  if(vs.length===1)return `<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> ${dateTxt(vs[0].t)}</p>`;
+  if(vs.length===1)return `<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> ${dateTxt(vs[0].t)} · ${gameLbl(vs[0])}</p>`;
   return `<button class="vhist" type="button" id="vHist" aria-expanded="false"><span class="stamp col">Visited</span> ${vs.length} times · last ${dateTxt(vs[0].t)} <span class="chev">›</span></button>
-    <div class="vlist" id="vList">${vs.map(x=>`<button type="button" data-g="${x.r.id||""}">${dateTxt(x.t)}<span>${gameLbl(x.r)}</span></button>`).join("")}</div>`}
+    <div class="vlist" id="vList">${vs.map(x=>`<button type="button" data-g="${x.r.id||""}">${dateTxt(x.t)}<span>${gameLbl(x)}</span></button>`).join("")}</div>`}
 function bindVisits(){const b=$("vHist");if(!b)return;b.onclick=()=>{const on=b.getAttribute("aria-expanded")!=="true";b.setAttribute("aria-expanded",String(on));$("vList").classList.toggle("on",on)};
   $("vList").querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{const id=x.dataset.g;if(!id||!H.some(r=>r.id===id))return;closeSheet();S.lastEnd=id;go("end")})}
 function barSheet(v){
