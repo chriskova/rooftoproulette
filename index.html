@@ -818,8 +818,8 @@ body.mapq .view{padding-bottom:12px!important}
 .mlist{position:absolute;left:0;right:0;bottom:0;max-height:62%;z-index:1000;background:var(--s1);border-top:1px solid var(--line);border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 24px rgba(0,0,0,.5)}
 .mlist .mlh{padding:8px 14px 8px;text-align:center;cursor:grab}.mlist .grab{display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}.mlist .mlh b{font-size:14px}
 .mlist .mlr{overflow-y:auto;padding:0 14px 10px;overscroll-behavior:contain}
-.mlist .mlr button{appearance:none;display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}.mlist .mlr button.off{opacity:.5}
-.mlist .t{flex:1;min-width:0}.mlist .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlist .t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlist .d{color:var(--muted);font-size:13px}
+.mlr button{appearance:none;display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}.mlr button.off{opacity:.5}
+.mlr .t{flex:1;min-width:0}.mlr .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlr .t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlr .d{color:var(--muted);font-size:13px}
 .mcard{position:absolute;left:10px;right:10px;bottom:28px;z-index:1000;appearance:none;display:flex;align-items:center;gap:10px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:11px 14px;color:var(--text);font:inherit;box-shadow:0 8px 20px rgba(0,0,0,.5);cursor:pointer}
 .mcard .t{flex:1;min-width:0}.mcard b{display:block;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard .chev{color:var(--amber);font-size:22px;line-height:1}
 .rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
@@ -2239,7 +2239,7 @@ const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
   return {toR,toX,ticks:o.ticks,all:false}};
 const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button>
-      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search a suburb"></div></div><div class="mres" id="rrRes" hidden></div><button class="mcard" type="button" id="rrCard" hidden></button><div class="mlist" id="rrList" hidden><div class="mlh"><i class="grab"></i><b id="rrListT"></b></div><div class="mlr" id="rrListR"></div></div></div>
+      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search a suburb"></div></div><div class="mres" id="rrRes" hidden></div><button class="mcard" type="button" id="rrCard" hidden></button></div>
       <div class="rrsum"><b id="rrLbl"></b><button class="rrnb" type="button" id="rrNB"><span id="rrN"></span> <span class="chev">›</span></button></div>
       <div class="rrslide"${o&&o.fixed?" hidden":""}><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/RRMAX*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
@@ -2252,7 +2252,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
-    lastP=P;onPaint(P,z,moved());if(!$("rrList").hidden)showList();
+    lastP=P;onPaint(P,z,moved());
     if(!rrMap)return;
     if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>pinCard(v)))}
     rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
@@ -2264,15 +2264,16 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const pinCard=v=>{const o=openState(v,now()),y=me||you();
     card.innerHTML=`<span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${inSheet?"":`<span class="chev">›</span>`}`;
     card.hidden=false;card.onclick=()=>{if(!inSheet)barSheet(v)}};
-  const list=$("rrList");let lastP=null;
-  [card,list].forEach(el=>{["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(el,el===list?".mlh":null)});
-  const showList=()=>{if(!lastP)return;card.hidden=true;const t=now(),y=me||you();
+  let lastP=null;
+  ["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>card.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(card);
+  // the bars in the circle, in a panel from the bottom like everything else
+  $("rrNB").onclick=()=>{if(!lastP)return;const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
     const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
-    $("rrListT").textContent=`${lastP.open.length} open in your circle`;
-    $("rrListR").innerHTML=L.map(v=>{const o=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<div class="mnone">No rooftops in the circle. Drag or widen it.</div>`;
-    $("rrListR").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{const v=byId(b.dataset.v);if(inSheet){list.hidden=true;pinCard(v);if(rrMap)rrMap.setView(v,15)}else barSheet(v)});
-    list.hidden=false;$("rrListR").scrollTop=0};
-  $("rrNB").onclick=()=>{if(list.hidden)showList();else list.hidden=true};
+    sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>
+      <div class="mlr">${L.map(v=>{const st=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}" ${back?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${st.open?"Open til "+clock12(st.closeAt):st.opens!=null?"Opens "+clock12(st.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<p class="note">No rooftops in the circle. Drag or widen it.</p>`}</div>
+      <button class="btn dark" type="button" id="mlBack" style="margin-top:14px">${back?"Back to the map":"Close"}</button>`,()=>{
+      $("sheetBody").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.v)));
+      $("mlBack").onclick=()=>{if(back)back(z);else closeSheet()}})};
   {const q=sfield($("rrQ")),res=$("rrRes");
     ["pointerdown","touchstart","mousedown","dblclick","wheel"].forEach(ev=>[q.parentNode,res].forEach(x=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true})));
     const show=()=>{const t=fold(q.value.trim());if(!t){res.hidden=true;return}
@@ -2294,9 +2295,9 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     m.onTap(()=>{card.hidden=true});m.onMove(()=>{if(!lock)card.hidden=true})});
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
-function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
+function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
   const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode==="map"||mode==="list"?mode:cur;
-  const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
+  const z=keep||(cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2});
   const nowTxt=cz.type==="list"?"your Hit list":zoneTxt(g);
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
   sheet(`<div class="rzsheet rz-${m}"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Spin zone</h3><p class="note" style="margin:2px 0 10px">Now spinning: <b style="color:var(--text)">${nowTxt}</b></p>
@@ -2308,7 +2309,7 @@ function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick"
     document.querySelectorAll(".rzsheet [data-m]").forEach(b=>b.onclick=()=>{if(b.dataset.m!==m)rrZoneSheet(b.dataset.m)});
     if(m==="map"){rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(!b)return;b.disabled=!P.open.length;
       b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestSuburb(zz):"Near you"):"Anywhere";
-        apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}});return}
+        apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}},{reopen:k=>rrZoneSheet("map",k)});return}
     // Hit list, right here: yours ticked at the top, tap to add or take off, search narrows
     const q=sfield($("lsQ")),t=now();let order=[];
     const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
@@ -3183,8 +3184,8 @@ async function apToggle(ap,k,getList,getGeo,force){
   L.forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));if(k==="__me")setMe(m);
 }
 let mvMaps=[];
-function openMove(free){
-  const g=G(),me=you()||fromPoint(),z={lat:g.center.lat,lng:g.center.lng,r:g.radius};
+function openMove(free,keep){
+  const g=G(),me=you()||fromPoint(),z=keep||{lat:g.center.lat,lng:g.center.lng,r:g.radius};
   sheet(`<div class="rzsheet"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
     <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a game. Drag the circle somewhere new. Same size."}</p></div>
     <div style="margin-top:4px">${rrZoneHTML({fixed:true,lo:g.radius,hi:g.radius,ticks:[]})}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
@@ -3196,7 +3197,7 @@ function openMove(free){
       const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Move here";
       b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
         if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
-        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{fixed:true,lo:g.radius,hi:g.radius+0.0001,ticks:[],pool});
+        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{fixed:true,lo:g.radius,hi:g.radius+0.0001,ticks:[],pool,reopen:k=>openMove(free,k)});
     $("mvX").onclick=closeSheet;
   });
 }
