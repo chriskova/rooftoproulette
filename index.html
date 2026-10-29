@@ -810,6 +810,7 @@ a.btn{text-decoration:none}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.clock .rrz{display:block;margin:5px auto 0;appearance:none;background:none;border:0;padding:2px 4px;font:inherit;font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);cursor:pointer;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}.clock .rrz .zchev{color:var(--amber)}
 .clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber)}
 .clock.warn b,.clock.warn small{color:var(--amber)}
 .clock.red b,.clock.red small{color:var(--red)}
@@ -2498,7 +2499,8 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const mixlineHTML=g=>CR(g)?`<div class="mixline" id="mixZone" role="button" tabindex="0" style="cursor:pointer"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span></div>`
+const zoneTxt=g=>g.cz.type==="list"?"Hit list":esc(g.areas[g.areas.length-1])+(g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:"");
+const mixlineHTML=g=>CR(g)?""
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
@@ -3390,17 +3392,17 @@ function rollWild(g,id){
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
-    if(!g.started){$("clockT").textContent="";$("clockL").innerHTML='<span class="rrt">R<i>&amp;</i>R</span>';return}
-    $("clockT").textContent="";$("clockL").innerHTML='<span class="rrt">R<i>&amp;</i>R</span>';return}
+    if(!g.started){$("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h}}return}
+    $("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h}}return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
-  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL").textContent="Starts on spin";return}
+  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts on spin";return}
   const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
   $("clock").className="clock"+(red?" red":warn?" warn":"");
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
-  $("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
-  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
+  $("clockL")._h=null;$("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
+  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
 }
 
 /* ---------- stats + scorecard ---------- */
