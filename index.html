@@ -1111,7 +1111,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bsearch .lsearch{flex:1;min-width:0}
 .bmain{display:flex;flex-direction:column;gap:16px}
 .bmain[hidden]{display:none}
-.rlist{margin-top:-4px;max-height:132px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}.rlist::-webkit-scrollbar{display:none}
+.rlist{margin-top:-4px}
+.rn{color:var(--muted);font-size:13px;font-weight:600}
 .rrow{padding:5px 0;gap:10px;min-height:44px}.rrow:first-child{border-top:0}
 .rrow .t{display:flex;align-items:baseline;gap:8px}.rrow .t b{font-size:15px;flex:0 1 auto}.rrow .t small{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .subrow{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.subrow::-webkit-scrollbar{display:none}.subrow .chip{flex:none;display:flex;align-items:center;gap:5px}.subrow .chip svg{width:14px;height:14px;color:var(--muted)}
@@ -3501,12 +3502,13 @@ function paintSearch(){
   const q=$("bQ"),box=$("barsResults"),s_=fold(q.value.trim()),t=now(),y=you(),c=collectedMap();
   $("bQclr").hidden=!q.value;
   if(!s_){
-    const rec=((S.recentB||{})[S.city]||[]).map(byId).filter(Boolean).slice(0,10),subs=[...new Set(VENUES.filter(inCityNow).map(v=>v.area))].sort();
+    const rec=((S.recentB||{})[S.city]||[]).map(byId).filter(Boolean).slice(0,3),subs=[...new Set(VENUES.filter(inCityNow).map(v=>v.area))].sort();
     const rrow=v=>`<div class="barrow rrow" role="button" tabindex="0" data-id="${v.id}"><span class="rclock">${I.clock}</span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></span><button class="rmx" type="button" data-rm="${v.id}" aria-label="Remove ${esc(v.name)}">${I.x}</button></div>`;
     // suburbs first as one swipeable row (always above the keyboard), then recent
-    // recent first (3 rows tall, scroll for more), suburbs underneath, well clear of the search box
+    // everything scrolls one way (down): last 3 bars you opened, then every suburb with how many rooftops it has
+    const nIn=a=>VENUES.filter(v=>inCityNow(v)&&v.area===a).length;
     box.innerHTML=`${rec.length?`<div class="shd">Recent</div><div class="rlist">${rec.map(rrow).join("")}</div>`:""}
-      <div class="shd">Suburbs</div><div class="chips subrow" id="subRow">${subs.map(a=>`<button class="chip" type="button" data-q="${esc(a)}">${I.pin} ${esc(a)}</button>`).join("")}</div>`;
+      <div class="shd">Suburbs</div><div class="rlist">${subs.map(a=>`<div class="barrow rrow" role="button" tabindex="0" data-q="${esc(a)}"><span class="rclock">${I.pin}</span><span class="t"><b>${esc(a)}</b></span><span class="rn">${nIn(a)}</span><span class="chev">›</span></div>`).join("")}</div>`;
     box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{q.value=b.dataset.q;paintSearch()});
     bindRows(box);
     box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.recentB[S.city]=(S.recentB[S.city]||[]).filter(x=>x!==b.dataset.rm);save();paintSearch()});return;
