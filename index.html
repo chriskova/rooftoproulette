@@ -2326,7 +2326,7 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}
+  const w=S.wiz;if(!w){go("home");return}if(w.step>2)w.step=2;if(w.step===2&&(!w.start||!w.radius))w.step=0;
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}
   $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
