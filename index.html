@@ -1111,6 +1111,8 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .bsearch .lsearch{flex:1;min-width:0}
 .bmain{display:flex;flex-direction:column;gap:16px}
 .bmain[hidden]{display:none}
+.rclock{width:22px;display:grid;place-items:center;color:var(--dim);flex:none}.rclock svg{width:17px;height:17px}
+.rmx{flex:none;width:34px;height:34px;margin-right:-6px;border:0;background:none;color:var(--dim);display:grid;place-items:center;cursor:pointer}.rmx svg{width:15px;height:15px}
 .shd{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:4px 0 -6px}
 .nores{display:flex;flex-direction:column;gap:6px;padding:18px 4px;color:var(--muted);font-size:14px}.nores b{color:var(--text);font-size:16px}
 .mapfab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 14px);z-index:40;display:flex;align-items:center;gap:7px;background:var(--text);color:var(--bg);border:0;border-radius:99px;padding:11px 18px;font:inherit;font-size:14.5px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.5);cursor:pointer}
@@ -3471,7 +3473,7 @@ const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
 function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}" role="button" tabindex="0" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
-  root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart]"))return;if(root.id==="barsResults")rememberQ();barSheet(v)};warmOnHold(b,v)});
+  root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
     document.querySelectorAll(`[data-heart="${id}"]`).forEach(x=>x.setAttribute("aria-pressed",String(!!S.want[id])));paintLists()});
 }
@@ -3488,15 +3490,20 @@ function sfield(el){if(!el||el._sf)return el;el._sf=1;
   return el}
 /* Search: every rooftop in your city by name or suburb; matches in other cities underneath */
 let bSearching=false;
-function rememberQ(){const q=$("bQ").value.trim();if(q.length<2)return;S.recentQ=[q,...(S.recentQ||[]).filter(x=>fold(x)!==fold(q))].slice(0,5);save()}
+// recent = bars you opened from search (per city): 5 shown, 15 kept so removing one backfills the next
+function rememberBar(id){const c=cityOf(byId(id));S.recentB=S.recentB||{};S.recentB[c]=[id,...(S.recentB[c]||[]).filter(x=>x!==id)].slice(0,15);save()}
+const rememberQ=()=>{};
 function paintSearch(){
   const q=$("bQ"),box=$("barsResults"),s_=fold(q.value.trim()),t=now(),y=you(),c=collectedMap();
   $("bQclr").hidden=!q.value;
   if(!s_){
-    const rec=S.recentQ||[],subs=[...new Set(VENUES.filter(inCityNow).map(v=>v.area))].sort();
-    box.innerHTML=`${rec.length?`<div class="shd">Recent</div><div class="chips">${rec.map(r=>`<button class="chip" type="button" data-q="${esc(r)}">${I.clock} ${esc(r)}</button>`).join("")}</div>`:""}
+    const rec=((S.recentB||{})[S.city]||[]).map(byId).filter(Boolean).slice(0,5),subs=[...new Set(VENUES.filter(inCityNow).map(v=>v.area))].sort();
+    const rrow=v=>{const o=openState(v,t);return `<div class="barrow" role="button" tabindex="0" data-id="${v.id}"><span class="rclock">${I.clock}</span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</small></span><button class="rmx" type="button" data-rm="${v.id}" aria-label="Remove ${esc(v.name)}">${I.x}</button></div>`};
+    box.innerHTML=`${rec.length?`<div class="shd">Recent</div><div class="card list" style="padding:4px 16px">${rec.map(rrow).join("")}</div>`:""}
       <div class="shd">Suburbs in ${esc(S.city)}</div><div class="chips">${subs.map(a=>`<button class="chip" type="button" data-q="${esc(a)}">${esc(a)}</button>`).join("")}</div>`;
-    box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{q.value=b.dataset.q;paintSearch()});return;
+    box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{q.value=b.dataset.q;paintSearch()});
+    bindRows(box);
+    box.querySelectorAll("[data-rm]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.recentB[S.city]=(S.recentB[S.city]||[]).filter(x=>x!==b.dataset.rm);save();paintSearch()});return;
   }
   const hit=v=>fold(v.name).includes(s_)||fold(v.area).includes(s_)||fold(areaOf(v).name).includes(s_);
   const rank=v=>(fold(v.name).startsWith(s_)?0:fold(v.name).includes(s_)?1:2);
