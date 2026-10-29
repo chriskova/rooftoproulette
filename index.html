@@ -804,7 +804,12 @@ a.btn{text-decoration:none}
 .clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
-@media (max-height:680px){.msub,.rrnote{display:none}}
+@media (max-height:680px){.rrnote{display:none}}
+.msub{display:none}
+body:has(.view:not([hidden]) .rrmap) #appbar{display:none}
+.view h1.q.qmap{font-size:26px}
+body.mapq .view .wtop~*:not(:has(.rrmap)):not(.rrmap),body.mapq .view :has(>.rrmap)>:not(.rrmap),body.mapq .rrsum,body.mapq .rrslide,body.mapq .rrnote,body.mapq #cta,body.mapq #wSum{display:none!important}
+body.mapq .view{padding-bottom:12px!important}
 .sczone{display:flex;align-items:center;gap:6px;justify-content:center;color:var(--muted);font-size:13.5px;font-weight:600;margin:-4px 0 2px}.sczone svg{width:15px;height:15px;color:var(--amber)}
 .msearch{position:absolute;top:10px;left:10px;right:62px;z-index:600;display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:0 12px;height:42px;box-shadow:0 4px 12px rgba(0,0,0,.4);color:var(--muted)}.msearch svg{width:17px;height:17px;flex:none}.msearch .sfield{flex:1;min-width:0;font-size:15px;color:var(--text)}
 .mres{position:absolute;top:58px;left:10px;right:10px;z-index:650;background:var(--s1);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.5)}
@@ -2209,10 +2214,13 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 let rrMap=null;
-function fitMap(v){const el=$("rrMap");if(!v||!el)return;el.style.height="200px";
-  const vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0,limit=vr.top+v.clientHeight-pb;
+function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;el.style.height="200px";
+  const vv=window.visualViewport,vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0;
+  let limit=vr.top+v.clientHeight-pb;if(vv&&document.body.classList.contains("mapq"))limit=Math.min(limit,vv.offsetTop+vv.height-12);
   const last=Math.max(...[...v.children].filter(x=>x.offsetParent!==null).map(x=>x.getBoundingClientRect().bottom));
-  el.style.height=Math.round(Math.max(150,Math.min(520,200+(limit-last)-6)))+"px";if(rrMap)rrMap.resize()}
+  el.style.height=Math.round(Math.max(150,Math.min(document.body.classList.contains("mapq")?900:620,200+(limit-last)-6)))+"px";if(rrMap)rrMap.resize();
+  if(!again){requestAnimationFrame(()=>fitMap(v,1));setTimeout(()=>fitMap(v,1),350)}}
+if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route),1)});
 window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route))});
 let SUBS=null;const subs=()=>SUBS||(SUBS=Object.values(VENUES.reduce((m,v)=>{const k=cityOf(v)+"|"+v.area,o=m[k]||(m[k]={name:v.area,city:cityOf(v),lat:0,lng:0,n:0});o.lat+=v.lat;o.lng+=v.lng;o.n++;return m},{})).map(o=>({...o,lat:o.lat/o.n,lng:o.lng/o.n})));
 // whichever city the circle sits in becomes the app's city (like changing your address in Uber Eats)
@@ -2250,7 +2258,10 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
       res.innerHTML=L.length?L.map((o,i)=>`<button type="button" data-s="${i}"><b>${esc(o.name)}</b><span>${o.city===S.city?"":esc(o.city)+" · "}${o.n} rooftop${o.n===1?"":"s"}</span></button>`).join(""):`<div class="mnone">No rooftops in a suburb called "${esc(q.value.trim())}" yet</div>`;
       res.hidden=false;res.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const o=L[+b.dataset.s];q.value="";res.hidden=true;q.blur();
         z.lat=o.lat;z.lng=o.lng;if(!z.r){z.r=2;$("rrR").value=Z.toX(2)}followCity(z);save();paint(true);fit()})};
-    q.oninput=show;q.addEventListener("blur",()=>setTimeout(()=>{if(!q.value)res.hidden=true},200))}
+    q.oninput=show;
+    const v_=q.closest(".view");
+    q.addEventListener("focus",()=>{if(!v_)return;document.body.classList.add("mapq");fitMap(v_)});
+    q.addEventListener("blur",()=>setTimeout(()=>{if(!q.value)res.hidden=true;if(document.activeElement!==q){document.body.classList.remove("mapq");if(v_)fitMap(v_)}},200))}
   $("rrHome").onclick=()=>{if(!me){if(o&&o.locate)o.locate();return}z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
   paint(true);
   requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
@@ -2314,7 +2325,7 @@ function renderQuick(){
     apClear();
     const me=q.from&&q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;if(!me){q.step=0;save();renderQuick();return}
     if(!q.z)q.z={lat:me.lat,lng:me.lng,r:2};
-    b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
+    b.innerHTML=top+`<div><h1 class="q qmap">How far?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
     rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));fitMap(b);
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
@@ -2377,7 +2388,7 @@ function renderWiz(){
     if(!me&&!w._loc){w._loc=1;permState().then(st=>{if(st==="granted"&&S.route==="wiz"&&S.wiz===w&&w.step===1)useMe()})}
     if(!w.z){const c0=me&&GAME_AREAS().some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
-    body.innerHTML=`<div><h1 class="q">Where's your zone?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to where you're starting. Every spin lands inside the circle.</p></div>${rrZoneHTML(R1)}`;
+    body.innerHTML=`<div><h1 class="q qmap">Where's your zone?</h1><p class="sub msub" style="margin:6px 0 0">Drag the map to where you're starting. Every spin lands inside the circle.</p></div>${rrZoneHTML(R1)}`;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),false);return {all,open:all.filter(v=>openOK(v,t))}};
     rrZoneBind(w.z,me,()=>false,(P,z,moved)=>{
       const shut=!P.all.some(v=>openState(v,now()).open);   // outside opening hours: count every rooftop so people can still plan ahead
