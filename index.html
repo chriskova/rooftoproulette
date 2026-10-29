@@ -806,7 +806,8 @@ a.btn{text-decoration:none}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
 .rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
-.rrrange{width:100%;accent-color:var(--amber);height:28px}.rrticks{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:-2px;padding:0 2px}
+.rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
+.rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber)}
 .clock.warn b,.clock.warn small{color:var(--amber)}
 .clock.red b,.clock.red small{color:var(--red)}
@@ -2189,8 +2190,9 @@ async function quickNearMe(){
   catch(e){q.note="Couldn't find you just now. Try again, or spin from your Want to try list."}
   save();renderQuick();
 }
-const RRSTOPS=[1,2,3,5,10,0]; // km; 0 = the whole city
-const rrLbl=r=>r?r+" km":"All";
+// smooth distance slider: 0–970 = 500 m to 15 km (finer at the short end), the last bit = the whole city (r 0)
+const RRMAX=1000,RRALL=970,rrToR=x=>x>=RRALL?0:Math.round(0.5*Math.pow(30,x/RRALL)*10)/10,rrToX=r=>r?Math.round(Math.log(r/0.5)/Math.log(30)*RRALL):RRMAX;
+const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0$/,""):Math.round(r))+" km";
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 let rrMap=null;
@@ -2221,13 +2223,13 @@ function renderQuick(){
     b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>
       <div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i></div>
       <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
-      <div><input class="rrrange" type="range" id="rrR" min="0" max="${RRSTOPS.length-1}" step="1" value="${Math.max(0,RRSTOPS.indexOf(q.z.r))}" aria-label="How far">
-      <div class="rrticks">${RRSTOPS.map(r=>`<span>${rrLbl(r)}</span>`).join("")}</div></div>
+      <div class="rrslide"><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" value="${rrToX(q.z.r)}" aria-label="How far">
+      <div class="rrticks">${[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]].map(([r,l])=>`<span style="left:${rrToX(r)/RRMAX*100}%">${l}</span>`).join("")}<span style="left:100%;transform:translateX(-100%)">All</span></div></div>
       <button class="txtbtn" type="button" id="rrHome" hidden>Back to where I am</button>
       ${newTog}`;
     const moved=()=>dist(q.z,me)>150;
     const paint=(full)=>{const z=q.z,P=rrPool(z,now(),q.newOnly);
-      $("rrLbl").textContent=z.r?`Within ${z.r} km of ${moved()?nearestArea(z):"you"}`:`All of ${S.city}`;
+      $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()?nearestArea(z):"you"}`:`All of ${S.city}`;
       $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
       $("rrHome").hidden=!z.r||!moved();$("rrPin").hidden=!z.r;
       cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved()?{type:"spot",name:"Around "+nearestArea(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()});
@@ -2235,7 +2237,8 @@ function renderQuick(){
       if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>barSheet(v)))}
       rrMap.ring(z.r?z:null,z.r);rrMap.me(me)};
     const fit=()=>{if(!rrMap)return;const z=q.z;if(z.r)rrMap.fitZone(z,z.r);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-    $("rrR").oninput=()=>{q.z.r=RRSTOPS[+$("rrR").value];save();paint(true);fit()};
+    $("rrR").oninput=()=>{q.z.r=rrToR(+$("rrR").value);paint(false)};
+    $("rrR").onchange=()=>{save();paint(true);fit()};
     $("rrHome").onclick=()=>{q.z.lat=me.lat;q.z.lng=me.lng;save();paint(true);fit()};
     paint(true);
     requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
@@ -2459,7 +2462,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${g.cz.r} km`:""}</span><span>R&amp;R</span></div>`
+const mixlineHTML=g=>CR(g)?`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span><span>R&amp;R</span></div>`
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
@@ -2674,7 +2677,7 @@ setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return "Flick it down. Harder flick, longer spin."}
 
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
-function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${g.cz.r} km of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Call it a night, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the night</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
+function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Call it a night, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the night</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
 function askDrink(a0,then){const v=byId(a0.id);
   sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><p class="note">You've been here under ${DWELL_MIN} minutes. It only counts if you had a drink.</p><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
     $("dS").onclick=closeSheet;
