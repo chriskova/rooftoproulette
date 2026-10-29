@@ -1493,7 +1493,11 @@ html.fl .app{visibility:hidden}
 .jv-count small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:2px}
 .bar.jpcard{position:relative}
 
-.fchips{gap:8px}
+.fchips{gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.fchips::-webkit-scrollbar{display:none}
+.fchips .chip{flex:none;display:flex;align-items:center;gap:6px}.fchips .chip svg{width:14px;height:14px}
+.fchips .chip.opn[aria-pressed="true"]{background:var(--green-soft);border-color:rgba(74,222,128,.55);color:var(--green)}
+.st{color:var(--muted)}.st.on{color:var(--green)}
+.barrow.shut .t b{color:var(--muted)}.barrow.shut{opacity:.8}
 .toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px;color:var(--muted);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
 .toast.on{transform:none;opacity:1;pointer-events:auto}
 .toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}
@@ -3477,7 +3481,7 @@ function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
-function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}" role="button" tabindex="0" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
+function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?`<span class="st on">● Open · Closes ${clock12(o.closeAt)}</span>`:`<span class="st">○ ${o.temp?"Temporarily closed":o.opens!=null?"Closed · Opens "+clock12(o.opens):"Closed today"}</span>`} · ${esc(v.area)}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
@@ -3548,11 +3552,18 @@ function renderBars(){
   const tabs=g?[["zone",CR(g)?(g.cz.type==="list"?"Your list":"Nearby"):"My zone"],["all","All"]]:[["all","All"]];
   if(g&&S.barsFilterGame!==g.id){S.barsFilter="zone";S.barsFilterGame=g.id;save()}   // a new game opens on your zone
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
-  $("barsSeg").hidden=tabs.length<2;$("barsCity").innerHTML=cityBtn();
+  $("barsCity").innerHTML=cityBtn();
   const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
   paintLists();
   if(false)$("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
-  $("barsSeg").innerHTML=tabs.map(([k,l])=>`<button class="chip" type="button" data-v="${k}" aria-pressed="${k===f}">${l}</button>`).join("");
+  const today=new Date().toDateString(),ct=sydAt(t,TZ[S.city]);
+  const openOnly=S.barsOpenDay===today?!!S.barsOpen:(ct.min>=960||ct.min<180);   // from 4pm, open-only by default
+  const rgSel=f==="all"?(S.barsRegion||"all"):null;
+  $("barsSeg").hidden=false;
+  $("barsSeg").innerHTML=`<button class="chip opn" type="button" data-open aria-pressed="${openOnly}">${I.clock} Open now</button>`
+    +(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
+    +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(S.city)}</button>`
+    +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
   const os=v=>openState(v,t);
   let intro="",rows=[],pins=[],extra="",fitTo=null;
@@ -3561,7 +3572,7 @@ function renderBars(){
     const inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)),tonight=g.visits.map(v=>v.id);
     const live=inZ.filter(v=>!tonight.includes(v.id)&&os(v).open).sort(sortD);
     if(g.target){const i=live.findIndex(v=>v.id===g.target);if(i>0)live.unshift(live.splice(i,1)[0])}
-    const closed=inZ.filter(v=>!tonight.includes(v.id)&&!os(v).open).sort(sortD);
+    const closed=openOnly?[]:inZ.filter(v=>!tonight.includes(v.id)&&!os(v).open).sort(sortD);
     intro=`${CR(g)?(g.cz.type==="list"?"Your Want to try list. Your spins only land on these.":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
     rows=[...live.map(v=>rowHTML(v,os(v),v.id===g.target?"next":barStatus(v,c),y)),
       ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
@@ -3590,16 +3601,17 @@ function renderBars(){
     if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Not for us".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
-    const rg=S.barsRegion||"all",openOnly=!!S.barsOpen;
+    const rg=S.barsRegion||"all";
     if(rg!=="all"&&!REG().some(r=>r.name===rg)){S.barsRegion="all";save();return renderBars()}
     if(bMap&&bMap._city!==S.city){bMap._city=S.city;bMapFit=true}
     const list=VENUES.filter(v=>inCityNow(v)&&(rg==="all"||areaOf(v).reg===rg)&&(!openOnly||os(v).open)).sort(sortD);
-    extra=regionChips(rg,openOnly);
+    extra="";
     intro="";
     rows=groupedRows(list,v=>rowHTML(v,os(v),barStatus(v,c),y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open here right now.</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open here right now. Tap <b>Open now</b> to see everything.</div>`];
     pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));fitTo=list;
   }
+  $("barsIntro").hidden=f==="all"&&!intro&&!extra;
   $("barsIntro").innerHTML=f==="all"?`${extra}${intro?`<p class="note" style="margin:10px 0 0">${intro}</p>`:""}`:`<p class="note" style="margin:0">${intro}</p>${extra}`;
   if($("rgSel"))$("rgSel").onchange=e=>{S.barsRegion=e.target.value;save();bMapFit=true;renderBars()};
   if($("rgOpen"))$("rgOpen").onclick=()=>{S.barsOpen=!S.barsOpen;save();renderBars()};
@@ -3616,7 +3628,9 @@ function renderBars(){
     setMe(m);
   });
 }
-$("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.barsFilter=b.dataset.v;save();renderBars()};
+$("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.hasAttribute("data-open")){S.barsOpen=b.getAttribute("aria-pressed")!=="true";S.barsOpenDay=new Date().toDateString();save();renderBars();return}
+  const w=b.dataset.w;if(w==="zone")S.barsFilter="zone";else{S.barsFilter="all";S.barsRegion=w;bMapFit=true}save();renderBars()};
 function barSheet(v){
   const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
   if(bMap&&S.route==="bars")bMap.setView(v,16);
