@@ -3659,7 +3659,7 @@ async function storyCard(r,look){
     const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
     x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
     x.font=`650 28px ${U}`;x.fillStyle=bod?AMB:ok?INK:"#6B7280";const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
-    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.translate(Math.min(ex+4,X+cw-140),Y-36);x.rotate(-5*Math.PI/180);x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;
+    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.max(X+54,ex-w*.8),Y-40);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
   if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1480+rows*gap)}
   // footer
