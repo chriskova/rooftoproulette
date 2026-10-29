@@ -1497,7 +1497,8 @@ html.fl .app{visibility:hidden}
 .fchips .chip{flex:none;display:flex;align-items:center;gap:6px}.fchips .chip svg{width:14px;height:14px}
 .fchips .chip.opn[aria-pressed="true"]{background:var(--green-soft);border-color:rgba(74,222,128,.55);color:var(--green)}
 .st{color:var(--muted)}.st.on{color:var(--green)}
-.barrow.shut .t b{color:var(--muted)}.barrow.shut{opacity:.8}
+.barrow.shut{opacity:.5}
+.shuthd{color:var(--muted)}
 .toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px;color:var(--muted);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
 .toast.on{transform:none;opacity:1;pointer-events:auto}
 .toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}
@@ -3481,7 +3482,7 @@ function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
-function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?`<span class="st on">● Open · Closes ${clock12(o.closeAt)}</span>`:`<span class="st">○ ${o.temp?"Temporarily closed":o.opens!=null?"Closed · Opens "+clock12(o.opens):"Closed today"}</span>`} · ${esc(v.area)}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
+function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?`Closes ${clock12(o.closeAt)}`:o.temp?"Temporarily closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"} · ${esc(v.area)}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
@@ -3557,11 +3558,10 @@ function renderBars(){
   paintLists();
   if(false)$("barsLists").innerHTML=[["want","Want to try",nWant],["been","Been to",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Not for us ›</button>`;
   const today=new Date().toDateString(),ct=sydAt(t,TZ[S.city]);
-  const openOnly=S.barsOpenDay===today?!!S.barsOpen:(ct.min>=960||ct.min<180);   // from 4pm, open-only by default
+  const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
   $("barsSeg").hidden=false;
-  $("barsSeg").innerHTML=`<button class="chip opn" type="button" data-open aria-pressed="${openOnly}">${I.clock} Open now</button>`
-    +(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
+  $("barsSeg").innerHTML=(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
     +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(S.city)}</button>`
     +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
@@ -3576,7 +3576,7 @@ function renderBars(){
     intro=`${CR(g)?(g.cz.type==="list"?"Your Want to try list. Your spins only land on these.":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
     rows=[...live.map(v=>rowHTML(v,os(v),v.id===g.target?"next":barStatus(v,c),y)),
       ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
-      ...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
+      ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
     pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
     if(!CR(g)){const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
       extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this game.</p>`}
@@ -3607,8 +3607,8 @@ function renderBars(){
     const list=VENUES.filter(v=>inCityNow(v)&&(rg==="all"||areaOf(v).reg===rg)&&(!openOnly||os(v).open)).sort(sortD);
     extra="";
     intro="";
-    rows=groupedRows(list,v=>rowHTML(v,os(v),barStatus(v,c),y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing's open here right now. Tap <b>Open now</b> to see everything.</div>`];
+    const op=list.filter(v=>os(v).open),ok=v=>{const x=os(v);return x.opens!=null&&!x.temp?x.opens:1e9},cl=list.filter(v=>!os(v).open).sort((a,b)=>ok(a)-ok(b)||sortD(a,b));   // closed: opening soonest first
+    rows=[...groupedRows(op,v=>rowHTML(v,os(v),barStatus(v,c),y)),...(cl.length?[`<div class="grouphd shuthd">Closed now</div>`,...cl.map(v=>rowHTML(v,os(v),barStatus(v,c),y))]:[])];
     pins=list.map(v=>({v,cls:barStatus(v,c)==="col"?"done":os(v).open?"":"off"}));fitTo=list;
   }
   $("barsIntro").hidden=f==="all"&&!intro&&!extra;
