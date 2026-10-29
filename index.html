@@ -1424,7 +1424,7 @@ html.fl .app{visibility:hidden}
 #v-play .again{gap:3px}
 #v-play .again .fine{font-size:12.5px}
 #v-play .stage>.btn{height:52px}
-#v-play .stage:has(>.bar.tgt),#v-play .stage:has(>.bar.at){flex:1 0 auto}#v-play .stage>.bar.at{flex:1 1 auto;justify-content:flex-end}#v-play .bar.tgt .facts{flex-wrap:nowrap;white-space:nowrap;gap:14px}#v-play .stage>.bar.tgt{flex:1 1 auto;justify-content:flex-end}
+#v-play .ready{min-height:0;justify-content:flex-start}#v-play .stage:has(>.bar.tgt),#v-play .stage:has(>.bar.at){flex:1 0 auto}#v-play .stage>.bar.at{flex:1 1 auto;justify-content:flex-end}#v-play .bar.tgt .facts{flex-wrap:nowrap;white-space:nowrap;gap:14px}#v-play .stage>.bar.tgt{flex:1 1 auto;justify-content:flex-end}
 #v-play .links{margin-top:-4px}
 #v-play .links .btn{height:38px}
 .bar .btn.dir{background:transparent;border:1.5px solid rgba(36,24,3,.55);color:var(--amber-ink)}
@@ -2556,7 +2556,7 @@ function makeReel(el,names,o){
   // The list round the drum. No name sits within GAP rows of itself (7 rows show at once). Small pools can't
   // manage that, so they get as much space as they can. Before each spin, the stretch it's about to roll
   // through is rewritten the same way, with the winner dropped in where it'll stop.
-  const U=[...new Set(names)],GAP=Math.max(1,Math.min(8,U.length-2)),LEN=Math.max(260,U.length+1);
+  const U=[...new Set(names)],GAP=Math.max(1,Math.min(12,U.length-2)),LEN=Math.max(260,U.length+1);
   const clash=(A,i,nm)=>{for(let d=1;d<=GAP;d++){if(A[(i-d+A.length)%A.length]===nm||A[(i+d)%A.length]===nm)return true}return false};
   const pickFrom=(ban,fallback)=>{let c=U.filter(x=>!ban.has(x));if(!c.length)c=U.filter(x=>x!==fallback);if(!c.length)c=U;return c[Math.floor(Math.random()*c.length)]};
   let L=[PH];while(L.length<LEN)L.push(pickFrom(new Set(L.slice(-GAP)),L[L.length-1]));
@@ -2568,13 +2568,13 @@ function makeReel(el,names,o){
      window and is only full size dead centre. On the way in it's squashed top-to-bottom (the edge of a rounded
      lens squeezes more in that direction), and it swaps from the fine weight to the bold one as it swells.
      Names are spread further apart near the middle so a big name never runs into its neighbours. */
-  el.innerHTML=`<div class="frame"></div>${[...Array(9)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
+  el.innerHTML=`<div class="frame"></div>${[...Array(13)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
   const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
   let lastK=0,lastFl=0,moved=false,lastP=0,lastT=performance.now();
   const SIG=.62,OUT=.66,bump=d=>Math.exp(-(d/SIG)*(d/SIG));
   // where each name sits: spacing is wider near the middle (integrated once into a lookup table)
-  const STEPD=.01,YT=[0];for(let i=1;i<=600;i++){const u=(i-.5)*STEPD;YT.push(YT[i-1]+(43+30*bump(u))*STEPD)}
-  const yAt=d=>{const a=Math.min(5.99,Math.abs(d))/STEPD,i=Math.floor(a),f=a-i,y=YT[i]+(YT[i+1]-YT[i])*f;return d<0?-y:y};
+  const STEPD=.01,YT=[0];for(let i=1;i<=800;i++){const u=(i-.5)*STEPD;YT.push(YT[i-1]+(43+30*bump(u))*STEPD)}
+  const yAt=d=>{const a=Math.min(7.99,Math.abs(d))/STEPD,i=Math.floor(a),f=a-i,y=YT[i]+(YT[i+1]-YT[i])*f;return d<0?-y:y};
   let RAD=190;   // the drum the names sit on, so the far ones curve away (bigger window, bigger drum)
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
@@ -2585,7 +2585,7 @@ function makeReel(el,names,o){
     const fl=Math.floor(R.p);
     // each name keeps the same element for as long as it's on screen, so its zoom state travels with it
     RAD=Math.max(190,(el.clientHeight||290)*.6);
-    for(let k=fl-4;k<=fl+4;k++){const r=rows[((k%9)+9)%9],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
+    for(let k=fl-6;k<=fl+6;k++){const r=rows[((k%13)+13)%13],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
       if(r._k!==k){r._k=k;r._in=false;[t,bo].forEach(x=>{x.style.transition="none";x.style.transform=""})}
       if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
       const g=bump(d),y=yAt(d),ang=y/RAD;
@@ -2969,7 +2969,7 @@ function fitPlay(){
     // free space = the bottom of the usable area minus the bottom of the last thing on screen
     const vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0,limit=vr.top+v.clientHeight-pb;
     const last=Math.max(...[...v.querySelectorAll("#stage>:not(.ready),#stage .ready>*")].map(x=>x.getBoundingClientRect().bottom));
-    const h=Math.round(Math.max(230,Math.min(540,rb.offsetHeight+(limit-last)-14)));rb.style.height=h+"px";if(reel&&reel.redraw)reel.redraw()}
+    const h=Math.round(Math.max(230,Math.min(760,rb.offsetHeight+(limit-last)-14)));rb.style.height=h+"px";if(reel&&reel.redraw)reel.redraw()}
   const card=$("stage").querySelector(".bar.photo");if(!card)return;card.style.minHeight="";
   const over=v.scrollHeight-v.clientHeight;if(over>0)card.style.minHeight=Math.max(0,card.offsetHeight-over)+"px";
 }
@@ -3343,7 +3343,7 @@ function renderPlay(){
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
-  if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay()}
+  if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay();requestAnimationFrame(()=>{if(!spinning)fitPlay()});setTimeout(()=>{if(!spinning)fitPlay()},400)}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{const id=g.target;(g.skipped=g.skipped||[]).push(id);g.target=null;save();renderPlay();skipToast(id)};
   else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
