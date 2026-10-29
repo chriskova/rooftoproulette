@@ -3319,7 +3319,7 @@ function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
     if(!g.started){$("clockT").textContent="R&R";$("clockL").textContent="Spin when you're ready";return}
-    $("clockT").textContent=now()-g.startedAt<60000?"Just out":hmm(now()-g.startedAt);$("clockL").textContent="Out for";return}
+    const el=now()-g.startedAt;$("clockT").textContent="R&R";$("clockL").textContent=el<60000?"Just started":hmm(el)+" in";return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
   if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL").textContent="Starts on spin";return}
