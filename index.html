@@ -1287,18 +1287,22 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jpx-bg{background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.55),rgba(3,4,7,.97) 70%)!important}
 .jpx-mesh{position:absolute;inset:0;opacity:0;transition:opacity 1.6s cubic-bezier(.4,0,.2,1) .1s;overflow:hidden}
 .jpx.live .jpx-mesh{opacity:1}
-/* soft light pooled at the bottom and top edges, slowly breathing and drifting, heavily blurred */
-.jpx-mesh i{position:absolute;border-radius:50%;filter:blur(56px);will-change:transform,opacity}
-.jpx-mesh .m1{width:110vw;height:46vh;left:-20vw;bottom:-22vh;background:rgba(245,184,61,.24);animation:jg1 11s ease-in-out infinite}
-.jpx-mesh .m2{width:90vw;height:40vh;right:-25vw;bottom:-18vh;background:rgba(232,110,82,.18);animation:jg2 13s ease-in-out infinite}
-.jpx-mesh .m3{width:80vw;height:34vh;left:10vw;bottom:-24vh;background:rgba(150,92,190,.15);animation:jg3 15s ease-in-out infinite}
-.jpx-mesh .m4{width:90vw;height:26vh;left:5vw;top:-18vh;background:rgba(245,184,61,.09);animation:jg4 14s ease-in-out infinite}
-.jpx-mesh .m5{width:70vw;height:30vh;left:15vw;top:30vh;background:rgba(245,184,61,.06);animation:jg5 9s ease-in-out infinite}
-@keyframes jg1{0%,100%{transform:translate(0,0) scale(1);opacity:.9}50%{transform:translate(12vw,-3vh) scale(1.08);opacity:1}}
-@keyframes jg2{0%,100%{transform:translate(0,0) scale(1);opacity:.8}50%{transform:translate(-14vw,-4vh) scale(1.12);opacity:1}}
-@keyframes jg3{0%,100%{transform:translate(-8vw,0) scale(1);opacity:.7}50%{transform:translate(10vw,-5vh) scale(1.15);opacity:1}}
-@keyframes jg4{0%,100%{transform:translate(-6vw,0);opacity:.6}50%{transform:translate(8vw,2vh);opacity:1}}
-@keyframes jg5{0%,100%{transform:scale(.9);opacity:.6}50%{transform:scale(1.1);opacity:1}}
+/* soft coloured light that keeps flowing round the screen: a slow blurred swirl plus a few drifting, shape-shifting glows */
+.jpx-mesh::before{content:"";position:absolute;left:50%;top:50%;width:160vmax;height:160vmax;margin:-80vmax 0 0 -80vmax;filter:blur(70px);opacity:.5;
+  background:conic-gradient(from 0deg,rgba(245,184,61,.22),rgba(232,110,82,.14),rgba(150,92,190,.12),rgba(11,13,18,0) 55%,rgba(245,184,61,.16),rgba(232,110,82,.1),rgba(245,184,61,.22));animation:jswirl 22s linear infinite}
+@keyframes jswirl{to{transform:rotate(360deg)}}
+.jpx-mesh i{position:absolute;width:62vw;height:62vw;left:19vw;top:30vh;filter:blur(54px);will-change:transform,border-radius}
+.jpx-mesh .m1{background:rgba(245,184,61,.26);animation:jf1 9s ease-in-out infinite,jshape 7s ease-in-out infinite}
+.jpx-mesh .m2{background:rgba(232,110,82,.2);animation:jf2 11s ease-in-out infinite,jshape 9s ease-in-out infinite reverse}
+.jpx-mesh .m3{background:rgba(150,92,190,.17);animation:jf3 13s ease-in-out infinite,jshape 8s ease-in-out infinite}
+.jpx-mesh .m4{background:rgba(245,184,61,.14);width:44vw;height:44vw;animation:jf4 7.5s ease-in-out infinite,jshape 6s ease-in-out infinite reverse}
+.jpx-mesh .m5{background:rgba(255,226,170,.1);width:36vw;height:36vw;animation:jf5 10s ease-in-out infinite,jshape 5s ease-in-out infinite}
+@keyframes jf1{0%,100%{transform:translate(-30vw,30vh) scale(1)}25%{transform:translate(25vw,10vh) scale(1.2)}50%{transform:translate(20vw,-30vh) scale(.9)}75%{transform:translate(-25vw,-10vh) scale(1.1)}}
+@keyframes jf2{0%,100%{transform:translate(30vw,-25vh) scale(1.1)}30%{transform:translate(-20vw,-30vh) scale(.85)}60%{transform:translate(-30vw,25vh) scale(1.2)}85%{transform:translate(20vw,30vh) scale(1)}}
+@keyframes jf3{0%,100%{transform:translate(0,40vh) scale(1.2)}35%{transform:translate(-32vw,0) scale(1)}70%{transform:translate(28vw,-15vh) scale(.9)}}
+@keyframes jf4{0%,100%{transform:translate(25vw,35vh)}50%{transform:translate(-28vw,-35vh)}}
+@keyframes jf5{0%,100%{transform:translate(-20vw,-38vh) scale(.9)}50%{transform:translate(26vw,20vh) scale(1.3)}}
+@keyframes jshape{0%,100%{border-radius:42% 58% 63% 37%/45% 40% 60% 55%}33%{border-radius:60% 40% 35% 65%/55% 62% 38% 45%}66%{border-radius:38% 62% 55% 45%/62% 38% 50% 50%}}
 .jpx-lift{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 70% 45% at 50% 42%,rgba(255,214,140,.10),rgba(255,214,140,0) 70%);transition:opacity 1s cubic-bezier(.4,0,.2,1)}
 .jpx.won .jpx-lift{opacity:1}
 .jpx.won .jpx-mesh .m1,.jpx.won .jpx-mesh .m2{filter:blur(64px) brightness(1.08)}
