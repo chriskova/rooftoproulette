@@ -3093,7 +3093,7 @@ function sheet(html,bind){$("sheet").classList.remove("full");$("sheetBody").inn
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
-  d.addEventListener("touchstart",e=>{if(d.scrollTop>0){y0=null;return}y0=e.touches[0].clientY;dy=0;d.style.transition="none"},{passive:true});
+  d.addEventListener("touchstart",e=>{if(d.scrollTop>0||e.target.closest&&e.target.closest(".rrmap,.rrslide,.map,input")){y0=null;return}y0=e.touches[0].clientY;dy=0;d.style.transition="none"},{passive:true});
   d.addEventListener("touchmove",e=>{if(y0===null)return;dy=Math.max(0,e.touches[0].clientY-y0);if(dy>0)d.style.transform=`translateY(${dy}px)`},{passive:true});
   d.addEventListener("touchend",()=>{if(y0===null)return;d.style.transition="transform .2s ease";if(dy>90){d.style.transform="translateY(100%)";setTimeout(()=>{closeSheet();d.style.transform="";d.style.transition=""},180)}else d.style.transform="";y0=null});
 })();
