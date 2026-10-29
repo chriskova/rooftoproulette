@@ -814,7 +814,13 @@ body.mapq .view{padding-bottom:12px!important}
 .msearch{position:absolute;top:10px;left:10px;right:62px;z-index:600;display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--line);border-radius:12px;padding:0 12px;height:42px;box-shadow:0 4px 12px rgba(0,0,0,.4);color:var(--muted)}.msearch svg{width:17px;height:17px;flex:none}.msearch .sfield{flex:1;min-width:0;font-size:15px;color:var(--text)}
 .mres{position:absolute;top:58px;left:10px;right:10px;z-index:650;background:var(--s1);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.5)}
 .mres button{appearance:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;padding:11px 14px;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;font-size:15px;text-align:left;cursor:pointer}.mres button:first-child{border-top:0}.mres button span{color:var(--muted);font-size:13px;white-space:nowrap}.mnone{padding:12px 14px;color:var(--muted);font-size:14px}
-.mcard{position:absolute;left:10px;right:10px;bottom:28px;z-index:640;appearance:none;display:flex;align-items:center;gap:10px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:11px 14px;color:var(--text);font:inherit;box-shadow:0 8px 20px rgba(0,0,0,.5);cursor:pointer}
+.rrnb{appearance:none;background:none;border:0;padding:4px 0 4px 8px;color:var(--amber);font:inherit;font-weight:700;font-size:15px;cursor:pointer;white-space:nowrap}.rrnb .chev{font-size:18px}
+.mlist{position:absolute;left:0;right:0;bottom:0;max-height:62%;z-index:1000;background:var(--s1);border-top:1px solid var(--line);border-radius:16px 16px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 24px rgba(0,0,0,.5)}
+.mlist .mlh{padding:8px 14px 8px;text-align:center;cursor:grab}.mlist .grab{display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 8px}.mlist .mlh b{font-size:14px}
+.mlist .mlr{overflow-y:auto;padding:0 14px 10px;overscroll-behavior:contain}
+.mlist .mlr button{appearance:none;display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}.mlist .mlr button.off{opacity:.5}
+.mlist .t{flex:1;min-width:0}.mlist .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlist .t small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mlist .d{color:var(--muted);font-size:13px}
+.mcard{position:absolute;left:10px;right:10px;bottom:28px;z-index:1000;appearance:none;display:flex;align-items:center;gap:10px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:11px 14px;color:var(--text);font:inherit;box-shadow:0 8px 20px rgba(0,0,0,.5);cursor:pointer}
 .mcard .t{flex:1;min-width:0}.mcard b{display:block;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mcard .chev{color:var(--amber);font-size:22px;line-height:1}
 .rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
@@ -2233,8 +2239,8 @@ const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
   return {toR,toX,ticks:o.ticks,all:false}};
 const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button>
-      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search a suburb"></div></div><div class="mres" id="rrRes" hidden></div><button class="mcard" type="button" id="rrCard" hidden></button></div>
-      <div class="rrsum"><b id="rrLbl"></b><span id="rrN"></span></div>
+      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search a suburb"></div></div><div class="mres" id="rrRes" hidden></div><button class="mcard" type="button" id="rrCard" hidden></button><div class="mlist" id="rrList" hidden><div class="mlh"><i class="grab"></i><b id="rrListT"></b></div><div class="mlr" id="rrListR"></div></div></div>
+      <div class="rrsum"><b id="rrLbl"></b><button class="rrnb" type="button" id="rrNB"><span id="rrN"></span> <span class="chev">›</span></button></div>
       <div class="rrslide"${o&&o.fixed?" hidden":""}><input class="rrrange" type="range" id="rrR" min="0" max="${RRMAX}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/RRMAX*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
@@ -2246,7 +2252,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
-    onPaint(P,z,moved());
+    lastP=P;onPaint(P,z,moved());if(!$("rrList").hidden)showList();
     if(!rrMap)return;
     if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>pinCard(v)))}
     rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
@@ -2258,7 +2264,15 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const pinCard=v=>{const o=openState(v,now()),y=me||you();
     card.innerHTML=`<span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${inSheet?"":`<span class="chev">›</span>`}`;
     card.hidden=false;card.onclick=()=>{if(!inSheet)barSheet(v)}};
-  ["pointerdown","touchstart","mousedown"].forEach(ev=>card.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));
+  const list=$("rrList");let lastP=null;
+  [card,list].forEach(el=>{["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>el.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(el,el===list?".mlh":null)});
+  const showList=()=>{if(!lastP)return;card.hidden=true;const t=now(),y=me||you();
+    const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
+    $("rrListT").textContent=`${lastP.open.length} open in your circle`;
+    $("rrListR").innerHTML=L.map(v=>{const o=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<div class="mnone">No rooftops in the circle. Drag or widen it.</div>`;
+    $("rrListR").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{const v=byId(b.dataset.v);if(inSheet){list.hidden=true;pinCard(v);if(rrMap)rrMap.setView(v,15)}else barSheet(v)});
+    list.hidden=false;$("rrListR").scrollTop=0};
+  $("rrNB").onclick=()=>{if(list.hidden)showList();else list.hidden=true};
   {const q=sfield($("rrQ")),res=$("rrRes");
     ["pointerdown","touchstart","mousedown","dblclick","wheel"].forEach(ev=>[q.parentNode,res].forEach(x=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true})));
     const show=()=>{const t=fold(q.value.trim());if(!t){res.hidden=true;return}
@@ -2277,7 +2291,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     let lock=true;setTimeout(()=>lock=false,900); // ignore the moves from fitting the map
     m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
     m.onIdle(()=>{if(lock||!z.r)return;followCity(z);save();paint(true)});
-    m.onTap(()=>{card.hidden=true})});
+    m.onTap(()=>{card.hidden=true});m.onMove(()=>{if(!lock)card.hidden=true})});
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
 function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
@@ -3783,6 +3797,13 @@ let toastT=null;
 function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t);swipeAway(t)}
   t.style.transition="";t.style.translate="";
   clearTimeout(toastT);t.innerHTML=html;t.classList.add("on");if(bind)bind(t);toastT=setTimeout(()=>t.classList.remove("on"),ms)}
+// drag a map card or the bar list down (or sideways) to put it away
+function swipeHide(el,handle){let x0=null,y0=0,dx=0,dy=0;
+  el.addEventListener("touchstart",e=>{if(handle&&!e.target.closest(handle))return;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=dy=0;el.style.transition="none"},{passive:true});
+  el.addEventListener("touchmove",e=>{if(x0===null)return;dx=e.touches[0].clientX-x0;dy=Math.max(0,e.touches[0].clientY-y0);const side=Math.abs(dx)>dy;el.style.transform=side?`translateX(${dx}px)`:`translateY(${dy}px)`;el.style.opacity=String(1-Math.min(.7,Math.max(Math.abs(dx),dy)/240))},{passive:true});
+  el.addEventListener("touchend",()=>{if(x0===null)return;x0=null;el.style.transition="transform .18s ease, opacity .18s ease";
+    if(Math.abs(dx)>70||dy>50){el.style.opacity="0";el.style.transform=Math.abs(dx)>dy?`translateX(${dx>0?120:-120}%)`:"translateY(120%)";setTimeout(()=>{el.hidden=true;el.style.transform="";el.style.opacity="";el.style.transition=""},180)}
+    else{el.style.transform="";el.style.opacity=""}})}
 // drag a toast sideways (or down) to get rid of it
 function swipeAway(t){let x0=null,y0=0,dx=0,dy=0;
   t.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;y0=e.clientY;dx=dy=0;t.style.transition="none";t.setPointerCapture(e.pointerId)});
