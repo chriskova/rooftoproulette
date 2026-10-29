@@ -1496,7 +1496,7 @@ html.fl .app{visibility:hidden}
 .fchips{gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.fchips::-webkit-scrollbar{display:none}
 .fchips .chip{flex:none;display:flex;align-items:center;gap:6px}.fchips .chip svg{width:14px;height:14px}
 .fchips .chip.opn[aria-pressed="true"]{background:var(--green-soft);border-color:rgba(74,222,128,.55);color:var(--green)}
-.st{color:var(--muted)}.st.on{color:var(--green)}
+.barrow .t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nw{white-space:nowrap}
 .barrow.shut{opacity:.5}
 .shuthd{color:var(--muted)}
 .toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.5);font-size:14px;color:var(--muted);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
@@ -1830,11 +1830,11 @@ function collectedMap(){ // id -> first date collected in a game
 /* Cities: picked up from where you are, changeable from "Sydney ▾". Your lists are per bar, so per city. */
 const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613}];
 const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||CITIES[0],inCityNow=v=>cityOf(v)===S.city;
-function pickCity(p){if(!p||S.cityManual)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
+function pickCity(p){if(!p||(S.cityManual&&Date.now()-(S.cityManualAt||0)<12*3600000))return;S.cityManual=false;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
 const cityBtn=()=>`<button class="citybtn" type="button" data-city>${esc(S.city)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
 function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a night somewhere else.</p>
   <div class="opts">${CITIES.map(c=>`<button class="opt" type="button" data-c="${c.name}" ${c.live?"":"disabled"} role="radio" aria-checked="${S.city===c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?(S.city===c.name?"You're here":"Rooftops ready to spin"):"Coming soon"}</small></span></button>`).join("")}</div>`,
-  ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;save();closeSheet();render()}))}
+  ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;S.cityManualAt=Date.now();save();closeSheet();render()}))}
 document.addEventListener("click",e=>{if(e.target.closest("[data-city]"))citySheet()});
 const listed=()=>VENUES.filter(v=>!S.nfu[v.id]&&(v.city||"Sydney")===S.city);
 function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
@@ -2119,7 +2119,7 @@ function renderOb(){
       <div class="opts">
         ${CITIES.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;return `<button class="opt" type="button" role="radio" data-obc="${c.name}" aria-checked="${c.live&&S.city===c.name}" ${c.live?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?n+" rooftop bars":"Coming soon"}</small></span></button>`}).join("")}
       </div>`;
-    body.querySelectorAll("[data-obc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.obc;S.cityManual=true;save();renderOb()});
+    body.querySelectorAll("[data-obc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.obc;S.cityManual=true;S.cityManualAt=Date.now();save();renderOb()});
     cta(`<button class="btn" id="obNext" type="button">Let's go</button>`,()=>$("obNext").onclick=()=>{S.ob=2;save();go("home")});
     return;
   }
@@ -3482,7 +3482,7 @@ function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S
 const stampHTML=s=>s==="col"?'<span class="stamp col">Visited</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Want to try">${HEART}</button>`;
-function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?`Closes ${clock12(o.closeAt)}`:o.temp?"Temporarily closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"} · ${esc(v.area)}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
+function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${o.open?`Closes ${clock12(o.closeAt)}`:o.temp?"Temporarily closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"} ${y&&dist(y,v)<50000?`· <span class="nw">${mOrKm(dist(y,v))}</span> `:""}· ${esc(v.area)}</small></span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
