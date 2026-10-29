@@ -803,6 +803,7 @@ a.btn{text-decoration:none}
 .clock b{display:block;font-family:var(--display);font-weight:800;font-size:46px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
+.clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber)}
 .clock.warn b,.clock.warn small{color:var(--amber)}
 .clock.red b,.clock.red small{color:var(--red)}
 .tbar{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:-6px}
@@ -2082,7 +2083,7 @@ function render(){
   const r=S.route;
   VIEWS.forEach(v=>$("v-"+v).hidden=v!==r);
   $("appbar").hidden=r==="home";
-  const tabbed=["home","play","end","bars","hist","quick"].includes(r);
+  const tabbed=["home","play","end","bars","hist"].includes(r);
   $("tabs").hidden=!tabbed;$("app").classList.toggle("has-tabs",tabbed);
   const tab=r==="bars"?"bars":r==="hist"?"hist":"play";
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
@@ -2172,7 +2173,7 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
-const listOpt=t=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Want to try list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Want to try":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -2192,37 +2193,44 @@ function renderQuick(){
   if(step===0){
     // one screen: near you, your list, or a part of town (the city's picked up from where you are)
     const cnt=from=>quickSet({from}).filter(v=>openOK(v,t)).length;
-    const opt=(key,title,sub,n)=>`<button class="opt" type="button" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
+    const sel=q.sel,opt=(key,title,sub,n)=>`<button class="opt" type="button" role="radio" aria-checked="${sel===key}" data-qa="${esc(key)}" ${n?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`;
     b.innerHTML=top+`<div><div class="cityrow"><h1 class="q modename">R<i>&amp;</i>R</h1>${cityBtn()}</div><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are we spinning?</p></div>
-      <div class="opts">${apWrap("__me",`<button class="opt" type="button" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>`)}
-      ${apWrap("__want",listOpt(t))}
+      <div class="opts">${apWrap("__me",`<button class="opt" type="button" role="radio" aria-checked="${sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Near me</b><small>Rooftops around wherever you are</small></span></button>`)}
+      ${apWrap("__want",listOpt(t,sel==="__want"))}
       ${apWrap("*",opt("*","Anywhere in "+S.city,"Any rooftop in "+S.city,cnt({type:"all"})))}
       <div class="eyebrow" style="margin-top:8px">Or pick a part of ${esc(S.city)}</div>
       ${REG().map(r=>apWrap(r.name,opt(r.name,r.name,r.d,cnt({type:"region",name:r.name})))).join("")}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
   }else if(step===1&&me){
     b.innerHTML=top+`<div><h1 class="q">How far will you go?</h1><p class="sub" style="margin:6px 0 0">Measured from wherever you are when you spin.</p></div><div class="opts">${QDIST.map(o=>{const n=quickSet({from:q.from,r:o.r}).filter(v=>openOK(v,t)).length;
-      return `<button class="opt" type="button" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
+      return `<button class="opt" type="button" role="radio" aria-checked="${q.r===o.r}" data-qr="${o.r}" ${n?"":"disabled"}><span class="ic">${I.walk}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span><span class="n">${n?`<b>${n}</b><small>open</small>`:`<small>None open</small>`}</span></button>`}).join("")}</div>`;
   }else{
     const beenN=q.from&&q.from.type==="list"?0:VENUES.filter(v=>inCityNow(v)&&!isNew(v.id)).length;
     if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
     b.innerHTML=top+`<div><h1 class="q">Nudge us after…</h1><p class="sub" style="margin:6px 0 0">We'll check in after this long at each bar. Next time you open the app, we'll ask if you're ready for the next one.</p></div>
       ${beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:""}
-      <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
+      <div class="opts">${NUDGES.map(o=>`<button class="opt" type="button" role="radio" aria-checked="${q.nudge===o.m}" data-qn="${o.m}"><span class="ic">${o.m?I.clock:I.x}</span><span class="t"><b>${o.t}</b><small>${o.s}</small></span></button>`).join("")}</div>`;
   }
   let meP=null;
   if(step===0)apBind(b,async k=>{if(k==="__me"){meP=await getOnce();return quickSet({from:{type:"me",lat:meP.lat,lng:meP.lng},r:2})}if(k==="__want")return wantList();if(k==="*")return quickSet({from:{type:"all"}});return quickSet({from:{type:"region",name:k}})},k=>k==="__me"?{c:meP,r:2}:null);else apClear();
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=me?step-1:0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
   b.querySelectorAll("[data-qs]").forEach(x=>x.onclick=()=>{q.step=+x.dataset.qs;q.note=null;save();renderQuick()});
-  if($("qMe"))$("qMe").onclick=quickNearMe;
+  const pick=k=>{q.sel=k;q.note=null;save();renderQuick()};
+  if($("qMe"))$("qMe").onclick=()=>pick("__me");
   if($("qList"))$("qList").onclick=()=>{const o=wantList().filter(v=>openOK(v,now())).length;
-    if(o>=2){q.from={type:"list",name:"Want to try"};q.newOnly=false;q.step=2;q.note=null;save();renderQuick();return}
-    listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",renderQuick)};
-  b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;q.step=2;save();renderQuick()});
-  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>{const n=x.dataset.qa;q.from=n==="*"?{type:"all",name:"Anywhere"}:{type:"region",name:n};q.step=2;save();renderQuick()});
+    if(o>=2){pick("__want");return}
+    listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",()=>{if(wantList().filter(v=>openOK(v,now())).length>=2)q.sel="__want";save();renderQuick()})};
+  b.querySelectorAll("[data-qr]").forEach(x=>x.onclick=()=>{q.r=+x.dataset.qr;save();renderQuick()});
+  b.querySelectorAll("[data-qa]").forEach(x=>x.onclick=()=>pick(x.dataset.qa));
+  if(step===0)cta(`<button class="btn" id="qNext" type="button" ${q.sel?"":"disabled"}>Next</button>`,()=>$("qNext").onclick=()=>{const k=q.sel;if(!k)return;
+    if(k==="__me"){quickNearMe();return}
+    if(k==="__want"){q.from={type:"list",name:"Want to try"};q.newOnly=false}else q.from=k==="*"?{type:"all",name:"Anywhere"}:{type:"region",name:k};
+    q.step=2;save();renderQuick()});
+  if(step===1&&me)cta(`<button class="btn" id="qNext" type="button" ${q.r?"":"disabled"}>Next</button>`,()=>$("qNext").onclick=()=>{q.step=2;save();renderQuick()});
   if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();renderQuick()};
-  b.querySelectorAll("[data-qn]").forEach(x=>x.onclick=()=>{q.nudge=+x.dataset.qn;save();startCruise()});
+  b.querySelectorAll("[data-qn]").forEach(x=>x.onclick=()=>{q.nudge=+x.dataset.qn;save();renderQuick()});
+  if(step>=2||(step===1&&!me))cta(`<button class="btn" id="qGo" type="button" ${q.nudge!=null?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(q.nudge!=null)startCruise()});
 }
 async function startCruise(){
   ac();const q=S.quick;
@@ -3320,7 +3328,7 @@ function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
     if(!g.started){$("clockT").textContent="";$("clockL").textContent="Spin when ready";return}
-    $("clockT").textContent="";$("clockL").textContent="R&R";return}
+    $("clockT").textContent="";$("clockL").innerHTML='<span class="rrt">R<i>&amp;</i>R</span>';return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
   if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL").textContent="Starts on spin";return}
