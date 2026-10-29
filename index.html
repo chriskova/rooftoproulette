@@ -2262,7 +2262,7 @@ function renderQuick(){
   if(q.sel===undefined||q.sel==="*"||(q.sel&&q.sel!=="__me"&&q.sel!=="__want"))q.sel="__me";
   if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
   if(rrMap&&step!==1){rrMap.remove();rrMap=null}
-  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${step===0?50:100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
+  const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${step===0&&q.sel!=="__want"?50:100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   const beenN=VENUES.filter(v=>inCityNow(v)&&!isNew(v.id)).length;
   const newTog=beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:"";
   if(step===0){
@@ -2498,7 +2498,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const mixlineHTML=g=>CR(g)?`<div class="mixline" id="mixZone" role="button" tabindex="0" style="cursor:pointer"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span><span>R&amp;R</span></div>`
+const mixlineHTML=g=>CR(g)?`<div class="mixline" id="mixZone" role="button" tabindex="0" style="cursor:pointer"><span>${esc(g.areas[g.areas.length-1])}${g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:""}</span></div>`
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
@@ -3390,7 +3390,7 @@ function rollWild(g,id){
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
-    if(!g.started){$("clockT").textContent="";$("clockL").textContent="Spin when ready";return}
+    if(!g.started){$("clockT").textContent="";$("clockL").innerHTML='<span class="rrt">R<i>&amp;</i>R</span>';return}
     $("clockT").textContent="";$("clockL").innerHTML='<span class="rrt">R<i>&amp;</i>R</span>';return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
