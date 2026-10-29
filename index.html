@@ -2227,7 +2227,7 @@ function rrZoneBind(z,me,newOnly,onPaint){
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
 function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
-  const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode||cur;
+  const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode==="map"||mode==="list"?mode:cur;
   const z=cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2};
   const nowTxt=cz.type==="list"?"your Hit list":esc(g.areas[g.areas.length-1])+(cz.r?" · "+kmTxt(cz.r):"");
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
@@ -3200,7 +3200,7 @@ function openMenu(){
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
-    $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=rrZoneSheet;
+    $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
