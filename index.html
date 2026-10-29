@@ -1830,11 +1830,12 @@ function collectedMap(){ // id -> first date collected in a game
 /* Cities: picked up from where you are, changeable from "Sydney ▾". Your lists are per bar, so per city. */
 const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613}];
 const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||CITIES[0],inCityNow=v=>cityOf(v)===S.city;
-function pickCity(p){if(!p||(S.cityManual&&Date.now()-(S.cityManualAt||0)<12*3600000))return;S.cityManual=false;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
+const RUN=Date.now()+":"+Math.random();
+function pickCity(p){if(!p||(S.cityManual&&S.cityManualRun===RUN))return;S.cityManual=false;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
 const cityBtn=()=>`<button class="citybtn" type="button" data-city>${esc(S.city)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
 function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a night somewhere else.</p>
   <div class="opts">${CITIES.map(c=>`<button class="opt" type="button" data-c="${c.name}" ${c.live?"":"disabled"} role="radio" aria-checked="${S.city===c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?(S.city===c.name?"You're here":"Rooftops ready to spin"):"Coming soon"}</small></span></button>`).join("")}</div>`,
-  ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;S.cityManualAt=Date.now();save();closeSheet();render()}))}
+  ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;S.cityManualRun=RUN;save();closeSheet();render()}))}
 document.addEventListener("click",e=>{if(e.target.closest("[data-city]"))citySheet()});
 const listed=()=>VENUES.filter(v=>!S.nfu[v.id]&&(v.city||"Sydney")===S.city);
 function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
@@ -1860,7 +1861,7 @@ function startWatch(){
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
 function getOnce(){
-  if(S.test)return Promise.resolve(S.fake||{lat:-33.8732,lng:151.2069});
+  if(S.test){const f=S.fake||{lat:-33.8732,lng:151.2069};pickCity(f);return Promise.resolve(f)}
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej({code:-1});
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
@@ -2119,7 +2120,7 @@ function renderOb(){
       <div class="opts">
         ${CITIES.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;return `<button class="opt" type="button" role="radio" data-obc="${c.name}" aria-checked="${c.live&&S.city===c.name}" ${c.live?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?n+" rooftop bars":"Coming soon"}</small></span></button>`}).join("")}
       </div>`;
-    body.querySelectorAll("[data-obc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.obc;S.cityManual=true;S.cityManualAt=Date.now();save();renderOb()});
+    body.querySelectorAll("[data-obc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.obc;S.cityManual=true;S.cityManualRun=RUN;save();renderOb()});
     cta(`<button class="btn" id="obNext" type="button">Let's go</button>`,()=>$("obNext").onclick=()=>{S.ob=2;save();go("home")});
     return;
   }
@@ -3764,6 +3765,7 @@ setInterval(loop,1000);setInterval(()=>{if(!document.hidden)markSeen()},15000);a
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){markSeen();return}
   awayGap=S.seenAt?Date.now()-S.seenAt:0;resumedAt=Date.now();
+  if(!S.game&&(S.test||navigator.geolocation)){const c0=S.city;permState().then(st=>{if(st==="granted"||S.test)getOnce().then(()=>{if(S.city!==c0)render()}).catch(()=>{})})}
   const g=G();
   if(g&&g.celebrate){const a=g.visits.find(v=>v.leftAt==null);
     // arrived while the phone was away: if it already counts, one quick beat; otherwise the usual arrival
@@ -3774,7 +3776,8 @@ document.addEventListener("visibilitychange",()=>{
 
 /* ---------- boot ---------- */
 if(S.game&&!S.test)startWatch();
-if(!S.test&&navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{[zMap,bMap].forEach(setMe);if(S.route==="bars")renderBars()}).catch(()=>{})});
+if(S.test){getOnce().then(()=>render())}
+else if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 render();loop();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
