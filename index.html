@@ -2384,7 +2384,7 @@ function quickSpin(vel){
 
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
 // your record for a game length, once you've played it
-const pbHTML=len=>{const b=H.filter(r=>r.mode!=="cruise"&&r.len===len).reduce((m,r)=>Math.max(m,new Set((r.visits||[]).filter(v=>v.counted===true).map(v=>v.id)).size),-1);return b<0?"":`<span class="pbtag">Best: ${b}</span>`};
+const pbHTML=len=>{const b=H.filter(r=>r.mode!=="cruise"&&r.len===len).reduce((m,r)=>Math.max(m,new Set((r.visits||[]).filter(v=>v.counted===true).map(v=>v.id)).size),-1);return b<0?"":`<span class="pbtag">PB: ${b}</span>`};
 function startWizard(){S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
 const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
