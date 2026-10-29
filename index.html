@@ -802,6 +802,7 @@ a.btn{text-decoration:none}
 .clock{text-align:center;line-height:1}
 .clock b{display:block;font-family:var(--display);font-weight:800;font-size:46px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .clock.warn b,.clock.warn small{color:var(--amber)}
 .clock.red b,.clock.red small{color:var(--red)}
 .tbar{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:-6px}
@@ -3318,8 +3319,8 @@ function rollWild(g,id){
 function renderClock(){
   const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
-    if(!g.started){$("clockT").textContent="R&R";$("clockL").textContent="Spin when you're ready";return}
-    const el=now()-g.startedAt;$("clockT").textContent="R&R";$("clockL").textContent=el<60000?"Just started":hmm(el)+" in";return}
+    if(!g.started){$("clockT").textContent="";$("clockL").textContent="Spin when ready";return}
+    const el=now()-g.startedAt;$("clockT").textContent="";$("clockL").textContent="R&R · "+(el<60000?"Just started":hmm(el)+" in");return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
   if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL").textContent="Starts on spin";return}
