@@ -1793,7 +1793,7 @@ const I={
 };
 I.plus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
 I.search='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
-I.car='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-5l2-5h12l3 5h1v5h-2"/><path d="M9 17h6"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M4 12h16"/></svg>';
+I.car='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11l1.7-4.4A2 2 0 0 1 8.6 5.3h6.8a2 2 0 0 1 1.9 1.3L19 11"/><rect x="3" y="11" width="18" height="6.5" rx="2"/><path d="M5.5 17.5v2M18.5 17.5v2"/><circle cx="7.5" cy="14.2" r="1" fill="currentColor"/><circle cx="16.5" cy="14.2" r="1" fill="currentColor"/></svg>';
 I.walk='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M9 21l2-6 3 3v3M7 12l3-4 4 1 2 4 2 1M10 8l-1 5"/></svg>';
 I.share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
 I.redo='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
@@ -2513,7 +2513,7 @@ function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return b
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
 const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
 // more than a 45-minute walk: show a rough drive time with a car instead
-const travelHTML=(a,b)=>{const w=walkMin(a,b);if(w<=45)return `${I.walk} ${w} min walk`;const d=Math.round(dist(a,b)/1000*1.25/50*60)+4;return `${I.car} ${d<60?d+" min":Math.floor(d/60)+" hr"+(d%60?" "+d%60:"")} drive`};
+const travelHTML=(a,b)=>{const w=walkMin(a,b);if(w<=45)return `${I.walk} ${w} min walk`;const d=Math.round(dist(a,b)/1000*1.25/50*60)+4;return `${I.car} ${d<60?d+" min":Math.floor(d/60)+" hr"+(d%60?" "+d%60+" min":"")} drive`};
 const tripMin=walkMin; // walking pace keeps final-stretch spins reachable
 function spinPool(){
   const g=G(),rem=remaining()/60000,from=fromPoint();let P=basePool();
