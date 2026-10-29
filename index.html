@@ -2194,6 +2194,8 @@ async function quickNearMe(){
   save();renderQuick();
 }
 // smooth distance slider: 0–970 = 500 m to 15 km (finer at the short end), the last bit = the whole city (r 0)
+// the suburb of the closest rooftop: one short name for a dragged circle
+const nearestSuburb=p=>{let b=null,bd=1e12;VENUES.forEach(v=>{const d=dist(p,v);if(d<bd){bd=d;b=v}});return b?b.area:S.city};
 const RRMAX=1000,RRALL=970,rrToR=x=>x>=RRALL?0:Math.round(0.5*Math.pow(30,x/RRALL)*10)/10,rrToX=r=>r?Math.round(Math.log(r/0.5)/Math.log(30)*RRALL):RRMAX;
 const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0$/,""):Math.round(r))+" km";
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
@@ -2208,7 +2210,7 @@ function rrZoneBind(z,me,newOnly,onPaint){
   $("rrR").value=rrToX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=rrPool(z,now(),newOnly());
-    $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestArea(z):"you"}`:`All of ${S.city}`;
+    $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!me||!z.r||!moved();$("rrPin").hidden=!z.r;
     onPaint(P,z,moved());
@@ -2240,7 +2242,7 @@ function rrZoneSheet(mode){const g=G();if(!g||!CR(g))return;if(S.route!=="quick"
     $("sheet").classList.add("full");$("sheet").scrollTop=0;requestAnimationFrame(()=>{$("sheet").scrollTop=0;if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest(".rzsheet"))document.activeElement.blur()});
     document.querySelectorAll(".rzsheet [data-m]").forEach(b=>b.onclick=()=>{if(b.dataset.m!==m)rrZoneSheet(b.dataset.m)});
     if(m==="map"){rrZoneBind(z,me,()=>g.newOnly,(P,zz,moved)=>{const b=$("rzOk");if(!b)return;b.disabled=!P.open.length;
-      b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestArea(zz):"Near you"):"Anywhere";
+      b.onclick=()=>{const label=zz.r?(moved?"Around "+nearestSuburb(zz):"Near you"):"Anywhere";
         apply(zz.r?(moved?{type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}:{type:"me",name:null,r:zz.r}):{type:"all",name:null,r:null},label)}});return}
     // Hit list, right here: yours ticked at the top, tap to add or take off, search narrows
     const q=sfield($("lsQ")),t=now();let order=[];
@@ -2282,7 +2284,7 @@ function renderQuick(){
     const me=q.from&&q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;if(!me){q.step=0;save();renderQuick();return}
     if(!q.z)q.z={lat:me.lat,lng:me.lng,r:2};
     b.innerHTML=top+`<div><h1 class="q">How far?</h1><p class="sub" style="margin:6px 0 0">Drag the map to spin somewhere else.</p></div>${rrZoneHTML()}${newTog}`;
-    rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestArea(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));
+    rrZoneBind(q.z,me,()=>q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{q.from=z.r?(moved?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}));
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
