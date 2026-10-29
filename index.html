@@ -1138,6 +1138,16 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .stage{gap:18px;padding:14px 0 6px}
 .stage .btn{margin:2px 0}
 .wheel{margin:12px 0}
+.sharev{position:fixed;inset:0;z-index:3000;background:#07080B;display:flex;flex-direction:column;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);opacity:0;transition:opacity .2s}
+.sharev.on{opacity:1}
+.shv-top{display:flex;align-items:center;justify-content:space-between;min-height:40px}.shv-top b{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.04em;text-transform:uppercase}
+.shv-x{appearance:none;border:0;background:var(--s1,#141820);color:var(--ink,#F4F1EA);width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:18px}.shv-x svg{width:20px;height:20px}
+.shv-car{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px}.shv-car::-webkit-scrollbar{display:none}
+.shv-s{flex:0 0 100%;scroll-snap-align:center;display:grid;place-items:center;padding:0 16px;min-height:0}
+.shv-s img{max-width:100%;max-height:100%;aspect-ratio:9/16;object-fit:contain;border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.shv-dots{display:flex;justify-content:center;gap:8px;min-height:36px;align-items:center}.shv-dots span{color:var(--muted,#9AA1AD);font-size:14px}
+.shv-dots button{appearance:none;border:1.5px solid var(--line,#232836);background:none;color:var(--muted,#9AA1AD);font:700 14px var(--ui);padding:8px 16px;border-radius:999px}
+.shv-dots button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink,#241803)}
 .wheel small{font-size:12.5px;letter-spacing:.04em;text-transform:none}
 .bar.anim{animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
 .bar{animation:none}
@@ -3545,7 +3555,7 @@ function renderEnd(){
   if(!r.photo&&r.photos&&r.photos.length){r.photo=r.photos[r.photos.length-1];saveH()}
   // just finished, 2+ bars, no pick yet: ask for bar of the day before the scorecard rolls in
   if(S.rackEnd===r.id&&n>=2&&!r.barOfDay&&!r.bodDone){
-    box.innerHTML=`<div class="bodpick"><div><div class="eyebrow">${n} rooftops tonight</div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">It gets the star on your story.</p></div>
+    box.innerHTML=`<div class="bodpick"><div><div class="eyebrow">${n} rooftops tonight</div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">It gets tagged on your story.</p></div>
       <div class="bodgrid">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div>
       <button class="txtbtn" type="button" id="bodSkip" style="align-self:center">Skip</button></div>`;
     box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;saveH();buzz(15);renderEnd()});
@@ -3600,41 +3610,85 @@ function renderEnd(){
     m.fitPts(all.concat([{lat:mn-sp*.75,lng:(Math.min(...lo)+Math.max(...lo))/2}]),16);
   });
 }
+// ---------- story cards (9:16) ----------
+// Two looks, Strava style: the crew photo with the route in a corner, or the map on its own.
+async function storyCard(r,look){
+  await Promise.all([document.fonts.load('800 100px "Big Shoulders Display"'),document.fonts.load('500 40px "Big Shoulders Display"')]).catch(()=>{});
+  const W=1080,Hh=1920,c=document.createElement("canvas");c.width=W;c.height=Hh;const x=c.getContext("2d");
+  const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,aw=(cr?cruiseAwards:awards)(r,st),D='"Big Shoulders Display","Arial Narrow",Impact,sans-serif',U='system-ui,-apple-system,Roboto,Arial,sans-serif';
+  const plain=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
+  const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
+  const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
+  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",photo=look==="photo"&&r.photo;
+  x.fillStyle=BG;x.fillRect(0,0,W,Hh);
+  // hero
+  const HH=1100;
+  if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore()}
+  else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}
+  const gr=x.createLinearGradient(0,0,0,HH);gr.addColorStop(0,"rgba(11,13,18,.6)");gr.addColorStop(.16,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG);x.fillStyle=gr;x.fillRect(0,0,W,HH);
+  // route: GPS trail when we have one, otherwise stop to stop
+  const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
+  if(stops.length>1){
+    const B=photo?{x:700,y:150,w:300,h:420}:{x:110,y:190,w:860,h:600},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
+    const la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mnla=Math.min(...la),mxla=Math.max(...la),mnlo=Math.min(...lo),mxlo=Math.max(...lo);
+    const s=Math.min(B.w/Math.max((mxlo-mnlo)*k,1e-4),B.h/Math.max(mxla-mnla,1e-4),photo?60000:200000);
+    const ox=B.x+(B.w-(mxlo-mnlo)*k*s)/2,oy=B.y+(B.h-(mxla-mnla)*s)/2,P=p=>[ox+(p.lng-mnlo)*k*s,oy+(mxla-p.lat)*s];
+    if(!photo){x.fillStyle="#3A4150";VENUES.forEach(v=>{const[X,Y]=P(v);if(X>40&&X<W-40&&Y>140&&Y<900){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}})}
+    const T=photo?{g:16,l:5,r:19,f:20,w:4}:{g:22,l:6,r:24,f:24,w:5};
+    x.save();if(photo){x.shadowColor="rgba(0,0,0,.7)";x.shadowBlur=14;x.shadowOffsetY=3}
+    const path=()=>{x.beginPath();line.forEach((p,i)=>{const[X,Y]=P(p);i?x.lineTo(X,Y):x.moveTo(X,Y)})};
+    x.lineCap="round";x.lineJoin="round";x.strokeStyle="rgba(245,184,61,.22)";x.lineWidth=T.g;path();x.stroke();x.strokeStyle=AMB;x.lineWidth=T.l;path();x.stroke();
+    const[sx,sy]=P(stops[0]);x.fillStyle=INK;x.beginPath();x.arc(sx,sy,T.r*.5,0,7);x.fill();
+    st.arrived.forEach((v,i)=>{const[X,Y]=P(byId(v.id));x.fillStyle=v.counted===true?AMB:"#6B7280";x.beginPath();x.arc(X,Y,T.r,0,7);x.fill();x.shadowColor="transparent";x.strokeStyle=BG;x.lineWidth=T.w;x.stroke();x.fillStyle=BG;x.font=`800 ${T.f}px ${U}`;x.textAlign="center";x.fillText(String(i+1),X,Y+T.f*.36);x.textAlign="left"});
+    x.restore()}
+  // top bar
+  x.font=`800 46px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,112,1);const lw=x.measureText("ROOFTOP ").width+8;x.fillStyle=AMB;sp("ROULETTE",64+lw,112,1);
+  x.font=`700 26px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,108,3.6,"right");
+  // award
+  let fs=112;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>70){fs-=4;x.font=`800 ${fs}px ${D}`}
+  x.fillStyle=INK;x.fillText(at,64,955);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1004);
+  // stats
+  const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
+  const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+    :[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
+  S6.forEach(([v,l],i)=>{const X=64+(i%3)*320,Y=1160+Math.floor(i/3)*130;x.fillStyle=AMB;x.font=`800 68px ${D}`;x.fillText(fit(String(v),300),X,Y);x.fillStyle=MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X,Y+34,2.5)});
+  // bars, two columns, with time at each
+  const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?78:86,cw=(W-128-40)/2;
+  list.forEach((v,i)=>{const col=Math.floor(i/rows),row=i%rows,X=64+col*(cw+40),Y=1480+row*gap,ok=v.counted===true,b=byId(v.id),bod=r.barOfDay===v.id;
+    x.fillStyle=ok?AMB:"#4B5263";x.beginPath();x.arc(X+20,Y-9,20,0,7);x.fill();x.fillStyle=BG;x.font=`800 22px ${U}`;x.textAlign="center";x.fillText(String(i+1),X+20,Y-1);x.textAlign="left";
+    const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
+    x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
+    x.font=`650 28px ${U}`;x.fillStyle=bod?AMB:ok?INK:"#6B7280";const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
+    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.translate(Math.min(ex+4,X+cw-140),Y-36);x.rotate(-5*Math.PI/180);x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;
+      x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
+  if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1480+rows*gap)}
+  // footer
+  x.font=`600 24px ${U}`;x.fillStyle=MUT;const ar=r.areas[r.areas.length-1];
+  x.fillText(fit([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),600),64,1856);
+  x.textAlign="right";x.fillText("Spin. Go. Drink. Repeat.",W-64,1856);x.textAlign="left";
+  return new Promise(res=>c.toBlob(res,"image/png"));
+}
 async function shareStory(r){
   const btn=$("shareBtn");btn.disabled=true;btn.textContent="Making your story…";
-  try{
-    await Promise.all([document.fonts.load('800 100px "Big Shoulders Display"'),document.fonts.load('500 40px "Big Shoulders Display"')]).catch(()=>{});
-    const W=1080,Hh=1920,c=document.createElement("canvas");c.width=W;c.height=Hh;const x=c.getContext("2d");
-    const st=stats(r),n=st.counted.length,aw=awards(r,st),D='"Big Shoulders Display","Arial Narrow",Impact,sans-serif',U='system-ui,-apple-system,Roboto,Arial,sans-serif';
-    const plain=s=>String(s).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
-    const g=x.createRadialGradient(W,0,0,W,0,1300);g.addColorStop(0,"rgba(245,184,61,.32)");g.addColorStop(1,"rgba(245,184,61,0)");
-    x.fillStyle="#0B0D12";x.fillRect(0,0,W,Hh);x.fillStyle=g;x.fillRect(0,0,W,Hh);
-    x.font=`800 56px ${D}`;x.fillStyle="#F4F1EA";x.fillText("ROOFTOP",72,128);x.fillStyle="#F5B83D";x.fillText("ROULETTE",72+x.measureText("ROOFTOP ").width,128);
-    x.font=`500 32px ${U}`;x.fillStyle="#9AA1AD";x.fillText(`${r.mode==="cruise"?"R&R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours"} · ${dateTxt(r.startedAt)}`,72,178);
-    // hero: crew photo or route
-    const bx=72,by=220,bw=W-144,bh=r.photo?700:600;
-    x.save();roundRect(x,bx,by,bw,bh,40);x.clip();x.fillStyle="#141820";x.fillRect(bx,by,bw,bh);
-    if(r.photo){const img=await loadImg(r.photo);const s=Math.max(bw/img.width,bh/img.height);x.drawImage(img,bx+(bw-img.width*s)/2,by+(bh-img.height*s)/2,img.width*s,img.height*s)}
-    else drawRoute(x,r,st,bx,by,bw,bh);
-    x.restore();
-    let y=by+bh+90;
-    y+=40;
-    x.fillStyle="#F4F1EA";x.font=`800 104px ${D}`;x.fillText(aw[0].t.toUpperCase(),72,y);y+=58;
-    x.fillStyle="#9AA1AD";x.font=`500 36px ${U}`;x.fillText(plain(aw[0].why).slice(0,52),72,y);y+=90;
-    // three stats
-    const cols=[[String(n),n===1?"rooftop":"rooftops"],[(st.total/1000).toFixed(1)+" km","covered"]];
-    cols.forEach(([v,l],i)=>{const cx=72+i*478;x.fillStyle="#141820";roundRect(x,cx,y-70,454,170,28);x.fill();x.fillStyle="#F5B83D";x.font=`800 88px ${D}`;x.fillText(v,cx+32,y+28);x.fillStyle="#9AA1AD";x.font=`500 28px ${U}`;x.fillText(l,cx+34,y+74)});
-    y+=170;
-    if(r.barOfDay){x.fillStyle="#F5B83D";x.font=`700 34px ${U}`;x.fillText("★ Bar of the day: "+byId(r.barOfDay).name,72,y);y+=70}
-    x.font=`600 36px ${U}`;
-    st.arrived.slice(0,r.photo?4:6).forEach((v,i)=>{if(y>Hh-110)return;x.fillStyle=v.counted===true?"#F4F1EA":"#6B7280";x.fillText(`${i+1}. ${byId(v.id).name}${r.barOfDay===v.id?"  ★":""}`,72,y);y+=56});
-    x.fillStyle="#6B7280";x.font=`500 28px ${U}`;x.fillText("Spin. Go. Drink. Repeat.",72,Hh-60);
-    const blob=await new Promise(res=>c.toBlob(res,"image/png"));
-    const file=new File([blob],"rooftop-roulette.png",{type:"image/png"});
+  const looks=r.photo?["photo","map"]:["map"];let blobs=[];
+  try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e)}
+  btn.disabled=false;btn.innerHTML=`${I.share} Share to story`;if(!blobs.length||!blobs[0])return;
+  const urls=blobs.map(b=>URL.createObjectURL(b));let cur=0;
+  const ov=document.createElement("div");ov.className="sharev";
+  ov.innerHTML=`<div class="shv-top"><b>Share to story</b><button type="button" class="shv-x" aria-label="Close">${I.x||"✕"}</button></div>
+    <div class="shv-car">${urls.map((u,i)=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
+    <div class="shv-dots">${looks.length>1?looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${!i}">${l==="photo"?"Photo":"Map"}</button>`).join(""):`<span>Add a crew photo for a photo card</span>`}</div>
+    <button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
+  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
+  const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")];
+  const mark=()=>dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));
+  car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;mark()}},{passive:true});
+  dots.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));
+  const close=()=>{ov.classList.remove("on");setTimeout(()=>{ov.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250)};
+  ov.querySelector(".shv-x").onclick=close;
+  ov.querySelector("#shvGo").onclick=async()=>{const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
-    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rooftop-roulette.png";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
-  }catch(e){console.warn(e)}
-  btn.disabled=false;btn.innerHTML=`${I.share} Share to story`;
+    else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
 }
 function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
 const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
