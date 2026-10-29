@@ -1853,7 +1853,7 @@ function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<lis
 
 /* ---------- location ---------- */
 let here=null,watchId=null,locErr=null;
-const you=()=>S.test?(S.fake||null):here;
+const you=()=>S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
 function startWatch(){
   if(S.test||watchId!==null||!navigator.geolocation)return;
   watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;lastFix=Date.now();onLocation()},
@@ -1861,10 +1861,10 @@ function startWatch(){
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
 function getOnce(){
-  if(S.test){const f=S.fake||{lat:-33.8732,lng:151.2069};pickCity(f);return Promise.resolve(f)}
+  if(S.test&&S.fake){pickCity(S.fake);return Promise.resolve(S.fake)}
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej({code:-1});
-    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(S.test&&S.fake?S.fake:here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
   });
 }
 async function permState(){if(S.test)return "granted";try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
@@ -3776,8 +3776,8 @@ document.addEventListener("visibilitychange",()=>{
 
 /* ---------- boot ---------- */
 if(S.game&&!S.test)startWatch();
-if(S.test){getOnce().then(()=>render())}
-else if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
+if(S.test&&!S.game&&S.fake){S.fake=null;save()}
+if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 render();loop();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
