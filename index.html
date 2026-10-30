@@ -1284,7 +1284,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jpx.live .jpx-glow{opacity:.5}.jpx.live .jpx-streaks{opacity:1}
 .reel.lifting .frame{transition:border-color .6s ease}
 .reel.lifting{will-change:transform}
-.jpx-bg{background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.55),rgba(3,4,7,.97) 70%)!important}
+.jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.55),rgba(3,4,7,.97) 70%)!important}
 .jpx-mesh{position:absolute;inset:0;opacity:0;overflow:hidden;transform:scale(.25);transition:opacity .9s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}
 .jpx.live .jpx-mesh{opacity:1;transform:none}
 /* starts as a glow round the wheel, then opens out to fill the screen and keeps flowing */
@@ -1303,7 +1303,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes jf4{0%,100%{transform:translate(30vw,-38vh)}50%{transform:translate(-32vw,36vh)}}
 @keyframes jf5{0%,100%{transform:translate(-30vw,10vh) scale(.9)}50%{transform:translate(32vw,-12vh) scale(1.35)}}
 @keyframes jshape{0%,100%{border-radius:42% 58% 63% 37%/45% 40% 60% 55%}33%{border-radius:62% 38% 32% 68%/58% 64% 36% 42%}66%{border-radius:35% 65% 58% 42%/66% 34% 52% 48%}}
-.jpx-lift{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 70% 45% at 50% 42%,rgba(255,214,140,.10),rgba(255,214,140,0) 70%);transition:opacity 1s cubic-bezier(.4,0,.2,1)}
+.jpx-lift{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 70% 45% at 50% 50%,rgba(255,214,140,.10),rgba(255,214,140,0) 70%);transition:opacity 1s cubic-bezier(.4,0,.2,1)}
 .jpx.won .jpx-lift{opacity:1}
 .jpx.won .jpx-mesh .m1,.jpx.won .jpx-mesh .m2{filter:blur(64px) brightness(1.08)}
 @media (prefers-reduced-motion:reduce){.jpx-mesh i{animation:none!important}}
@@ -1315,7 +1315,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jpx-sub.show{opacity:1;transform:none}
 .jpx-sub b{font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:.06em;text-transform:uppercase;color:#F5B83D;text-shadow:0 0 22px rgba(245,184,61,.6)}
 .jpx-sub span{max-width:320px;color:var(--text);font-size:15.5px;line-height:1.45}
-.jpx-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,#FFF6DC,rgba(255,226,160,.35) 38%,rgba(245,184,61,0) 70%);pointer-events:none}
+.jpx-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#FFF6DC,rgba(255,226,160,.35) 38%,rgba(245,184,61,0) 70%);pointer-events:none}
 .jpcard-wrap{position:absolute;inset:0;display:grid;place-items:center;padding:24px;z-index:3}
 .bar.jpcard{width:100%;max-width:400px;gap:12px;padding:22px;box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 80px rgba(245,184,61,.35)}
 .bar.jpcard p{margin:0;font-size:15.5px;line-height:1.45;font-weight:500}
@@ -2938,7 +2938,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
     Object.assign(e.style,{left:(4+Math.random()*92)+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.12+Math.random()*.2});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
-  const tx=innerWidth/2-(r.left+r.width/2),ty=innerHeight*.42-(r.top+r.height/2),SC=Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
+  const tx=innerWidth/2-(r.left+r.width/2),ty=innerHeight*.5-(r.top+r.height/2),SC=Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
   box.classList.add("lifting");requestAnimationFrame(()=>{box.classList.add("gold","jpbig");ov.classList.add("live")});
   box.animate([{transform:"translate(0,0) scale(1)"},{transform:`translate(${tx}px,${ty}px) scale(${SC})`}],{duration:900,easing:"cubic-bezier(.33,0,.15,1)",fill:"forwards"});
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
