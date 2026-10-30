@@ -841,11 +841,11 @@ body.mapq .view{padding-bottom:12px!important}
 .schead{display:flex;align-items:flex-start;gap:12px}.schead .sct{flex:1;min-width:0}
 .schead .aw-t{font-size:34px;line-height:.95;text-align:left;margin:0;text-shadow:none}
 .schead .aw-w{white-space:nowrap;font-size:13.5px;text-align:left;margin-top:5px;color:var(--muted);opacity:1;text-shadow:none}
-.schead .scmeta{margin-top:6px;font-size:12.5px;gap:5px;flex-wrap:wrap}.schead .scmeta svg{width:13px;height:13px}
+.schead .scmeta{margin-top:6px;font-size:12.5px;gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}.schead .scmeta svg{width:13px;height:13px}
 .schead .scph{position:static;flex:none;width:62px;height:62px}
 #v-end .scmap{margin:0;border-radius:16px}
-#v-end .scmap.wide{margin:0;border-radius:16px;overflow:hidden;cursor:pointer;transform:translateZ(0)}#v-end .scmap.wide .leaflet-bottom{top:0;bottom:auto}
-#v-end .scmap.wide .scov{padding:56px 14px 12px;background:linear-gradient(rgba(11,13,18,0),rgba(11,13,18,.72) 40%,rgba(11,13,18,.9))}
+#v-end .scmap.wide{margin:0 -16px;border-radius:0;cursor:pointer}#v-end .scmap.wide .leaflet-bottom{top:0;bottom:auto}
+#v-end .scmap.wide .scov{padding:60px 16px 0;background:linear-gradient(rgba(20,24,32,0),rgba(20,24,32,.78) 34%,var(--s1) 78%)}#v-end .scmap.wide::before{content:"";position:absolute;left:0;right:0;top:0;height:28px;z-index:899;pointer-events:none;background:linear-gradient(var(--s1),rgba(20,24,32,0))}
 
 .scexp{position:absolute;top:10px;right:12px;z-index:901;width:34px;height:34px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--text);display:grid;place-items:center;pointer-events:none}.scexp svg{width:16px;height:16px}
 .mapfull{position:fixed;inset:0;z-index:2600;background:var(--bg);opacity:0;transition:opacity .2s}.mapfull.on{opacity:1}#bigMap{position:absolute;inset:0}.mf-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.5)}
@@ -3710,7 +3710,7 @@ async function simTrail(r){
   return out}
 function fitLine(el,min){if(!el)return;el.style.fontSize="";let f=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>el.clientWidth+1&&f>min){f-=.5;el.style.fontSize=f+"px"}}
 function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;
-  box.querySelectorAll(".bcard .nm").forEach(n=>fitLine(n,10.5));box.querySelectorAll(".brow .nmw").forEach(w=>{const n=w.querySelector(".nm");n.style.fontSize="";let f=parseFloat(getComputedStyle(n).fontSize);while(n.scrollWidth>w.clientWidth-(w.querySelector(".bodtag")?40:0)&&f>11){f-=.5;n.style.fontSize=f+"px"}});fitLine(box.querySelector(".schead .aw-t"),16);fitLine(box.querySelector(".schead .aw-w"),11);box.querySelectorAll(".sc-bars .nm").forEach(n=>fitLine(n,10.5));
+  box.querySelectorAll(".bcard .nm").forEach(n=>fitLine(n,10.5));box.querySelectorAll(".brow .nmw").forEach(w=>{const n=w.querySelector(".nm");n.style.fontSize="";let f=parseFloat(getComputedStyle(n).fontSize);while(n.scrollWidth>w.clientWidth-(w.querySelector(".bodtag")?40:0)&&f>11){f-=.5;n.style.fontSize=f+"px"}});fitLine(box.querySelector(".schead .aw-t"),16);fitLine(box.querySelector(".schead .aw-w"),11);fitLine(box.querySelector(".schead .scmeta"),10);box.querySelectorAll(".sc-bars .nm").forEach(n=>fitLine(n,10.5));
   box.classList.remove("tight");el.style.height="200px";
   const room=()=>{const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top;return Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop)};
   let h=200+room();if(h<170){box.classList.add("tight");el.style.height="200px";h=200+room()}
