@@ -3803,10 +3803,12 @@ async function storyCard(r,look){
   const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,rund=look==="rund",RV=rund?(window.RUND_VAR||(r.photo?"photo":"map")):"",mapc=look==="map",photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
   x.fillStyle=BG;x.fillRect(0,0,W,Hh);
   // hero
-  const HH=full?Hh:rund?(RV==="map"?980:Hh):mapc?1500:1160;
+  // where the Rundown's title will land, so the map above it can reach down to meet it
+  const L4=Math.min(8,st.arrived.length),LT=RV==="plain"?Math.max(760,1700-(L4-1)*96):Math.max(1180,1700-(L4-1)*78),T4=LT-265,RMH=T4-60;
+  const HH=full?Hh:rund?(RV==="map"?RMH:Hh):mapc?1500:1160;
   if(rund){   // rundown: a photo or the map up top, the night listed underneath (or plain)
     if(RV==="photo"&&r.photo){const img=await loadImg(r.photo);const s2=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s2)/2,(HH-img.height*s2)/2,img.width*s2,img.height*s2);x.restore()}
-    else if(RV==="map"){x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,{cx:W/2,cy:560,bw:860,bh:520}).catch(()=>null);
+    else if(RV==="map"){x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,{cx:W/2,cy:(300+RMH-200)/2,bw:860,bh:Math.max(300,RMH-560)}).catch(()=>null);
       if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
     else{const g4=x.createRadialGradient(W*.8,250,0,W*.8,250,1100);g4.addColorStop(0,"rgba(245,184,61,.16)");g4.addColorStop(1,"rgba(245,184,61,0)");x.fillStyle=g4;x.fillRect(0,0,W,Hh)}}
   else if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore();
@@ -3822,7 +3824,7 @@ async function storyCard(r,look){
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
   const FV=full?(window.FULL_VAR||"e"):"";
   if(stops.length>1&&!FV&&(!rund||RV==="map")){
-    const B=rund?{x:110,y:300,w:860,h:520}:full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:400,w:360,h:560}:mapc?{x:110,y:330,w:860,h:900}:{x:110,y:400,w:860,h:540},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
+    const B=rund?{x:110,y:300,w:860,h:Math.max(300,RMH-560)}:full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:400,w:360,h:560}:mapc?{x:110,y:330,w:860,h:900}:{x:110,y:400,w:860,h:540},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
     const la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mnla=Math.min(...la),mxla=Math.max(...la),mnlo=Math.min(...lo),mxlo=Math.max(...lo);
     const s=Math.min(B.w/Math.max((mxlo-mnlo)*k,1e-4),B.h/Math.max(mxla-mnla,1e-4),photo?60000:200000);
     const ox=B.x+(B.w-(mxlo-mnlo)*k*s)/2,oy=B.y+(B.h-(mxla-mnla)*s)/2,P=mapP||(p=>[ox+(p.lng-mnlo)*k*s,oy+(mxla-p.lat)*s]);
@@ -3853,7 +3855,7 @@ async function storyCard(r,look){
         const right=pos.rt,lx=pos.lx;x.save();x.shadowColor="rgba(0,0,0,.85)";x.shadowBlur=10;x.textAlign=right?"left":"right";
         x.fillStyle=INK;x.fillText(nn,lx,Y-r*1.5+pos.dy);x.font=`600 21px ${U}`;x.fillStyle="rgba(244,241,234,.75)";x.fillText(stay?hmm(stay):"",lx,Y-r*1.5+26+pos.dy);x.restore()}});
     x.restore()}
-  if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText(x._mapSrc==="google"?"Map data © Google":x._mapSrc==="carto"?"© OpenStreetMap © CARTO":"Esri, HERE, Garmin, © OpenStreetMap",W-64,mapc?1470:rund?950:1140);x.textAlign="left"}
+  if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText(x._mapSrc==="google"?"Map data © Google":x._mapSrc==="carto"?"© OpenStreetMap © CARTO":"Esri, HERE, Garmin, © OpenStreetMap",W-64,mapc?1470:rund?RMH-30:1140);x.textAlign="left"}
   const ICP={roof:"M3 10l9-6 9 6 M5 9v12h14V9 M10 21v-5h4v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
     span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
