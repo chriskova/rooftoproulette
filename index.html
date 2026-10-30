@@ -850,7 +850,33 @@ body.mapq .view{padding-bottom:12px!important}
 .scexp{position:absolute;top:10px;right:12px;z-index:901;width:34px;height:34px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--text);display:grid;place-items:center;pointer-events:none}.scexp svg{width:16px;height:16px}
 .mapfull{position:fixed;inset:0;z-index:2600;background:var(--bg);opacity:0;transition:opacity .2s}.mapfull.on{opacity:1}#bigMap{position:absolute;inset:0}.mf-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .tri.s6c{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;padding:4px 2px 0}#v-end.tight .sc-bars{row-gap:9px;padding-top:10px}#v-end.tight .sc{gap:9px}
-.tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:22px 12px 9px}#v-end .scov .tri.s6c b{font-size:21px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b,.tri.s6c b{color:var(--text)}.tri.s6c b i{font-style:normal;font-size:.8em;margin-left:1px}.schead .aw-t{color:var(--amber);font-size:28px;white-space:nowrap;overflow:visible}.tri.s3b{padding:0 12px}
+.tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:22px 12px 9px}#v-end .scov .tri.s6c b{font-size:21px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b,.tri.s6c b{color:var(--text)}.tri.s6c b i{font-style:normal;font-size:.8em;margin-left:1px}
+.tri.s6c small,.scov .tri.s6c small{color:rgba(245,184,61,.72)!important;opacity:1!important}
+.tri.s6c b{font-weight:800}
+/* option A: map + stats, swipe for the bars */
+.scar2{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}.scar2::-webkit-scrollbar{display:none}
+.scp2{flex:0 0 100%;scroll-snap-align:center;min-width:0;display:flex;flex-direction:column}
+.scp2 .scmap.wide{margin:0}
+.scp2.p2{padding:6px 16px 0;gap:10px}
+.sblist{display:flex;flex-direction:column;gap:10px}
+.brow{display:flex;align-items:center;gap:12px;min-width:0}
+.brow .bth{flex:none;width:52px;height:52px;border-radius:12px;background:var(--s2) center/cover no-repeat}
+.brow i{flex:none;width:22px;height:22px;border-radius:50%;background:rgba(244,241,234,.14);color:var(--text);font-style:normal;font-size:12px;font-weight:800;display:grid;place-items:center}
+.brow .nmw{flex:1;min-width:0;display:flex;flex-direction:column}
+.brow .nmx{position:relative;align-self:flex-start;max-width:100%}
+.brow .nm{display:block;white-space:nowrap;font-weight:650;font-size:15.5px}
+.brow .tm{font-size:12.5px;color:var(--muted);margin-top:2px}
+.brow .bodtag,.bcard .bodtag{z-index:3;opacity:1;position:absolute;left:100%;top:-13px;margin-left:-22px;font-size:8.5px;white-space:nowrap}
+.sblist.many{gap:5px}.sblist.many .bth{width:34px;height:34px;border-radius:9px}.sblist.many .nm{font-size:14px}.sblist.many .tm{font-size:11.5px;margin-top:0}
+/* option B: bars as a sideways strip of photo cards */
+.bstrip{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:14px 16px 2px;scroll-snap-type:x proximity}.bstrip::-webkit-scrollbar{display:none}
+.bcard{flex:0 0 132px;scroll-snap-align:start;position:relative;display:flex;flex-direction:column;gap:3px;min-width:0}
+.bcard .bth{position:relative;height:84px;border-radius:12px;background:var(--s2) center/cover no-repeat}
+.bcard .bth i{position:absolute;left:7px;top:7px;width:22px;height:22px;border-radius:50%;background:rgba(11,13,18,.72);color:var(--text);font-style:normal;font-size:12px;font-weight:800;display:grid;place-items:center}
+.bcard .nm{display:block;white-space:nowrap;overflow:visible;font-weight:650;font-size:14px;margin-top:4px}
+.bcard .tm{font-size:12px;color:var(--muted)}
+.bcard .bodtag{left:auto;right:-4px;top:-10px;margin:0}
+.bcard.x{opacity:.5}.schead .aw-t{color:var(--amber);font-size:28px;white-space:nowrap;overflow:visible}.tri.s3b{padding:0 12px}
 .tri.s6c b{font-size:24px;line-height:1}.tri.s6c small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin-top:3px;white-space:nowrap}
 .scar{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}.scar::-webkit-scrollbar{display:none}
 .scp{flex:0 0 100%;scroll-snap-align:center;padding:0 16px;display:flex;flex-direction:column;gap:12px;min-height:0}
@@ -907,7 +933,7 @@ body.mapq .view{padding-bottom:12px!important}
 .bodt::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 35%,rgba(0,0,0,.8))}
 .bodt b{position:relative;font-family:var(--display);font-weight:800;font-size:24px;line-height:.95;text-transform:uppercase}
 .bodt:active{transform:scale(.97)}
-.snap{display:flex;align-items:center;gap:10px;background:var(--s1);border:1.5px solid var(--amber);border-radius:16px;padding:10px 10px 10px 14px}.snap>svg{width:20px;height:20px;color:var(--amber);flex:none}.snap span{flex:1;font-size:14px;line-height:1.3}.snap .btn.sm{width:auto;padding:0 11px;height:38px}.snap .btn.sm svg{width:19px;height:19px}
+.snap{display:flex;align-items:center;gap:10px;background:var(--s1);border:1.5px solid var(--amber);border-radius:16px;padding:10px 10px 10px 14px}.snap>svg{width:20px;height:20px;color:var(--amber);flex:none}.snap span{flex:1;font-size:14px;line-height:1.3}.snap .btn.sm{width:auto;padding:0 11px;height:38px}.snap.two{flex-direction:column;align-items:stretch;gap:10px;padding:12px}.snap.two .snapt{display:flex;align-items:center;gap:10px}.snap.two .snapt>svg{width:20px;height:20px;color:var(--amber);flex:none}.snap.two .snapt span{flex:1;font-size:14.5px}.snap.two .row2 .btn.sm{width:100%;height:40px}.snap.two .btn svg{width:18px;height:18px}.snap .btn.sm svg{width:19px;height:19px}
 .snapx{appearance:none;background:none;border:0;color:var(--muted);width:30px;height:30px;display:grid;place-items:center;cursor:pointer}.snapx svg{width:16px;height:16px}
 .pthumbs{display:flex;gap:8px}.pthumbs button{appearance:none;border:2px solid var(--line);border-radius:12px;padding:0;overflow:hidden;width:64px;height:64px;background:none;cursor:pointer}.pthumbs button[aria-pressed="true"]{border-color:var(--amber)}.pthumbs img{width:100%;height:100%;object-fit:cover;display:block}
 .mcard{position:absolute;left:10px;right:10px;bottom:28px;z-index:1000;appearance:none;display:flex;align-items:center;gap:10px;text-align:left;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:11px 14px;color:var(--text);font:inherit;box-shadow:0 8px 20px rgba(0,0,0,.5);cursor:pointer}
@@ -3474,7 +3500,7 @@ function renderPlay(){
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"').replace(' data-pending="1"',''):""}</div>
       ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>Keen to try another bar?</b> Spin whenever you're ready.</span></div>`:""}
-      ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap">${I.camera}<span><b>Grab a photo of tonight.</b> The group, the view, whatever's in your glass.</span><button class="btn sm" type="button" id="snapIn">${I.camera} Camera</button><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div>`
+      ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap two"><div class="snapt">${I.camera}<span><b>Grab a photo for your card</b></span><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div><div class="row2"><button class="btn sm" type="button" id="snapIn">${I.camera} Camera</button><button class="btn sm dark" type="button" id="snapGal">${GAL} Gallery</button></div></div>`
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
@@ -3513,7 +3539,7 @@ function renderPlay(){
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
   const snapGot=f=>shrink(f,1000).then(d=>{const gg=S.game;if(!gg)return;(gg.photos=gg.photos||[]).push(d);if(gg.photos.length>3)gg.photos.shift();gg.snapAsk=1;try{save()}catch(x){gg.photos.pop();toast("Couldn't save the photo. Phone storage is full.")}if(S.route==="play")renderPlay();setTimeout(()=>{if(S.game){S.game.snapSeen=1;save();if(S.route==="play")renderPlay()}},4000)});
-  if($("snapIn"))$("snapIn").onclick=()=>pickPhoto(snapGot,true);
+  if($("snapIn")){$("snapIn").onclick=()=>pickPhoto(snapGot,true);$("snapGal").onclick=()=>pickPhoto(snapGot,false)}
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay();requestAnimationFrame(()=>{if(!spinning)fitPlay()});setTimeout(()=>{if(!spinning)fitPlay()},400)}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
@@ -3669,6 +3695,8 @@ async function bigMap(r,st){
 // otherwise a street-like zigzag between the bars.
 async function simTrail(r){
   const stops=[r.startPos,...r.visits.filter(v=>v.arrivedAt!=null).map(v=>byId(v.id))].filter(Boolean);if(stops.length<2)return [];
+  try{const u="https://routing.openstreetmap.de/routed-foot/route/v1/foot/"+stops.map(p=>p.lng.toFixed(6)+","+p.lat.toFixed(6)).join(";")+"?overview=full&geometries=geojson";
+    const j=await (await fetch(u)).json(),c=j&&j.routes&&j.routes[0]&&j.routes[0].geometry.coordinates;if(c&&c.length>1)return c.map(q=>[+q[1].toFixed(5),+q[0].toFixed(5)])}catch(e){}
   try{if(!(window.google&&google.maps&&google.maps.DirectionsService))throw 0;
     const res=await new google.maps.DirectionsService().route({origin:stops[0],destination:stops[stops.length-1],waypoints:stops.slice(1,-1).map(p=>({location:{lat:p.lat,lng:p.lng},stopover:true})),travelMode:"WALKING"});
     const path=res.routes[0].overview_path.map(p=>[+p.lat().toFixed(5),+p.lng().toFixed(5)]);if(path.length>1)return path}catch(e){}
@@ -3679,10 +3707,11 @@ async function simTrail(r){
   return out}
 function fitLine(el,min){if(!el)return;el.style.fontSize="";let f=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>el.clientWidth+1&&f>min){f-=.5;el.style.fontSize=f+"px"}}
 function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;
-  fitLine(box.querySelector(".schead .aw-t"),16);fitLine(box.querySelector(".schead .aw-w"),11);box.querySelectorAll(".sc-bars .nm").forEach(n=>fitLine(n,10.5));
+  box.querySelectorAll(".bcard .nm").forEach(n=>fitLine(n,10.5));box.querySelectorAll(".brow .nmw").forEach(w=>{const n=w.querySelector(".nm");n.style.fontSize="";let f=parseFloat(getComputedStyle(n).fontSize);while(n.scrollWidth>w.clientWidth-(w.querySelector(".bodtag")?40:0)&&f>11){f-=.5;n.style.fontSize=f+"px"}});fitLine(box.querySelector(".schead .aw-t"),16);fitLine(box.querySelector(".schead .aw-w"),11);box.querySelectorAll(".sc-bars .nm").forEach(n=>fitLine(n,10.5));
   box.classList.remove("tight");el.style.height="200px";
   const room=()=>{const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top;return Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop)};
   let h=200+room();if(h<170){box.classList.add("tight");el.style.height="200px";h=200+room()}
+  for(let k=0;k<4;k++){h=Math.max(140,Math.min(460,h));el.style.height=h+"px";const d=room();if(Math.abs(d)<2)break;h+=d}
   el.style.height=Math.max(140,Math.min(460,h))+"px";if(eMap){const m=eMap;m.resize&&m.resize();m._fit&&setTimeout(()=>{if(eMap===m&&document.contains(el)&&!box.hidden)try{m._fit()}catch(e){}},60)}}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
@@ -3714,12 +3743,17 @@ function renderEnd(){
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
-        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
+${(()=>{const SV=window.SUMV||S.sumV||"b",arr=st.arrived;
+          const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay)),cp=cardPhoto(b);
+            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
+            return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
+          const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
+          const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
           <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
-          <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}<span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span></span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
-      ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
-
-          ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}`})()}
+`;
+          if(SV==="a")return `<div class="scar2" id="scar2"><section class="scp2">${mapblk}</section><section class="scp2 p2"><div class="scph-h">The bars</div><div class="sblist${arr.length>6?" many":""}">${arr.map((v,i)=>row(v,i,"row")).join("")}</div>${pick}</section></div>
+            <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
+          return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
     `;
@@ -3728,7 +3762,12 @@ function renderEnd(){
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=()=>{S.bodOpen=r.id;renderEnd()});
   $("scPh").onclick=()=>photoSheet(r,renderEnd);
-  if(S.test&&(!r.trail||r.trail.length<2)&&!r._sim&&st.arrived.length){r._sim=1;simTrail(r).then(t=>{if(t.length>1){r.trail=t;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
+  box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
+    (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
+  if($("scar2")){const car=$("scar2"),ds=[...box.querySelectorAll("#scdots2 [data-p]")];let cur=0;
+    car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;ds.forEach((d,j)=>d.setAttribute("aria-pressed",j===i))}},{passive:true});
+    ds.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}))}
+  if(S.test&&!r.simDone&&!r._sim&&st.arrived.length){r._sim=1;simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=1;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
@@ -3891,7 +3930,7 @@ async function storyCard(r,look){
     const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
     x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
     x.font=`650 28px ${U}`;x.fillStyle=SCH==="b"?(ok?AMB:"#6B7280"):SCH==="d"?(ok?INK:"#6B7280"):(bod?AMB:ok?INK:"#6B7280");const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
-    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.max(X+54,Math.min(ex-w*.3,X+cw-tw-14-w)),Y-36);x.rotate(5*Math.PI/180);
+    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-24,X+cw-w),Y-40);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
   if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1340+rows*gap)}
   foot();
