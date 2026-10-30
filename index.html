@@ -892,7 +892,7 @@ body.mapq .view{padding-bottom:12px!important}
 #v-end .sc-bars .br i{margin-top:1px}
 #v-end .sc-bars .br.isbod .nm{color:var(--amber)}
 #v-end .sc-bars .nmw{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
-#v-end .sc-bars .nmw .nm{white-space:normal;overflow:visible}
+#v-end .sc-bars .nmw .nm{white-space:normal;overflow:visible;position:relative;align-self:flex-start}#v-end .sc-bars .nmw .nm .bodtag{position:absolute;left:100%;top:-13px;margin-left:-26px;font-size:8.5px}
 #v-end .sc-bars .sub{display:flex;align-items:center;gap:8px;margin-top:2px}#v-end .sc-bars.many{row-gap:8px;font-size:13px}#v-end .sc-bars.many .tm{font-size:11.5px}
 #v-end .sc-bars .nmw .tm{font-size:12px}
 .bodtag{flex:none;white-space:nowrap;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:var(--amber);color:var(--amber-ink);border-radius:5px;padding:2px 5px;transform:rotate(4deg);box-shadow:0 2px 6px rgba(0,0,0,.4)}
@@ -3641,7 +3641,7 @@ function cruiseAwards(r,st){
   if(n===1)add("Just the One",`${hmm(stays[0]?stays[0].ms:st.dur)} at ${nm(st.arrived[0].id)}. It's never just the one`);
   if(stays[0]&&stays[0].ms>=60*60000)add("Settled In",`${hmm(stays[0].ms)} at ${nm(stays[0].id)}`);
   if(startH<15&&st.dur>=2.5*3600000)add("Long Lunch",`Out from ${clock12(Math.round(startH*60))} for ${hmm(st.dur)}`);
-  if(n>=4)add("Wanderers",`${n} rooftops, ${km(st.total)}`);
+  if(n>=4)add("Grand Tour",`${n} rooftops, ${km(st.total)}`);
   if(n>=2&&stays.length&&stays.every(s=>s.ms>=30*60000))add("Slow Burn","At least half an hour at every bar");
   const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
   if(!L.length)add(n?"Good Night Out":"Quiet One",n?`${n} rooftop${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
@@ -3682,7 +3682,7 @@ function renderEnd(){
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
         <div class="scmap"><div id="endMap"></div><div class="scov"><div class="tri s6c">${K.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
         <div class="tri s6c s3b">${M.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div>
-          <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
+          <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span></span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
       ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
 
           ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}`})()}
@@ -3778,7 +3778,7 @@ async function storyCard(r,look){
     if(r.barOfDay&&byId(r.barOfDay)){x.save();x.font=`800 17px ${U}`;x.letterSpacing="1.8px";const t="BAR OF THE DAY",w=x.measureText(t).width+20;x.translate(64,1496);x.rotate(-3*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-22,w,32,8);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,10,1);x.restore();
       x.font=`700 34px ${U}`;x.fillStyle=INK;x.fillText(fit(byId(r.barOfDay).name,W-128-w-24),64+w+22,1508)}
-    foot(false);return new Promise(res=>c.toBlob(res,"image/png"))}
+    foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   // award
   let fs=112;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>70){fs-=4;x.font=`800 ${fs}px ${D}`}
   x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,925);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,972);
