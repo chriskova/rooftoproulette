@@ -3654,7 +3654,7 @@ function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)r
   box.classList.remove("tight");el.style.height="200px";
   const room=()=>{const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top;return Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop)};
   let h=200+room();if(h<170){box.classList.add("tight");el.style.height="200px";h=200+room()}
-  el.style.height=Math.max(140,Math.min(460,h))+"px";if(eMap){eMap.resize&&eMap.resize();eMap._fit&&setTimeout(eMap._fit,60)}}
+  el.style.height=Math.max(140,Math.min(460,h))+"px";if(eMap){const m=eMap;m.resize&&m.resize();m._fit&&setTimeout(()=>{if(eMap===m&&document.contains(el)&&!box.hidden)try{m._fit()}catch(e){}},60)}}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
   const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
@@ -3714,7 +3714,7 @@ function renderEnd(){
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean);
-    m._fit=()=>{const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov?ov.offsetHeight-14:40,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
+    m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov?ov.offsetHeight-14:40,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
   });
   fitEnd();
 }
