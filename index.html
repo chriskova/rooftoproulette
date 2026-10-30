@@ -3292,7 +3292,7 @@ document.addEventListener("pointerdown",e=>{const sw=e.target.closest&&e.target.
 function camLight(on){let l=$("camLight");if(!l){if(!on)return;l=document.createElement("div");l.id="camLight";document.body.appendChild(l)}l.classList.toggle("on",on)}
 function camStart(){
   if(typeof MediaRecorder==="undefined"||!CAM.vid)return;
-  const W=1080,H=Math.round(1080*innerHeight/innerWidth/2)*2,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
+  const W=1080,H=1920,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
   // is it dark? (judged once, before the light comes on)
   try{const t=document.createElement("canvas");t.width=t.height=24;const tx=t.getContext("2d",{willReadFrequently:true});tx.drawImage(CAM.vid,0,0,24,24);const d=tx.getImageData(0,0,24,24).data;let L=0;for(let i=0;i<d.length;i+=4)L+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];CAM.dark=L/(d.length/4)<70}catch(e){CAM.dark=false}
   const out=cv.captureStream(30);
@@ -3366,7 +3366,7 @@ const camPh={};
 function camPhoto(url){if(!url)return null;if(camPh[url]!==undefined)return camPh[url]&&camPh[url].complete&&camPh[url].naturalWidth?camPh[url]:null;
   if(/^data:/.test(url)){const im=new Image();im.src=url;camPh[url]=im;return null}
   camPh[url]=null;fetch(url,{mode:"cors"}).then(r=>r.ok?r.blob():Promise.reject()).then(b=>createImageBitmap(b)).then(bm=>{camPh[url]={complete:true,naturalWidth:bm.width,bm}}).catch(()=>{camPh[url]=false});return null}
-function camPaint(x,k,roots){
+function camPaint(x,k,ox,oy,roots){
   const mm=new Map(),am=new Map(),cs_=new Map(),gs=el=>{let c=cs_.get(el);if(!c){c=getComputedStyle(el);cs_.set(el,c)}return c};
   const off=n=>{let X=0,Y=0;while(n){X+=n.offsetLeft||0;Y+=n.offsetTop||0;n=n.offsetParent}return {x:X,y:Y}};
   const mat=el=>{if(!el||el===document.documentElement||el.nodeType!==1)return new DOMMatrix();let M=mm.get(el);if(M)return M;M=mat(el.parentElement);
@@ -3382,7 +3382,7 @@ function camPaint(x,k,roots){
     // 3D (a card flipping in): fit a flat transform to where its corners actually land on screen
     let M=M3;if(!M3.is2D&&w&&h){const q0=M3.transformPoint(new DOMPoint(o.x,o.y)),q1=M3.transformPoint(new DOMPoint(o.x+w,o.y)),q2=M3.transformPoint(new DOMPoint(o.x,o.y+h)),P_=q=>({x:q.x/q.w,y:q.y/q.w}),a0=P_(q0),a1=P_(q1),a2=P_(q2);
       const a=(a1.x-a0.x)/w,b=(a1.y-a0.y)/w,c=(a2.x-a0.x)/h,d=(a2.y-a0.y)/h;M=new DOMMatrix([a,b,c,d,a0.x-a*o.x-c*o.y,a0.y-b*o.x-d*o.y])}
-    x.save();x.setTransform(k*M.a,k*M.b,k*M.c,k*M.d,k*M.e,k*M.f);x.globalAlpha=Math.min(1,A);
+    x.save();x.setTransform(k*M.a,k*M.b,k*M.c,k*M.d,k*M.e+ox,k*M.f+oy);x.globalAlpha=Math.min(1,A);
     let rad=parseFloat(c.borderTopLeftRadius)||0;if(/%/.test(c.borderTopLeftRadius))rad=Math.min(w,h)*rad/100;rad=Math.min(rad,w/2,h/2);
     const box=()=>{x.beginPath();x.roundRect(o.x,o.y,w,h,rad)};
     if(w&&h){const bg=c.backgroundColor;if(bg&&!/rgba\([^)]*,\s*0\)|transparent/.test(bg)){box();x.fillStyle=bg;x.fill()}
@@ -3408,10 +3408,12 @@ function camPaint(x,k,roots){
   roots.forEach(r=>{if(r&&r.isConnected)node(r)});
 }
 function camDraw(){
-  const cv=CAM.cv,x=cv.getContext("2d"),W=cv.width,H=cv.height,k=W/innerWidth,v=CAM.vid;
+  // 9:16 for Stories: the camera fills the frame, the game is scaled to the frame's height and centred
+  const cv=CAM.cv,x=cv.getContext("2d"),W=cv.width,H=cv.height,k=Math.min(H/innerHeight,W/innerWidth),ox=(W-innerWidth*k)/2,v=CAM.vid;
   x.fillStyle="#000";x.fillRect(0,0,W,H);
   if(v&&v.videoWidth){const s_=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*s_,dh=v.videoHeight*s_;x.save();x.translate(W,0);x.scale(-1,1);x.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);x.restore()}
   const jp=document.querySelector(".jpx");if(jp){x.fillStyle="rgba(40,26,4,.42)";x.fillRect(0,0,W,H)}
+  x.save();x.translate(ox,(H-innerHeight*k)/2);
   const txt=(el,o)=>{o=o||{};const r=el.getBoundingClientRect();if(!r.width||!r.height)return;const cs=getComputedStyle(el);let t=el.textContent;if(cs.textTransform==="uppercase")t=t.toUpperCase();if(!t.trim())return;
     x.save();x.font=`${cs.fontWeight} ${parseFloat(cs.fontSize)*k}px ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing==="normal"?"0px":(parseFloat(cs.letterSpacing)*k)+"px"}catch(e){}
     x.globalAlpha=o.a==null?1:o.a;x.fillStyle=o.c||cs.color;x.textBaseline="middle";
@@ -3443,12 +3445,13 @@ function camDraw(){
     CAM.last=ops}
   const ct=document.querySelector(".camtgt"),flying=document.querySelector(".flybox,.flyname,.wfly");
   if(rb||!ct&&!flying)CAM.last.forEach(f=>f());
-  camPaint(x,k,[...document.querySelectorAll(".flybox,.flyname"),ct,...document.querySelectorAll(".wfly,.jpx .jpcard-wrap,.jpx .cf"),$("sheet")&&$("sheet").open?$("sheet"):null]);
+  camPaint(x,k,ox,(H-innerHeight*k)/2,[...document.querySelectorAll(".flybox,.flyname"),ct,...document.querySelectorAll(".wfly,.jpx .jpcard-wrap,.jpx .cf"),$("sheet")&&$("sheet").open?$("sheet"):null]);
   if(false){const r=ct.getBoundingClientRect(),o=parseFloat(getComputedStyle(ct).opacity)||1;x.save();x.globalAlpha=o;rrect(r,18,"rgba(11,13,18,.72)");
     const im=ct.querySelector(".ct-ph");if(im){const p=im.getBoundingClientRect(),src=camPhoto(im.currentSrc||im.src);if(src){const w=src.bm?src.bm.width:src.naturalWidth,h=src.bm?src.bm.height:src.naturalHeight,s_=Math.max(p.width/w,p.height/h),sw=p.width/s_,sh=p.height/s_;
       x.save();x.beginPath();x.roundRect(p.left*k,p.top*k,p.width*k,p.height*k,12*k);x.clip();x.drawImage(src.bm||src,(w-sw)/2,(h-sh)/2,sw,sh,p.left*k,p.top*k,p.width*k,p.height*k);x.restore()}}
     const tx=ct.querySelector(".ct-t").getBoundingClientRect();x.save();x.beginPath();x.rect(tx.left*k,tx.top*k,tx.width*k,tx.height*k);x.clip();
     ct.querySelectorAll(".eyebrow,.ct-n,.ct-f i").forEach(e=>txt(e,{left:1}));ct.querySelectorAll(".ct-f svg").forEach(icon);x.restore();x.restore()}
+  x.restore();
 }
 /* clips: kept on the phone (IndexedDB), grouped by night */
 const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
