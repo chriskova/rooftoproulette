@@ -1248,7 +1248,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .shv-dots{display:flex;justify-content:center;gap:8px;min-height:36px;align-items:center}.shv-dots span{color:var(--muted,#9AA1AD);font-size:14px}
 .shv-dots button{appearance:none;border:1.5px solid var(--line,#232836);background:none;color:var(--muted,#9AA1AD);font:700 14px var(--ui);padding:8px 16px;border-radius:999px}
 .shv-dots button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink,#241803)}
-body:has(.sharev) .toast{z-index:3100;top:calc(env(safe-area-inset-top) + 70px);bottom:auto}.shv-dots.dots{gap:9px}.shv-dots.dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(244,241,234,.28);transition:width .2s,background .2s}.shv-dots.dots button[aria-pressed="true"]{background:var(--amber)}
+.shv-diag{font:600 12px var(--ui);color:#FF8A7A;text-align:center;line-height:1.4;padding:0 6px;word-break:break-all}body:has(.sharev) .toast{z-index:3100;top:calc(env(safe-area-inset-top) + 70px);bottom:auto}.shv-dots.dots{gap:9px}.shv-dots.dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(244,241,234,.28);transition:width .2s,background .2s}.shv-dots.dots button[aria-pressed="true"]{background:var(--amber)}
 .wheel small{font-size:12.5px;letter-spacing:.04em;text-transform:none}
 .bar.anim{animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
 .bar{animation:none}
@@ -3767,7 +3767,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if($("scar2")){const car=$("scar2"),ds=[...box.querySelectorAll("#scdots2 [data-p]")];let cur=0;
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;ds.forEach((d,j)=>d.setAttribute("aria-pressed",j===i))}},{passive:true});
     ds.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}))}
-  if(S.test&&r.simDone!==2&&!r._sim&&st.arrived.length){r._sim=1;const fb=byId(st.arrived[0].id);if(fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=2;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
+  if(S.test&&r.simDone!==2&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=2;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
@@ -3812,7 +3812,7 @@ async function storyCard(r,look){
       if(!mapP){o.save();o.translate(W/2,HH/2);o.rotate(-12*Math.PI/180);o.strokeStyle="rgba(255,255,255,.04)";o.lineWidth=2;for(let i=-1400;i<=1400;i+=90){o.beginPath();o.moveTo(i,-1400);o.lineTo(i,1400);o.stroke();o.beginPath();o.moveTo(-1400,i);o.lineTo(1400,i);o.stroke()}o.restore()}
       o.globalCompositeOperation="destination-in";const mg=o.createLinearGradient(380,0,720,0);mg.addColorStop(0,"rgba(0,0,0,0)");mg.addColorStop(1,"rgba(0,0,0,1)");o.fillStyle=mg;o.fillRect(0,0,W,HH);
       x.drawImage(oc,0,0);x._mapSrc=o._mapSrc;sideMap=true}}
-  else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(()=>null);if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
+  else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
   const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(.32,"rgba(11,13,18,0)");gr.addColorStop(.5,"rgba(11,13,18,.72)");gr.addColorStop(.75,"rgba(11,13,18,.86)");gr.addColorStop(1,"rgba(11,13,18,.92)")}else if(rund){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.55,"rgba(11,13,18,0)");gr.addColorStop(.85,"rgba(11,13,18,.8)");gr.addColorStop(1,BG)}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
@@ -4015,13 +4015,13 @@ async function shareStory(r){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
     looks=r.photo?["full","map","rund"]:["map","rund"];
     window._mapErrs=[];try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e);blobs=[]}
-    if(S.test&&window._mapErrs.length)toast("Map didn't load: "+esc([...new Set(window._mapErrs)].slice(0,3).join(" · ")),9000);
+    const mapDiag=S.test&&window._mapErrs.length?`<div class="shv-diag">Map didn't load: ${esc([...new Set(window._mapErrs)].slice(0,4).join(" · "))}</div>`:"";
     if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map(u=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
       <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"?"Map":"Rundown"}"></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
-      <button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
+      ${mapDiag}<button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]!=="map"?"visible":"hidden"};
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
