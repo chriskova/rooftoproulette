@@ -844,6 +844,11 @@ body.mapq .view{padding-bottom:12px!important}
 .schead .scmeta{margin-top:6px;font-size:12.5px;gap:5px;flex-wrap:wrap}.schead .scmeta svg{width:13px;height:13px}
 .schead .scph{position:static;flex:none;width:62px;height:62px}
 #v-end .scmap{margin:0;border-radius:16px}
+#v-end .scmap.wide{margin:0 -16px;border-radius:0;cursor:pointer}#v-end .scmap.wide .leaflet-bottom{top:0;bottom:auto}
+#v-end .scmap.wide .scov{padding:70px 16px 2px;background:linear-gradient(rgba(20,24,32,0),rgba(20,24,32,.78) 34%,var(--s1) 78%)}
+#v-end .scmap.wide::before{content:"";position:absolute;left:0;right:0;top:0;height:28px;z-index:899;pointer-events:none;background:linear-gradient(var(--s1),rgba(20,24,32,0))}
+.scexp{position:absolute;top:10px;right:12px;z-index:901;width:34px;height:34px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--text);display:grid;place-items:center;pointer-events:none}.scexp svg{width:16px;height:16px}
+.mapfull{position:fixed;inset:0;z-index:2600;background:var(--bg);opacity:0;transition:opacity .2s}.mapfull.on{opacity:1}#bigMap{position:absolute;inset:0}.mf-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .tri.s6c{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;padding:4px 2px 0}#v-end.tight .sc-bars{row-gap:9px;padding-top:10px}#v-end.tight .sc{gap:9px}
 .tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:22px 12px 9px}#v-end .scov .tri.s6c b{font-size:21px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b,.tri.s6c b{color:var(--text)}.tri.s6c b i{font-style:normal;font-size:.8em;margin-left:1px}.schead .aw-t{color:var(--amber);font-size:28px;white-space:nowrap;overflow:visible}.tri.s3b{padding:0 12px}
 .tri.s6c b{font-size:24px;line-height:1}.tri.s6c small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin-top:3px;white-space:nowrap}
@@ -1217,6 +1222,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .shv-dots{display:flex;justify-content:center;gap:8px;min-height:36px;align-items:center}.shv-dots span{color:var(--muted,#9AA1AD);font-size:14px}
 .shv-dots button{appearance:none;border:1.5px solid var(--line,#232836);background:none;color:var(--muted,#9AA1AD);font:700 14px var(--ui);padding:8px 16px;border-radius:999px}
 .shv-dots button[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink,#241803)}
+.shv-dots.dots{gap:9px}.shv-dots.dots button{width:8px;height:8px;padding:0;border:0;border-radius:50%;background:rgba(244,241,234,.28);transition:width .2s,background .2s}.shv-dots.dots button[aria-pressed="true"]{width:22px;border-radius:5px;background:var(--amber)}
 .wheel small{font-size:12.5px;letter-spacing:.04em;text-transform:none}
 .bar.anim{animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
 .bar{animation:none}
@@ -3648,6 +3654,29 @@ function cruiseAwards(r,st){
   return L;
 }
 // shrink text until it sits on one line (never cut off)
+// the night's route, full screen
+async function bigMap(r,st){
+  const ov=document.createElement("div");ov.className="mapfull";ov.innerHTML=`<div id="bigMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>`;
+  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
+  const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
+  m=await makeMap("bigMap",{greedy:true});if(!m)return;
+  const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]}));
+  m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts);m.dot(r.startPos);
+  st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
+  const all=pts.concat(tr);setTimeout(()=>m.fitPts(all,17,{top:80,left:30,right:30,bottom:40}),80);
+}
+// Test mode: no GPS trail from a real walk, so draw one. A real walking route from Google when it's available,
+// otherwise a street-like zigzag between the bars.
+async function simTrail(r){
+  const stops=[r.startPos,...r.visits.filter(v=>v.arrivedAt!=null).map(v=>byId(v.id))].filter(Boolean);if(stops.length<2)return [];
+  try{if(!(window.google&&google.maps&&google.maps.DirectionsService))throw 0;
+    const res=await new google.maps.DirectionsService().route({origin:stops[0],destination:stops[stops.length-1],waypoints:stops.slice(1,-1).map(p=>({location:{lat:p.lat,lng:p.lng},stopover:true})),travelMode:"WALKING"});
+    const path=res.routes[0].overview_path.map(p=>[+p.lat().toFixed(5),+p.lng().toFixed(5)]);if(path.length>1)return path}catch(e){}
+  let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280-.5};const out=[];
+  for(let i=1;i<stops.length;i++){const A=stops[i-1],B=stops[i],n=4;let la=A.lat,lo=A.lng;out.push([la,lo]);
+    for(let k=1;k<n;k++){const t=k/n;if(k%2){lo=A.lng+(B.lng-A.lng)*(t+rnd()*.15)}else{la=A.lat+(B.lat-A.lat)*(t+rnd()*.15)}out.push([+la.toFixed(5),+lo.toFixed(5)])}
+    out.push([+la.toFixed(5),+B.lng.toFixed(5)]);out.push([B.lat,B.lng])}
+  return out}
 function fitLine(el,min){if(!el)return;el.style.fontSize="";let f=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>el.clientWidth+1&&f>min){f-=.5;el.style.fontSize=f+"px"}}
 function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;
   fitLine(box.querySelector(".schead .aw-t"),16);fitLine(box.querySelector(".schead .aw-w"),11);box.querySelectorAll(".sc-bars .nm").forEach(n=>fitLine(n,10.5));
@@ -3685,8 +3714,8 @@ function renderEnd(){
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
-        <div class="scmap"><div id="endMap"></div><div class="scov"><div class="tri s6c">${K.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
-        <div class="tri s6c s3b">${M.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div>
+        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
+          <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
           <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}<span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span></span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
       ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
 
@@ -3699,6 +3728,8 @@ function renderEnd(){
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=()=>{S.bodOpen=r.id;renderEnd()});
   $("scPh").onclick=()=>photoSheet(r,renderEnd);
+  if(S.test&&(!r.trail||r.trail.length<2)&&!r._sim&&st.arrived.length){r._sim=1;simTrail(r).then(t=>{if(t.length>1){r.trail=t;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
+  box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
@@ -3714,7 +3745,7 @@ function renderEnd(){
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean);
-    m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov?ov.offsetHeight-14:40,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
+    m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov?Math.round(ov.offsetHeight*.55):40,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
   });
   fitEnd();
 }
@@ -3847,7 +3878,7 @@ async function shareStory(r){
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map(u=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}">${l==="full"?"Photo":l==="photo"?"Photo + stats":"Map"}</button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
+      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="photo"?"Photo and stats":"Map"}"></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
       <button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]!=="map"?"visible":"hidden"};
