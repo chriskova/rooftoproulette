@@ -1040,6 +1040,10 @@ body.camon #v-play .ptop{order:5;margin-top:4px}
 body.camon #v-play .ready{justify-content:flex-start!important}
 body.camon #v-play .camacts{margin-top:auto}
 body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
+.leavebar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px;font-size:14px;color:var(--muted)}
+.leavebar>span{display:flex;align-items:center;gap:7px;min-width:0}.leavebar>span>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.leavebar svg{width:16px;height:16px;flex:none;color:var(--amber)}
+.leavebar b{color:var(--text);font-weight:700}.leavebar i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--text)}
+.leavebar .btn.sm{width:auto;flex:none;height:36px;padding:0 14px;font-size:14px}
 .spinrow{display:flex;gap:10px;width:100%;align-items:center}.spinrow .btn{flex:1;min-width:0}
 .camfab{appearance:none;flex:none;width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--s2);color:var(--text);display:grid;place-items:center;padding:0}.camfab svg{width:22px;height:22px}
 .ready{position:relative}
@@ -3732,14 +3736,14 @@ function renderPlay(){
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div></div>
       <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;
       const ct=st.querySelector(".camtgt");if(ct&&animateId===v.id&&ct.animate)ct.animate([{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,.75,.2,1)"})}
-    else st.innerHTML=banner+ask+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    else{const d=leaving();st.innerHTML=banner+ask+(d?`<div class="leavebar"><span>${I.clock}<span>At <b>${esc(byId(d.id).name)}</b> <i id="lvT">${mmss(now()-d.arrivedAt)}</i></span></span><button class="btn sm" type="button" id="leaveBtn">Leaving now</button></div>`:"")+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       <div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
-      ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;
+      ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;}
     if(animateId===v.id)animateId=null;
   }else{
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
@@ -3759,6 +3763,7 @@ function renderPlay(){
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
+  if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
     CAM.once=true;CAM.onceAt=Date.now();const sb_=$("spinBtn"),sk_=$("skipBtn");
@@ -3840,7 +3845,7 @@ function rollWild(g,id){
   g.wild={id,text:w,leg};g.lastWild=w;if(w===PICK3)g.pick3=true;
 }
 function renderClock(){
-  const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
+  const g=G();if(!g)return;{const lt=$("lvT"),d=leaving();if(lt&&d)lt.textContent=mmss(now()-d.arrivedAt)}const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
     if(!g.started){$("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
     $("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
