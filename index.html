@@ -3758,19 +3758,24 @@ async function storyCard(r,look){
   const plain=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
   const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
   const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
-  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,photo=(look==="photo"||full)&&r.photo;let mapP=null;
+  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
   x.fillStyle=BG;x.fillRect(0,0,W,Hh);
   // hero
   const HH=full?Hh:1040;
-  if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore()}
+  if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore();
+    if(!full){const oc=document.createElement("canvas");oc.width=W;oc.height=HH;const o=oc.getContext("2d");o.fillStyle="#10141B";o.fillRect(0,0,W,HH);
+      mapP=await mapTiles(o,r,st,W,HH,{cx:830,cy:600,bw:360,bh:500}).catch(()=>null);
+      if(!mapP){o.save();o.translate(W/2,HH/2);o.rotate(-12*Math.PI/180);o.strokeStyle="rgba(255,255,255,.04)";o.lineWidth=2;for(let i=-1400;i<=1400;i+=90){o.beginPath();o.moveTo(i,-1400);o.lineTo(i,1400);o.stroke();o.beginPath();o.moveTo(-1400,i);o.lineTo(1400,i);o.stroke()}o.restore()}
+      o.globalCompositeOperation="destination-in";const mg=o.createLinearGradient(380,0,720,0);mg.addColorStop(0,"rgba(0,0,0,0)");mg.addColorStop(1,"rgba(0,0,0,1)");o.fillStyle=mg;o.fillRect(0,0,W,HH);
+      x.drawImage(oc,0,0);sideMap=true}}
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(()=>null);if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
-  const gr=x.createLinearGradient(0,0,0,HH);if(full){x.fillStyle="rgba(11,13,18,.18)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.55,"rgba(11,13,18,0)");gr.addColorStop(.75,"rgba(11,13,18,.55)");gr.addColorStop(1,"rgba(11,13,18,.88)")}
+  const gr=x.createLinearGradient(0,0,0,HH);if(full){x.fillStyle="rgba(11,13,18,.18)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.4,"rgba(11,13,18,0)");gr.addColorStop(.56,"rgba(11,13,18,.5)");gr.addColorStop(.72,"rgba(11,13,18,.8)");gr.addColorStop(1,"rgba(11,13,18,.92)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
   const FV=full?(window.FULL_VAR||"e"):"";
   if(stops.length>1&&!FV){
-    const B=full?{x:200,y:400,w:680,h:620}:photo?{x:700,y:320,w:300,h:400}:{x:110,y:330,w:860,h:470},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
+    const B=full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:350,w:360,h:500}:{x:110,y:330,w:860,h:470},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
     const la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mnla=Math.min(...la),mxla=Math.max(...la),mnlo=Math.min(...lo),mxlo=Math.max(...lo);
     const s=Math.min(B.w/Math.max((mxlo-mnlo)*k,1e-4),B.h/Math.max(mxla-mnla,1e-4),photo?60000:200000);
     const ox=B.x+(B.w-(mxlo-mnlo)*k*s)/2,oy=B.y+(B.h-(mxla-mnla)*s)/2,P=mapP||(p=>[ox+(p.lng-mnlo)*k*s,oy+(mxla-p.lat)*s]);
@@ -3792,7 +3797,7 @@ async function storyCard(r,look){
       x.shadowColor="transparent";x.strokeStyle=c;x.lineWidth=T.w*.9;x.beginPath();x.moveTo(X,Y-r*.8);x.lineTo(X,Y);x.moveTo(X-r*.65,Y);x.lineTo(X+r*.65,Y);x.stroke();
       glass();x.fillStyle=c;x.fill();x.fillStyle=BG;x.font=`800 ${T.f*(lab.length>2?.78:.92)}px ${U}`;x.textAlign="center";x.fillText(lab,X,Y-r*1.72);x.textAlign="left"});
     x.restore()}
-  if(mapP){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1020);x.textAlign="left"}
+  if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1020);x.textAlign="left"}
   const ICP={roof:"M3 10l9-6 9 6 M5 9v12h14V9 M10 21v-5h4v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
     span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
@@ -3833,13 +3838,16 @@ async function storyCard(r,look){
         for(let t=0;t<=1;t+=.02){const u=1-t;pts.push([u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]])}}}
     else{let h=0;String(r.id||r.startedAt).split("").forEach(ch=>h=(h*31+ch.charCodeAt(0))>>>0);const shape=window.WAVE!=null?window.WAVE:h%3;let sd=h%9973||7;const rn=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
       const A=[[40,1.7,4.1,30,.6,1,-10],[44,1.4,1.0,30,.5,3.0,14],[38,1.85,0.4,30,.5,2.2,18]][shape].map((v,i)=>i===1||i===4?v*(.96+rn()*.08):i===2||i===5?v+rn()*.5:v);
-      for(let X=70;X<=1010;X+=7){const t=(X-70)/940;pts.push([X,1000+A[0]*Math.sin(2*Math.PI*A[1]*t+A[2])+A[3]*Math.sin(2*Math.PI*A[4]*t+A[5])+A[6]*t])}
+      for(let X=70;X<=1010;X+=7){const t=(X-70)/940;pts.push([X,1090+A[0]*Math.sin(2*Math.PI*A[1]*t+A[2])+A[3]*Math.sin(2*Math.PI*A[4]*t+A[5])+A[6]*t])}
       bars._jit=bars.map((_,i)=>(rn()-.5)*.06)}
     const L=[0];for(let i=1;i<pts.length;i++)L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const tot=L[L.length-1];
     const at=d=>{let i=L.findIndex(v=>v>=d);if(i<1)return pts[Math.max(0,i)];const f=(d-L[i-1])/(L[i]-L[i-1]);return[pts[i-1][0]+(pts[i][0]-pts[i-1][0])*f,pts[i-1][1]+(pts[i][1]-pts[i-1][1])*f]};
     if(FV==="e"){const lg=x.createLinearGradient(0,820,0,1180);lg.addColorStop(0,"rgba(11,13,18,0)");lg.addColorStop(.5,"rgba(11,13,18,.45)");lg.addColorStop(1,"rgba(11,13,18,0)");x.fillStyle=lg;x.fillRect(0,820,W,360)}
     x.save();x.lineCap="round";x.lineJoin="round";x.shadowColor="rgba(0,0,0,.7)";x.shadowBlur=12;x.strokeStyle="rgba(245,184,61,.95)";x.lineWidth=7;x.setLineDash([2,17]);
     x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.stroke();x.restore();
+    if(window.WAVE_ENDS&&FV==="e"){const p0=pts[0],pn=pts[pts.length-1],pq=pts[pts.length-4],ang=Math.atan2(pn[1]-pq[1],pn[0]-pq[0]);x.save();x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=8;
+      x.fillStyle=INK;x.beginPath();x.arc(p0[0],p0[1],8,0,7);x.fill();
+      x.translate(pn[0]+6,pn[1]);x.rotate(ang);x.strokeStyle=AMB;x.lineWidth=5;x.lineCap="round";x.lineJoin="round";x.globalAlpha=.9;x.beginPath();x.moveTo(-12,-11);x.lineTo(2,0);x.lineTo(-12,11);x.stroke();x.restore()}
     const n2=bars.length;bars.forEach((v,i)=>{const d=tot*Math.min(.97,Math.max(.03,n2===1?.5:(.04+.92*i/(n2-1))+((bars._jit||[])[i]||0))),[gx,gy]=at(d),b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt);
       x.save();x.shadowColor="rgba(0,0,0,.6)";x.shadowBlur=12;const r2=FV==="d"?22:17;
       x.beginPath();x.moveTo(gx-r2*1.25,gy-r2*1.3);x.lineTo(gx+r2*1.25,gy-r2*1.3);x.lineTo(gx,gy+r2*.45);x.closePath();x.fillStyle=AMB;x.fill();x.strokeStyle=AMB;x.lineWidth=4;x.beginPath();x.moveTo(gx,gy+r2*.4);x.lineTo(gx,gy+r2*1.25);x.moveTo(gx-r2*.7,gy+r2*1.25);x.lineTo(gx+r2*.7,gy+r2*1.25);x.stroke();
@@ -3853,8 +3861,8 @@ async function storyCard(r,look){
       x.textAlign="left";x.restore()})}
   if(full){
     let f2=80;x.font=`800 ${f2}px ${D}`;const t2=aw[0].t.toUpperCase();while(x.measureText(t2).width>W-128&&f2>44){f2-=4;x.font=`800 ${f2}px ${D}`}
-    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1262);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1298);
-    let sy=1392;
+    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1352);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1390);
+    let sy=1482;
     if(FV==="a"){x.font=`700 32px ${U}`;let X=64,Y=1366;const gl=(gx,gy)=>{x.fillStyle=AMB;x.beginPath();x.moveTo(gx-11,gy-22);x.lineTo(gx+11,gy-22);x.lineTo(gx,gy-8);x.closePath();x.fill();x.strokeStyle=AMB;x.lineWidth=3;x.beginPath();x.moveTo(gx,gy-9);x.lineTo(gx,gy);x.moveTo(gx-6,gy);x.lineTo(gx+6,gy);x.stroke()};
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
         if(r.barOfDay===v.id){x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const tw2=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(X+w-50,W-64-tw2),Y-34,4);x.font=`700 32px ${U}`}X+=w+14;if(i<bars.length-1){if(X+30>W-64){X=64;Y+=50}gl(X+11,Y-2);X+=36}});
@@ -3890,14 +3898,14 @@ async function storyCard(r,look){
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
-async function mapTiles(x,r,st,W,HH){
+async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:330+235,bw:860,bh:470};
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
-  const SC=2,BW=860,BH=470,cy0=330+BH/2;let z=16;
+  const SC=2,BW=AR.bw,BH=AR.bh,cy0=AR.cy,cxp=AR.cx;let z=16;
   for(;z>3;z--){const a=all.map(p=>wp(p,z)),xs=a.map(q=>q[0]),ys=a.map(q=>q[1]);if((Math.max(...xs)-Math.min(...xs))*SC<=BW&&(Math.max(...ys)-Math.min(...ys))*SC<=BH)break}
   const a=all.map(p=>wp(p,z)),cx=(Math.min(...a.map(q=>q[0]))+Math.max(...a.map(q=>q[0])))/2,cy=(Math.min(...a.map(q=>q[1]))+Math.max(...a.map(q=>q[1])))/2;
-  const P=p=>{const q=wp(p,z);return[W/2+(q[0]-cx)*SC,cy0+(q[1]-cy)*SC]};
-  const x0=cx-W/2/SC,y0=cy-cy0/SC,x1=cx+W/2/SC,y1=y0+HH/SC,T=[];
+  const P=p=>{const q=wp(p,z);return[cxp+(q[0]-cx)*SC,cy0+(q[1]-cy)*SC]};
+  const x0=cx-cxp/SC,y0=cy-cy0/SC,x1=cx+(W-cxp)/SC,y1=y0+HH/SC,T=[];
   for(let tx=Math.floor(x0/256);tx<=Math.floor(x1/256);tx++)for(let ty=Math.floor(y0/256);ty<=Math.floor(y1/256);ty++)T.push([tx,ty]);
   const load=u=>new Promise((res,rej)=>{const i=new Image();i.crossOrigin="anonymous";i.onload=()=>res(i);i.onerror=rej;i.src=u;setTimeout(rej,6000)});
   const n=Math.pow(2,z),url=(b,tx,ty)=>b.replace("{z}",z).replace("{y}",ty).replace("{x}",((tx%n)+n)%n);
