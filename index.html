@@ -3867,8 +3867,11 @@ async function storyCard(r,look){
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
   const foot=big=>{let lf=big===false?80:58;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
     x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1840);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1840);x.letterSpacing="0px";x.globalAlpha=1;
-    const ar=r.areas[r.areas.length-1];const fz=big===false?22:17;x.font=`700 ${fz}px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,big===false?1798:1812,3,"right");
-    x.font=`600 ${fz}px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1840);x.textAlign="left"};
+    x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1832,3,"right")};
+  // where and when, with a pin, sitting just above the title
+  const where=Y=>{x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(r.startedAt)].filter(Boolean).join(" · ").toUpperCase();
+    x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
+    x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
     x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore();return w};
   const bars=st.arrived.filter(v=>v.counted!==false||v.cant).slice(0,8);
@@ -3917,14 +3920,14 @@ async function storyCard(r,look){
       x.textAlign="left";x.restore()})}
   if(mapc){
     let f3=80;x.font=`800 ${f3}px ${D}`;const t3=aw[0].t.toUpperCase();while(x.measureText(t3).width>W-128&&f3>44){f3-=4;x.font=`800 ${f3}px ${D}`}
-    x.fillStyle=INK;x.fillText(t3,64,1560);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1598);
+    x.fillStyle=INK;where(1468);x.fillStyle=INK;x.fillText(t3,64,1560);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1598);
     (cr?[[km(st.total),"Distance","route"],[lng?hmm(lng):"—","Longest stay","hour"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay","clock"]]
       :[[km(st.total),"Distance","route"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop","bolt"],[st.longest?mOrKm(st.longest.d):"—","Longest leg","span"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1690,64));
     foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   if(rund){   // the rundown: every bar and the time there, on the photo (softened) or plain
     const list=st.arrived.slice(0,8),n4=list.length,listTop=RV==="plain"?Math.max(760,1700-(n4-1)*96):1325,gap4=n4>1?Math.min(RV==="plain"?96:78,(1700-listTop)/(n4-1)):0;
     x.font=`800 76px ${D}`;let f4=76;const t4=aw[0].t.toUpperCase();while(x.measureText(t4).width>W-128&&f4>44){f4-=4;x.font=`800 ${f4}px ${D}`}
-    const top4=listTop-265;x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
+    const top4=listTop-265;where(top4-94);x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
     (cr?[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(st.dur),"Night","moon"]]:[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
     x.strokeStyle="rgba(244,241,234,.12)";x.lineWidth=2;x.beginPath();x.moveTo(64,listTop-62);x.lineTo(W-64,listTop-62);x.stroke();
     list.forEach((v,i)=>{const Y=listTop+i*gap4,b=byId(v.id),ok=v.counted===true,stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
@@ -3935,7 +3938,7 @@ async function storyCard(r,look){
     foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   if(full){x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=16;
     let f2=80;x.font=`800 ${f2}px ${D}`;const t2=aw[0].t.toUpperCase();while(x.measureText(t2).width>W-128&&f2>44){f2-=4;x.font=`800 ${f2}px ${D}`}
-    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1540);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1578);
+    x.fillStyle=SCH==="c"?AMB:INK;where(1448);x.fillStyle=INK;x.fillText(t2,64,1540);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1578);
     let sy=1670;
     if(FV==="a"){x.font=`700 32px ${U}`;let X=64,Y=1366;const gl=(gx,gy)=>{x.fillStyle=AMB;x.beginPath();x.moveTo(gx-11,gy-22);x.lineTo(gx+11,gy-22);x.lineTo(gx,gy-8);x.closePath();x.fill();x.strokeStyle=AMB;x.lineWidth=3;x.beginPath();x.moveTo(gx,gy-9);x.lineTo(gx,gy);x.moveTo(gx-6,gy);x.lineTo(gx+6,gy);x.stroke()};
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
@@ -3948,7 +3951,7 @@ async function storyCard(r,look){
     foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   // award
   let fs=84;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>44){fs-=4;x.font=`800 ${fs}px ${D}`}
-  x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,1035);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1092);
+  x.fillStyle=SCH==="c"?AMB:INK;where(943);x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,1035);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1092);
   // stats
   const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
     :[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
