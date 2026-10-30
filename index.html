@@ -1285,10 +1285,10 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .reel.lifting .frame{transition:border-color .6s ease}
 .reel.lifting{will-change:transform}
 .jpx-glow{position:absolute;top:8%;width:80vw;height:84vh;border-radius:50%;opacity:.5;pointer-events:none;will-change:transform}
-.jpx-glow.l{left:-58vw;background:radial-gradient(circle,rgba(245,184,61,.95),rgba(255,122,61,.35) 45%,rgba(255,122,61,0) 70%);animation:jgl 1.8s ease-in-out infinite alternate}
-.jpx-glow.r{right:-58vw;background:radial-gradient(circle,rgba(255,138,76,.9),rgba(245,184,61,.3) 45%,rgba(245,184,61,0) 70%);animation:jgr 1.5s ease-in-out infinite alternate}
-@keyframes jgl{to{transform:translate(10vw,5vh) scale(1.12)}}@keyframes jgr{to{transform:translate(-10vw,-4vh) scale(1.1)}}
-.jpx.won .jpx-glow{opacity:.95;animation-duration:.5s;transition-delay:0s}
+.jpx-glow.l{left:-58vw;background:radial-gradient(circle,rgba(245,184,61,.95),rgba(255,122,61,.35) 45%,rgba(255,122,61,0) 70%);animation:jgl 7s ease-in-out infinite}
+.jpx-glow.r{right:-58vw;background:radial-gradient(circle,rgba(255,138,76,.9),rgba(245,184,61,.3) 45%,rgba(245,184,61,0) 70%);animation:jgr 8.5s ease-in-out infinite}
+@keyframes jgl{0%,100%{transform:translate(0,0) scale(1)}20%{transform:translate(14vw,-16vh) scale(1.12)}45%{transform:translate(6vw,14vh) scale(.92)}70%{transform:translate(18vw,4vh) scale(1.18)}85%{transform:translate(4vw,-8vh) scale(1.04)}}@keyframes jgr{0%,100%{transform:translate(0,0) scale(1.05)}25%{transform:translate(-12vw,14vh) scale(.94)}50%{transform:translate(-18vw,-10vh) scale(1.16)}75%{transform:translate(-6vw,-18vh) scale(1)}}
+.jpx.won .jpx-glow{opacity:.95;transition-delay:0s}
 .jpx-streaks i{position:absolute;bottom:-140px;width:2px;border-radius:2px;background:linear-gradient(rgba(255,226,160,0),rgba(255,226,160,.9));animation:jstreak .7s linear infinite}
 @keyframes jstreak{to{transform:translateY(-120vh)}}
 .jpx.won .jpx-streaks{opacity:0;transition:opacity .5s}
