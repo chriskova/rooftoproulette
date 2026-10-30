@@ -1016,6 +1016,28 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .menu button svg{width:22px;height:22px;color:var(--muted)}
 .menu button small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
 .menu button.danger{color:var(--red)}
+#camVid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;display:none}
+body.camon #camVid{display:block}
+body.camon,body.camon .app,body.camon .appbar{background:transparent!important}
+body.camon .app{position:relative;z-index:1}
+body.camon .appbar .logo{text-shadow:0 1px 8px rgba(0,0,0,.5)}
+body.camon #v-play{background:transparent}
+body.camon #v-play #pCount{visibility:hidden}
+body.camon #v-play .tbar,body.camon #v-play #strip,body.camon #v-play #gpsNote,body.camon #v-play .poolnum,body.camon #v-play .mixline,body.camon #v-play .reelnote,body.camon #v-play .banner,body.camon #v-play .tip{display:none!important}
+body.camon #tabs{display:none!important}
+body.camon .app.has-tabs .view{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
+body.camon #v-play .clock{background:rgba(11,13,18,.62);border-radius:99px;padding:6px 14px;display:flex;align-items:baseline;gap:6px}
+body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{display:none}body.camon #v-play .clock b{font-size:20px}body.camon #v-play .clock small{font-size:11px}
+body.camon #v-play #pMenu{background:rgba(11,13,18,.62)}
+body.camon #v-play .stage{flex:1}
+body.camon #v-play .ready{flex:1;justify-content:flex-end!important}
+body.camon #v-play .reel{background:rgba(11,13,18,.62)}
+body.camon #v-play .reel .row{font-size:30px}body.camon #v-play .reel .row.long{font-size:25px}body.camon #v-play .reel .row.xlong{font-size:19px}
+body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.25),rgba(3,4,7,.5) 70%)}
+.sctr{display:flex;align-items:center;gap:14px}.sctr #clipsBtn{display:inline-flex;align-items:center;gap:5px;color:var(--text)}.sctr #clipsBtn svg{width:16px;height:16px}
+.clips{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.clip video{width:100%;max-height:52vh;border-radius:14px;background:#000;display:block}
+.clipb{display:flex;align-items:center;gap:8px;margin-top:8px}.clipb .small{flex:1}.clipb .btn.sm{width:auto;padding:0 14px;height:38px}
 .menu button.danger svg{color:var(--red)}
 
 /* score */
@@ -3158,10 +3180,90 @@ function dealWild(delay){
     };
   },delay||0);
 }
+/* ---------- Camera: front camera behind the game, and each spin recorded with the game drawn over it ---------- */
+const CAM={stream:null,vid:null,rec:null,cv:null,last:[],t0:0,idleAt:0,busy:false};
+function camSync(asked){
+  const want=!!S.camOn&&S.route==="play"&&!document.hidden&&!!G();
+  if(want&&!CAM.stream&&!CAM.busy){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){S.camOn=false;save();toast("This browser can't use the camera.",3500);return}
+    CAM.busy=true;
+    navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true}}).then(st=>{
+      CAM.busy=false;if(!(S.camOn&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
+      CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
+      v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
+      if(asked)toast("Camera's on. Every spin is recorded.",3000)
+    }).catch(e=>{CAM.busy=false;S.camOn=false;save();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
+  }
+  if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play")fitPlay();
+    if(asked)toast("Camera's off.",2000)}
+}
+document.addEventListener("visibilitychange",()=>camSync());
+setInterval(()=>{camSync();
+  if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
+  if(!CAM.rec&&spinning)camStart();
+  else if(CAM.rec){if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
+    if((CAM.idleAt&&Date.now()-CAM.idleAt>3000)||Date.now()-CAM.t0>90000)camStop()}},120);
+function camStart(){
+  if(typeof MediaRecorder==="undefined"||!CAM.vid)return;
+  const W=720,H=Math.round(720*innerHeight/innerWidth/2)*2,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
+  const out=cv.captureStream(30);CAM.stream.getAudioTracks().forEach(t=>out.addTrack(t));
+  const mt=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(m=>MediaRecorder.isTypeSupported(m))||"";
+  let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:6e6}:{})}catch(e){return}
+  const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
+  rec.onstop=()=>{const type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
+    clipPut({id:"c"+Date.now(),game:gid,at:Date.now(),type,blob}).then(()=>toast(`${I.camera}<span><b>Spin saved.</b> It's with tonight's clips.</span><button class="txtbtn amber" type="button" id="clipShare">Share</button>`,5000,t=>{const b=t.querySelector("#clipShare");if(b)b.onclick=()=>{hideToast();clipShare(blob,type)}})).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
+  CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
+  const loop=()=>{if(CAM.rec!==rec)return;camDraw();requestAnimationFrame(loop)};loop();
+}
+function camStop(){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){try{r.requestData()}catch(e){}r.stop()}}
+function camDraw(){
+  const cv=CAM.cv,x=cv.getContext("2d"),W=cv.width,H=cv.height,k=W/innerWidth,v=CAM.vid;
+  x.fillStyle="#000";x.fillRect(0,0,W,H);
+  if(v&&v.videoWidth){const s_=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*s_,dh=v.videoHeight*s_;x.save();x.translate(W,0);x.scale(-1,1);x.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);x.restore()}
+  const jp=document.querySelector(".jpx");if(jp){x.fillStyle="rgba(40,26,4,.42)";x.fillRect(0,0,W,H)}
+  const txt=(el,o)=>{o=o||{};const r=el.getBoundingClientRect();if(!r.width||!r.height)return;const cs=getComputedStyle(el);let t=el.textContent;if(cs.textTransform==="uppercase")t=t.toUpperCase();if(!t.trim())return;
+    x.save();x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing==="normal"?"0px":cs.letterSpacing}catch(e){}
+    x.globalAlpha=o.a==null?1:o.a;x.fillStyle=o.c||cs.color;x.textBaseline="middle";
+    x.textAlign="center";x.fillText(t,(r.left+r.width/2)*k,(r.top+r.height/2)*k);
+    x.restore()};
+  const rrect=(r,rad,fill,stroke,lw)=>{x.beginPath();x.roundRect(r.left*k,r.top*k,r.width*k,r.height*k,rad*k);if(fill){x.fillStyle=fill;x.fill()}if(stroke){x.strokeStyle=stroke;x.lineWidth=lw*k;x.stroke()}};
+  // logo
+  const lg=$("logo");if(lg&&lg.offsetParent){const r=lg.getBoundingClientRect(),cs=getComputedStyle(lg),sp=lg.querySelector("span");x.save();x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing}catch(e){}x.textBaseline="middle";x.textAlign="left";
+    x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=8*k;x.fillStyle=cs.color;const a="ROOFTOP ";x.fillText(a,r.left*k,(r.top+r.height/2)*k);x.fillStyle=getComputedStyle(sp).color;x.fillText("ROULETTE",r.left*k+x.measureText(a).width,(r.top+r.height/2)*k);x.restore()}
+  // clock pill
+  const ck=$("clock");if(ck&&ck.offsetParent){const r=ck.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");x.save();x.shadowColor="transparent";[...ck.children].forEach(c=>txt(c));x.restore()}
+  // the reel, as it sits on screen (or as it landed, once it's gone)
+  const rb=document.querySelector(".reel");
+  if(rb&&rb.offsetParent!==null||rb&&rb.closest(".jpx")){const R_=rb.getBoundingClientRect(),ops=[];
+    ops.push(()=>{const g=x.createLinearGradient(0,R_.top*k,0,R_.bottom*k);g.addColorStop(0,"rgba(11,13,18,0)");g.addColorStop(.24,"rgba(11,13,18,.62)");g.addColorStop(.76,"rgba(11,13,18,.62)");g.addColorStop(1,"rgba(11,13,18,0)");rrect(R_,20,g)});
+    const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect();ops.push(()=>rrect(r,14,"rgba(245,184,61,.10)","#F5B83D",2))}
+    const fade=y=>{const u=(y-R_.top)/R_.height;return u<.24?Math.max(0,u/.24):u>.76?Math.max(0,(1-u)/.24):1};
+    rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02)return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
+      const r=sp.getBoundingClientRect(),f=fade(r.top+r.height/2);if(f<.02)return;const col=getComputedStyle(sp).color,snap={getBoundingClientRect:()=>r,textContent:sp.textContent,offsetWidth:sp.offsetWidth,offsetHeight:sp.offsetHeight},cs=getComputedStyle(sp),font={fw:cs.fontWeight,fs:cs.fontSize,ff:cs.fontFamily};
+      ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
+        x.translate((r.left+r.width/2)*k,(r.top+r.height/2)*k);x.scale(k*r.width/m,k*r.height/(snap.offsetHeight||r.height));x.fillText(t,0,0);x.restore()})})});
+    CAM.last=ops}
+  CAM.last.forEach(f=>f());
+}
+/* clips: kept on the phone (IndexedDB), grouped by night */
+const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const clipPut=o=>clipDB().then(db=>new Promise((res,rej)=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").put(o);t.oncomplete=res;t.onerror=()=>rej(t.error)}));
+const clipList=gid=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
+const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
+function clipFile(blob,type,at){const ext=/mp4/.test(type)?"mp4":"webm",d=new Date(at||Date.now());return new File([blob],`rooftop-roulette-${d.getHours()}${String(d.getMinutes()).padStart(2,"0")}${String(d.getSeconds()).padStart(2,"0")}.${ext}`,{type:type.split(";")[0]})}
+function clipSave(blob,type,at){const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function clipShare(blob,type,at){const f=clipFile(blob,type,at);if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else clipSave(blob,type,at)}
+function clipsSheet(gid){clipList(gid).then(L=>{const urls=L.map(c=>URL.createObjectURL(c.blob));
+  sheet(`<h3>Clips</h3><p class="note">Your spins from tonight. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
+    document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cs];clipShare(c.blob,c.type,c.at)});
+    document.querySelectorAll("[data-cv]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cv];clipSave(c.blob,c.type,c.at)});
+    document.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cd];clipDel(c.id).then(()=>{closeSheet();if(S.route==="end")renderEnd();clipList(gid).then(n=>{if(n.length)clipsSheet(gid)})})});
+    $("sheet").addEventListener("close",()=>urls.forEach(u=>URL.revokeObjectURL(u)),{once:true})})})}
 function fitPlay(){
   const v=$("v-play");if(!v||v.hidden)return;v.scrollTop=0;
   const rb=$("reelBox");
-  if(rb&&!rb.closest(".jpx")){rb.style.height="";
+  if(rb&&!rb.closest(".jpx")&&document.body.classList.contains("camon")){rb.style.height="190px";if(reel&&reel.redraw)reel.redraw()}
+  else if(rb&&!rb.closest(".jpx")){rb.style.height="";
     // free space = the bottom of the usable area minus the bottom of the last thing on screen
     const vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0,limit=vr.top+v.clientHeight-pb;
     const last=Math.max(...[...v.querySelectorAll("#stage>:not(.ready),#stage .ready>*")].map(x=>x.getBoundingClientRect().bottom));
@@ -3404,12 +3506,14 @@ function openMenu(){
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
+    <button type="button" id="mCam">${I.camera}<span>Camera ${S.camOn?"on":"off"}<small>Records each spin with your reaction</small></span></button>
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
+    $("mCam").onclick=()=>{S.camOn=!S.camOn;save();closeSheet();camSync(true)};
     $("mEnd").onclick=()=>sheet(`<h3>${cr?"Call it a night?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the night":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
@@ -3738,7 +3842,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
+      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><span class="sctr"><button class="txtbtn" type="button" id="clipsBtn" hidden>${I.camera} Clips</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -3775,6 +3879,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
+  clipList(r.id).then(L=>{const b=$("clipsBtn");if(!b||!L.length)return;b.hidden=false;b.lastChild.textContent=` Clips (${L.length})`;b.onclick=()=>clipsSheet(r.id)});
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
