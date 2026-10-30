@@ -2740,7 +2740,11 @@ $("permGo").onclick=async()=>{
 
 /* ---------- game logic ---------- */
 const G=()=>S.game;
-const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
+const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null&&!v.dep)};
+const leaving=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null&&v.dep)};   // spun, still at the bar until we see you go
+// when you left, if we didn't see it happen: the last time the phone went in your pocket after the spin
+const awayNow=()=>!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=60000;
+const leftGuess=d=>Math.max(d.dep,d.hid&&d.hid>=d.dep?d.hid:d.dep);
 const visited=id=>G().visits.some(v=>v.id===id);
 // A freeze pushes the end back and holds the clock still until it runs out. A free trip (Your call) ends early
 // when you arrive or spin again, and hands back whatever it didn't use.
@@ -2787,13 +2791,15 @@ function spinPool(){
   }
   return {pool:P,final:false};
 }
-function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=t;if(reason==="end")v.counted=v.arrivedAt<G().endsAt;else v.counted=(t-v.arrivedAt)/60000>=DWELL_MIN?true:null}
+function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)/60000>=DWELL_MIN;
+  if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
 function onLocation(){
   const g=G();[bMap,zMap].forEach(setMe);
   if(!g||g.ended)return;
   const y=you();if(!y)return;
   if(g.started&&(!here||!here.acc||here.acc<60)){const T=g.trail||(g.trail=[]),l=T[T.length-1];if(!l||dist({lat:l[0],lng:l[1]},y)>=25){T.push([+y.lat.toFixed(5),+y.lng.toFixed(5)]);if(T.length>3000)T.splice(0,T.length-3000)}}
   const slack=Math.min(y.acc||0,40),a=atVisit();
+  const d=leaving();if(d&&dist(y,byId(d.id))-slack>LEAVE_M){closeVisit(d,awayNow()?leftGuess(d):Math.max(d.dep,now()-90000),"walk");save()}
   if(a){if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()}}
   else if(g.target&&g.started&&now()<g.endsAt){
     const v=byId(g.target);
@@ -3001,7 +3007,7 @@ function doSpin(force,vel){
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
   if(!g.started){prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
-  const a=atVisit();if(a){closeVisit(a,now(),"spin");if(a._ans!==undefined){a.counted=a._ans;delete a._ans}}
+  const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
   if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
     if(g.visits.length>=g.jpLeg&&spinPool().pool.length){jackpotSpin(vel);return}}
@@ -3634,6 +3640,7 @@ function endGame(at){
   const before=collectedMap();
   const t=Math.min(at,g.endsAt),early=at<g.endsAt;if(early)g.endsAt=at;
   const a=atVisit();if(a)closeVisit(a,t,"end");
+  const d=leaving();if(d)closeVisit(d,Math.min(t,awayNow()||document.hidden?leftGuess(d):t),"end");
   if(g.target){const y=you(),v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
   g.ended=true;g.endedAt=t;g.early=early;
   const rec=JSON.parse(JSON.stringify(g));
@@ -3661,7 +3668,9 @@ function logArrival(manual){
   const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
   // the phone was away for a while and we only just found out they're here: assume they've done their 3 minutes
   const late=!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;
-  let at=now();if(late){const est=(g.targetAt||at)+walkMin(g.targetFrom||v,v)*60000;at=Math.min(now()-DWELL_MIN*60000,Math.max(now()-awayGap,est))}
+  let at=now();const d=leaving();
+  if(d){const W=walkMin(byId(d.id),v)*60000;let L=late?leftGuess(d):Math.max(d.dep,now()-W);if(late)at=Math.min(now()-DWELL_MIN*60000,Math.max(L+W,d.dep));L=Math.min(L,at);closeVisit(d,L,"walk")}
+  else if(late){const est=(g.targetAt||at)+walkMin(g.targetFrom||v,v)*60000;at=Math.min(now()-DWELL_MIN*60000,Math.max(now()-awayGap,est))}
   g.visits.push({id:v.id,arrivedAt:at,leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
   if(S.test&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
@@ -4622,7 +4631,7 @@ function loop(){
 }
 setInterval(loop,1000);setInterval(()=>{if(!document.hidden)markSeen()},15000);addEventListener("pagehide",markSeen);
 document.addEventListener("visibilitychange",()=>{
-  if(document.hidden){markSeen();return}
+  if(document.hidden){const d_=leaving();if(d_){d_.hid=now();save()}markSeen();return}
   awayGap=S.seenAt?Date.now()-S.seenAt:0;resumedAt=Date.now();
   if(!S.game&&(S.test||navigator.geolocation)){const c0=S.city;permState().then(st=>{if(st==="granted"||S.test)getOnce().then(()=>{if(S.city!==c0)render()}).catch(()=>{})})}
   const g=G();
