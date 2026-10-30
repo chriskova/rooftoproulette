@@ -3748,7 +3748,7 @@ function renderEnd(){
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay)),cp=cardPhoto(b);
-            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" data-bar="${b.id}" role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag" data-bodopen="1" role="button">Bar of the day</span>':""}</div>`;
+            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
           const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
@@ -4200,7 +4200,7 @@ function renderBars(){
     const list=VENUES.filter(v=>{const s=barStatus(v,c);return s==="col"||s==="been"}).sort(sortD);
     intro=`Rooftops you've visited in a game or marked as been before. Turn on <b>New rooftops only</b> when you set up a game and these get skipped.`;
     rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "I've been here before".</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "Been here before".</div>`];
     pins=list.map(v=>({v,cls:"done"}));
   }else if(f==="nfu"){
     const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
@@ -4257,12 +4257,12 @@ function barSheet(v,night){
     ${v.fact?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${visitsHTML(v)}
     <div class="acts">
-      ${night?`<button class="toggle" type="button" id="tgBod" role="switch" aria-checked="${night.barOfDay===v.id}"><span class="t"><b>Bar of the day</b><small>Your pick from tonight. It's tagged on your story.</small></span><span class="sw"></span></button>`:""}
-      ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
-      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>${night?"Keen to come back. You can spin just your Hit list in R&amp;R.":"On your shortlist for R&amp;R."}</small></span><span class="sw"></span></button>
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>${night?"Not for you. It won't come up in R&amp;R.":"Never comes up in R&amp;R."}</small></span><span class="sw"></span></button>
+      ${night&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
+      ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
+      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Save for next time</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>`,()=>{bindSheetCard(v,bf);bindVisits();
-    if($("tgBod"))$("tgBod").onclick=()=>{if(night.barOfDay===v.id)night.barOfDay=null;else night.barOfDay=v.id;night.bodDone=true;saveH();buzz(12);barSheet(v,night);if(S.route==="end")renderEnd()};
+    if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
     $("tgWant").onclick=()=>{if(S.want[v.id])delete S.want[v.id];else{S.want[v.id]=1;delete S.nfu[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
