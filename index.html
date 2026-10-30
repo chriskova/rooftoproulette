@@ -2155,17 +2155,18 @@ async function permState(){if(S.test)return "granted";try{const p=await navigato
 /* ---------- sound + haptics ---------- */
 let AC=null;
 function OUT(a){if(!a._out){a._out=a.createGain();a._out.connect(a.destination)}return a._out}
+function OUTJ(a){if(!a._outJ){a._outJ=a.createGain();a._outJ.connect(a.destination)}return a._outJ}   // jackpot sounds: full on the phone, half in clips
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume();return AC}
 function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(OUT(a));o.start(t);o.stop(t+.05)}
 function arriveSound(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,out=a.createGain();out.gain.value=.9;out.connect(OUT(a));
   [[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28]].forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type="triangle";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i===4?.22:.16,st+.01);g.gain.exponentialRampToValueAtTime(.0001,st+(i===4?.7:.25));o.connect(g).connect(out);o.start(st);o.stop(st+.75)})}
-function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=4200;lp.connect(OUT(a));
+function fanfare(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=4200;lp.connect(OUTJ(a));
   const notes=[[523.25,0],[659.25,.07],[783.99,.14],[1046.5,.21],[1318.5,.28],[1568,.35],[1046.5,.5],[1318.5,.5],[1568,.5],[2093,.5]];
   notes.forEach(([hz,dt],i)=>{const o=a.createOscillator(),g=a.createGain();o.type=i<6?"square":"triangle";o.frequency.value=hz;const st=t+dt,len=i<6?.12:1.3;
     g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(i<6?.05:.09,st+.012);g.gain.exponentialRampToValueAtTime(.0001,st+len);o.connect(g).connect(lp);o.start(st);o.stop(st+len+.05)})}
 let NB=null;function noiseBuf(){const a=ac();if(!a)return null;if(NB&&NB.sampleRate===a.sampleRate)return NB;NB=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const ch=NB.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;return NB}
 const prewarmAudio=()=>{try{(window.requestIdleCallback||setTimeout)(()=>noiseBuf(),{timeout:1500})}catch(e){}};
-function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,M=a.createGain();M.gain.value=1;M.connect(OUT(a));
+function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};const t=a.currentTime,end=t+sec,M=a.createGain();M.gain.value=1;M.connect(OUTJ(a));
   const out=a.createGain(),lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.setValueAtTime(1600,t);lp.frequency.exponentialRampToValueAtTime(7000,end);
   out.gain.setValueAtTime(.09,t);out.gain.linearRampToValueAtTime(.15,end);lp.connect(out).connect(M);
   const lfo=a.createOscillator(),lg=a.createGain();lfo.type="sine";lfo.frequency.setValueAtTime(3,t);lfo.frequency.exponentialRampToValueAtTime(16,end);lg.gain.value=.03;lfo.connect(lg).connect(out.gain);lfo.start(t);
@@ -2178,7 +2179,7 @@ function riser(sec){if(!S.sound)return()=>{};const a=ac();if(!a)return()=>{};con
   return kill}
 function whoosh(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,len=.6;
   const ns=a.createBufferSource(),bp=a.createBiquadFilter(),g=a.createGain();ns.buffer=noiseBuf();bp.type="bandpass";bp.Q.value=.8;bp.frequency.setValueAtTime(300,t);bp.frequency.exponentialRampToValueAtTime(3000,t+len);
-  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(OUT(a));ns.start(t);ns.stop(t+len)}
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.15);g.gain.exponentialRampToValueAtTime(.0001,t+len);ns.connect(bp).connect(g).connect(OUTJ(a));ns.start(t);ns.stop(t+len)}
 function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime;
   const noise=(len,f0,f1,q,vol,type)=>{const nb=a.createBuffer(1,Math.ceil(a.sampleRate*len),a.sampleRate),ch=nb.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
     const n=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();n.buffer=nb;f.type=type||"bandpass";f.Q.value=q;f.frequency.setValueAtTime(f0,t);f.frequency.exponentialRampToValueAtTime(f1,t+len);
@@ -2192,7 +2193,7 @@ function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
   if(kind==="thud"){tone(110,0,.22,.35);noise(.12,300,120,.8,.35,"lowpass")}
 }
 function boom(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(38,t+.7);
-  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(OUT(a));o.start(t);o.stop(t+1)}
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(OUTJ(a));o.start(t);o.stop(t+1)}
 function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(OUT(a));[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
@@ -3327,12 +3328,12 @@ function camStart(){
   const out=cv.captureStream(30);
   // sound: your mic plus the app's own clicks and chimes
   const a=ac();let mix=null;
-  if(a&&a.createMediaStreamDestination){try{mix={d:a.createMediaStreamDestination(),m:CAM.stream.getAudioTracks().length?a.createMediaStreamSource(CAM.stream):null};if(mix.m)mix.m.connect(mix.d);mix.g=a.createGain();mix.g.gain.value=.7;OUT(a).connect(mix.g);mix.g.connect(mix.d);mix.d.stream.getAudioTracks().forEach(t=>out.addTrack(t))}catch(e){mix=null}}
+  if(a&&a.createMediaStreamDestination){try{mix={d:a.createMediaStreamDestination(),m:CAM.stream.getAudioTracks().length?a.createMediaStreamSource(CAM.stream):null};if(mix.m)mix.m.connect(mix.d);mix.g=a.createGain();mix.g.gain.value=.7;OUT(a).connect(mix.g);mix.g.connect(mix.d);mix.j=a.createGain();mix.j.gain.value=.35;OUTJ(a).connect(mix.j);mix.j.connect(mix.d);mix.d.stream.getAudioTracks().forEach(t=>out.addTrack(t))}catch(e){mix=null}}
   if(!mix)CAM.stream.getAudioTracks().forEach(t=>out.addTrack(t));
   const mt=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(m=>MediaRecorder.isTypeSupported(m))||"";
   let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:12e6,audioBitsPerSecond:160000}:{})}catch(e){return}
   const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
-  rec.onstop=async()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.g);mix.g.disconnect()}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;let type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
+  rec.onstop=async()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.g);mix.g.disconnect();OUTJ(a).disconnect(mix.j);mix.j.disconnect()}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;let type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
     if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
     const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
