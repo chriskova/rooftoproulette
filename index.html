@@ -876,7 +876,7 @@ body.mapq .view{padding-bottom:12px!important}
 .bcard .nm{display:block;white-space:nowrap;overflow:visible;font-weight:650;font-size:13px;margin-top:3px}
 .bcard .tm{font-size:11.5px;color:var(--muted)}
 .bcard .bodtag{left:auto;right:-4px;top:-10px;margin:0}
-.bcard.x{opacity:.5}.schead .aw-t{color:var(--amber);font-size:28px;white-space:nowrap;overflow:visible}.tri.s3b{padding:0 12px}
+.bcard.x{opacity:.5}.bcard{cursor:pointer}.bcard:active .bth{transform:scale(.97)}.bcard .bth{transition:transform .12s}.schead .aw-t{color:var(--amber);font-size:28px;white-space:nowrap;overflow:visible}.tri.s3b{padding:0 12px}
 .tri.s6c b{font-size:24px;line-height:1}.tri.s6c small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin-top:3px;white-space:nowrap}
 .scar{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}.scar::-webkit-scrollbar{display:none}
 .scp{flex:0 0 100%;scroll-snap-align:center;padding:0 16px;display:flex;flex-direction:column;gap:12px;min-height:0}
@@ -3748,7 +3748,7 @@ function renderEnd(){
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay)),cp=cardPhoto(b);
-            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
+            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" data-bar="${b.id}" role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag" data-bodopen="1" role="button">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
           const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
@@ -3763,7 +3763,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
-  box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=()=>{S.bodOpen=r.id;renderEnd()});
+  box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
+  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v)});
   $("scPh").onclick=()=>photoSheet(r,renderEnd);
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
