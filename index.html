@@ -1431,6 +1431,7 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .reel .row.xlong{font-size:clamp(18px,5.5vw,25px)}
 .reel .row.ph .b{color:var(--amber)}
 .reel.won .row.c .b{color:var(--amber)}
+.reel .frame.held{border-color:#FFE3A3;box-shadow:0 0 0 4px rgba(255,214,120,.45),0 0 28px rgba(255,214,120,.6),inset 0 0 18px rgba(255,214,120,.25)!important}
 .reel.won .frame{box-shadow:0 0 0 7px rgba(245,184,61,.28),0 0 60px rgba(245,184,61,.45)}
 .demo .demoacts{margin-top:10px}
 .demoacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
@@ -2872,7 +2873,8 @@ function makeReel(el,names,o){
       if(frame&&frame.animate&&!R.landing){const dur=Math.round(Math.min(240,Math.max(70,900/Math.max(spd,1))));const fi=Math.min(1,.4+.6*Math.min(1,7/Math.max(spd,1)));frame._fl=performance.now();frame._fd=dur;frame._fi=fi;   // softer at full speed, full strength on the last few names
         frame.animate([{borderColor:fi>.8?"#FFE3A3":"#FBD27E",boxShadow:`0 0 0 ${(4*fi).toFixed(1)}px rgba(255,214,120,${(.45*fi).toFixed(2)}),0 0 ${Math.round(28*fi)}px rgba(255,214,120,${(.6*fi).toFixed(2)}),inset 0 0 18px rgba(255,214,120,${(.25*fi).toFixed(2)})`},{}],{duration:dur,easing:"ease-out"})}}
     // the slot is pushed out while a name sits in its catch, and springs back once it's rolled past (same range as the name's own zoom)
-    if(frame){const fin=Math.abs(R.p-Math.round(R.p))<.14&&spd<12&&!R.landing;if(fin!==frame._in){frame._in=fin;frame.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";frame.style.transform=fin?"scale(1.025,1.09)":""}}
+    if(frame){const fin=Math.abs(R.p-Math.round(R.p))<.14&&spd<12&&!R.landing;if(fin!==frame._in){frame._in=fin;frame.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";frame.style.transform=fin?"scale(1.025,1.09)":""}
+      frame.classList.toggle("held",fin&&!!R.down)}   // dragging slowly: the light holds while a name's in the slot
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4){L[0]=U[0];swapIn(0)}
     const fl=Math.floor(R.p);
@@ -2934,9 +2936,9 @@ function makeReel(el,names,o){
   };
   if(o.onRelease){
     let y0=0,pS=0,pts=[],down=false;
-    el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;cancelAnimationFrame(R.raf);down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
+    el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;cancelAnimationFrame(R.raf);down=true;R.down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
     el.addEventListener("pointermove",e=>{if(!down)return;const dy=e.clientY-y0;R.p=pS-(dy>0?dy:dy*.35)/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[1][0]>80)pts.shift();draw()});
-    const up=()=>{if(!down)return;down=false;const t=performance.now(),a=pts[0],travel=R.p-pS;
+    const up=()=>{if(!down)return;down=false;R.down=false;draw();const t=performance.now(),a=pts[0],travel=R.p-pS;
       let v=(t-a[0])>8&&(t-pts[pts.length-1][0])<150?(R.p-a[1])/((t-a[0])/1000):0;
       if(Math.abs(travel)<.2&&Math.abs(v)<2){if(o.onRelease(-16)===false)R.bounce();return}  // a tap gives a gentle spin
       if(v>-3.5){if(travel<-1.5)v=-14;else{R.bounce();return}}                                // too gentle, or the wrong way (a long, slow pull down still counts)
@@ -3453,7 +3455,7 @@ function camDraw(){
         const gh=c.createLinearGradient(0,0,w,0);gh.addColorStop(0,"rgba(11,13,18,0)");gh.addColorStop(.09,"rgba(11,13,18,.62)");gh.addColorStop(.91,"rgba(11,13,18,.62)");gh.addColorStop(1,"rgba(11,13,18,0)");c.fillStyle=gh;c.fillRect(0,0,w,h);
         c.globalCompositeOperation="destination-in";const gv=c.createLinearGradient(0,0,0,h);gv.addColorStop(0,"rgba(0,0,0,0)");gv.addColorStop(.24,"#000");gv.addColorStop(.76,"#000");gv.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=gv;c.fillRect(0,0,w,h)}
       x.drawImage(t,R_.left*k,R_.top*k)});   // the usual dark band, faded at all four sides so there are no corners
-    const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect(),cam=document.body.classList.contains("camon"),fl=fr._fl?Math.max(0,1-(performance.now()-fr._fl)/(fr._fd||120))*(fr._fi||1):0;ops.push(()=>{
+    const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect(),cam=document.body.classList.contains("camon"),fl=fr.classList.contains("held")?1:fr._fl?Math.max(0,1-(performance.now()-fr._fl)/(fr._fd||120))*(fr._fi||1):0;ops.push(()=>{
       if(fl>0){x.save();x.shadowColor=`rgba(255,214,120,${.6*fl})`;x.shadowBlur=28*k*fl;rrect({left:r.left-4*fl,top:r.top-4*fl,width:r.width+8*fl,height:r.height+8*fl},18,null,`rgba(255,214,120,${.45*fl})`,4);x.restore()}
       rrect(r,14,cam?"rgba(11,13,18,.35)":"rgba(245,184,61,.10)",fl>0?`rgb(${245+10*fl|0},${184+43*fl|0},${61+102*fl|0})`:"#F5B83D",2);
 })}
