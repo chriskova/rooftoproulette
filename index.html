@@ -1095,7 +1095,8 @@ body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{
 body.camon #v-play #pMenu{background:rgba(11,13,18,.62)}
 body.camon #v-play .stage{flex:1}
 body.camon #v-play .ready{flex:1}
-body.camon #v-play .reel{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(11,13,18,.62),rgba(11,13,18,.34) 50%,rgba(11,13,18,0) 88%);border-color:transparent;box-shadow:none}
+body.camon #v-play .reel{background:none;border-color:transparent;box-shadow:none}
+body.camon #v-play .reel::before{content:"";position:absolute;inset:0;background:rgba(11,13,18,.62);-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent);pointer-events:none}
 body.camon #v-play .reel .frame{box-shadow:0 0 0 3px rgba(245,184,61,.12)}body.camon #v-play .reel .hint{display:none}
 body.camon #v-play .reel .row{font-size:30px}body.camon #v-play .reel .row.long{font-size:25px}body.camon #v-play .reel .row.xlong{font-size:19px}
 body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.25),rgba(3,4,7,.5) 70%)}
@@ -3434,8 +3435,10 @@ function camDraw(){
   // the reel, as it sits on screen (or as it landed, once it's gone)
   const rb=document.querySelector(".reel");
   if(rb&&rb.offsetParent!==null||rb&&rb.closest(".jpx")){const R_=rb.getBoundingClientRect(),ops=[];
-    ops.push(()=>{const cx=(R_.left+R_.width/2)*k,cy=(R_.top+R_.height/2)*k,rx=R_.width*.5*k,ry=R_.height*.5*k;x.save();x.translate(cx,cy);x.scale(rx/ry,1);const g=x.createRadialGradient(0,0,0,0,0,ry);
-      g.addColorStop(0,"rgba(11,13,18,.62)");g.addColorStop(.5,"rgba(11,13,18,.34)");g.addColorStop(.88,"rgba(11,13,18,0)");x.fillStyle=g;x.fillRect(-ry*2,-ry,ry*4,ry*2);x.restore()});   // a soft pool of shade, no box
+    ops.push(()=>{const w=Math.round(R_.width*k),h=Math.round(R_.height*k);let t=CAM.shade;if(!t||t.width!==w||t.height!==h){t=CAM.shade=document.createElement("canvas");t.width=w;t.height=h;const c=t.getContext("2d");
+        const gh=c.createLinearGradient(0,0,w,0);gh.addColorStop(0,"rgba(11,13,18,0)");gh.addColorStop(.09,"rgba(11,13,18,.62)");gh.addColorStop(.91,"rgba(11,13,18,.62)");gh.addColorStop(1,"rgba(11,13,18,0)");c.fillStyle=gh;c.fillRect(0,0,w,h);
+        c.globalCompositeOperation="destination-in";const gv=c.createLinearGradient(0,0,0,h);gv.addColorStop(0,"rgba(0,0,0,0)");gv.addColorStop(.24,"#000");gv.addColorStop(.76,"#000");gv.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=gv;c.fillRect(0,0,w,h)}
+      x.drawImage(t,R_.left*k,R_.top*k)});   // the usual dark band, faded at all four sides so there are no corners
     const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect();ops.push(()=>rrect(r,14,"rgba(245,184,61,.10)","#F5B83D",2))}
     const fade=y=>{const u=(y-R_.top)/R_.height;return u<.24?Math.max(0,u/.24):u>.76?Math.max(0,(1-u)/.24):1};
     rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02)return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
