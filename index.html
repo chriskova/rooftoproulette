@@ -3268,12 +3268,14 @@ function camSync(asked){
       v.classList.remove("on");v.onplaying=()=>v.classList.add("on");v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
     }).catch(e=>{CAM.busy=false;CAM.once=false;if(S.route==="play"&&!spinning)renderPlay();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
   }
-  if(!want&&!CAM.stream&&!CAM.busy&&document.body.classList.contains("camon")){document.body.classList.remove("camon");if(S.route==="play"&&!spinning){renderPlay();fitPlay()}}
-  if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
+  // the camera layout goes up the moment it's asked for, before the picture arrives, so the plain wheel never flashes up
+  if(CAM.once&&spot&&S.route==="play"&&!document.body.classList.contains("camon")){document.body.classList.add("camon");if(!spinning)fitPlay()}
+  if(!CAM.once&&!CAM.rec&&!CAM.stream&&!CAM.busy&&document.body.classList.contains("camon")){document.body.classList.remove("camon");if(S.route==="play"&&!spinning){renderPlay();fitPlay()}}
+  if(!want&&CAM.stream&&(!CAM.once||document.hidden||S.route!=="play")){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
 }
 document.addEventListener("visibilitychange",()=>camSync());
 setInterval(()=>{
-  {const g=G();if(CAM.once&&!CAM.rec&&!spinning&&g&&g.target&&!($("sheet")&&$("sheet").open)&&Date.now()-(CAM.onceAt||0)>1500)CAM.once=false}   // backed out of the re-spin: no camera next time
+  {const g=G(),spot=!!g&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen));if(CAM.once&&!CAM.rec&&!spinning&&g&&!spot&&!($("sheet")&&$("sheet").open)&&Date.now()-(CAM.onceAt||0)>1500)CAM.once=false}   // backed out (closed the re-spin or drink question): no camera next time
   camSync();
   if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
   if(!CAM.rec&&spinning){camStart();CAM.spun=true}
@@ -3798,6 +3800,7 @@ function celebrate(id){
 }
 function renderPlay(){
   const g=G();if(!g)return;
+  if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
   $("pMenu").innerHTML=I.more;
   const counted=countShown(g);
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your night</span>`:""}`;
