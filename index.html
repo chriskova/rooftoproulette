@@ -1025,6 +1025,20 @@ body.camon #v-play{background:transparent}
 body.camon #v-play #pCount{visibility:hidden}
 body.camon #v-play .tbar,body.camon #v-play #strip,body.camon #v-play #gpsNote,body.camon #v-play .poolnum,body.camon #v-play .mixline,body.camon #v-play .reelnote,body.camon #v-play .banner,body.camon #v-play .tip{display:none!important}
 body.camon #tabs{display:none!important}
+.camloc{display:none}
+body.camon .camloc{display:flex}
+.camloc{margin-left:auto;align-items:center;gap:5px;background:rgba(11,13,18,.62);border-radius:99px;padding:5px 11px 5px 8px;font-size:13px;font-weight:650;max-width:55%;min-width:0}
+.camloc svg{width:15px;height:15px;color:var(--amber);flex:none}.camloc i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar{align-items:center}
+body.camon #v-play .stage{justify-content:flex-end}
+.camtgt{width:100%;display:flex;gap:12px;align-items:center;background:rgba(11,13,18,.72);border-radius:18px;padding:10px;cursor:pointer}
+.ct-ph{width:76px;height:76px;border-radius:12px;object-fit:cover;flex:none}
+.ct-t{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.ct-t .eyebrow{font-size:11px}
+.ct-n{display:block;font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;text-transform:uppercase;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-f{display:flex;gap:14px;font-size:14px;font-weight:600}.ct-f span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.ct-f svg{width:16px;height:16px}.ct-f i{font-style:normal}
+.camacts{display:flex;gap:10px;width:100%}.camacts .btn.sm{flex:1;height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px}.camacts .btn.sm svg{width:17px;height:17px}
+body.camon .camacts .btn.line{background:rgba(11,13,18,.62)}
 body.camon .app.has-tabs .view{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 18px)}
 body.camon #v-play .clock{background:rgba(11,13,18,.62);border-radius:99px;padding:6px 14px;display:flex;align-items:baseline;gap:6px}
 body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{display:none}body.camon #v-play .clock b{font-size:20px}body.camon #v-play .clock small{font-size:11px}
@@ -1788,7 +1802,7 @@ setTimeout(done,1200)})();</script>
 </head>
 <body>
 <div class="app" id="app">
-  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div></header>
+  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="camloc" id="camLoc"></div></header>
 
   <!-- INTRO (first open) -->
   <section class="view" id="v-intro" hidden>
@@ -3216,20 +3230,31 @@ function camStart(){
   const loop=()=>{if(CAM.rec!==rec)return;camDraw();requestAnimationFrame(loop)};loop();
 }
 function camStop(){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){try{r.requestData()}catch(e){}r.stop()}}
+const svgImgs={};
+function svgImg(el,col){const k=el.outerHTML+col;if(svgImgs[k])return svgImgs[k].complete&&svgImgs[k].naturalWidth?svgImgs[k]:null;
+  const im=new Image();let src=el.outerHTML.replace(/currentColor/g,col);if(!/xmlns=/.test(src))src=src.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"');
+  im.src="data:image/svg+xml,"+encodeURIComponent(src);svgImgs[k]=im;return null}
+const camPh={};
+function camPhoto(url){if(!url)return null;if(camPh[url]!==undefined)return camPh[url]&&camPh[url].complete&&camPh[url].naturalWidth?camPh[url]:null;
+  if(/^data:/.test(url)){const im=new Image();im.src=url;camPh[url]=im;return null}
+  camPh[url]=null;fetch(url,{mode:"cors"}).then(r=>r.ok?r.blob():Promise.reject()).then(b=>createImageBitmap(b)).then(bm=>{camPh[url]={complete:true,naturalWidth:bm.width,bm}}).catch(()=>{camPh[url]=false});return null}
 function camDraw(){
   const cv=CAM.cv,x=cv.getContext("2d"),W=cv.width,H=cv.height,k=W/innerWidth,v=CAM.vid;
   x.fillStyle="#000";x.fillRect(0,0,W,H);
   if(v&&v.videoWidth){const s_=Math.max(W/v.videoWidth,H/v.videoHeight),dw=v.videoWidth*s_,dh=v.videoHeight*s_;x.save();x.translate(W,0);x.scale(-1,1);x.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);x.restore()}
   const jp=document.querySelector(".jpx");if(jp){x.fillStyle="rgba(40,26,4,.42)";x.fillRect(0,0,W,H)}
   const txt=(el,o)=>{o=o||{};const r=el.getBoundingClientRect();if(!r.width||!r.height)return;const cs=getComputedStyle(el);let t=el.textContent;if(cs.textTransform==="uppercase")t=t.toUpperCase();if(!t.trim())return;
-    x.save();x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing==="normal"?"0px":cs.letterSpacing}catch(e){}
+    x.save();x.font=`${cs.fontWeight} ${parseFloat(cs.fontSize)*k}px ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing==="normal"?"0px":(parseFloat(cs.letterSpacing)*k)+"px"}catch(e){}
     x.globalAlpha=o.a==null?1:o.a;x.fillStyle=o.c||cs.color;x.textBaseline="middle";
-    x.textAlign="center";x.fillText(t,(r.left+r.width/2)*k,(r.top+r.height/2)*k);
+    if(o.left){x.textAlign="left";x.fillText(t,r.left*k,(r.top+r.height/2)*k)}else{x.textAlign="center";x.fillText(t,(r.left+r.width/2)*k,(r.top+r.height/2)*k)}
     x.restore()};
+  const icon=el=>{const r=el.getBoundingClientRect();if(!r.width)return;const im=svgImg(el,getComputedStyle(el).color);if(im)x.drawImage(im,r.left*k,r.top*k,r.width*k,r.height*k)};
   const rrect=(r,rad,fill,stroke,lw)=>{x.beginPath();x.roundRect(r.left*k,r.top*k,r.width*k,r.height*k,rad*k);if(fill){x.fillStyle=fill;x.fill()}if(stroke){x.strokeStyle=stroke;x.lineWidth=lw*k;x.stroke()}};
   // logo
-  const lg=$("logo");if(lg&&lg.offsetParent){const r=lg.getBoundingClientRect(),cs=getComputedStyle(lg),sp=lg.querySelector("span");x.save();x.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;try{x.letterSpacing=cs.letterSpacing}catch(e){}x.textBaseline="middle";x.textAlign="left";
+  const lg=$("logo");if(lg&&lg.offsetParent){const r=lg.getBoundingClientRect(),cs=getComputedStyle(lg),sp=lg.querySelector("span");x.save();x.font=`${cs.fontWeight} ${parseFloat(cs.fontSize)*k}px ${cs.fontFamily}`;try{x.letterSpacing=(parseFloat(cs.letterSpacing)||0)*k+"px"}catch(e){}x.textBaseline="middle";x.textAlign="left";
     x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=8*k;x.fillStyle=cs.color;const a="ROOFTOP ";x.fillText(a,r.left*k,(r.top+r.height/2)*k);x.fillStyle=getComputedStyle(sp).color;x.fillText("ROULETTE",r.left*k+x.measureText(a).width,(r.top+r.height/2)*k);x.restore()}
+  // where you are
+  const cl=$("camLoc");if(cl&&cl.offsetParent){const r=cl.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");cl.querySelectorAll("svg").forEach(icon);cl.querySelectorAll("i").forEach(e=>txt(e))}
   // clock pill
   const ck=$("clock");if(ck&&ck.offsetParent){const r=ck.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");x.save();x.shadowColor="transparent";[...ck.children].forEach(c=>txt(c));x.restore()}
   // the reel, as it sits on screen (or as it landed, once it's gone)
@@ -3243,7 +3268,13 @@ function camDraw(){
       ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
         x.translate((r.left+r.width/2)*k,(r.top+r.height/2)*k);x.scale(k*r.width/m,k*r.height/(snap.offsetHeight||r.height));x.fillText(t,0,0);x.restore()})})});
     CAM.last=ops}
-  CAM.last.forEach(f=>f());
+  const ct=document.querySelector(".camtgt");
+  if(ct&&!rb){const r=ct.getBoundingClientRect(),o=parseFloat(getComputedStyle(ct).opacity)||1;x.save();x.globalAlpha=o;rrect(r,18,"rgba(11,13,18,.72)");
+    const im=ct.querySelector(".ct-ph");if(im){const p=im.getBoundingClientRect(),src=camPhoto(im.currentSrc||im.src);if(src){const w=src.bm?src.bm.width:src.naturalWidth,h=src.bm?src.bm.height:src.naturalHeight,s_=Math.max(p.width/w,p.height/h),sw=p.width/s_,sh=p.height/s_;
+      x.save();x.beginPath();x.roundRect(p.left*k,p.top*k,p.width*k,p.height*k,12*k);x.clip();x.drawImage(src.bm||src,(w-sw)/2,(h-sh)/2,sw,sh,p.left*k,p.top*k,p.width*k,p.height*k);x.restore()}}
+    const tx=ct.querySelector(".ct-t").getBoundingClientRect();x.save();x.beginPath();x.rect(tx.left*k,tx.top*k,tx.width*k,tx.height*k);x.clip();
+    ct.querySelectorAll(".eyebrow,.ct-n,.ct-f i").forEach(e=>txt(e,{left:1}));ct.querySelectorAll(".ct-f svg").forEach(icon);x.restore();x.restore()}
+  else CAM.last.forEach(f=>f());
 }
 /* clips: kept on the phone (IndexedDB), grouped by night */
 const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
@@ -3588,6 +3619,7 @@ function renderPlay(){
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
   renderClock();
+  {const a_=atVisit(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(a_?byId(a_.id).name:nearestSuburb(you()||g.center))}</i>`}
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
@@ -3614,7 +3646,11 @@ function renderPlay(){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
     const cp0=cardPhoto(v),fs=g.freeSkips||0,coming=!cp0.cls&&phMem[v.id]===undefined&&phAllowed(v.id,"play")&&!gBad;
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
-    st.innerHTML=banner+ask+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    if(document.body.classList.contains("camon")){const ph=phMem[v.id];
+      st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div></div>
+      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;
+      const ct=st.querySelector(".camtgt");if(ct&&animateId===v.id&&ct.animate)ct.animate([{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,.75,.2,1)"})}
+    else st.innerHTML=banner+ask+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -3638,7 +3674,7 @@ function renderPlay(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.querySelector("span").lastChild.textContent;
     sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
-  st.querySelectorAll(".bar.tapmaps").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
+  st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
