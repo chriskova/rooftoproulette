@@ -1061,6 +1061,7 @@ body.camon dialog.sheet{inset:calc(env(safe-area-inset-top,0px) + 10px) 10px aut
 body.camon dialog.sheet::backdrop{background:rgba(0,0,0,.25)}
 @keyframes sheetdown{from{transform:translateY(-24px);opacity:0}}
 .camswipe{display:none}
+body.camon #v-play,body.camon .appbar{touch-action:none}
 body.camon #v-play .camswipe{display:flex;flex:1;min-height:120px;align-items:center;justify-content:center;touch-action:none;margin:0 -18px;user-select:none;-webkit-user-select:none}
 .camswipe span{font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.7);background:rgba(11,13,18,.45);border-radius:99px;padding:7px 14px;transition:opacity .2s}
 body.spinning .camswipe span,body.recording .camswipe span{opacity:0}
@@ -3297,14 +3298,19 @@ setInterval(()=>{
       if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}}
   camLight(!!CAM.rec&&CAM.dark&&S.camLight!==false);camRecPill()},120);
 let nudgeAt=0;setInterval(()=>{if(!document.body.classList.contains("camon")||spinning||!reel||reel.busy||!$("reelBox")||document.hidden||CAM.spun||$("sheet").open||Math.abs(reel.p-reel.rest)>.01)return;
-  if(Date.now()-nudgeAt<3500)return;nudgeAt=Date.now();reel.p=reel.rest+.28;reel.redraw();reel.bounce()},500);   // the wheel twitches now and then, so it reads as a wheel
+  if(!nudgeAt)nudgeAt=Date.now();if(Date.now()-nudgeAt<6500)return;nudgeAt=Date.now();
+  // a slow pull up of the wheel, then it drops back with a little bounce: "pull me down"
+  const R_=reel,p0=R_.rest,t0=performance.now(),UP=420,HOLD=90;
+  const f=t=>{if(R_!==reel||R_.down||spinning||!document.body.classList.contains("camon"))return;const u=Math.min(1,(t-t0)/UP),e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;
+    R_.p=p0+.42*e;R_.redraw();if(u<1)requestAnimationFrame(f);else setTimeout(()=>{if(R_===reel&&!R_.down&&!spinning)R_.bounce()},HOLD)};requestAnimationFrame(f)},500);   // the wheel twitches now and then, so it reads as a wheel
 function camRecPill(){let p=$("camRec");document.body.classList.toggle("spinning",!!spinning);document.body.classList.toggle("recording",!!CAM.rec);const on=!!CAM.rec&&CAM.spun!==false&&document.body.classList.contains("camon");
   if(!p){if(!on)return;p=document.createElement("div");p.id="camRec";p.className="camrec";p.innerHTML='<i></i><b></b>';document.body.appendChild(p)}
   p.classList.toggle("on",on);if(CAM.rec){const t=Math.floor((Date.now()-CAM.t0)/1000);p.lastChild.textContent=`REC ${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`}}
 // the build-up counts: recording starts the moment a finger lands on the reel
-document.addEventListener("pointerdown",e=>{if(CAM.stream&&!CAM.rec&&e.isTrusted&&e.target.closest&&e.target.closest("#v-play .reel,#camSwipe")){camStart();CAM.spun=false}},true);
+document.addEventListener("pointerdown",e=>{if(CAM.stream&&!CAM.rec&&e.isTrusted&&e.target.closest&&(e.target.closest("#v-play .reel")||camGrab(e.target))){camStart();CAM.spun=false}},true);
 // a swipe down the middle of the screen drives the reel
-document.addEventListener("pointerdown",e=>{const sw=e.target.closest&&e.target.closest("#camSwipe"),rb=$("reelBox");if(!sw||!rb||spinning)return;e.preventDefault();
+const camGrab=t=>!!t.closest&&(!!t.closest("#camSwipe")||document.body.classList.contains("camon")&&!!t.closest("#v-play,.appbar")&&!t.closest("button,a,input,.reel,.camtgt,.wild,.bar,dialog"));
+document.addEventListener("pointerdown",e=>{const sw=camGrab(e.target),rb=$("reelBox");if(!sw||!rb||spinning||rb.closest(".jpx"))return;e.preventDefault();
   rb.dispatchEvent(new PointerEvent("pointerdown",{pointerId:e.pointerId,pointerType:e.pointerType,isPrimary:true,clientX:e.clientX,clientY:e.clientY,bubbles:true}))});
 function camLight(on){let l=$("camLight");if(!l){if(!on)return;l=document.createElement("div");l.id="camLight";document.body.appendChild(l)}l.classList.toggle("on",on)}
 function camStart(){
