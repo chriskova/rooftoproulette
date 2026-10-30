@@ -2155,7 +2155,7 @@ async function permState(){if(S.test)return "granted";try{const p=await navigato
 /* ---------- sound + haptics ---------- */
 let AC=null;
 function OUT(a){if(!a._out){a._out=a.createGain();a._out.connect(a.destination)}return a._out}
-function OUTJ(a){if(!a._outJ){a._outJ=a.createGain();a._outJ.connect(a.destination)}return a._outJ}   // jackpot sounds: full on the phone, half in clips
+function OUTJ(a){if(!a._outJ){a._outJ=a.createGain();a._outJ.gain.value=.5;a._outJ.connect(a.destination)}return a._outJ}   // jackpot sounds: full on the phone, half in clips
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume();return AC}
 function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(OUT(a));o.start(t);o.stop(t+.05)}
 function arriveSound(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,out=a.createGain();out.gain.value=.9;out.connect(OUT(a));
@@ -3325,10 +3325,10 @@ function camStart(){
   const W=1080,H=1920,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
   // is it dark? (judged once, before the light comes on)
   try{const t=document.createElement("canvas");t.width=t.height=24;const tx=t.getContext("2d",{willReadFrequently:true});tx.drawImage(CAM.vid,0,0,24,24);const d=tx.getImageData(0,0,24,24).data;let L=0;for(let i=0;i<d.length;i+=4)L+=.2126*d[i]+.7152*d[i+1]+.0722*d[i+2];CAM.dark=L/(d.length/4)<70}catch(e){CAM.dark=false}
-  const out=cv.captureStream(30);
+  const out=cv.captureStream(0),vtrack=out.getVideoTracks()[0];
   // sound: your mic plus the app's own clicks and chimes
   const a=ac();let mix=null;
-  if(a&&a.createMediaStreamDestination){try{mix={d:a.createMediaStreamDestination(),m:CAM.stream.getAudioTracks().length?a.createMediaStreamSource(CAM.stream):null};if(mix.m)mix.m.connect(mix.d);mix.g=a.createGain();mix.g.gain.value=.7;OUT(a).connect(mix.g);mix.g.connect(mix.d);mix.j=a.createGain();mix.j.gain.value=.35;OUTJ(a).connect(mix.j);mix.j.connect(mix.d);mix.d.stream.getAudioTracks().forEach(t=>out.addTrack(t))}catch(e){mix=null}}
+  if(a&&a.createMediaStreamDestination){try{mix={d:a.createMediaStreamDestination(),m:CAM.stream.getAudioTracks().length?a.createMediaStreamSource(CAM.stream):null};if(mix.m)mix.m.connect(mix.d);mix.g=a.createGain();mix.g.gain.value=.7;OUT(a).connect(mix.g);mix.g.connect(mix.d);mix.j=a.createGain();mix.j.gain.value=.7;OUTJ(a).connect(mix.j);mix.j.connect(mix.d);mix.d.stream.getAudioTracks().forEach(t=>out.addTrack(t))}catch(e){mix=null}}
   if(!mix)CAM.stream.getAudioTracks().forEach(t=>out.addTrack(t));
   const mt=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(m=>MediaRecorder.isTypeSupported(m))||"";
   let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:12e6,audioBitsPerSecond:160000}:{})}catch(e){return}
@@ -3337,7 +3337,8 @@ function camStart(){
     if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
     const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
-  let lastF=0;const loop=t=>{if(CAM.rec!==rec)return;if(!t||t-lastF>=31){lastF=t||0;camDraw()}requestAnimationFrame(loop)};loop();   // 30fps is plenty, and leaves the drag smooth
+  let next=0;const FR=1000/30,frame=()=>{camDraw();if(vtrack&&vtrack.requestFrame)vtrack.requestFrame()};
+  const loop=t=>{if(CAM.rec!==rec)return;if(!next)next=t;if(t>=next-6){frame();next+=FR;if(t-next>FR*2)next=t+FR}requestAnimationFrame(loop)};frame();requestAnimationFrame(loop);   // 30fps on a fixed beat, so playback doesn't stutter
 }
 /* Chrome records fragmented MP4 with no duration in the header: galleries and Instagram read it as a few seconds.
    This rewrites it as a plain MP4 (one moov up front with full sample tables, then the media). */
@@ -3355,6 +3356,12 @@ function mp4Flat(buf){
       for(let i=0;i<n;i++){let du=dDur,sz=dSize,sf=i===0&&ffl!=null?ffl:dFl,ct=0;if(f&0x100){du=dv.getUint32(q);q+=4}if(f&0x200){sz=dv.getUint32(q);q+=4}if(f&0x400){sf=dv.getUint32(q);q+=4}if(f&0x800){ct=v?dv.getInt32(q):dv.getUint32(q);q+=4}
         T.smp.push({off,sz,du,sync:!(sf&0x10000),ct});off+=sz}next=off}}
   const ids=Object.keys(tracks).map(Number).filter(id=>tracks[id].smp.length);if(!ids.length)return null;
+  ids.forEach(id=>{const S_=tracks[id].smp;for(let i=0;i<S_.length-1;i++)if(!S_[i].du&&S_[i+1].du>1){const h=Math.floor(S_[i+1].du/2);S_[i].du=h;S_[i+1].du-=h}});
+  // video: frames were drawn on a 30fps beat but stamped whenever the phone got round to it; snap them back onto the beat so playback is even
+  ids.forEach(id=>{const tr=tracks[id].tr,md=kid(tr,"mdia"),hd=kid(md,"hdlr");if(!hd||String.fromCharCode(...u.subarray(hd.b+8,hd.b+12))!=="vide")return;
+    const mh=kid(md,"mdhd"),ts=dv.getUint32(mh.b+(u[mh.b]?20:12)),F=ts/30,S_=tracks[id].smp;if(S_.length<3||S_.some(x=>x.ct))return;
+    let t=0,prev=-1;const at=S_.map(x=>{const v=t;t+=x.du;return v}),end=t,slot=at.map(v=>{let k=Math.round(v/F);if(k<=prev)k=prev+1;prev=k;return k});
+    for(let i=0;i<S_.length;i++)S_[i].du=Math.round(((i<S_.length-1?slot[i+1]:Math.max(slot[i]+1,Math.round(end/F)))-slot[i])*F)});
   const B=(t,...parts)=>{const n=8+parts.reduce((a,p)=>a+p.length,0),o=new Uint8Array(n),w=new DataView(o.buffer);w.setUint32(0,n);for(let i=0;i<4;i++)o[4+i]=t.charCodeAt(i);let k=8;parts.forEach(p=>{o.set(p,k);k+=p.length});return o},
     U32=(...a)=>{const o=new Uint8Array(a.length*4),w=new DataView(o.buffer);a.forEach((x,i)=>w.setUint32(i*4,x>>>0));return o},raw=b=>u.slice(b.s,b.e),body=b=>u.slice(b.b,b.e);
   const mvhd=kid(moov,"mvhd"),mts=dv.getUint32(mvhd.b+(u[mvhd.b]?20:12));
