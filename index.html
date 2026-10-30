@@ -1085,7 +1085,7 @@ body.spinning .camswipe span,body.recording .camswipe span{opacity:0}
 .ct-ph{width:76px;height:76px;border-radius:12px;object-fit:cover;flex:none}
 .ct-t{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
 .ct-t .eyebrow{font-size:11px}
-.ct-n{display:block;font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;text-transform:uppercase;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-n{display:block;font-family:var(--display);font-weight:800;font-size:28px;line-height:1.05;text-transform:uppercase;color:var(--amber);white-space:nowrap;overflow:hidden}
 .ct-f{display:flex;gap:14px;font-size:14px;font-weight:600}.ct-f span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.ct-f svg{width:16px;height:16px}.ct-f i{font-style:normal}
 .camacts{display:flex;gap:10px;width:100%}.camacts .btn.sm{flex:1;height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px}.camacts .btn.sm svg{width:17px;height:17px}
 body.camon .camacts .btn.line{background:rgba(11,13,18,.62)}
@@ -2867,9 +2867,9 @@ function makeReel(el,names,o){
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
     const fNow=Math.floor(R.p),fPrev=Math.floor(lastFl),crossed=fNow!==fPrev?Math.max(fNow,fPrev):null;lastFl=R.p;
-    if(crossed!==null){tick(560+Math.random()*80);buzz(3);
-      if(frame&&frame.animate){const q=Math.min(1,Math.max(.25,6/Math.max(spd,1))),sy=1+.09*q,sx=1+.025*q;frame.getAnimations().forEach(a=>a.cancel());
-        frame.animate([{transform:`scale(${sx},${sy})`},{transform:"scale(1)"}],{duration:90+150*q,easing:"cubic-bezier(.25,1.6,.5,1)"})}}
+    if(crossed!==null){tick(560+Math.random()*80);buzz(3)}
+    // the slot is pushed out while a name sits in its catch, and springs back once it's rolled past (same range as the name's own zoom)
+    if(frame){const fin=Math.abs(R.p-Math.round(R.p))<.14&&spd<12&&!R.landing;if(fin!==frame._in){frame._in=fin;frame.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";frame.style.transform=fin?"scale(1.025,1.09)":""}}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
     if(moved&&L[0]===PH&&Math.abs(R.p-Math.round(R.p/L.length)*L.length)>4){L[0]=U[0];swapIn(0)}
     const fl=Math.floor(R.p);
@@ -2997,12 +2997,12 @@ function reveal(info,scope){
   const font={fontFamily:hs.fontFamily,fontWeight:hs.fontWeight,fontSize:hs.fontSize,lineHeight:hs.lineHeight,letterSpacing:hs.letterSpacing,textTransform:hs.textTransform,color:info.ink||"#F5B83D"};
   const words=h2.textContent.trim().split(/\s+/).map(w=>`<span class="fw">${esc(w)}</span>`).join(" ");
   const ghost=document.createElement("div");ghost.className="flyname";ghost.innerHTML=words;
-  Object.assign(ghost.style,font,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",whiteSpace:"normal"});
+  Object.assign(ghost.style,font,{left:hr.left+"px",top:hr.top+"px",width:hr.width+"px",whiteSpace:getComputedStyle(h2).whiteSpace==="nowrap"?"nowrap":"normal"});
   host.appendChild(ghost);
   const line=document.createElement("div");line.className="flyname";line.innerHTML=words;
   Object.assign(line.style,font,{left:"0px",top:"0px",whiteSpace:"nowrap",visibility:"hidden"});host.appendChild(line);
   const lr=line.getBoundingClientRect(),ls=[...line.children].map(x=>x.getBoundingClientRect());line.remove();
-  const sc=info.fs/parseFloat(hs.fontSize),x0=nr.left+nr.width/2-lr.width*sc/2,y0=nr.top+nr.height/2-lr.height*sc/2;
+  const sc=Math.min(info.fs/parseFloat(hs.fontSize),(fr.width-24)/Math.max(1,lr.width)),x0=nr.left+nr.width/2-lr.width*sc/2,y0=nr.top+nr.height/2-lr.height*sc/2;
   [...ghost.children].forEach((sp,i)=>{const f_=sp.getBoundingClientRect(),sx=x0+(ls[i].left-lr.left)*sc,sy=y0+(ls[i].top-lr.top)*sc;
     sp.animate([{transform:`translate(${sx-f_.left}px,${sy-f_.top}px) scale(${sc})`},{transform:"none"}],{duration:D,easing:E,fill:"forwards"})});
   card.style.opacity="0";after.forEach(k=>k.style.opacity="0");
@@ -3453,14 +3453,14 @@ function camDraw(){
     const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect(),cam=document.body.classList.contains("camon");ops.push(()=>{rrect(r,14,cam?"rgba(11,13,18,.35)":"rgba(245,184,61,.10)","#F5B83D",2);
 })}
     const fe=document.body.classList.contains("camon")&&!rb.closest(".jpx")?.3:.24,fade=y=>{const u=(y-R_.top)/R_.height;return u<fe?Math.max(0,u/fe):u>1-fe?Math.max(0,(1-u)/fe):1};
-    rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02)return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
+    rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02||row.style.visibility==="hidden")return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
       const r=sp.getBoundingClientRect(),f=fade(r.top+r.height/2);if(f<.02)return;const col=getComputedStyle(sp).color,snap={getBoundingClientRect:()=>r,textContent:sp.textContent,offsetWidth:sp.offsetWidth,offsetHeight:sp.offsetHeight},cs=getComputedStyle(sp),font={fw:cs.fontWeight,fs:cs.fontSize,ff:cs.fontFamily};
       ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=10*k;x.shadowOffsetY=2*k;x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
         x.translate((r.left+r.width/2)*k,(r.top+r.height/2)*k);x.scale(k*r.width/m,k*r.height/(snap.offsetHeight||r.height));x.fillText(t,0,0);x.restore()})})});
     CAM.last=ops}
-  const ct=document.querySelector(".camtgt"),flying=document.querySelector(".flybox,.flyname,.wfly");
+  const ct=document.querySelector(".camtgt"),flying=document.querySelector(".flybox,.flyname,.wfly,.punch");
   if(rb||!ct&&!flying)CAM.last.forEach(f=>f());
-  camPaint(x,k,ox,(H-innerHeight*k)/2,[...document.querySelectorAll(".flybox,.flyname"),ct,...document.querySelectorAll(".wfly,.jpx .jpcard-wrap,.jpx .cf"),$("sheet")&&$("sheet").open?$("sheet"):null]);
+  camPaint(x,k,ox,(H-innerHeight*k)/2,[...document.querySelectorAll(".punch,.flybox,.flyname"),ct,...document.querySelectorAll(".wfly,.jpx .jpcard-wrap,.jpx .cf"),$("sheet")&&$("sheet").open?$("sheet"):null]);
   if(false){const r=ct.getBoundingClientRect(),o=parseFloat(getComputedStyle(ct).opacity)||1;x.save();x.globalAlpha=o;rrect(r,18,"rgba(11,13,18,.72)");
     const im=ct.querySelector(".ct-ph");if(im){const p=im.getBoundingClientRect(),src=camPhoto(im.currentSrc||im.src);if(src){const w=src.bm?src.bm.width:src.naturalWidth,h=src.bm?src.bm.height:src.naturalHeight,s_=Math.max(p.width/w,p.height/h),sw=p.width/s_,sh=p.height/s_;
       x.save();x.beginPath();x.roundRect(p.left*k,p.top*k,p.width*k,p.height*k,12*k);x.clip();x.drawImage(src.bm||src,(w-sw)/2,(h-sh)/2,sw,sh,p.left*k,p.top*k,p.width*k,p.height*k);x.restore()}}
@@ -3848,7 +3848,7 @@ function renderPlay(){
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
-      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;
+      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
     else{const d=leaving();st.innerHTML=banner+ask+(d?`<div class="leavebar"><span>${I.clock}<span>At <b>${esc(byId(d.id).name)}</b> <i id="lvT">${mmss(now()-d.arrivedAt)}</i></span></span><button class="btn sm" type="button" id="leaveBtn">Leaving now</button></div>`:"")+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
