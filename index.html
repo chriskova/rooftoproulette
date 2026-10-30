@@ -837,7 +837,16 @@ body.mapq .view{padding-bottom:12px!important}
 .bodt.on{border:2.5px solid var(--amber);box-shadow:0 0 0 4px rgba(245,184,61,.2)}
 #v-end .sc{gap:12px;padding:14px 16px}#v-end .aw-t{margin-top:2px}
 #v-end .award{padding:2px 0 0}
-#v-end .aw-t{font-size:40px}
+#v-end .aw-t{font-size:34px;line-height:.95;margin:0;text-align:left;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+#v-end .aw-w{font-size:13px;margin-top:5px;text-align:left;color:var(--text);opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.sctop{position:absolute;left:0;right:0;top:0;z-index:900;display:flex;align-items:flex-start;gap:12px;padding:14px 14px 40px;background:linear-gradient(rgba(11,13,18,.92),rgba(11,13,18,.7) 55%,rgba(11,13,18,0));pointer-events:none}
+.sctop .sct{flex:1;min-width:0}.sctop .scph{position:static;flex:none;pointer-events:auto}
+.sctop .scmeta{margin-top:7px;font-size:12px;color:var(--text);opacity:.9;gap:5px;flex-wrap:wrap;text-shadow:0 1px 6px rgba(0,0,0,.8)}.sctop .scmeta svg{width:13px;height:13px}
+#v-end .scov{display:block;padding:44px 14px 12px}
+.tri.s6{display:grid!important;grid-template-columns:repeat(3,1fr);gap:9px 8px}
+.scov .tri.s6 div{background:none;padding:0;text-align:left}
+.scov .tri.s6 b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1;color:var(--amber)}
+.scov .tri.s6 small{display:block;font-size:10px;letter-spacing:.07em;color:var(--text);opacity:.75;margin-top:2px;white-space:nowrap}
 .scph{position:absolute;top:10px;right:10px;z-index:901;width:58px;height:58px;border-radius:12px;overflow:hidden;padding:0;border:2px solid rgba(255,255,255,.85);background:rgba(11,13,18,.75);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .scph img{width:100%;height:100%;object-fit:cover;display:block}.scph svg{width:20px;height:20px;color:var(--amber)}.scph small{font-size:10.5px;font-weight:700}
 .scph.none{border:1.5px dashed var(--amber)}
@@ -854,7 +863,7 @@ body.mapq .view{padding-bottom:12px!important}
 #v-end .sc-bars .br.isbod .nm{color:var(--amber)}
 #v-end .sc-bars .nmw{flex:1;min-width:0;display:flex;flex-direction:column;position:relative}
 #v-end .sc-bars .nmw .nm{white-space:normal;overflow:visible}
-#v-end .sc-bars .sub{display:flex;align-items:center;gap:8px;margin-top:2px}
+#v-end .sc-bars .sub{display:flex;align-items:center;gap:8px;margin-top:2px}#v-end .sc-bars.many{row-gap:8px;font-size:13px}#v-end .sc-bars.many .tm{font-size:11.5px}
 #v-end .sc-bars .nmw .tm{font-size:12px}
 .bodtag{flex:none;white-space:nowrap;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:var(--amber);color:var(--amber-ink);border-radius:5px;padding:2px 5px;transform:rotate(4deg);box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .bodbtn{appearance:none;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:40px;border-radius:14px;border:1.5px dashed var(--amber);background:rgba(245,184,61,.08);color:var(--amber);font:700 15px var(--ui)}.bodbtn svg{width:18px;height:18px}
@@ -3175,7 +3184,7 @@ function rackUp(box,n){
   const small=cell.querySelector("small");
   const dbox=document.createElement("div");dbox.className="cbox";
   Object.assign(dbox.style,{left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",perspective:Math.round(cr.width*2.6)+"px",borderRadius:"14px",transformOrigin:"50% 50%"});
-  dbox.innerHTML=`<div class="chole" style="border-radius:14px"></div><div class="cleaf" style="border-radius:14px;flex-direction:column;gap:2px;background:var(--s2)"><b style="display:block;font-family:var(--display);font-weight:800;font-size:44px;line-height:1;color:var(--amber)">0</b><small style="font-size:13px;color:var(--muted);font-weight:500">${small?small.textContent:""}</small></div>`;
+  dbox.innerHTML=`<div class="chole" style="border-radius:14px"></div><div class="cleaf" style="border-radius:14px;flex-direction:column;gap:2px;background:var(--s2)"><b style="display:block;font-family:var(--display);font-weight:800;font-size:${getComputedStyle(num).fontSize};line-height:1;color:var(--amber)">0</b><small style="font-size:${small?getComputedStyle(small).fontSize:"12px"};color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${small?small.textContent:""}</small></div>`;
   document.body.appendChild(dbox);fx.push(dbox);cell.style.visibility="hidden";
   const leaf=dbox.querySelector(".cleaf"),hole=dbox.querySelector(".chole"),lb=leaf.querySelector("b");
   at(0,()=>{sfx("flip");
@@ -3384,6 +3393,7 @@ function logArrival(manual){
   // the phone was away for a while and we only just found out they're here: assume they've done their 3 minutes
   const late=!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;
   g.visits.push({id:v.id,arrivedAt:late?now()-DWELL_MIN*60000:now(),leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
+  if(S.test&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
   if(late){catchUp(v.id);return}
@@ -3606,7 +3616,7 @@ function cruiseAwards(r,st){
   if(!L.length)add(n?"Good Night Out":"Quiet One",n?`${n} rooftop${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
   return L;
 }
-function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;el.style.height="300px";const spare=box.clientHeight-box.scrollHeight;el.style.height=Math.max(140,Math.min(420,300+spare))+"px";if(eMap&&eMap.resize)eMap.resize()}
+function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;el.style.height="300px";const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top,spare=Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop);el.style.height=Math.max(230,Math.min(480,300+spare))+"px";if(eMap&&eMap.resize)eMap.resize()}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
   const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
@@ -3630,14 +3640,15 @@ function renderEnd(){
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
-      <div class="award"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div></div>
-      <div class="scmap"><div id="endMap"></div><button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button><div class="scmeta onmap">${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}</div>
-        <div class="scov"><div class="tri"><div><b>${n}</b><small>rooftop${n===1?"":"s"}</small></div></div>
-          <div class="srow">${(cr?[[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[km(st.total),"Distance"]]:[[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"]]).map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div></div></div>
-      ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
-        const L=cr?[["Longest stay",lng?hmm(lng):"—"],["Average stay",stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—"]]:[["Fastest leg",st.quick?hmm(st.quick.ms):"—"],["Longest leg",st.longest?mOrKm(st.longest.d):"—"]];
-        return `<div class="sc2">${L.map(([l,v])=>`<div><small>${l}</small><b>${v}</b></div>`).join("")}</div>`})()}
-      <div class="sc-bars" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
+      <div class="scmap"><div id="endMap"></div>
+        <div class="sctop"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div>
+          <div class="scmeta">${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}</div></div>
+          <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
+        <div class="scov">${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
+          const L=cr?[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+            :[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
+          return `<div class="tri s6">${L.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div>`})()}</div></div>
+      <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
       ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
     </div>
     <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
@@ -3661,7 +3672,7 @@ function renderEnd(){
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean),la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mn=Math.min(...la),mx=Math.max(...la),sp=Math.max(mx-mn,.004);
-    m.fitPts(all.concat([{lat:mn-sp*.75,lng:(Math.min(...lo)+Math.max(...lo))/2}]),16);
+    m.fitPts(all.concat([{lat:mn-sp*.8,lng:(Math.min(...lo)+Math.max(...lo))/2},{lat:mx+sp*.7,lng:(Math.min(...lo)+Math.max(...lo))/2}]),16);
   });
   fitEnd();
 }
@@ -3677,18 +3688,18 @@ async function storyCard(r,look){
   const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",photo=look==="photo"&&r.photo;let mapP=null;
   x.fillStyle=BG;x.fillRect(0,0,W,Hh);
   // hero
-  const HH=1100;
+  const HH=1040;
   if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore()}
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(()=>null);if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
   const gr=x.createLinearGradient(0,0,0,HH);gr.addColorStop(0,"rgba(11,13,18,.6)");gr.addColorStop(.16,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG);x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
   if(stops.length>1){
-    const B=photo?{x:700,y:200,w:300,h:400}:{x:110,y:190,w:860,h:600},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
+    const B=photo?{x:700,y:320,w:300,h:400}:{x:110,y:330,w:860,h:470},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
     const la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mnla=Math.min(...la),mxla=Math.max(...la),mnlo=Math.min(...lo),mxlo=Math.max(...lo);
     const s=Math.min(B.w/Math.max((mxlo-mnlo)*k,1e-4),B.h/Math.max(mxla-mnla,1e-4),photo?60000:200000);
     const ox=B.x+(B.w-(mxlo-mnlo)*k*s)/2,oy=B.y+(B.h-(mxla-mnla)*s)/2,P=mapP||(p=>[ox+(p.lng-mnlo)*k*s,oy+(mxla-p.lat)*s]);
-    if(!photo&&!mapP){x.fillStyle="#3A4150";VENUES.forEach(v=>{const[X,Y]=P(v);if(X>40&&X<W-40&&Y>140&&Y<900){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}})}
+    if(!photo&&!mapP){x.fillStyle="#3A4150";VENUES.forEach(v=>{const[X,Y]=P(v);if(X>40&&X<W-40&&Y>300&&Y<860){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}})}
     const T=photo?{g:16,l:5,r:19,f:20,w:4}:{g:22,l:6,r:24,f:24,w:5};
     x.save();if(photo){x.shadowColor="rgba(0,0,0,.7)";x.shadowBlur=14;x.shadowOffsetY=3}
     const path=()=>{x.beginPath();line.forEach((p,i)=>{const[X,Y]=P(p);i?x.lineTo(X,Y):x.moveTo(X,Y)})};
@@ -3704,13 +3715,13 @@ async function storyCard(r,look){
       x.shadowColor="transparent";x.strokeStyle=c;x.lineWidth=T.w*.9;x.beginPath();x.moveTo(X,Y-r*.8);x.lineTo(X,Y);x.moveTo(X-r*.65,Y);x.lineTo(X+r*.65,Y);x.stroke();
       glass();x.fillStyle=c;x.fill();x.fillStyle=BG;x.font=`800 ${T.f*(lab.length>2?.78:.92)}px ${U}`;x.textAlign="center";x.fillText(lab,X,Y-r*1.72);x.textAlign="left"});
     x.restore()}
-  if(mapP){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1060);x.textAlign="left"}
+  if(mapP){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1020);x.textAlign="left"}
   // top bar
-  x.font=`800 46px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,112,1);const lw=x.measureText("ROOFTOP ").width+8;x.fillStyle=AMB;sp("ROULETTE",64+lw,112,1);
-  x.font=`700 26px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,108,3.6,"right");
+  x.font=`800 46px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,262,1);const lw=x.measureText("ROOFTOP ").width+8;x.fillStyle=AMB;sp("ROULETTE",64+lw,262,1);
+  x.font=`700 26px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,258,3.6,"right");
   // award
   let fs=112;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>70){fs-=4;x.font=`800 ${fs}px ${D}`}
-  x.fillStyle=INK;x.fillText(at,64,955);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1004);
+  x.fillStyle=INK;x.fillText(at,64,925);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,972);
   // stats
   const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
   const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -3719,30 +3730,30 @@ async function storyCard(r,look){
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
     span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
   const SIC=cr?["roof","route","moon","glass","hour","clock"]:["roof","route","walk","glass","bolt","span"];
-  S6.forEach(([v,l],i)=>{const X=64+(i%3)*320,Y=1160+Math.floor(i/3)*130;x.fillStyle=AMB;x.font=`800 68px ${D}`;x.fillText(fit(String(v),300),X,Y);
+  S6.forEach(([v,l],i)=>{const X=64+(i%3)*320,Y=1095+Math.floor(i/3)*122;x.fillStyle=AMB;x.font=`800 68px ${D}`;x.fillText(fit(String(v),300),X,Y);
     x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[SIC[i]]));x.restore();
     x.fillStyle=MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)});
   // bars, two columns, with time at each
-  const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?78:86,cw=(W-128-40)/2;
-  list.forEach((v,i)=>{const col=Math.floor(i/rows),row=i%rows,X=64+col*(cw+40),Y=1480+row*gap,ok=v.counted===true,b=byId(v.id),bod=r.barOfDay===v.id;
+  const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?66:76,cw=(W-128-40)/2;
+  list.forEach((v,i)=>{const col=Math.floor(i/rows),row=i%rows,X=64+col*(cw+40),Y=1360+row*gap,ok=v.counted===true,b=byId(v.id),bod=r.barOfDay===v.id;
     x.fillStyle=ok?AMB:"#4B5263";x.beginPath();x.arc(X+20,Y-9,20,0,7);x.fill();x.fillStyle=BG;x.font=`800 22px ${U}`;x.textAlign="center";x.fillText(String(i+1),X+20,Y-1);x.textAlign="left";
     const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
     x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
     x.font=`650 28px ${U}`;x.fillStyle=bod?AMB:ok?INK:"#6B7280";const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
-    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.max(X+54,ex-w*.8),Y-40);x.rotate(5*Math.PI/180);
+    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-w*.3,X+cw-w),Y-36);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
-  if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1480+rows*gap)}
+  if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1360+rows*gap)}
   // footer
   x.font=`600 24px ${U}`;x.fillStyle=MUT;const ar=r.areas[r.areas.length-1];
-  x.fillText(fit([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),600),64,1856);
-  x.textAlign="right";x.fillText("Spin. Go. Drink. Repeat.",W-64,1856);x.textAlign="left";
+  x.fillText(fit([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),600),64,1650);
+  x.textAlign="right";x.fillText("Spin. Go. Drink. Repeat.",W-64,1650);x.textAlign="left";
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
 async function mapTiles(x,r,st,W,HH){
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
-  const SC=2,BW=860,BH=600,cy0=190+BH/2;let z=16;
+  const SC=2,BW=860,BH=470,cy0=330+BH/2;let z=16;
   for(;z>3;z--){const a=all.map(p=>wp(p,z)),xs=a.map(q=>q[0]),ys=a.map(q=>q[1]);if((Math.max(...xs)-Math.min(...xs))*SC<=BW&&(Math.max(...ys)-Math.min(...ys))*SC<=BH)break}
   const a=all.map(p=>wp(p,z)),cx=(Math.min(...a.map(q=>q[0]))+Math.max(...a.map(q=>q[0])))/2,cy=(Math.min(...a.map(q=>q[1]))+Math.max(...a.map(q=>q[1])))/2;
   const P=p=>{const q=wp(p,z);return[W/2+(q[0]-cx)*SC,cy0+(q[1]-cy)*SC]};
