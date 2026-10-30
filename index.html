@@ -3764,7 +3764,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
-  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v)});
+  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
   $("scPh").onclick=()=>photoSheet(r,renderEnd);
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
@@ -4249,7 +4249,7 @@ function visitsHTML(v){const vs=visitsOf(v.id);if(!vs.length)return "";
     <div class="vlist" id="vList">${vs.map(x=>`<button type="button" data-g="${x.r.id||""}">${dateTxt(x.t)}<span>${gameLbl(x)}</span></button>`).join("")}</div>`}
 function bindVisits(){const b=$("vHist");if(!b)return;b.onclick=()=>{const on=b.getAttribute("aria-expanded")!=="true";b.setAttribute("aria-expanded",String(on));$("vList").classList.toggle("on",on)};
   $("vList").querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{const id=x.dataset.g;if(!id||!H.some(r=>r.id===id))return;closeSheet();S.lastEnd=id;go("end")})}
-function barSheet(v){
+function barSheet(v,night){
   const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
   if(bMap&&S.route==="bars")bMap.setView(v,16);
   const bf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>${y?`<span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}`;
@@ -4257,13 +4257,15 @@ function barSheet(v){
     ${v.fact?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${visitsHTML(v)}
     <div class="acts">
-      ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
-      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>On your shortlist for R&amp;R.</small></span><span class="sw"></span></button>
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Never comes up in R&amp;R.</small></span><span class="sw"></span></button>
+      ${night?`<button class="toggle" type="button" id="tgBod" role="switch" aria-checked="${night.barOfDay===v.id}"><span class="t"><b>Bar of the day</b><small>Your pick from tonight. It's tagged on your story.</small></span><span class="sw"></span></button>`:""}
+      ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
+      <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>${night?"Keen to come back. You can spin just your Hit list in R&amp;R.":"On your shortlist for R&amp;R."}</small></span><span class="sw"></span></button>
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>${night?"Not for you. It won't come up in R&amp;R.":"Never comes up in R&amp;R."}</small></span><span class="sw"></span></button>
     </div>`,()=>{bindSheetCard(v,bf);bindVisits();
+    if($("tgBod"))$("tgBod").onclick=()=>{if(night.barOfDay===v.id)night.barOfDay=null;else night.barOfDay=v.id;night.bodDone=true;saveH();buzz(12);barSheet(v,night);if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
-    $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
-    $("tgWant").onclick=()=>{if(S.want[v.id])delete S.want[v.id];else{S.want[v.id]=1;delete S.nfu[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
+    $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
+    $("tgWant").onclick=()=>{if(S.want[v.id])delete S.want[v.id];else{S.want[v.id]=1;delete S.nfu[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
   });
 }
 
