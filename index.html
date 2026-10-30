@@ -3867,9 +3867,14 @@ async function storyCard(r,look){
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
   const foot=big=>{let lf=big===false?80:58;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
     x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1840);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1840);x.letterSpacing="0px";x.globalAlpha=1;
+    if(WV==="foot"){const ar=r.areas[r.areas.length-1],pl=(ar==="you"?"Near you":ar).toUpperCase();x.font=`700 23px ${U}`;x.letterSpacing="2.4px";const pw=x.measureText(pl).width;x.letterSpacing="0px";
+      x.save();x.translate(W-64-pw-34,1786);x.scale(26/24,26/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
+      x.fillStyle="rgba(244,241,234,.9)";sp(pl,W-64,1808,2.4,"right");
+      x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"),dateTxt(r.startedAt)].join(" · "),W-64,1840);x.textAlign="left";return}
     x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1832,3,"right")};
   // where and when, with a pin, sitting just above the title
-  const where=Y=>{x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(r.startedAt)].filter(Boolean).join(" · ").toUpperCase();
+  const WV=window.WHERE_VAR||"foot";
+  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(r.startedAt)].filter(Boolean).join(" · ").toUpperCase();
     x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
     x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
