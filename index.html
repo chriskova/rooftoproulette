@@ -1279,34 +1279,16 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .jbloom{position:fixed;z-index:58;pointer-events:none;width:380px;height:220px;border-radius:50%;background:radial-gradient(closest-side,rgba(245,184,61,.55),rgba(245,184,61,.18) 55%,rgba(245,184,61,0));filter:blur(8px)}
 .jring{position:fixed;z-index:59;pointer-events:none;width:200px;height:120px;border-radius:50%;border:1.5px solid rgba(255,226,150,.7)}
 .jpx{position:fixed;inset:0;z-index:3000;overflow:hidden}
-.jpx-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(40,28,6,.6),rgba(3,4,7,.94) 62%);opacity:0}
+.jpx-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.6),rgba(3,4,7,.94) 62%);opacity:0}
 .jpx .jpx-glow,.jpx .jpx-streaks{opacity:0;transition:opacity .9s ease .25s}
 .jpx.live .jpx-glow{opacity:.5}.jpx.live .jpx-streaks{opacity:1}
 .reel.lifting .frame{transition:border-color .6s ease}
 .reel.lifting{will-change:transform}
-.jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.55),rgba(3,4,7,.97) 70%)!important}
-.jpx-mesh{position:absolute;inset:0;opacity:0;overflow:hidden;transform:scale(.25);transition:opacity .9s ease,transform 1.4s cubic-bezier(.2,.8,.2,1)}
-.jpx.live .jpx-mesh{opacity:1;transform:none}
-/* starts as a glow round the wheel, then opens out to fill the screen and keeps flowing */
-.jpx-mesh::before{content:"";position:absolute;left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;filter:blur(60px);opacity:.42;
-  background:conic-gradient(from 0deg,rgba(245,184,61,.24),rgba(232,110,82,.16),rgba(150,92,190,.14),rgba(11,13,18,.0) 40%,rgba(245,184,61,.2),rgba(232,110,82,.12) 75%,rgba(245,184,61,.24));animation:jswirl 9s linear infinite}
-@keyframes jswirl{to{transform:rotate(360deg)}}
-.jpx-mesh i{position:absolute;left:50%;top:50%;width:80vmax;height:80vmax;margin:-40vmax 0 0 -40vmax;filter:blur(50px);will-change:transform,border-radius}
-.jpx-mesh .m1{background:rgba(245,184,61,.17);animation:jf1 6s ease-in-out infinite,jshape 4s ease-in-out infinite}
-.jpx-mesh .m2{background:rgba(232,110,82,.14);animation:jf2 7s ease-in-out infinite,jshape 5s ease-in-out infinite reverse}
-.jpx-mesh .m3{background:rgba(150,92,190,.13);animation:jf3 8s ease-in-out infinite,jshape 4.5s ease-in-out infinite}
-.jpx-mesh .m4{background:rgba(245,184,61,.1);width:55vmax;height:55vmax;margin:-27.5vmax 0 0 -27.5vmax;animation:jf4 5s ease-in-out infinite,jshape 3.5s ease-in-out infinite reverse}
-.jpx-mesh .m5{background:rgba(255,226,170,.07);width:45vmax;height:45vmax;margin:-22.5vmax 0 0 -22.5vmax;animation:jf5 6.5s ease-in-out infinite,jshape 3s ease-in-out infinite}
-@keyframes jf1{0%,100%{transform:translate(-38vw,-30vh) scale(1)}25%{transform:translate(36vw,-24vh) scale(1.25)}50%{transform:translate(32vw,32vh) scale(.85)}75%{transform:translate(-34vw,28vh) scale(1.15)}}
-@keyframes jf2{0%,100%{transform:translate(36vw,30vh) scale(1.1)}25%{transform:translate(-36vw,26vh) scale(.85)}50%{transform:translate(-30vw,-34vh) scale(1.2)}75%{transform:translate(34vw,-26vh) scale(1)}}
-@keyframes jf3{0%,100%{transform:translate(0,38vh) scale(1.2)}33%{transform:translate(-40vw,-12vh) scale(.95)}66%{transform:translate(38vw,-30vh) scale(1.1)}}
-@keyframes jf4{0%,100%{transform:translate(30vw,-38vh)}50%{transform:translate(-32vw,36vh)}}
-@keyframes jf5{0%,100%{transform:translate(-30vw,10vh) scale(.9)}50%{transform:translate(32vw,-12vh) scale(1.35)}}
-@keyframes jshape{0%,100%{border-radius:42% 58% 63% 37%/45% 40% 60% 55%}33%{border-radius:62% 38% 32% 68%/58% 64% 36% 42%}66%{border-radius:35% 65% 58% 42%/66% 34% 52% 48%}}
-.jpx-lift{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 70% 45% at 50% 50%,rgba(255,214,140,.10),rgba(255,214,140,0) 70%);transition:opacity 1s cubic-bezier(.4,0,.2,1)}
-.jpx.won .jpx-lift{opacity:1}
-.jpx.won .jpx-mesh .m1,.jpx.won .jpx-mesh .m2{filter:blur(64px) brightness(1.08)}
-@media (prefers-reduced-motion:reduce){.jpx-mesh i{animation:none!important}}
+.jpx-glow{position:absolute;top:8%;width:80vw;height:84vh;border-radius:50%;opacity:.5;pointer-events:none;will-change:transform}
+.jpx-glow.l{left:-58vw;background:radial-gradient(circle,rgba(245,184,61,.95),rgba(255,122,61,.35) 45%,rgba(255,122,61,0) 70%);animation:jgl 1.8s ease-in-out infinite alternate}
+.jpx-glow.r{right:-58vw;background:radial-gradient(circle,rgba(255,138,76,.9),rgba(245,184,61,.3) 45%,rgba(245,184,61,0) 70%);animation:jgr 1.5s ease-in-out infinite alternate}
+@keyframes jgl{to{transform:translate(10vw,5vh) scale(1.12)}}@keyframes jgr{to{transform:translate(-10vw,-4vh) scale(1.1)}}
+.jpx.won .jpx-glow{opacity:.95;animation-duration:.5s;transition-delay:0s}
 .jpx-streaks i{position:absolute;bottom:-140px;width:2px;border-radius:2px;background:linear-gradient(rgba(255,226,160,0),rgba(255,226,160,.9));animation:jstreak .7s linear infinite}
 @keyframes jstreak{to{transform:translateY(-120vh)}}
 .jpx.won .jpx-streaks{opacity:0;transition:opacity .5s}
@@ -2932,10 +2914,10 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   ac();
   const r=box.getBoundingClientRect(),calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const ov=document.createElement("div");ov.className="jpx";
-  ov.innerHTML=`<i class="jpx-bg"></i><div class="jpx-mesh"><i class="m1"></i><i class="m2"></i><i class="m3"></i><i class="m4"></i><i class="m5"></i></div><i class="jpx-lift"></i><div class="jpx-streaks"></div>`;
+  ov.innerHTML=`<i class="jpx-bg"></i><i class="jpx-glow l"></i><i class="jpx-glow r"></i><div class="jpx-streaks"></div>`;
   document.body.appendChild(ov);
-  if(!calm){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<10;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
-    Object.assign(e.style,{left:(4+Math.random()*92)+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.12+Math.random()*.2});st.appendChild(e)}}
+  if(!calm){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<18;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
+    Object.assign(e.style,{left:left+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.25+Math.random()*.5});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
   const tx=innerWidth/2-(r.left+r.width/2),ty=innerHeight*.5-(r.top+r.height/2),SC=Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
