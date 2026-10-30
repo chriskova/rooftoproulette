@@ -1034,6 +1034,13 @@ body.camon #v-play .stage{justify-content:flex-start;order:1}
 body.camon #v-play .ptop{order:5;margin-top:4px}
 body.camon #v-play .ready{justify-content:flex-start!important}
 body.camon #v-play .camacts{margin-top:auto}
+body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
+#camLight{position:fixed;inset:0;z-index:3100;pointer-events:none;opacity:0;transition:opacity .25s;box-shadow:inset 0 0 0 16px rgba(255,247,232,.96),inset 0 0 70px 34px rgba(255,247,232,.7)}
+#camLight.on{opacity:1}
+.shv-s.clip{position:relative}.shv-s.clip video{max-width:100%;max-height:100%;border-radius:14px;background:#000;display:block;margin:auto}
+.shv-snd{position:absolute;right:30px;bottom:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--muted);display:grid;place-items:center;opacity:.9}.shv-snd svg{width:20px;height:20px}.shv-snd.on{color:var(--amber)}
+.shv-go{display:flex;gap:10px}.shv-go .btn{flex:1}.shv-go .btn[hidden]{display:none}
+.shv-dots .cdot{border-radius:2px}
 .campop{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:2700;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:translateY(130%);transition:transform .25s cubic-bezier(.3,.75,.2,1);touch-action:pan-y}
 .campop.on{transform:none}
 .campop video{width:40px;height:56px;border-radius:9px;object-fit:cover;background:#000;flex:none}
@@ -3221,9 +3228,15 @@ function camSync(asked){
 document.addEventListener("visibilitychange",()=>camSync());
 setInterval(()=>{camSync();
   if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
-  if(!CAM.rec&&spinning)camStart();
-  else if(CAM.rec){if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
-    if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}},120);
+  if(!CAM.rec&&spinning){camStart();CAM.spun=true}
+  else if(CAM.rec){if(spinning)CAM.spun=true;
+    if(!CAM.spun){if(Date.now()-CAM.t0>8000)camStop(true)}   // touched the reel but never spun: no clip
+    else{if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
+      if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}}
+  camLight(!!CAM.rec&&S.camLight!==false)},120);
+// the build-up counts: recording starts the moment a finger lands on the reel
+document.addEventListener("pointerdown",e=>{if(CAM.stream&&!CAM.rec&&e.target.closest&&e.target.closest("#v-play .reel")){camStart();CAM.spun=false}},true);
+function camLight(on){let l=$("camLight");if(!l){if(!on)return;l=document.createElement("div");l.id="camLight";document.body.appendChild(l)}l.classList.toggle("on",on)}
 function camStart(){
   if(typeof MediaRecorder==="undefined"||!CAM.vid)return;
   const W=720,H=Math.round(720*innerHeight/innerWidth/2)*2,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
@@ -3231,8 +3244,8 @@ function camStart(){
   const mt=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(m=>MediaRecorder.isTypeSupported(m))||"";
   let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:6e6}:{})}catch(e){return}
   const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
-  rec.onstop=()=>{const type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
-    const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>camSaved(blob,type,at)).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
+  rec.onstop=()=>{if(rec._drop)return;const type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
+    const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   const loop=()=>{if(CAM.rec!==rec)return;camDraw();requestAnimationFrame(loop)};loop();
 }
@@ -3247,7 +3260,7 @@ function camSaved(blob,type,at){let p=$("camPop");if(p){clearTimeout(camPopT);p.
   let x0=null,dx=0;p.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;dx=0});p.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;p.style.translate=dx+"px 0"});
   p.addEventListener("pointerup",()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>60)bye();else p.style.translate=""});
   camPopT=setTimeout(bye,7000)}
-function camStop(){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){try{r.requestData()}catch(e){}r.stop()}}
+function camStop(drop){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){r._drop=!!drop;try{r.requestData()}catch(e){}r.stop()}}
 const svgImgs={};
 function svgImg(el,col){const k=el.outerHTML+col;if(svgImgs[k])return svgImgs[k].complete&&svgImgs[k].naturalWidth?svgImgs[k]:null;
   const im=new Image();let src=el.outerHTML.replace(/currentColor/g,col);if(!/xmlns=/.test(src))src=src.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"');
@@ -3556,6 +3569,8 @@ function openMenu(){
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" id="mCam">${I.camera}<span>Camera ${S.camOn?"on":"off"}<small>Records each spin with your reaction</small></span></button>
+    ${S.camOn?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"on":"off"}<small>Lights up your faces while it records</small></span></button>`:""}
+    ${S.camOn||g.clipN?`<button type="button" id="mClips">${I.play||I.camera}<span>Clips<small>${g.clipN?`${g.clipN} from tonight`:"None yet. Spin to record one"}</small></span></button>`:""}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
@@ -3563,6 +3578,8 @@ function openMenu(){
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     $("mCam").onclick=()=>{S.camOn=!S.camOn;save();closeSheet();camSync(true)};
+    if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
+    if($("mClips"))$("mClips").onclick=()=>{if(g.clipN)clipsSheet(g.id)};
     $("mEnd").onclick=()=>sheet(`<h3>${cr?"Call it a night?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the night":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
@@ -3896,7 +3913,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><span class="sctr"><button class="txtbtn" type="button" id="clipsBtn" hidden>${I.camera} Clips</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
+      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><span class="sctr"><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -3933,7 +3950,6 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
-  clipList(r.id).then(L=>{const b=$("clipsBtn");if(!b||!L.length)return;b.hidden=false;b.lastChild.textContent=` Clips (${L.length})`;b.onclick=()=>clipsSheet(r.id)});
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
@@ -4188,21 +4204,26 @@ async function shareStory(r){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
     looks=r.photo?["full","map","rund"]:["map","rund"];
     window._mapErrs=[];try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e);blobs=[]}
+    const clips=await clipList(r.id);clips.forEach(c=>{looks.push("clip");blobs.push(c.blob)});
     const mapDiag=S.test&&window._mapErrs.length?`<div class="shv-diag">Map didn't load: ${esc([...new Set(window._mapErrs)].slice(0,4).join(" · "))}</div>`:"";
     if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
-    ov.innerHTML=top+`<div class="shv-car">${urls.map(u=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"?"Map":"Rundown"}"></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
-      ${mapDiag}<button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
+    ov.innerHTML=top+`<div class="shv-car">${urls.map((u,i)=>looks[i]==="clip"?`<div class="shv-s clip"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`:`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
+      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"?"Map":l==="clip"?"Clip":"Rundown"}"${l==="clip"?' class="cdot"':""}></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
+      ${mapDiag}<div class="shv-go"><button class="btn dark" type="button" id="shvSave" hidden>Save</button><button class="btn" type="button" id="shvGo">${I.share} Share</button></div>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
-    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]!=="map"?"visible":"hidden"};
+    const vids=[...ov.querySelectorAll(".shv-s")].map(sl=>sl.querySelector("video"));
+    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="clip"?"hidden":"visible";
+      $("shvSave").hidden=looks[cur]!=="clip";vids.forEach((v,i)=>{if(!v)return;if(i===cur)v.play().catch(()=>{});else v.pause()})};
+    ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;mark()}},{passive:true});
     dots.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));
     ov.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.ph];saveH();cards(0)});
     if($("shvAdd2"))$("shvAdd2").onclick=()=>photoSheet(r,()=>cards(0));
-    $("shvGo").onclick=async()=>{const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
+    $("shvSave").onclick=()=>{const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at)};
+    $("shvGo").onclick=async()=>{if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
       if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
       else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
   }
