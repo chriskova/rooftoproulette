@@ -3929,7 +3929,7 @@ async function storyCard(r,look){
     [[km(st.total),"Distance","route"],[hmm(moving),"Travel time","walk"],[st.longest?mOrKm(st.longest.d):"—","Longest leg","span"]].forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1690,64));
     foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   if(rund){   // the rundown: every bar and the time there, on the photo (softened) or plain
-    const list=st.arrived.slice(0,8),n4=list.length,listTop=RV==="plain"?Math.max(760,1700-(n4-1)*96):1325,gap4=n4>1?Math.min(RV==="plain"?96:78,(1700-listTop)/(n4-1)):0;
+    const list=st.arrived.slice(0,8),n4=list.length,listTop=RV==="plain"?Math.max(760,1700-(n4-1)*96):Math.max(1180,1700-(n4-1)*78),gap4=n4>1?Math.min(RV==="plain"?96:78,(1700-listTop)/(n4-1)):0;
     x.font=`800 76px ${D}`;let f4=76;const t4=aw[0].t.toUpperCase();while(x.measureText(t4).width>W-128&&f4>44){f4-=4;x.font=`800 ${f4}px ${D}`}
     const top4=listTop-265;where(top4-94);x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
     (cr?[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(st.dur),"Night","moon"]]:[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
