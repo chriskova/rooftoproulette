@@ -1017,7 +1017,7 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .menu button small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
 .menu button.danger{color:var(--red)}
 #camVid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;display:none}
-body.camon #camVid{display:block}
+body.camon #camVid{display:block;opacity:0;transition:opacity .3s}body.camon #camVid.on{opacity:1}
 body.camon,body.camon .app,body.camon .appbar{background:transparent!important}
 body.camon .app{position:relative;z-index:1}
 body.camon .appbar .logo{text-shadow:0 1px 8px rgba(0,0,0,.5)}
@@ -1095,7 +1095,8 @@ body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{
 body.camon #v-play #pMenu{background:rgba(11,13,18,.62)}
 body.camon #v-play .stage{flex:1}
 body.camon #v-play .ready{flex:1}
-body.camon #v-play .reel{background:rgba(11,13,18,.62)}
+body.camon #v-play .reel{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(11,13,18,.62),rgba(11,13,18,.34) 50%,rgba(11,13,18,0) 88%);border-color:transparent;box-shadow:none}
+body.camon #v-play .reel .frame{box-shadow:0 0 0 3px rgba(245,184,61,.12)}body.camon #v-play .reel .hint{display:none}
 body.camon #v-play .reel .row{font-size:30px}body.camon #v-play .reel .row.long{font-size:25px}body.camon #v-play .reel .row.xlong{font-size:19px}
 body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.25),rgba(3,4,7,.5) 70%)}
 .sctr{display:flex;align-items:center;gap:14px}.sctr #clipsBtn{display:inline-flex;align-items:center;gap:5px;color:var(--text)}.sctr #clipsBtn svg{width:16px;height:16px}
@@ -3263,9 +3264,10 @@ function camSync(asked){
     navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1920},height:{ideal:1080}},audio:{echoCancellation:true,noiseSuppression:true}}).then(st=>{
       CAM.busy=false;if(!(CAM.once&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
       CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
-      v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
+      v.classList.remove("on");v.onplaying=()=>v.classList.add("on");v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
     }).catch(e=>{CAM.busy=false;CAM.once=false;if(S.route==="play"&&!spinning)renderPlay();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
   }
+  if(!want&&!CAM.stream&&!CAM.busy&&document.body.classList.contains("camon")){document.body.classList.remove("camon");if(S.route==="play"&&!spinning){renderPlay();fitPlay()}}
   if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
 }
 document.addEventListener("visibilitychange",()=>camSync());
@@ -3301,11 +3303,49 @@ function camStart(){
   const mt=["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm"].find(m=>MediaRecorder.isTypeSupported(m))||"";
   let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:12e6,audioBitsPerSecond:160000}:{})}catch(e){return}
   const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
-  rec.onstop=()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.d)}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;const type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
+  rec.onstop=async()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.d)}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;let type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
+    if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
     const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   let lastF=0;const loop=t=>{if(CAM.rec!==rec)return;if(!t||t-lastF>=31){lastF=t||0;camDraw()}requestAnimationFrame(loop)};loop();   // 30fps is plenty, and leaves the drag smooth
 }
+/* Chrome records fragmented MP4 with no duration in the header: galleries and Instagram read it as a few seconds.
+   This rewrites it as a plain MP4 (one moov up front with full sample tables, then the media). */
+function mp4Flat(buf){
+  const u=new Uint8Array(buf),dv=new DataView(buf),boxes=(s,e)=>{const L=[];let o=s;while(o+8<=e){let sz=dv.getUint32(o),hs=8;const t=String.fromCharCode(u[o+4],u[o+5],u[o+6],u[o+7]);if(sz===1){sz=Number(dv.getBigUint64(o+8));hs=16}else if(sz===0)sz=e-o;if(sz<8)break;L.push({t,s:o,e:o+sz,b:o+hs});o+=sz}return L},
+    kid=(b,t)=>boxes(b.b,b.e).find(x=>x.t===t),kids=(b,t)=>boxes(b.b,b.e).filter(x=>x.t===t);
+  const top=boxes(0,u.length),ftyp=top.find(x=>x.t==="ftyp"),moov=top.find(x=>x.t==="moov");if(!moov||!top.some(x=>x.t==="moof"))return null;
+  const mvex=kid(moov,"mvex"),trex={};if(mvex)kids(mvex,"trex").forEach(x=>{const p=x.b+4;trex[dv.getUint32(p)]={dur:dv.getUint32(p+8),size:dv.getUint32(p+12),flags:dv.getUint32(p+16)}});
+  const tracks={};kids(moov,"trak").forEach(tr=>{const tk=kid(tr,"tkhd"),v=u[tk.b],id=dv.getUint32(tk.b+4+(v?16:8));tracks[id]={tr,id,smp:[]}});
+  for(const mf of top.filter(x=>x.t==="moof"))for(const tf of kids(mf,"traf")){
+    const th=kid(tf,"tfhd"),fl=dv.getUint32(th.b)&0xffffff;let p=th.b+4;const id=dv.getUint32(p);p+=4;const T=tracks[id],d=trex[id]||{dur:0,size:0,flags:0};if(!T)continue;
+    let base=mf.s;if(fl&1){base=Number(dv.getBigUint64(p));p+=8}if(fl&2)p+=4;let dDur=d.dur,dSize=d.size,dFl=d.flags;if(fl&8){dDur=dv.getUint32(p);p+=4}if(fl&16){dSize=dv.getUint32(p);p+=4}if(fl&32){dFl=dv.getUint32(p);p+=4}
+    let next=null;
+    for(const tn of kids(tf,"trun")){const v=u[tn.b],f=dv.getUint32(tn.b)&0xffffff;let q=tn.b+4;const n=dv.getUint32(q);q+=4;let off=next==null?base:next;if(f&1){off=base+dv.getInt32(q);q+=4}let ffl=null;if(f&4){ffl=dv.getUint32(q);q+=4}
+      for(let i=0;i<n;i++){let du=dDur,sz=dSize,sf=i===0&&ffl!=null?ffl:dFl,ct=0;if(f&0x100){du=dv.getUint32(q);q+=4}if(f&0x200){sz=dv.getUint32(q);q+=4}if(f&0x400){sf=dv.getUint32(q);q+=4}if(f&0x800){ct=v?dv.getInt32(q):dv.getUint32(q);q+=4}
+        T.smp.push({off,sz,du,sync:!(sf&0x10000),ct});off+=sz}next=off}}
+  const ids=Object.keys(tracks).map(Number).filter(id=>tracks[id].smp.length);if(!ids.length)return null;
+  const B=(t,...parts)=>{const n=8+parts.reduce((a,p)=>a+p.length,0),o=new Uint8Array(n),w=new DataView(o.buffer);w.setUint32(0,n);for(let i=0;i<4;i++)o[4+i]=t.charCodeAt(i);let k=8;parts.forEach(p=>{o.set(p,k);k+=p.length});return o},
+    U32=(...a)=>{const o=new Uint8Array(a.length*4),w=new DataView(o.buffer);a.forEach((x,i)=>w.setUint32(i*4,x>>>0));return o},raw=b=>u.slice(b.s,b.e),body=b=>u.slice(b.b,b.e);
+  const mvhd=kid(moov,"mvhd"),mts=dv.getUint32(mvhd.b+(u[mvhd.b]?20:12));
+  // media goes after the moov; work out sizes first, then offsets
+  const T=ids.map(id=>{const t=tracks[id],md=kid(kid(t.tr,"mdia"),"mdhd"),mv=u[md.b],ts=dv.getUint32(md.b+(mv?20:12)),dur=t.smp.reduce((a,s)=>a+s.du,0);return {t,md,ts,dur,bytes:t.smp.reduce((a,s)=>a+s.sz,0)}});
+  const patchDur=(bx,durOff1,durOff0,val)=>{const o=raw(bx),w=new DataView(o.buffer),v=o[8];if(v)w.setBigUint64(8+durOff1,BigInt(val));else w.setUint32(8+durOff0,val>>>0);return o};
+  const build=chunkOff=>{let at=chunkOff;const traks=T.map(x=>{const tr=x.t.tr,mdia=kid(tr,"mdia"),minf=kid(mdia,"minf"),stbl=kid(minf,"stbl"),S=x.t.smp,stts=[];S.forEach(s=>{const l=stts[stts.length-1];if(l&&l[1]===s.du)l[0]++;else stts.push([1,s.du])});
+      const hasCt=S.some(s=>s.ct),sync=S.map((s,i)=>s.sync?i+1:0).filter(Boolean),allSync=sync.length===S.length;
+      const st=B("stbl",raw(kid(stbl,"stsd")),B("stts",U32(0,stts.length),...stts.map(e=>U32(e[0],e[1]))),...(hasCt?[B("ctts",U32(0x01000000,S.length),...S.map(s=>U32(1,s.ct)))]:[]),...(allSync?[]:[B("stss",U32(0,sync.length),U32(...sync))]),
+        B("stsc",U32(0,1,1,S.length,1)),B("stsz",U32(0,0,S.length),U32(...S.map(s=>s.sz))),B("stco",U32(0,1,at)));at+=x.bytes;
+      const mi=B("minf",...boxes(minf.b,minf.e).filter(b=>b.t!=="stbl").map(raw),st);
+      const md=B("mdia",patchDur(x.md,24,16,x.dur),...boxes(mdia.b,mdia.e).filter(b=>b.t!=="mdhd"&&b.t!=="minf").map(raw),mi);
+      const tk=patchDur(kid(tr,"tkhd"),28,20,Math.round(x.dur*mts/x.ts));
+      return B("trak",tk,...boxes(tr.b,tr.e).filter(b=>b.t!=="tkhd"&&b.t!=="mdia"&&b.t!=="edts").map(raw),md)});
+    const mdur=Math.max(...T.map(x=>Math.round(x.dur*mts/x.ts)));
+    return B("moov",patchDur(mvhd,24,16,mdur),...boxes(moov.b,moov.e).filter(b=>b.t!=="mvhd"&&b.t!=="trak"&&b.t!=="mvex").map(raw),...traks)};
+  const ft=ftyp?raw(ftyp):B("ftyp",new TextEncoder().encode("isom"),U32(512),new TextEncoder().encode("isomiso2mp41"));
+  const total=T.reduce((a,x)=>a+x.bytes,0),mdatHead=8;let mv=build(0);mv=build(ft.length+mv.length+mdatHead);
+  const out=new Uint8Array(ft.length+mv.length+mdatHead+total);out.set(ft,0);out.set(mv,ft.length);let k=ft.length+mv.length;new DataView(out.buffer).setUint32(k,mdatHead+total);out.set([109,100,97,116],k+4);k+=8;
+  T.forEach(x=>x.t.smp.forEach(s=>{out.set(u.subarray(s.off,s.off+s.sz),k);k+=s.sz}));
+  return out.buffer}
 let camPopT=null;
 function camSaved(blob,type,at){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
   p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
@@ -3392,7 +3432,8 @@ function camDraw(){
   // the reel, as it sits on screen (or as it landed, once it's gone)
   const rb=document.querySelector(".reel");
   if(rb&&rb.offsetParent!==null||rb&&rb.closest(".jpx")){const R_=rb.getBoundingClientRect(),ops=[];
-    ops.push(()=>{const g=x.createLinearGradient(0,R_.top*k,0,R_.bottom*k);g.addColorStop(0,"rgba(11,13,18,0)");g.addColorStop(.24,"rgba(11,13,18,.62)");g.addColorStop(.76,"rgba(11,13,18,.62)");g.addColorStop(1,"rgba(11,13,18,0)");rrect(R_,20,g)});
+    ops.push(()=>{const cx=(R_.left+R_.width/2)*k,cy=(R_.top+R_.height/2)*k,rx=R_.width*.5*k,ry=R_.height*.5*k;x.save();x.translate(cx,cy);x.scale(rx/ry,1);const g=x.createRadialGradient(0,0,0,0,0,ry);
+      g.addColorStop(0,"rgba(11,13,18,.62)");g.addColorStop(.5,"rgba(11,13,18,.34)");g.addColorStop(.88,"rgba(11,13,18,0)");x.fillStyle=g;x.fillRect(-ry*2,-ry,ry*4,ry*2);x.restore()});   // a soft pool of shade, no box
     const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect();ops.push(()=>rrect(r,14,"rgba(245,184,61,.10)","#F5B83D",2))}
     const fade=y=>{const u=(y-R_.top)/R_.height;return u<.24?Math.max(0,u/.24):u>.76?Math.max(0,(1-u)/.24):1};
     rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02)return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
@@ -3820,7 +3861,7 @@ function renderPlay(){
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
-    CAM.once=true;CAM.onceAt=Date.now();const sb_=$("spinBtn"),sk_=$("skipBtn");
+    CAM.once=true;CAM.onceAt=Date.now();document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
     if(sb_)sb_.click();else if(sk_)sk_.click();else{camSync();renderPlay()}}}
   if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
   const snapGot=f=>shrink(f,1000).then(d=>{const gg=S.game;if(!gg)return;(gg.photos=gg.photos||[]).push(d);if(gg.photos.length>3)gg.photos.shift();gg.snapAsk=1;try{save()}catch(x){gg.photos.pop();toast("Couldn't save the photo. Phone storage is full.")}if(S.route==="play")renderPlay();setTimeout(()=>{if(S.game){S.game.snapSeen=1;save();if(S.route==="play")renderPlay()}},4000)});
