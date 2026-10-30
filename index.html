@@ -845,7 +845,7 @@ body.mapq .view{padding-bottom:12px!important}
 .schead .scph{position:static;flex:none;width:62px;height:62px}
 #v-end .scmap{margin:0;border-radius:16px}
 .tri.s6c{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;padding:2px 2px 0}
-.tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:34px 12px 10px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b{color:var(--amber)}.tri.s3b{padding:0 12px}
+.tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:34px 12px 10px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b,.tri.s6c b{color:var(--text)}.tri.s6c b i{font-style:normal;color:var(--amber);font-size:.66em;margin-left:2px}.schead .aw-t{color:var(--amber)}.tri.s3b{padding:0 12px}
 .tri.s6c b{font-size:24px;line-height:1}.tri.s6c small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin-top:3px;white-space:nowrap}
 .scar{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}.scar::-webkit-scrollbar{display:none}
 .scp{flex:0 0 100%;scroll-snap-align:center;padding:0 16px;display:flex;flex-direction:column;gap:12px;min-height:0}
@@ -3612,13 +3612,13 @@ let eMap=null;
 function awards(r,st){
   const L=[],n=st.counted.length,nm=id=>esc(byId(id).name);
   const add=(t,why)=>L.push({t,why});
-  if(st.last&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=3*60000)add("Buzzer Beaters",`Into ${nm(st.last.id)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`);
+  if(st.last&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=3*60000)add("Down to the Wire",`Into ${nm(st.last.id)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`);
   if(r.missed&&r.missed.m!=null&&r.missed.m<=300)add("So Close",`${nm(r.missed.id)} was ${mOrKm(r.missed.m)} away at zero`);
-  if(st.quick&&st.quick.ms>=60000&&st.quick.ms<=6*60000)add("Pit Stop Crew",`${nm(st.quick.from)} to ${nm(st.quick.to)} in ${hmm(st.quick.ms)}`);
+  if(st.quick&&st.quick.ms>=60000&&st.quick.ms<=6*60000)add("Pit Stop",`${nm(st.quick.from)} to ${nm(st.quick.to)} in ${hmm(st.quick.ms)}`);
   if(st.longest&&st.longest.d>=1500)add("Long Haul",`${km(st.longest.d)} to ${nm(st.longest.to.id)}`);
   const longStay=st.arrived.filter(v=>v.leftAt&&v.leftAt-v.arrivedAt>=30*60000).sort((a,b)=>(b.leftAt-b.arrivedAt)-(a.leftAt-a.arrivedAt))[0];
   if(longStay)add("Settled In",`${hmm(longStay.leftAt-longStay.arrivedAt)} at ${nm(longStay.id)}`);
-  if((r.skipCost||0)>=6)add("Picky Lot",`${r.skipCost} minutes spent re-spinning`);
+  if((r.skipCost||0)>=6)add("Spin Cycle",`${r.skipCost} minutes spent re-spinning`);
   const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
   if(r.areas.length>1)add("Change of Scenery",esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ")));
   if(!r.skipCost&&!(r.skipped||[]).length&&n>=2)add("Trust the Wheel","Took every spin the wheel gave you");
@@ -3680,8 +3680,8 @@ function renderEnd(){
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
-        <div class="scmap"><div id="endMap"></div><div class="scov"><div class="tri s6c">${K.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div></div></div>
-        <div class="tri s6c s3b">${M.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div>
+        <div class="scmap"><div id="endMap"></div><div class="scov"><div class="tri s6c">${K.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
+        <div class="tri s6c s3b">${M.map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div>
           <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
       ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
 
@@ -3760,25 +3760,28 @@ async function storyCard(r,look){
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
     span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
   const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
-  const SCH=window.STORY_SCHEME||"a";
+  const SCH=window.STORY_SCHEME||"c";
   const stat=(v,l,ic,X,Y,sz)=>{x.font=`800 ${sz}px ${D}`;
     if(SCH==="a"){x.fillStyle=AMB;x.fillText(fit(String(v),300),X,Y)}
     else if(SCH==="b"){x.fillStyle=INK;x.fillText(fit(String(v),300),X,Y)}
     else{let cx=X;String(v).split(/([a-zA-Z]+)/).filter(Boolean).forEach(t=>{const u=/[a-zA-Z]/.test(t);x.font=`800 ${u?Math.round(sz*.62):sz}px ${D}`;x.fillStyle=u?AMB:INK;x.fillText(t,cx,Y);cx+=x.measureText(t).width+(u?4:0)})}
     x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[ic]));x.restore();
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
-  const foot=()=>{let lf=80;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
+  const foot=big=>{let lf=big===false?80:58;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
     x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1652);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1652);x.letterSpacing="0px";x.globalAlpha=1;
-    const ar=r.areas[r.areas.length-1];x.font=`700 22px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1610,3,"right");
-    x.font=`600 22px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1652);x.textAlign="left"};
+    const ar=r.areas[r.areas.length-1];const fz=big===false?22:17;x.font=`700 ${fz}px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,big===false?1610:1624,3,"right");
+    x.font=`600 ${fz}px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1652);x.textAlign="left"};
   if(full){
     let f2=104;x.font=`800 ${f2}px ${D}`;const t2=aw[0].t.toUpperCase();while(x.measureText(t2).width>W-128&&f2>70){f2-=4;x.font=`800 ${f2}px ${D}`}
-    x.fillStyle=INK;x.fillText(t2,64,1330);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1378);
-    (cr?[[n,"Rooftops","roof"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","glass"]]:[[n,"Rooftops","roof"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","glass"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1478,64));
-    foot();return new Promise(res=>c.toBlob(res,"image/png"))}
+    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1250);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1298);
+    (cr?[[n,"Rooftops","roof"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","glass"]]:[[n,"Rooftops","roof"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","glass"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1392,64));
+    if(r.barOfDay&&byId(r.barOfDay)){x.save();x.font=`800 17px ${U}`;x.letterSpacing="1.8px";const t="BAR OF THE DAY",w=x.measureText(t).width+20;x.translate(64,1496);x.rotate(-3*Math.PI/180);
+      x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-22,w,32,8);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,10,1);x.restore();
+      x.font=`700 34px ${U}`;x.fillStyle=INK;x.fillText(fit(byId(r.barOfDay).name,W-128-w-24),64+w+22,1508)}
+    foot(false);return new Promise(res=>c.toBlob(res,"image/png"))}
   // award
   let fs=112;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>70){fs-=4;x.font=`800 ${fs}px ${D}`}
-  x.fillStyle=INK;x.fillText(at,64,925);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,972);
+  x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,925);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,972);
   // stats
   const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
     :[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
@@ -3790,7 +3793,7 @@ async function storyCard(r,look){
     x.fillStyle=ok?AMB:"#4B5263";x.beginPath();x.arc(X+20,Y-9,20,0,7);x.fill();x.fillStyle=BG;x.font=`800 22px ${U}`;x.textAlign="center";x.fillText(String(i+1),X+20,Y-1);x.textAlign="left";
     const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
     x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
-    x.font=`650 28px ${U}`;x.fillStyle=SCH==="a"?(bod?AMB:ok?INK:"#6B7280"):(ok?AMB:"#6B7280");const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
+    x.font=`650 28px ${U}`;x.fillStyle=SCH==="b"?(ok?AMB:"#6B7280"):(bod?AMB:ok?INK:"#6B7280");const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
     if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.max(X+54,Math.min(ex-w*.3,X+cw-tw-14-w)),Y-36);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
   if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1340+rows*gap)}
