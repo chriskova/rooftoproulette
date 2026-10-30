@@ -3762,7 +3762,8 @@ async function storyCard(r,look){
   const stat=(v,l,ic,X,Y,sz)=>{x.fillStyle=AMB;x.font=`800 ${sz}px ${D}`;x.fillText(fit(String(v),300),X,Y);
     x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[ic]));x.restore();
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
-  const foot=()=>{x.font=`800 44px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,1612,1.5);x.fillStyle=AMB;sp("ROULETTE",64,1656,1.5);
+  const foot=()=>{let lf=80;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
+    x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1652);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1652);x.letterSpacing="0px";x.globalAlpha=1;
     const ar=r.areas[r.areas.length-1];x.font=`700 22px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1610,3,"right");
     x.font=`600 22px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1652);x.textAlign="left"};
   if(full){
