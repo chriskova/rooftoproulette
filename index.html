@@ -2867,7 +2867,10 @@ function makeReel(el,names,o){
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
     const fNow=Math.floor(R.p),fPrev=Math.floor(lastFl),crossed=fNow!==fPrev?Math.max(fNow,fPrev):null;lastFl=R.p;
-    if(crossed!==null){tick(560+Math.random()*80);buzz(3)}
+    if(crossed!==null){tick(560+Math.random()*80);buzz(3);
+      // the slot's lights flash with every name that passes: a fast flicker at speed, slow blinks as it winds down
+      if(frame&&frame.animate&&!R.landing){const dur=Math.round(Math.min(240,Math.max(70,900/Math.max(spd,1))));frame._fl=performance.now();frame._fd=dur;
+        frame.animate([{borderColor:"#FFE3A3",boxShadow:"0 0 0 4px rgba(255,214,120,.45),0 0 28px rgba(255,214,120,.6),inset 0 0 18px rgba(255,214,120,.25)"},{}],{duration:dur,easing:"ease-out"})}}
     // the slot is pushed out while a name sits in its catch, and springs back once it's rolled past (same range as the name's own zoom)
     if(frame){const fin=Math.abs(R.p-Math.round(R.p))<.14&&spd<12&&!R.landing;if(fin!==frame._in){frame._in=fin;frame.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";frame.style.transform=fin?"scale(1.025,1.09)":""}}
     // once the placeholder has scrolled out of sight, it becomes a bar like the rest
@@ -3450,7 +3453,9 @@ function camDraw(){
         const gh=c.createLinearGradient(0,0,w,0);gh.addColorStop(0,"rgba(11,13,18,0)");gh.addColorStop(.09,"rgba(11,13,18,.62)");gh.addColorStop(.91,"rgba(11,13,18,.62)");gh.addColorStop(1,"rgba(11,13,18,0)");c.fillStyle=gh;c.fillRect(0,0,w,h);
         c.globalCompositeOperation="destination-in";const gv=c.createLinearGradient(0,0,0,h);gv.addColorStop(0,"rgba(0,0,0,0)");gv.addColorStop(.24,"#000");gv.addColorStop(.76,"#000");gv.addColorStop(1,"rgba(0,0,0,0)");c.fillStyle=gv;c.fillRect(0,0,w,h)}
       x.drawImage(t,R_.left*k,R_.top*k)});   // the usual dark band, faded at all four sides so there are no corners
-    const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect(),cam=document.body.classList.contains("camon");ops.push(()=>{rrect(r,14,cam?"rgba(11,13,18,.35)":"rgba(245,184,61,.10)","#F5B83D",2);
+    const fr=rb.querySelector(".frame");if(fr){const r=fr.getBoundingClientRect(),cam=document.body.classList.contains("camon"),fl=fr._fl?Math.max(0,1-(performance.now()-fr._fl)/(fr._fd||120)):0;ops.push(()=>{
+      if(fl>0){x.save();x.shadowColor=`rgba(255,214,120,${.6*fl})`;x.shadowBlur=28*k*fl;rrect({left:r.left-4*fl,top:r.top-4*fl,width:r.width+8*fl,height:r.height+8*fl},18,null,`rgba(255,214,120,${.45*fl})`,4);x.restore()}
+      rrect(r,14,cam?"rgba(11,13,18,.35)":"rgba(245,184,61,.10)",fl>0?`rgb(${245+10*fl|0},${184+43*fl|0},${61+102*fl|0})`:"#F5B83D",2);
 })}
     const fe=document.body.classList.contains("camon")&&!rb.closest(".jpx")?.3:.24,fade=y=>{const u=(y-R_.top)/R_.height;return u<fe?Math.max(0,u/fe):u>1-fe?Math.max(0,(1-u)/fe):1};
     rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02||row.style.visibility==="hidden")return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
