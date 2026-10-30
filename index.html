@@ -3619,7 +3619,7 @@ function renderPlay(){
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
   renderClock();
-  {const a_=atVisit(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(a_?byId(a_.id).name:nearestSuburb(you()||g.center))}</i>`}
+  {const lv=g.visits.filter(x=>!x.cant&&x.counted!==false).pop(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(lv?byId(lv.id).name:nearestSuburb(you()||g.center))}</i>`}   // the bar you're at (or just left); the suburb before the first one
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
