@@ -3755,7 +3755,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
             <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
-    <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
+    <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -3797,11 +3797,13 @@ async function storyCard(r,look){
   const plain=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
   const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
   const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
-  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
+  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,rund=look==="rund",mapc=look==="map",photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
   x.fillStyle=BG;x.fillRect(0,0,W,Hh);
   // hero
-  const HH=full?Hh:1160;
-  if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore();
+  const HH=full?Hh:mapc?1500:1160;
+  if(rund){if(r.photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,Hh/img.height);x.save();x.filter="blur(28px) saturate(1.1)";x.drawImage(img,(W-img.width*s)/2-40,(Hh-img.height*s)/2-40,img.width*s+80,img.height*s+80);x.restore();x.fillStyle="rgba(11,13,18,.62)";x.fillRect(0,0,W,Hh)}
+    else{const g4=x.createRadialGradient(W*.8,250,0,W*.8,250,1100);g4.addColorStop(0,"rgba(245,184,61,.16)");g4.addColorStop(1,"rgba(245,184,61,0)");x.fillStyle=g4;x.fillRect(0,0,W,Hh)}}
+  else if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore();
     if(!full){const oc=document.createElement("canvas");oc.width=W;oc.height=HH;const o=oc.getContext("2d");o.fillStyle="#10141B";o.fillRect(0,0,W,HH);
       mapP=await mapTiles(o,r,st,W,HH,{cx:830,cy:680,bw:360,bh:560}).catch(()=>null);
       if(!mapP){o.save();o.translate(W/2,HH/2);o.rotate(-12*Math.PI/180);o.strokeStyle="rgba(255,255,255,.04)";o.lineWidth=2;for(let i=-1400;i<=1400;i+=90){o.beginPath();o.moveTo(i,-1400);o.lineTo(i,1400);o.stroke();o.beginPath();o.moveTo(-1400,i);o.lineTo(1400,i);o.stroke()}o.restore()}
@@ -3813,12 +3815,12 @@ async function storyCard(r,look){
   // route: GPS trail when we have one, otherwise stop to stop
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
   const FV=full?(window.FULL_VAR||"e"):"";
-  if(stops.length>1&&!FV){
-    const B=full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:400,w:360,h:560}:{x:110,y:400,w:860,h:540},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
+  if(stops.length>1&&!FV&&!rund){
+    const B=full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:400,w:360,h:560}:mapc?{x:110,y:330,w:860,h:900}:{x:110,y:400,w:860,h:540},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
     const la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mnla=Math.min(...la),mxla=Math.max(...la),mnlo=Math.min(...lo),mxlo=Math.max(...lo);
     const s=Math.min(B.w/Math.max((mxlo-mnlo)*k,1e-4),B.h/Math.max(mxla-mnla,1e-4),photo?60000:200000);
     const ox=B.x+(B.w-(mxlo-mnlo)*k*s)/2,oy=B.y+(B.h-(mxla-mnla)*s)/2,P=mapP||(p=>[ox+(p.lng-mnlo)*k*s,oy+(mxla-p.lat)*s]);
-    if(!photo&&!mapP){x.fillStyle="#3A4150";VENUES.forEach(v=>{const[X,Y]=P(v);if(X>40&&X<W-40&&Y>320&&Y<980){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}})}
+    if(!photo&&!mapP){x.fillStyle="#3A4150";VENUES.forEach(v=>{const[X,Y]=P(v);if(X>40&&X<W-40&&Y>320&&Y<(mapc?1300:980)){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}})}
     const T=full?{g:20,l:7,r:24,f:24,w:5}:photo?{g:16,l:5,r:19,f:20,w:4}:{g:22,l:6,r:24,f:24,w:5};
     x.save();if(photo){x.shadowColor="rgba(0,0,0,.7)";x.shadowBlur=14;x.shadowOffsetY=3}
     const path=()=>{x.beginPath();line.forEach((p,i)=>{const[X,Y]=P(p);i?x.lineTo(X,Y):x.moveTo(X,Y)})};
@@ -3836,7 +3838,7 @@ async function storyCard(r,look){
       x.shadowColor="transparent";x.strokeStyle=c;x.lineWidth=T.w*.9;x.beginPath();x.moveTo(X,Y-r*.8);x.lineTo(X,Y);x.moveTo(X-r*.65,Y);x.lineTo(X+r*.65,Y);x.stroke();
       glass();x.fillStyle=c;x.fill();x.fillStyle=BG;x.font=`800 ${T.f*(lab.length>2?.78:.92)}px ${U}`;x.textAlign="center";x.fillText(lab,X,Y-r*1.72);x.textAlign="left"});
     x.restore()}
-  if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1140);x.textAlign="left"}
+  if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,mapc?1470:1140);x.textAlign="left"}
   const ICP={roof:"M3 10l9-6 9 6 M5 9v12h14V9 M10 21v-5h4v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
     span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
@@ -3849,9 +3851,9 @@ async function storyCard(r,look){
     x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[ic]));x.restore();
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
   const foot=big=>{let lf=big===false?80:58;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
-    x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1772);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1772);x.letterSpacing="0px";x.globalAlpha=1;
-    const ar=r.areas[r.areas.length-1];const fz=big===false?22:17;x.font=`700 ${fz}px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,big===false?1730:1744,3,"right");
-    x.font=`600 ${fz}px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1772);x.textAlign="left"};
+    x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1840);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1840);x.letterSpacing="0px";x.globalAlpha=1;
+    const ar=r.areas[r.areas.length-1];const fz=big===false?22:17;x.font=`700 ${fz}px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,big===false?1798:1812,3,"right");
+    x.font=`600 ${fz}px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1840);x.textAlign="left"};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
     x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore();return w};
   const bars=st.arrived.filter(v=>v.counted!==false||v.cant).slice(0,8);
@@ -3877,7 +3879,7 @@ async function storyCard(r,look){
         for(let t=0;t<=1;t+=.02){const u=1-t;pts.push([u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]])}}}
     else{let h=0;String(r.id||r.startedAt).split("").forEach(ch=>h=(h*31+ch.charCodeAt(0))>>>0);const shape=window.WAVE!=null?window.WAVE:h%3;let sd=h%9973||7;const rn=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
       const A=[[40,1.7,4.1,30,.6,1,-10],[44,1.4,1.0,30,.5,3.0,14],[38,1.85,0.4,30,.5,2.2,18]][shape].map((v,i)=>i===1||i===4?v*(.96+rn()*.08):i===2||i===5?v+rn()*.5:v);
-      for(let X=70;X<=1010;X+=7){const t=(X-70)/940;pts.push([X,1210+A[0]*Math.sin(2*Math.PI*A[1]*t+A[2])+A[3]*Math.sin(2*Math.PI*A[4]*t+A[5])+A[6]*t])}
+      for(let X=70;X<=1010;X+=7){const t=(X-70)/940;pts.push([X,1278+A[0]*Math.sin(2*Math.PI*A[1]*t+A[2])+A[3]*Math.sin(2*Math.PI*A[4]*t+A[5])+A[6]*t])}
       bars._jit=bars.map((_,i)=>(rn()-.5)*.06)}
     const L=[0];for(let i=1;i<pts.length;i++)L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const tot=L[L.length-1];
     const at=d=>{let i=L.findIndex(v=>v>=d);if(i<1)return pts[Math.max(0,i)];const f=(d-L[i-1])/(L[i]-L[i-1]);return[pts[i-1][0]+(pts[i][0]-pts[i-1][0])*f,pts[i-1][1]+(pts[i][1]-pts[i-1][1])*f]};
@@ -3898,10 +3900,28 @@ async function storyCard(r,look){
       else{const yb=at(Math.max(0,d-40))[1],ya=at(Math.min(tot,d+40))[1],cv=(yb+ya)/2-gy,up=Math.abs(cv)>3?cv>0:i%2===0;x.textAlign="center";x.font=`700 26px ${U}`;x.fillStyle=INK;const nn=fit(nm,200),ly=up?gy-48:gy+64;x.fillText(nn,Math.min(Math.max(gx,110),W-110),ly);
         if(r.barOfDay===v.id){const tw=x.measureText(nn).width;x.textAlign="left";x.shadowColor="transparent";(()=>{const lx=Math.min(Math.max(gx,110),W-110);x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const w=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(Math.max(40,lx-w/2+10),W-40-w),up?ly-40:ly+30,4)})()}}
       x.textAlign="left";x.restore()})}
+  if(mapc){
+    let f3=80;x.font=`800 ${f3}px ${D}`;const t3=aw[0].t.toUpperCase();while(x.measureText(t3).width>W-128&&f3>44){f3-=4;x.font=`800 ${f3}px ${D}`}
+    x.fillStyle=INK;x.fillText(t3,64,1560);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1598);
+    (cr?[[km(st.total),"Distance","route"],[lng?hmm(lng):"—","Longest stay","hour"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay","clock"]]
+      :[[km(st.total),"Distance","route"],[st.quick?hmm(st.quick.ms):"—","Fastest leg","bolt"],[st.longest?mOrKm(st.longest.d):"—","Longest leg","span"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1690,64));
+    foot();return new Promise(res=>c.toBlob(res,"image/png"))}
+  if(rund){   // the rundown: every bar and the time there, on the photo (softened) or plain
+    const list=st.arrived.slice(0,8),n4=list.length,gap4=n4>6?82:96,listTop=1730-n4*gap4;
+    x.font=`800 76px ${D}`;let f4=76;const t4=aw[0].t.toUpperCase();while(x.measureText(t4).width>W-128&&f4>44){f4-=4;x.font=`800 ${f4}px ${D}`}
+    const top4=listTop-250;x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
+    (cr?[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(st.dur),"Night","moon"]]:[[n,"Rooftops","roof"],[hmm(atBars),"Bar time","glass"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+138,60));
+    x.strokeStyle="rgba(244,241,234,.12)";x.lineWidth=2;x.beginPath();x.moveTo(64,listTop-56);x.lineTo(W-64,listTop-56);x.stroke();
+    list.forEach((v,i)=>{const Y=listTop+i*gap4,b=byId(v.id),ok=v.counted===true,stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
+      x.fillStyle=ok?"rgba(244,241,234,.14)":"rgba(107,114,128,.2)";x.beginPath();x.arc(88,Y-12,24,0,7);x.fill();x.fillStyle=ok?INK:"#6B7280";x.font=`800 24px ${U}`;x.textAlign="center";x.fillText(String(i+1),88,Y-3);x.textAlign="left";
+      x.font=`600 30px ${U}`;const tw=x.measureText(tm).width;x.fillStyle="rgba(244,241,234,.7)";x.fillText(tm,W-64-tw,Y);
+      x.font=`700 38px ${U}`;x.fillStyle=ok?INK:"#6B7280";const nm=fit(b.name,W-64-tw-40-130);x.fillText(nm,130,Y);
+      if(r.barOfDay===v.id){const ex=130+x.measureText(nm).width;x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const w=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(ex-24,W-64-tw-20-w),Y-42)}});
+    foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   if(full){
     let f2=80;x.font=`800 ${f2}px ${D}`;const t2=aw[0].t.toUpperCase();while(x.measureText(t2).width>W-128&&f2>44){f2-=4;x.font=`800 ${f2}px ${D}`}
-    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1472);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1510);
-    let sy=1602;
+    x.fillStyle=SCH==="c"?AMB:INK;x.fillText(t2,64,1540);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1578);
+    let sy=1670;
     if(FV==="a"){x.font=`700 32px ${U}`;let X=64,Y=1366;const gl=(gx,gy)=>{x.fillStyle=AMB;x.beginPath();x.moveTo(gx-11,gy-22);x.lineTo(gx+11,gy-22);x.lineTo(gx,gy-8);x.closePath();x.fill();x.strokeStyle=AMB;x.lineWidth=3;x.beginPath();x.moveTo(gx,gy-9);x.lineTo(gx,gy);x.moveTo(gx-6,gy);x.lineTo(gx+6,gy);x.stroke()};
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
         if(r.barOfDay===v.id){x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const tw2=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(X+w-50,W-64-tw2),Y-34,4);x.font=`700 32px ${U}`}X+=w+14;if(i<bars.length-1){if(X+30>W-64){X=64;Y+=50}gl(X+11,Y-2);X+=36}});
@@ -3937,7 +3957,7 @@ async function storyCard(r,look){
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
-async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
+async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:mapc?780:670,bw:860,bh:mapc?900:540};
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
   const SC=2,BW=AR.bw,BH=AR.bh,cy0=AR.cy,cxp=AR.cx;let z=16;
@@ -3959,7 +3979,7 @@ async function shareStory(r){
   const ov=document.createElement("div");ov.className="sharev";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   let urls=[],blobs=[],looks=[],cur=0;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{ov.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250)};
-  const top=`<div class="shv-top"><b>Share to story</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>`;
+  const top=`<div class="shv-top"><b>Share</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>`;
   const bindX=()=>ov.querySelector(".shv-x").onclick=close;
   const addPhoto=cam=>pickPhoto(f=>shrink(f,1000).then(d=>{(r.photos=r.photos||[]).push(d);if(r.photos.length>3)r.photos.shift();r.photo=d;delete r.noPhoto;try{saveH()}catch(e){}cards(0)}),cam);
   // no photo yet: offer one first, the map card is the fallback
@@ -3968,13 +3988,13 @@ async function shareStory(r){
     bindX();$("shvAdd").onclick=()=>addPhoto(true);$("shvGal").onclick=()=>addPhoto(false);$("shvSkip").onclick=()=>cards(0)};
   async function cards(start){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
-    looks=r.photo?["full","photo","map"]:["map"];
+    looks=r.photo?["full","map","rund"]:["map","rund"];
     try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e);blobs=[]}
     if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map(u=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="photo"?"Photo and stats":"Map"}"></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
+      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"?"Map":"Rundown"}"></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
       <button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]!=="map"?"visible":"hidden"};
