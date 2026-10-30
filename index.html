@@ -3832,7 +3832,7 @@ async function storyCard(r,look){
       for(let i=0;i<P0.length-1;i++){const[a,b]=[P0[i],P0[i+1]],c1=[a[0]+(b[0]-a[0])*.15,a[1]+(b[1]-a[1])*.85+40],c2=[b[0]-(b[0]-a[0])*.15,b[1]-(b[1]-a[1])*.85-40];
         for(let t=0;t<=1;t+=.02){const u=1-t;pts.push([u*u*u*a[0]+3*u*u*t*c1[0]+3*u*t*t*c2[0]+t*t*t*b[0],u*u*u*a[1]+3*u*u*t*c1[1]+3*u*t*t*c2[1]+t*t*t*b[1]])}}}
     else{let h=0;String(r.id||r.startedAt).split("").forEach(ch=>h=(h*31+ch.charCodeAt(0))>>>0);const shape=window.WAVE!=null?window.WAVE:h%3;let sd=h%9973||7;const rn=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
-      const A=[[40,1.7,4.1,30,.6,1,-10],[44,1.4,1.0,30,.5,3.0,14],[42,1.05,4.71,20,1.6,.8,10]][shape].map((v,i)=>i===1||i===4?v*(.96+rn()*.08):i===2||i===5?v+rn()*.5:v);
+      const A=[[40,1.7,4.1,30,.6,1,-10],[44,1.4,1.0,30,.5,3.0,14],[38,1.85,0.4,30,.5,2.2,18]][shape].map((v,i)=>i===1||i===4?v*(.96+rn()*.08):i===2||i===5?v+rn()*.5:v);
       for(let X=70;X<=1010;X+=7){const t=(X-70)/940;pts.push([X,1000+A[0]*Math.sin(2*Math.PI*A[1]*t+A[2])+A[3]*Math.sin(2*Math.PI*A[4]*t+A[5])+A[6]*t])}
       bars._jit=bars.map((_,i)=>(rn()-.5)*.06)}
     const L=[0];for(let i=1;i<pts.length;i++)L.push(L[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const tot=L[L.length-1];
