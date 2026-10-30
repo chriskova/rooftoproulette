@@ -3695,8 +3695,11 @@ async function bigMap(r,st){
 // otherwise a street-like zigzag between the bars.
 async function simTrail(r){
   const stops=r.visits.filter(v=>v.arrivedAt!=null).map(v=>byId(v.id)).filter(Boolean);if(stops.length<2)return [];
-  try{const u="https://routing.openstreetmap.de/routed-foot/route/v1/foot/"+stops.map(p=>p.lng.toFixed(6)+","+p.lat.toFixed(6)).join(";")+"?overview=full&geometries=geojson";
-    const j=await (await fetch(u)).json(),c=j&&j.routes&&j.routes[0]&&j.routes[0].geometry.coordinates;if(c&&c.length>1)return c.map(q=>[+q[1].toFixed(5),+q[0].toFixed(5)])}catch(e){}
+  try{const out=[];let ok=0;
+    for(let i=1;i<stops.length;i++){const A=stops[i-1],B=stops[i],u=`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${A.lng.toFixed(6)},${A.lat.toFixed(6)};${B.lng.toFixed(6)},${B.lat.toFixed(6)}?overview=full&geometries=geojson`;
+      let seg=null;try{const j=await (await fetch(u)).json(),rt=j&&j.routes&&j.routes[0];if(rt&&rt.distance<Math.max(400,dist(A,B)*2.6)){seg=rt.geometry.coordinates.map(q=>[+q[1].toFixed(5),+q[0].toFixed(5)]);ok++}}catch(e){}
+      (seg||[[A.lat,A.lng],[B.lat,B.lng]]).forEach((p,k)=>{if(!(k===0&&out.length))out.push(p)})}
+    if(ok)return out}catch(e){}
   try{if(!(window.google&&google.maps&&google.maps.DirectionsService))throw 0;
     const res=await new google.maps.DirectionsService().route({origin:stops[0],destination:stops[stops.length-1],waypoints:stops.slice(1,-1).map(p=>({location:{lat:p.lat,lng:p.lng},stopover:true})),travelMode:"WALKING"});
     const path=res.routes[0].overview_path.map(p=>[+p.lat().toFixed(5),+p.lng().toFixed(5)]);if(path.length>1)return path}catch(e){}
@@ -3767,7 +3770,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if($("scar2")){const car=$("scar2"),ds=[...box.querySelectorAll("#scdots2 [data-p]")];let cur=0;
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;ds.forEach((d,j)=>d.setAttribute("aria-pressed",j===i))}},{passive:true});
     ds.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}))}
-  if(S.test&&r.simDone!==2&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=2;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
+  if(S.test&&r.simDone!==3&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
@@ -3989,9 +3992,7 @@ async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,b
     const gi=await Promise.all(parts.map(([py,ph])=>{const ccx=x0+W/2/SC,ccy=y0+(py+ph/2)/SC;return load(`https://maps.googleapis.com/maps/api/staticmap?center=${ll(ccx,ccy)}&zoom=${z}&size=${W/2}x${ph/2}&scale=2&key=${GKEY}${GST}`)}));
     if(gi.every(Boolean)){x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();gi.forEach((im,i)=>x.drawImage(im,0,parts[i][0],W,parts[i][1]));x.fillStyle="rgba(11,13,18,.18)";x.fillRect(0,0,W,HH);x.restore();x._mapSrc="google";return P}
     console.warn("story map: Google static map didn't load")}
-  const CARTO="https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png";
-  let imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(CARTO,tx,ty)),Promise.resolve(null)])));let src="carto";
-  if(imgs.filter(q=>q[0]).length<T.length*.6){imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(ESRI,tx,ty)),load(url(ESRI_LBL,tx,ty))])));src="esri"}
+  const imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(ESRI,tx,ty)),load(url(ESRI_LBL,tx,ty))])));const src="esri";
   if(imgs.filter(q=>q[0]).length<T.length*.6){console.warn("story map: tiles didn't load");return null}
   x._mapSrc=src;
   x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.imageSmoothingQuality="high";
