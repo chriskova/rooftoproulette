@@ -3661,7 +3661,8 @@ function logArrival(manual){
   const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
   // the phone was away for a while and we only just found out they're here: assume they've done their 3 minutes
   const late=!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;
-  g.visits.push({id:v.id,arrivedAt:late?now()-DWELL_MIN*60000:now(),leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
+  let at=now();if(late){const est=(g.targetAt||at)+walkMin(g.targetFrom||v,v)*60000;at=Math.min(now()-DWELL_MIN*60000,Math.max(now()-awayGap,est))}
+  g.visits.push({id:v.id,arrivedAt:at,leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
   if(S.test&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
@@ -3909,8 +3910,8 @@ async function bigMap(r,st){
 }
 // Test mode: no GPS trail from a real walk, so draw one. A real walking route from Google when it's available,
 // otherwise a street-like zigzag between the bars.
-async function simTrail(r){
-  const stops=r.visits.filter(v=>v.arrivedAt!=null).map(v=>byId(v.id)).filter(Boolean);if(stops.length<2)return [];
+async function simTrail(r,from){
+  const stops=r.visits.filter(v=>v.arrivedAt!=null).map(v=>byId(v.id)).filter(Boolean);if(from&&stops.length&&dist(from,stops[0])>120&&dist(from,stops[0])<2500)stops.unshift({lat:from.lat,lng:from.lng});if(stops.length<2)return [];
   try{const out=[];let ok=0;
     for(let i=1;i<stops.length;i++){const A=stops[i-1],B=stops[i],u=`https://routing.openstreetmap.de/routed-foot/route/v1/foot/${A.lng.toFixed(6)},${A.lat.toFixed(6)};${B.lng.toFixed(6)},${B.lat.toFixed(6)}?overview=full&geometries=geojson`;
       let seg=null;try{const j=await (await fetch(u)).json(),rt=j&&j.routes&&j.routes[0];if(rt&&rt.distance<Math.max(400,dist(A,B)*2.6)){seg=rt.geometry.coordinates.map(q=>[+q[1].toFixed(5),+q[0].toFixed(5)]);ok++}}catch(e){}
@@ -3987,7 +3988,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if($("scar2")){const car=$("scar2"),ds=[...box.querySelectorAll("#scdots2 [data-p]")];let cur=0;
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;ds.forEach((d,j)=>d.setAttribute("aria-pressed",j===i))}},{passive:true});
     ds.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}))}
-  if(S.test&&r.simDone!==3&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
+  const thin=!S.test&&!r.simDone&&st.arrived.length>=1&&(r.trail||[]).length<st.arrived.length*8;   // phone closed between bars
+  if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>go("home");
