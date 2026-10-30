@@ -1030,7 +1030,16 @@ body.camon .camloc{display:flex}
 .camloc{margin-left:auto;align-items:center;gap:5px;background:rgba(11,13,18,.62);border-radius:99px;padding:5px 11px 5px 8px;font-size:13px;font-weight:650;max-width:55%;min-width:0}
 .camloc svg{width:15px;height:15px;color:var(--amber);flex:none}.camloc i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appbar{align-items:center}
-body.camon #v-play .stage{justify-content:flex-end}
+body.camon #v-play .stage{justify-content:flex-start;order:1}
+body.camon #v-play .ptop{order:5;margin-top:4px}
+body.camon #v-play .ready{justify-content:flex-start!important}
+body.camon #v-play .camacts{margin-top:auto}
+.campop{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:2700;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:translateY(130%);transition:transform .25s cubic-bezier(.3,.75,.2,1);touch-action:pan-y}
+.campop.on{transform:none}
+.campop video{width:40px;height:56px;border-radius:9px;object-fit:cover;background:#000;flex:none}
+.campop b{flex:1;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.campop button{appearance:none;border:0;border-radius:99px;height:40px;padding:0 16px;font:700 14.5px var(--ui);background:var(--s3);color:var(--text)}
+.campop button.pri{background:var(--amber);color:var(--amber-ink)}
 .camtgt{width:100%;display:flex;gap:12px;align-items:center;background:rgba(11,13,18,.72);border-radius:18px;padding:10px;cursor:pointer}
 .ct-ph{width:76px;height:76px;border-radius:12px;object-fit:cover;flex:none}
 .ct-t{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
@@ -1044,7 +1053,7 @@ body.camon #v-play .clock{background:rgba(11,13,18,.62);border-radius:99px;paddi
 body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{display:none}body.camon #v-play .clock b{font-size:20px}body.camon #v-play .clock small{font-size:11px}
 body.camon #v-play #pMenu{background:rgba(11,13,18,.62)}
 body.camon #v-play .stage{flex:1}
-body.camon #v-play .ready{flex:1;justify-content:flex-end!important}
+body.camon #v-play .ready{flex:1}
 body.camon #v-play .reel{background:rgba(11,13,18,.62)}
 body.camon #v-play .reel .row{font-size:30px}body.camon #v-play .reel .row.long{font-size:25px}body.camon #v-play .reel .row.xlong{font-size:19px}
 body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.25),rgba(3,4,7,.5) 70%)}
@@ -3205,18 +3214,16 @@ function camSync(asked){
       CAM.busy=false;if(!(S.camOn&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
       CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
       v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
-      if(asked)toast("Camera's on. Every spin is recorded.",3000)
     }).catch(e=>{CAM.busy=false;S.camOn=false;save();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
   }
-  if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play")fitPlay();
-    if(asked)toast("Camera's off.",2000)}
+  if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play")fitPlay()}
 }
 document.addEventListener("visibilitychange",()=>camSync());
 setInterval(()=>{camSync();
   if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
   if(!CAM.rec&&spinning)camStart();
   else if(CAM.rec){if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
-    if((CAM.idleAt&&Date.now()-CAM.idleAt>3000)||Date.now()-CAM.t0>90000)camStop()}},120);
+    if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}},120);
 function camStart(){
   if(typeof MediaRecorder==="undefined"||!CAM.vid)return;
   const W=720,H=Math.round(720*innerHeight/innerWidth/2)*2,cv=document.createElement("canvas");cv.width=W;cv.height=H;CAM.cv=cv;CAM.last=[];
@@ -3225,10 +3232,21 @@ function camStart(){
   let rec;try{rec=new MediaRecorder(out,mt?{mimeType:mt,videoBitsPerSecond:6e6}:{})}catch(e){return}
   const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
   rec.onstop=()=>{const type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
-    clipPut({id:"c"+Date.now(),game:gid,at:Date.now(),type,blob}).then(()=>toast(`${I.camera}<span><b>Spin saved.</b> It's with tonight's clips.</span><button class="txtbtn amber" type="button" id="clipShare">Share</button>`,5000,t=>{const b=t.querySelector("#clipShare");if(b)b.onclick=()=>{hideToast();clipShare(blob,type)}})).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
+    const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>camSaved(blob,type,at)).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   const loop=()=>{if(CAM.rec!==rec)return;camDraw();requestAnimationFrame(loop)};loop();
 }
+let camPopT=null;
+function camSaved(blob,type,at){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
+  p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
+  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><b>Clip saved</b><button type="button" data-a="save">Save</button><button type="button" data-a="share" class="pri">Share</button>`;
+  document.body.appendChild(p);requestAnimationFrame(()=>p.classList.add("on"));
+  const bye=()=>{clearTimeout(camPopT);p.classList.remove("on");setTimeout(()=>{p.remove();URL.revokeObjectURL(u)},250)};
+  p.querySelector('[data-a="save"]').onclick=()=>{clipSave(blob,type,at);p.querySelector("b").textContent="Saved to your phone";clearTimeout(camPopT);camPopT=setTimeout(bye,2200)};
+  p.querySelector('[data-a="share"]').onclick=()=>{bye();clipShare(blob,type,at)};
+  let x0=null,dx=0;p.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;dx=0});p.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;p.style.translate=dx+"px 0"});
+  p.addEventListener("pointerup",()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>60)bye();else p.style.translate=""});
+  camPopT=setTimeout(bye,7000)}
 function camStop(){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){try{r.requestData()}catch(e){}r.stop()}}
 const svgImgs={};
 function svgImg(el,col){const k=el.outerHTML+col;if(svgImgs[k])return svgImgs[k].complete&&svgImgs[k].naturalWidth?svgImgs[k]:null;
