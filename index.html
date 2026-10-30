@@ -1049,10 +1049,21 @@ body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
 .ready{position:relative}
 .camfab.ontop{position:absolute;right:8px;top:8px;width:40px;height:40px;z-index:5;background:rgba(28,33,44,.85)}.camfab.ontop svg{width:19px;height:19px}
 body.camon .camfab.ontop{background:rgba(11,13,18,.62);border-color:transparent}
+.camtgt{flex-wrap:wrap}.camtgt .wild{flex:1 0 100%;margin:0;padding:8px 10px;font-size:13.5px;background:rgba(0,0,0,.28);border:1.5px dashed rgba(245,184,61,.75);color:rgba(255,255,255,.92)}
+body.camon .jpx.camup .jpcard-wrap{place-items:start center;padding:calc(env(safe-area-inset-top,0px) + 58px) 14px 0}
+body.camon .jpx.camup .bar.jpcard{max-width:370px;padding:14px 16px;gap:7px;border-radius:20px}
+body.camon .jpx.camup .bar.jpcard h2{font-size:32px}
+body.camon .jpx.camup .bar.jpcard p{font-size:13.5px;line-height:1.35}
+body.camon .jpx.camup .bar.jpcard .btn{height:44px;margin-top:2px}
+body.camon .jpx.camup .bar.jpcard .jv-freeze{transform:scale(.72);margin:-18px auto -20px}
+body.camon .jpx.camup .bar.jpcard .jv-short{transform:scale(.9);transform-origin:top center;margin-bottom:-8px}
+body.camon dialog.sheet{inset:calc(env(safe-area-inset-top,0px) + 10px) 10px auto 10px;width:auto;border-radius:20px;max-height:62dvh;padding-bottom:16px;animation:sheetdown .25s ease-out}
+body.camon dialog.sheet::backdrop{background:rgba(0,0,0,.25)}
+@keyframes sheetdown{from{transform:translateY(-24px);opacity:0}}
 .camswipe{display:none}
 body.camon #v-play .camswipe{display:flex;flex:1;min-height:120px;align-items:center;justify-content:center;touch-action:none;margin:0 -18px;user-select:none;-webkit-user-select:none}
 .camswipe span{font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.7);background:rgba(11,13,18,.45);border-radius:99px;padding:7px 14px;transition:opacity .2s}
-body.spinning .camswipe span{opacity:0}
+body.spinning .camswipe span,body.recording .camswipe span{opacity:0}
 .camrec{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translate(-50%,-160%);z-index:3200;display:flex;align-items:center;gap:7px;background:rgba(11,13,18,.78);border-radius:99px;padding:6px 12px 6px 10px;font:800 12.5px var(--ui);letter-spacing:.06em;color:#fff;transition:transform .22s cubic-bezier(.3,.75,.2,1);pointer-events:none}
 .camrec.on{transform:translate(-50%,0)}
 .camrec i{width:9px;height:9px;border-radius:50%;background:#FF3B30;animation:recblink 1s steps(2,start) infinite}
@@ -2964,10 +2975,10 @@ const afterReveal=fn=>setTimeout(fn,Math.max(0,revealEnd-Date.now()));
 function reveal(info,scope){
   /* Landing → card: the slot (as it looks, dark with the yellow outline) grows to the card's size and spot,
      the landed name rides along into the title position, then the card fades in over the top. */
-  const card=scope.querySelector(".bar");if(!card||!card.animate)return;
+  const card=scope.querySelector(".bar,.camtgt");if(!card||!card.animate)return;
   if(!info){card.animate([{opacity:0},{opacity:1}],{duration:220});return}
   revealEnd=Date.now()+960;
-  const h2=card.querySelector("h2"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
+  const h2=card.querySelector("h2,.ct-n"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
   const host=scope.closest("dialog")||scope.closest(".jpx,.jpdemo")||document.body;
@@ -3073,7 +3084,8 @@ function jackpotRun(box,R_,vel,j,done,ctx){
     Object.assign(e.style,{left:left+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.25+Math.random()*.5});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
-  const tx=innerWidth/2-(r.left+r.width/2),ty=innerHeight*.5-(r.top+r.height/2),SC=Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
+  const camUp=document.body.classList.contains("camon");if(camUp)ov.classList.add("camup");
+  const tx=camUp?0:innerWidth/2-(r.left+r.width/2),ty=camUp?0:innerHeight*.5-(r.top+r.height/2),SC=camUp?1:Math.max(1,Math.min(1.12,(innerWidth-20)/(r.width*1.03)));
   box.classList.add("lifting");requestAnimationFrame(()=>{box.classList.add("gold","jpbig");ov.classList.add("live")});
   box.animate([{transform:"translate(0,0) scale(1)"},{transform:`translate(${tx}px,${ty}px) scale(${SC})`}],{duration:900,easing:"cubic-bezier(.33,0,.15,1)",fill:"forwards"});
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
@@ -3221,7 +3233,7 @@ function dealerChoice(){
 function dealWild(delay){
   const g=G();if(!g||!g.wild||g.wild.shown||g.wild.dealing||g.wild.id!==g.target)return;g.wild.dealing=true;
   setTimeout(()=>{
-    const slot=$("stage")&&$("stage").querySelector(".bar .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
+    const slot=$("stage")&&$("stage").querySelector(".bar .wild,.camtgt .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
     g.wild.shown=true;g.wild.flying=true;delete g.wild.dealing;save();
     const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");
     Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
@@ -3232,10 +3244,10 @@ function dealWild(delay){
       {transform:`perspective(700px) translate(${dx*.25}px,${dy*.18}px) rotateY(-150deg) rotateZ(-8deg) scale(1.2)`,offset:.6},
       {transform:"perspective(700px) translate(0,0) rotateY(0) rotateZ(0) scale(1)",opacity:1}],{duration:calm?200:620,easing:"cubic-bezier(.45,0,.75,.6)",fill:"forwards"}).onfinish=()=>{
       fly.remove();g.wild.landed=true;delete g.wild.flying;save();slot.removeAttribute("data-pending");
-      const cur=($("stage")&&$("stage").querySelector(".bar .wild"))||slot;cur.removeAttribute("data-pending");
+      const cur=($("stage")&&$("stage").querySelector(".bar .wild,.camtgt .wild"))||slot;cur.removeAttribute("data-pending");
       sfx("thud");buzz([90,50,140]);
       cur.animate([{transform:"scale(1.12,.86)"},{transform:"scale(.96,1.05)",offset:.4},{transform:"scale(1.02,.99)",offset:.7},{transform:"none"}],{duration:420,easing:"ease-out"});
-      const card=cur.closest(".bar");if(card&&!calm)card.animate([{transform:"none"},{transform:"translate(-5px,3px) rotate(-.6deg)"},{transform:"translate(4px,-2px) rotate(.5deg)"},{transform:"translate(-3px,1px)"},{transform:"translate(2px,0)"},{transform:"none"}],{duration:380,easing:"ease-out"});
+      const card=cur.closest(".bar,.camtgt");if(card&&!calm)card.animate([{transform:"none"},{transform:"translate(-5px,3px) rotate(-.6deg)"},{transform:"translate(4px,-2px) rotate(.5deg)"},{transform:"translate(-3px,1px)"},{transform:"translate(2px,0)"},{transform:"none"}],{duration:380,easing:"ease-out"});
       cur.classList.add("fresh");setTimeout(()=>cur.classList.remove("fresh"),2200);
     };
   },delay||0);
@@ -3267,7 +3279,7 @@ setInterval(()=>{
     else{if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
       if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}}
   camLight(!!CAM.rec&&CAM.dark&&S.camLight!==false);camRecPill()},120);
-function camRecPill(){let p=$("camRec");document.body.classList.toggle("spinning",!!spinning);const on=!!CAM.rec&&CAM.spun!==false&&document.body.classList.contains("camon");
+function camRecPill(){let p=$("camRec");document.body.classList.toggle("spinning",!!spinning);document.body.classList.toggle("recording",!!CAM.rec);const on=!!CAM.rec&&CAM.spun!==false&&document.body.classList.contains("camon");
   if(!p){if(!on)return;p=document.createElement("div");p.id="camRec";p.className="camrec";p.innerHTML='<i></i><b></b>';document.body.appendChild(p)}
   p.classList.toggle("on",on);if(CAM.rec){const t=Math.floor((Date.now()-CAM.t0)/1000);p.lastChild.textContent=`REC ${Math.floor(t/60)}:${String(t%60).padStart(2,"0")}`}}
 // the build-up counts: recording starts the moment a finger lands on the reel
@@ -3314,6 +3326,47 @@ const camPh={};
 function camPhoto(url){if(!url)return null;if(camPh[url]!==undefined)return camPh[url]&&camPh[url].complete&&camPh[url].naturalWidth?camPh[url]:null;
   if(/^data:/.test(url)){const im=new Image();im.src=url;camPh[url]=im;return null}
   camPh[url]=null;fetch(url,{mode:"cors"}).then(r=>r.ok?r.blob():Promise.reject()).then(b=>createImageBitmap(b)).then(bm=>{camPh[url]={complete:true,naturalWidth:bm.width,bm}}).catch(()=>{camPh[url]=false});return null}
+function camPaint(x,k,roots){
+  const mm=new Map(),am=new Map(),cs_=new Map(),gs=el=>{let c=cs_.get(el);if(!c){c=getComputedStyle(el);cs_.set(el,c)}return c};
+  const off=n=>{let X=0,Y=0;while(n){X+=n.offsetLeft||0;Y+=n.offsetTop||0;n=n.offsetParent}return {x:X,y:Y}};
+  const mat=el=>{if(!el||el===document.documentElement||el.nodeType!==1)return new DOMMatrix();let M=mm.get(el);if(M)return M;M=mat(el.parentElement);
+    const c=gs(el),hasT=c.transform!=="none",hasX=c.translate&&c.translate!=="none",hasS=c.scale&&c.scale!=="none";
+    if(hasT||hasX||hasS){const o=off(el),org=c.transformOrigin.split(" ").map(parseFloat),ox=o.x+(org[0]||0),oy=o.y+(org[1]||0);M=M.translate(ox,oy);
+      if(hasX){const t=c.translate.split(" ").map(parseFloat);M=M.translate(t[0]||0,t[1]||0)}if(hasS){const t=c.scale.split(" ").map(parseFloat);M=M.scale(t[0],t[1]==null?t[0]:t[1])}
+      if(hasT)M=M.multiply(new DOMMatrix(c.transform));M=M.translate(-ox,-oy)}
+    mm.set(el,M);return M};
+  const alp=el=>{if(!el||el.nodeType!==1||el===document.documentElement)return 1;let a=am.get(el);if(a!=null)return a;a=alp(el.parentElement)*parseFloat(gs(el).opacity);am.set(el,a);return a};
+  const firstCol=g=>{const m=g.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}/i);return m?m[0]:null};
+  const node=el=>{const c=gs(el);if(c.display==="none"||c.visibility==="hidden")return;const A=alp(el);if(A<.02)return;
+    const M3=mat(el),o=off(el),w=el.offsetWidth||0,h=el.offsetHeight||0;
+    // 3D (a card flipping in): fit a flat transform to where its corners actually land on screen
+    let M=M3;if(!M3.is2D&&w&&h){const q0=M3.transformPoint(new DOMPoint(o.x,o.y)),q1=M3.transformPoint(new DOMPoint(o.x+w,o.y)),q2=M3.transformPoint(new DOMPoint(o.x,o.y+h)),P_=q=>({x:q.x/q.w,y:q.y/q.w}),a0=P_(q0),a1=P_(q1),a2=P_(q2);
+      const a=(a1.x-a0.x)/w,b=(a1.y-a0.y)/w,c=(a2.x-a0.x)/h,d=(a2.y-a0.y)/h;M=new DOMMatrix([a,b,c,d,a0.x-a*o.x-c*o.y,a0.y-b*o.x-d*o.y])}
+    x.save();x.setTransform(k*M.a,k*M.b,k*M.c,k*M.d,k*M.e,k*M.f);x.globalAlpha=Math.min(1,A);
+    let rad=parseFloat(c.borderTopLeftRadius)||0;if(/%/.test(c.borderTopLeftRadius))rad=Math.min(w,h)*rad/100;rad=Math.min(rad,w/2,h/2);
+    const box=()=>{x.beginPath();x.roundRect(o.x,o.y,w,h,rad)};
+    if(w&&h){const bg=c.backgroundColor;if(bg&&!/rgba\([^)]*,\s*0\)|transparent/.test(bg)){box();x.fillStyle=bg;x.fill()}
+      const bi=c.backgroundImage;if(bi&&bi!=="none"){const u=bi.match(/url\("?([^")]+)"?\)/);if(u){const im=camPhoto(u[1]);if(im){const iw=im.bm?im.bm.width:im.naturalWidth,ih=im.bm?im.bm.height:im.naturalHeight,s_=Math.max(w/iw,h/ih),sw=w/s_,sh=h/s_;x.save();box();x.clip();x.drawImage(im.bm||im,(iw-sw)/2,(ih-sh)/2,sw,sh,o.x,o.y,w,h);x.restore()}}
+        else{const fc=firstCol(bi);if(fc){box();x.fillStyle=fc;x.fill()}}}
+      const bw=parseFloat(c.borderTopWidth)||0;if(bw>0&&c.borderTopStyle!=="none"){x.beginPath();x.roundRect(o.x+bw/2,o.y+bw/2,w-bw,h-bw,Math.max(0,rad-bw/2));x.lineWidth=bw;x.strokeStyle=c.borderTopColor;x.setLineDash(c.borderTopStyle==="dashed"?[bw*3,bw*2.5]:[]);x.stroke();x.setLineDash([])}
+      const sh_=c.boxShadow&&c.boxShadow.match(/(rgba?\([^)]*\)) 0px 0px 0px ([\d.]+)px inset/);if(sh_){x.beginPath();x.roundRect(o.x+(+sh_[2])/2,o.y+(+sh_[2])/2,w-(+sh_[2]),h-(+sh_[2]),Math.max(0,rad-(+sh_[2])/2));x.lineWidth=+sh_[2];x.strokeStyle=sh_[1];x.stroke()}}
+    const tag=el.tagName;
+    if(tag==="svg"||tag==="SVG"){const im=svgImg(el,c.color),r=el.getBoundingClientRect();if(im&&r.width){const sw=parseFloat(c.width)||16,sh=parseFloat(c.height)||sw,p=new DOMMatrix([M.a,M.b,M.c,M.d,M.e,M.f]).inverse().transformPoint(new DOMPoint(r.left+r.width/2,r.top+r.height/2));x.drawImage(im,p.x-sw/2,p.y-sh/2,sw,sh)}x.restore();return}
+    if(tag==="IMG"){const im=camPhoto(el.currentSrc||el.src);if(im){const iw=im.bm?im.bm.width:im.naturalWidth,ih=im.bm?im.bm.height:im.naturalHeight,s_=Math.max(w/iw,h/ih),sw=w/s_,sh=h/s_;x.save();box();x.clip();x.drawImage(im.bm||im,(iw-sw)/2,(ih-sh)/2,sw,sh,o.x,o.y,w,h);x.restore()}x.restore();return}
+    if(tag==="VIDEO"||tag==="CANVAS"){x.restore();return}
+    if(c.overflow==="hidden"||c.overflowX==="hidden"){box();x.clip()}
+    let inv=null;
+    for(const t of el.childNodes){if(t.nodeType!==3||!t.textContent.trim())continue;
+      if(!inv)inv=new DOMMatrix([M.a,M.b,M.c,M.d,M.e,M.f]).inverse();
+      x.font=`${c.fontStyle} ${c.fontWeight} ${c.fontSize} ${c.fontFamily}`;try{x.letterSpacing=c.letterSpacing==="normal"?"0px":c.letterSpacing}catch(e){}
+      x.fillStyle=c.color;x.textAlign="center";x.textBaseline="middle";const up=c.textTransform==="uppercase";
+      const re=/\S+/g,txt=t.textContent,rg=document.createRange();let m;
+      while((m=re.exec(txt))){rg.setStart(t,m.index);rg.setEnd(t,m.index+m[0].length);const r=rg.getBoundingClientRect();if(!r.width)continue;
+        const p=inv.transformPoint(new DOMPoint(r.left+r.width/2,r.top+r.height/2));x.fillText(up?m[0].toUpperCase():m[0],p.x,p.y)}}
+    for(const ch of el.children)node(ch);
+    x.restore()};
+  roots.forEach(r=>{if(r&&r.isConnected)node(r)});
+}
 function camDraw(){
   const cv=CAM.cv,x=cv.getContext("2d"),W=cv.width,H=cv.height,k=W/innerWidth,v=CAM.vid;
   x.fillStyle="#000";x.fillRect(0,0,W,H);
@@ -3347,13 +3400,14 @@ function camDraw(){
       ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
         x.translate((r.left+r.width/2)*k,(r.top+r.height/2)*k);x.scale(k*r.width/m,k*r.height/(snap.offsetHeight||r.height));x.fillText(t,0,0);x.restore()})})});
     CAM.last=ops}
-  const ct=document.querySelector(".camtgt");
-  if(ct&&!rb){const r=ct.getBoundingClientRect(),o=parseFloat(getComputedStyle(ct).opacity)||1;x.save();x.globalAlpha=o;rrect(r,18,"rgba(11,13,18,.72)");
+  const ct=document.querySelector(".camtgt"),flying=document.querySelector(".flybox,.flyname,.wfly");
+  if(rb||!ct&&!flying)CAM.last.forEach(f=>f());
+  camPaint(x,k,[...document.querySelectorAll(".flybox,.flyname"),ct,...document.querySelectorAll(".wfly,.jpx .jpcard-wrap,.jpx .cf"),$("sheet")&&$("sheet").open?$("sheet"):null]);
+  if(false){const r=ct.getBoundingClientRect(),o=parseFloat(getComputedStyle(ct).opacity)||1;x.save();x.globalAlpha=o;rrect(r,18,"rgba(11,13,18,.72)");
     const im=ct.querySelector(".ct-ph");if(im){const p=im.getBoundingClientRect(),src=camPhoto(im.currentSrc||im.src);if(src){const w=src.bm?src.bm.width:src.naturalWidth,h=src.bm?src.bm.height:src.naturalHeight,s_=Math.max(p.width/w,p.height/h),sw=p.width/s_,sh=p.height/s_;
       x.save();x.beginPath();x.roundRect(p.left*k,p.top*k,p.width*k,p.height*k,12*k);x.clip();x.drawImage(src.bm||src,(w-sw)/2,(h-sh)/2,sw,sh,p.left*k,p.top*k,p.width*k,p.height*k);x.restore()}}
     const tx=ct.querySelector(".ct-t").getBoundingClientRect();x.save();x.beginPath();x.rect(tx.left*k,tx.top*k,tx.width*k,tx.height*k);x.clip();
     ct.querySelectorAll(".eyebrow,.ct-n,.ct-f i").forEach(e=>txt(e,{left:1}));ct.querySelectorAll(".ct-f svg").forEach(icon);x.restore();x.restore()}
-  else CAM.last.forEach(f=>f());
 }
 /* clips: kept on the phone (IndexedDB), grouped by night */
 const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
@@ -3733,9 +3787,9 @@ function renderPlay(){
     const cp0=cardPhoto(v),fs=g.freeSkips||0,coming=!cp0.cls&&phMem[v.id]===undefined&&phAllowed(v.id,"play")&&!gBad;
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
-      st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div></div>
+      st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
       <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;
-      const ct=st.querySelector(".camtgt");if(ct&&animateId===v.id&&ct.animate)ct.animate([{opacity:0,transform:"translateY(14px)"},{opacity:1,transform:"none"}],{duration:320,easing:"cubic-bezier(.3,.75,.2,1)"})}
+}
     else{const d=leaving();st.innerHTML=banner+ask+(d?`<div class="leavebar"><span>${I.clock}<span>At <b>${esc(byId(d.id).name)}</b> <i id="lvT">${mmss(now()-d.arrivedAt)}</i></span></span><button class="btn sm" type="button" id="leaveBtn">Leaving now</button></div>`:"")+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
