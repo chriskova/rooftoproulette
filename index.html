@@ -3936,7 +3936,7 @@ async function storyCard(r,look){
     const top4=listTop-265;
     if(RV==="photo"&&r.photo){const f0=top4-170,g5=x.createLinearGradient(0,f0,0,Hh);g5.addColorStop(0,"rgba(11,13,18,0)");g5.addColorStop(Math.min(.9,180/(Hh-f0)),"rgba(11,13,18,.5)");g5.addColorStop(Math.min(.95,(listTop-50-f0)/(Hh-f0)),"rgba(11,13,18,.8)");g5.addColorStop(1,"rgba(11,13,18,.93)");x.fillStyle=g5;x.fillRect(0,f0,W,Hh-f0)}
     x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=16;where(top4-94);x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
-    (cr?[[n,"Bars","roof"],[hmm(atBars),"Bar time","glass"],[hmm(st.dur),"Night","moon"]]:[[n,"Bars","roof"],[hmm(atBars),"Bar time","glass"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
+    (cr?[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(st.dur),"Night","moon"]]:[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
     x.strokeStyle="rgba(244,241,234,.12)";x.lineWidth=2;x.beginPath();x.moveTo(64,listTop-62);x.lineTo(W-64,listTop-62);x.stroke();
     list.forEach((v,i)=>{const Y=listTop+i*gap4,b=byId(v.id),ok=v.counted===true,stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
       x.fillStyle=ok?"rgba(244,241,234,.14)":"rgba(107,114,128,.2)";x.beginPath();x.arc(88,Y-12,24,0,7);x.fill();x.fillStyle=ok?INK:"#6B7280";x.font=`800 24px ${U}`;x.textAlign="center";x.fillText(String(i+1),88,Y-3);x.textAlign="left";
@@ -3952,7 +3952,7 @@ async function storyCard(r,look){
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
         if(r.barOfDay===v.id){x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const tw2=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(X+w-50,W-64-tw2),Y-34,4);x.font=`700 32px ${U}`}X+=w+14;if(i<bars.length-1){if(X+30>W-64){X=64;Y+=50}gl(X+11,Y-2);X+=36}});
       sy=Y+96}
-    (cr?[[n,"Bars","roof"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","glass"]]:[[n,"Bars","roof"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","glass"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
+    (cr?[[n,"Bars","glass"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","clock"]]:[[n,"Bars","glass"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","clock"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
     if(!FV&&r.barOfDay&&byId(r.barOfDay)){x.font=`700 34px ${U}`;x.fillStyle=INK;const bn=fit(byId(r.barOfDay).name,W-128-120);x.fillText(bn,64,1508);const ex=64+x.measureText(bn).width;
       x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-w*.3,W-64-w),1508-38);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}
@@ -3963,7 +3963,7 @@ async function storyCard(r,look){
   // stats
   const S6=cr?[[n,"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
     :[[n,"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-  const SIC=cr?["roof","route","moon","glass","hour","clock"]:["roof","route","walk","glass","bolt","span"];
+  const SIC=cr?["glass","route","moon","clock","hour","span"]:["glass","route","walk","clock","bolt","span"];
   S6.forEach(([v,l],i)=>stat(v,l,SIC[i],64+(i%3)*320,1205+Math.floor(i/3)*118,68));
   // bars, two columns, with time at each
   const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?62:72,cw=(W-128-40)/2;
