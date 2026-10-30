@@ -1,4 +1,4 @@
-const CACHE="rr-app-v53-1";
+const CACHE="rr-app-v53-2";
 const ASSETS=["./","index.html","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",

@@ -1025,7 +1025,12 @@ body.camon #v-play{background:transparent}
 body.camon #v-play #pCount{visibility:hidden}
 body.camon #v-play .tbar,body.camon #v-play #strip,body.camon #v-play #gpsNote,body.camon #v-play .poolnum,body.camon #v-play .mixline,body.camon #v-play .reelnote,body.camon #v-play .banner,body.camon #v-play .tip{display:none!important}
 body.camon #tabs{display:none!important}
-.camloc{display:none}
+.camloc{display:none}.cammark{display:none}
+body.camon #logo{display:none}
+body.camon .cammark{display:flex;align-items:baseline;gap:9px}
+.cammark b{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.04em;line-height:1;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5)}.cammark b span{color:var(--amber)}
+.cammark small{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.75);text-shadow:0 1px 6px rgba(0,0,0,.6)}
+body.camon #v-play .clock.cruise{visibility:hidden}
 body.camon .camloc{display:flex}
 .camloc{margin-left:auto;align-items:center;gap:5px;background:rgba(11,13,18,.62);border-radius:99px;padding:5px 11px 5px 8px;font-size:13px;font-weight:650;max-width:55%;min-width:0}
 .camloc svg{width:15px;height:15px;color:var(--amber);flex:none}.camloc i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1818,7 +1823,7 @@ setTimeout(done,1200)})();</script>
 </head>
 <body>
 <div class="app" id="app">
-  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="camloc" id="camLoc"></div></header>
+  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="cammark" id="camMark"><b>R<span>R</span></b><small id="camMode"></small></div><div class="camloc" id="camLoc"></div></header>
 
   <!-- INTRO (first open) -->
   <section class="view" id="v-intro" hidden>
@@ -3289,12 +3294,15 @@ function camDraw(){
   const icon=el=>{const r=el.getBoundingClientRect();if(!r.width)return;const im=svgImg(el,getComputedStyle(el).color);if(im)x.drawImage(im,r.left*k,r.top*k,r.width*k,r.height*k)};
   const rrect=(r,rad,fill,stroke,lw)=>{x.beginPath();x.roundRect(r.left*k,r.top*k,r.width*k,r.height*k,rad*k);if(fill){x.fillStyle=fill;x.fill()}if(stroke){x.strokeStyle=stroke;x.lineWidth=lw*k;x.stroke()}};
   // logo
+  const mk=$("camMark");if(mk&&mk.offsetParent){const b=mk.querySelector("b"),r=b.getBoundingClientRect(),cs=getComputedStyle(b);x.save();x.font=`${cs.fontWeight} ${parseFloat(cs.fontSize)*k}px ${cs.fontFamily}`;try{x.letterSpacing=(parseFloat(cs.letterSpacing)||0)*k+"px"}catch(e){}
+    x.textBaseline="middle";x.textAlign="left";x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=8*k;x.fillStyle=cs.color;x.fillText("R",r.left*k,(r.top+r.height/2)*k);const w=x.measureText("R").width;x.fillStyle=getComputedStyle(b.querySelector("span")).color;x.fillText("R",r.left*k+w,(r.top+r.height/2)*k);x.restore();
+    x.save();x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=6*k;txt(mk.querySelector("small"));x.restore()}
   const lg=$("logo");if(lg&&lg.offsetParent){const r=lg.getBoundingClientRect(),cs=getComputedStyle(lg),sp=lg.querySelector("span");x.save();x.font=`${cs.fontWeight} ${parseFloat(cs.fontSize)*k}px ${cs.fontFamily}`;try{x.letterSpacing=(parseFloat(cs.letterSpacing)||0)*k+"px"}catch(e){}x.textBaseline="middle";x.textAlign="left";
     x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=8*k;x.fillStyle=cs.color;const a="ROOFTOP ";x.fillText(a,r.left*k,(r.top+r.height/2)*k);x.fillStyle=getComputedStyle(sp).color;x.fillText("ROULETTE",r.left*k+x.measureText(a).width,(r.top+r.height/2)*k);x.restore()}
   // where you are
   const cl=$("camLoc");if(cl&&cl.offsetParent){const r=cl.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");cl.querySelectorAll("svg").forEach(icon);cl.querySelectorAll("i").forEach(e=>txt(e))}
   // clock pill
-  const ck=$("clock");if(ck&&ck.offsetParent){const r=ck.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");x.save();x.shadowColor="transparent";[...ck.children].forEach(c=>txt(c));x.restore()}
+  const ck=$("clock");if(ck&&ck.offsetParent&&getComputedStyle(ck).visibility!=="hidden"){const r=ck.getBoundingClientRect();rrect(r,r.height/2,"rgba(11,13,18,.62)");x.save();x.shadowColor="transparent";[...ck.children].forEach(c=>txt(c));x.restore()}
   // the reel, as it sits on screen (or as it landed, once it's gone)
   const rb=document.querySelector(".reel");
   if(rb&&rb.offsetParent!==null||rb&&rb.closest(".jpx")){const R_=rb.getBoundingClientRect(),ops=[];
@@ -3661,6 +3669,7 @@ function renderPlay(){
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
   renderClock();
+  {const cm=$("camMode");if(cm)cm.innerHTML=CR(g)?"R&amp;R":"Rush Hour"}
   {const lv=g.visits.filter(x=>!x.cant&&x.counted!==false).pop(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(lv?byId(lv.id).name:nearestSuburb(you()||g.center))}</i>`}   // the bar you're at (or just left); the suburb before the first one
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
