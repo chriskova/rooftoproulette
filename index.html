@@ -837,6 +837,27 @@ body.mapq .view{padding-bottom:12px!important}
 .bodt.on{border:2.5px solid var(--amber);box-shadow:0 0 0 4px rgba(245,184,61,.2)}
 #v-end .sc{gap:12px;padding:14px 16px}#v-end .aw-t{margin-top:2px}
 #v-end .award{padding:2px 0 0}
+#v-end .sc{gap:10px}
+.scar{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;overscroll-behavior-x:contain}.scar::-webkit-scrollbar{display:none}
+.scp{flex:0 0 100%;scroll-snap-align:center;padding:0 16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.scp.p1 .award{text-align:center}.scp.p1 .aw-t{font-size:38px;text-align:center;text-shadow:none;margin:0}.scp.p1 .aw-w{font-size:13.5px;text-align:center;opacity:1;color:var(--muted);text-shadow:none;margin-top:6px}
+.scp.p1 .scmap{flex:1;min-height:150px;margin:0;border-radius:16px}.scp.p1 #endMap{height:100%!important}
+.tri.k3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tri.k3 div{background:var(--s2);border-radius:14px;padding:10px 6px;text-align:center}
+.tri.k3 b{font-size:28px}.tri.k3 small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:var(--muted);margin-top:3px}
+.scph-h{font-family:var(--display);font-weight:800;font-size:22px;text-transform:uppercase;letter-spacing:.03em;padding-top:4px}
+.scp.p2 .sc-bars{flex:0 0 auto}
+.scp.p3{justify-content:flex-start}
+.m3{display:grid;grid-template-columns:1fr;gap:8px}
+.m3 div{display:flex;align-items:baseline;justify-content:space-between;background:var(--s2);border-radius:14px;padding:12px 14px}
+.m3 b{font-family:var(--display);font-weight:800;font-size:26px;color:var(--amber);line-height:1}.m3 small{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:var(--muted)}
+.scp.p3 .scmeta{justify-content:space-between;padding:0 2px}
+.scbig{appearance:none;flex:1;min-height:110px;border-radius:16px;overflow:hidden;position:relative;padding:0;border:0;background:var(--s2);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.scbig img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.scbig span{position:absolute;right:10px;bottom:10px;background:rgba(11,13,18,.75);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+.scbig.none{border:1.5px dashed var(--amber);background:rgba(245,184,61,.06)}.scbig svg{width:26px;height:26px;color:var(--amber)}.scbig b{font-size:15px}.scbig small{font-size:12.5px;color:var(--muted)}
+.scdots{display:flex;justify-content:center;gap:6px}
+.scdots button{appearance:none;border:0;background:var(--s2);color:var(--muted);font:700 12px var(--ui);padding:6px 11px;border-radius:999px}
+.scdots button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
 #v-end .aw-t{font-size:34px;line-height:.95;margin:0;text-align:left;text-shadow:0 2px 12px rgba(0,0,0,.6)}
 #v-end .aw-w{font-size:13px;margin-top:5px;text-align:left;color:var(--text);opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.8)}
 .sctop{position:absolute;left:0;right:0;top:0;z-index:900;display:flex;align-items:flex-start;gap:12px;padding:14px 14px 40px;background:linear-gradient(rgba(11,13,18,.92),rgba(11,13,18,.7) 55%,rgba(11,13,18,0));pointer-events:none}
@@ -3172,7 +3193,7 @@ function flyToCounter(force,lead){
    number, the door shuts, and the count racks up. Any tap skips to the end. */
 function rackUp(box,n){
   const cell=box.querySelector(".tri>div"),num=cell&&cell.querySelector("b");if(!cell||!num)return;
-  const chips=[...box.querySelectorAll(".sc-bars .br:not(.x) .nm")];
+  const chips=[...box.querySelectorAll(".sc-bars .br:not(.x) .nm")],vw=innerWidth;
   const tm=[],fx=[];let over=false;
   const at=(ms,f)=>tm.push(setTimeout(()=>{if(!over)f()},ms));
   const finish=()=>{if(over)return;over=true;tm.forEach(clearTimeout);fx.forEach(e=>e.remove());cell.style.visibility="";chips.forEach(c=>c.style.opacity="");num.textContent=n;
@@ -3192,7 +3213,8 @@ function rackUp(box,n){
     hole.animate([{opacity:0},{opacity:1}],{duration:180,fill:"forwards"})});
   const tx=cr.left+cr.width/2,ty=cr.top+cr.height/2,STEP=260;
   chips.forEach((c,i)=>at(300+i*STEP,()=>{
-    const r=c.getBoundingClientRect(),cs=getComputedStyle(c),x0=r.left+r.width/2,y0=r.top+r.height/2,dx=tx-x0,dy=ty-y0;
+    let r=c.getBoundingClientRect();const cs=getComputedStyle(c);if(r.right<0||r.left>vw){const mp=box.querySelector(".scmap").getBoundingClientRect();r={left:mp.left+mp.width*(.25+((i*37)%50)/100),width:0,top:mp.top+mp.height*.55,height:0}}
+    const x0=r.left+r.width/2,y0=r.top+r.height/2,dx=tx-x0,dy=ty-y0;
     const f=document.createElement("div");f.className="cpop";f.textContent=c.textContent;
     Object.assign(f.style,{left:x0+"px",top:y0+"px",fontFamily:cs.fontFamily,fontWeight:700,fontSize:cs.fontSize,color:"#F5B83D",textShadow:"0 0 14px rgba(245,184,61,.8)"});
     document.body.appendChild(f);fx.push(f);c.style.opacity=".3";
@@ -3616,7 +3638,9 @@ function cruiseAwards(r,st){
   if(!L.length)add(n?"Good Night Out":"Quiet One",n?`${n} rooftop${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
   return L;
 }
-function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)return;el.style.height="300px";const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top,spare=Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop);el.style.height=Math.max(230,Math.min(480,300+spare))+"px";if(eMap&&eMap.resize)eMap.resize()}
+function fitEnd(){const box=$("v-end"),car=$("scar");if(!box||!car||box.hidden)return;car.style.height="360px";
+  const br=box.getBoundingClientRect(),pb=parseFloat(getComputedStyle(box).paddingBottom)||0,kids=[...box.children].filter(k=>k.offsetParent),last=kids.length?Math.max(...kids.map(k=>k.getBoundingClientRect().bottom)):br.top;
+  car.style.height=Math.max(330,360+Math.floor(br.top+box.clientHeight-pb-last+box.scrollTop))+"px";if(eMap&&eMap.resize)eMap.resize()}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
   const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
@@ -3640,16 +3664,25 @@ function renderEnd(){
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
-      <div class="scmap"><div id="endMap"></div>
-        <div class="sctop"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div>
-          <div class="scmeta">${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}</div></div>
-          <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
-        <div class="scov">${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
-          const L=cr?[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
-            :[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-          return `<div class="tri s6">${L.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div>`})()}</div></div>
-      <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
+      ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
+        const K=cr?[[n,n===1?"Rooftop":"Rooftops"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"]]:[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance"],[hmm(atBars),"Bar time"]];
+        const M=cr?[[km(st.total),"Distance"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+          :[[hmm(moving),"Travel time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
+        const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
+        return `<div class="scar" id="scar">
+        <section class="scp p1"><div class="award"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div></div>
+          <div class="scmap"><div id="endMap"></div></div>
+          <div class="tri k3">${K.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div></section>
+        <section class="scp p2"><div class="scph-h">${n} rooftop${n===1?"":"s"} tonight</div>
+          <div class="sc-bars${st.arrived.length>6?" many":""}" style="grid-template-rows:repeat(${Math.max(1,Math.ceil(st.arrived.length/2))},auto)">${st.arrived.map((v,i)=>{const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id;return `<div class="br${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><i>${i+1}</i><span class="nmw"><span class="nm">${esc(byId(v.id).name)}</span><span class="sub"><span class="tm">${v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay))}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span></span></div>`}).join("")||'<div class="br x"><span class="nm">No visits logged</span></div>'}</div>
       ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}
+
+          ${n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:""}</section>
+        <section class="scp p3"><div class="m3">${M.map(([v,l])=>`<div><b>${v}</b><small>${l}</small></div>`).join("")}</div>
+          <div class="scmeta">${meta}</div>
+          <button class="scbig${r.photo?"":" none"}" type="button" id="scPh">${r.photo?`<img src="${r.photo}" alt=""><span>Change photo</span>`:`${I.camera}<b>Add a photo</b><small>The group, the view, whatever's in your glass</small>`}</button></section>
+        </div>
+        <div class="scdots" id="scdots"><button type="button" data-p="0" aria-pressed="true">The night</button><button type="button" data-p="1" aria-pressed="false">Bars</button><button type="button" data-p="2" aria-pressed="false">More stats</button></div>`})()}
     </div>
     <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share to story</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
     `;
@@ -3658,6 +3691,11 @@ function renderEnd(){
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=()=>{S.bodOpen=r.id;renderEnd()});
   $("scPh").onclick=()=>photoSheet(r,renderEnd);
+  {const car=$("scar"),ds=[...box.querySelectorAll("#scdots [data-p]")];let cur=S.scPanel&&S.scPanel.id===r.id?S.scPanel.p:0;
+    const mark=()=>ds.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));
+    requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
+    car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;S.scPanel={id:r.id,p:i};mark()}},{passive:true});
+    ds.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}))}
   $("doneBtn").onclick=()=>go("home");
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
@@ -3672,7 +3710,7 @@ function renderEnd(){
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean),la=all.map(p=>p.lat),lo=all.map(p=>p.lng),mn=Math.min(...la),mx=Math.max(...la),sp=Math.max(mx-mn,.004);
-    m.fitPts(all.concat([{lat:mn-sp*.8,lng:(Math.min(...lo)+Math.max(...lo))/2},{lat:mx+sp*.7,lng:(Math.min(...lo)+Math.max(...lo))/2}]),16);
+    m.fitPts(all,16);
   });
   fitEnd();
 }
@@ -3685,13 +3723,14 @@ async function storyCard(r,look){
   const plain=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
   const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
   const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
-  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",photo=look==="photo"&&r.photo;let mapP=null;
+  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,photo=(look==="photo"||full)&&r.photo;let mapP=null;
   x.fillStyle=BG;x.fillRect(0,0,W,Hh);
   // hero
-  const HH=1040;
+  const HH=full?Hh:1040;
   if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore()}
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(()=>null);if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
-  const gr=x.createLinearGradient(0,0,0,HH);gr.addColorStop(0,"rgba(11,13,18,.6)");gr.addColorStop(.16,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG);x.fillStyle=gr;x.fillRect(0,0,W,HH);
+  const gr=x.createLinearGradient(0,0,0,HH);if(full){gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.55,"rgba(11,13,18,0)");gr.addColorStop(.75,"rgba(11,13,18,.55)");gr.addColorStop(1,"rgba(11,13,18,.88)")}
+  else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
   if(stops.length>1){
@@ -3716,37 +3755,40 @@ async function storyCard(r,look){
       glass();x.fillStyle=c;x.fill();x.fillStyle=BG;x.font=`800 ${T.f*(lab.length>2?.78:.92)}px ${U}`;x.textAlign="center";x.fillText(lab,X,Y-r*1.72);x.textAlign="left"});
     x.restore()}
   if(mapP){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText("Esri, HERE, Garmin, © OpenStreetMap",W-64,1020);x.textAlign="left"}
-  // top bar
-  x.font=`800 46px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,262,1);const lw=x.measureText("ROOFTOP ").width+8;x.fillStyle=AMB;sp("ROULETTE",64+lw,262,1);
-  x.font=`700 26px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,258,3.6,"right");
+  const ICP={roof:"M3 10l9-6 9 6 M5 9v12h14V9 M10 21v-5h4v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
+    glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
+    span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
+  const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
+  const stat=(v,l,ic,X,Y,sz)=>{x.fillStyle=AMB;x.font=`800 ${sz}px ${D}`;x.fillText(fit(String(v),300),X,Y);
+    x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[ic]));x.restore();
+    x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
+  const foot=()=>{x.font=`800 44px ${D}`;x.fillStyle=INK;sp("ROOFTOP",64,1612,1.5);x.fillStyle=AMB;sp("ROULETTE",64,1656,1.5);
+    const ar=r.areas[r.areas.length-1];x.font=`700 22px ${U}`;x.fillStyle="rgba(244,241,234,.85)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1610,3,"right");
+    x.font=`600 22px ${U}`;x.fillStyle=full?"rgba(244,241,234,.7)":MUT;x.textAlign="right";x.fillText([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),W-64,1652);x.textAlign="left"};
+  if(full){
+    let f2=104;x.font=`800 ${f2}px ${D}`;const t2=aw[0].t.toUpperCase();while(x.measureText(t2).width>W-128&&f2>70){f2-=4;x.font=`800 ${f2}px ${D}`}
+    x.fillStyle=INK;x.fillText(t2,64,1330);x.font=`600 28px ${U}`;x.fillStyle="rgba(244,241,234,.85)";x.fillText(fit(plain(aw[0].why),W-128),64,1378);
+    (cr?[[n,"Rooftops","roof"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","glass"]]:[[n,"Rooftops","roof"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","glass"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,1478,64));
+    foot();return new Promise(res=>c.toBlob(res,"image/png"))}
   // award
   let fs=112;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>70){fs-=4;x.font=`800 ${fs}px ${D}`}
   x.fillStyle=INK;x.fillText(at,64,925);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,972);
   // stats
-  const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
   const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
     :[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[st.quick?hmm(st.quick.ms):"—","Fastest leg"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-  const ICP={roof:"M3 10l9-6 9 6 M5 9v12h14V9 M10 21v-5h4v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
-    glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
-    span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
   const SIC=cr?["roof","route","moon","glass","hour","clock"]:["roof","route","walk","glass","bolt","span"];
-  S6.forEach(([v,l],i)=>{const X=64+(i%3)*320,Y=1095+Math.floor(i/3)*122;x.fillStyle=AMB;x.font=`800 68px ${D}`;x.fillText(fit(String(v),300),X,Y);
-    x.save();x.translate(X,Y+12);x.scale(26/24,26/24);x.strokeStyle=AMB;x.lineWidth=2;x.lineCap="round";x.lineJoin="round";x.stroke(new Path2D(ICP[SIC[i]]));x.restore();
-    x.fillStyle=MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)});
+  S6.forEach(([v,l],i)=>stat(v,l,SIC[i],64+(i%3)*320,1095+Math.floor(i/3)*122,68));
   // bars, two columns, with time at each
-  const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?66:76,cw=(W-128-40)/2;
-  list.forEach((v,i)=>{const col=Math.floor(i/rows),row=i%rows,X=64+col*(cw+40),Y=1360+row*gap,ok=v.counted===true,b=byId(v.id),bod=r.barOfDay===v.id;
+  const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?62:72,cw=(W-128-40)/2;
+  list.forEach((v,i)=>{const col=Math.floor(i/rows),row=i%rows,X=64+col*(cw+40),Y=1340+row*gap,ok=v.counted===true,b=byId(v.id),bod=r.barOfDay===v.id;
     x.fillStyle=ok?AMB:"#4B5263";x.beginPath();x.arc(X+20,Y-9,20,0,7);x.fill();x.fillStyle=BG;x.font=`800 22px ${U}`;x.textAlign="center";x.fillText(String(i+1),X+20,Y-1);x.textAlign="left";
     const stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
     x.font=`600 25px ${U}`;const tw=x.measureText(tm).width;x.fillStyle=MUT;x.fillText(tm,X+cw-tw,Y);
     x.font=`650 28px ${U}`;x.fillStyle=bod?AMB:ok?INK:"#6B7280";const nm=fit(b.name,cw-56-tw-18);x.fillText(nm,X+54,Y);
-    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-w*.3,X+cw-w),Y-36);x.rotate(5*Math.PI/180);
+    if(bod){const ex=X+54+x.measureText(nm).width;x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.max(X+54,Math.min(ex-w*.3,X+cw-tw-14-w)),Y-36);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}});
-  if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1360+rows*gap)}
-  // footer
-  x.font=`600 24px ${U}`;x.fillStyle=MUT;const ar=r.areas[r.areas.length-1];
-  x.fillText(fit([ar==="you"?"Near you":ar,!cr&&r.radius?kmTxt(r.radius):"",dateTxt(r.startedAt)].filter(Boolean).join(" · "),600),64,1650);
-  x.textAlign="right";x.fillText("Spin. Go. Drink. Repeat.",W-64,1650);x.textAlign="left";
+  if(st.arrived.length>8){x.fillStyle=MUT;x.font=`600 24px ${U}`;x.fillText(`+${st.arrived.length-8} more`,64,1340+rows*gap)}
+  foot();
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
@@ -3781,16 +3823,16 @@ async function shareStory(r){
     bindX();$("shvAdd").onclick=()=>addPhoto(true);$("shvGal").onclick=()=>addPhoto(false);$("shvSkip").onclick=()=>cards(0)};
   async function cards(start){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
-    looks=r.photo?["photo","map"]:["map"];
+    looks=r.photo?["full","photo","map"]:["map"];
     try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e);blobs=[]}
     if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map(u=>`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}">${l==="photo"?"Photo":"Map"}</button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
+      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}">${l==="full"?"Photo":l==="photo"?"Photo + stats":"Map"}</button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
       <button class="btn" type="button" id="shvGo">${I.share} Share</button>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
-    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="photo"?"visible":"hidden"};
+    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]!=="map"?"visible":"hidden"};
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;mark()}},{passive:true});
     dots.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));
