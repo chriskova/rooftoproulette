@@ -1040,6 +1040,11 @@ body.camon #v-play .ptop{order:5;margin-top:4px}
 body.camon #v-play .ready{justify-content:flex-start!important}
 body.camon #v-play .camacts{margin-top:auto}
 body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
+.spinrow{display:flex;gap:10px;width:100%;align-items:center}.spinrow .btn{flex:1;min-width:0}
+.camfab{appearance:none;flex:none;width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--s2);color:var(--text);display:grid;place-items:center;padding:0}.camfab svg{width:22px;height:22px}
+.ready{position:relative}
+.camfab.ontop{position:absolute;right:8px;top:8px;width:40px;height:40px;z-index:5;background:rgba(28,33,44,.85)}.camfab.ontop svg{width:19px;height:19px}
+body.camon .camfab.ontop{background:rgba(11,13,18,.62);border-color:transparent}
 .camswipe{display:none}
 body.camon #v-play .camswipe{display:flex;flex:1;min-height:120px;align-items:center;justify-content:center;touch-action:none;margin:0 -18px;user-select:none;-webkit-user-select:none}
 .camswipe span{font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.7);background:rgba(11,13,18,.45);border-radius:99px;padding:7px 14px;transition:opacity .2s}
@@ -3229,20 +3234,22 @@ function dealWild(delay){
 const CAM={stream:null,vid:null,rec:null,cv:null,last:[],t0:0,idleAt:0,busy:false};
 function camSync(asked){
   const g=G(),spot=!!g&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen));
-  const want=!!S.camOn&&S.route==="play"&&!document.hidden&&!!g&&(spot||!!CAM.rec);
+  const want=!!CAM.once&&S.route==="play"&&!document.hidden&&!!g&&(spot||!!CAM.rec);
   if(want&&!CAM.stream&&!CAM.busy){
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){S.camOn=false;save();toast("This browser can't use the camera.",3500);return}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){CAM.once=false;toast("This browser can't use the camera.",3500);return}
     CAM.busy=true;
     navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1920},height:{ideal:1080}},audio:{echoCancellation:true,noiseSuppression:true}}).then(st=>{
-      CAM.busy=false;if(!(S.camOn&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
+      CAM.busy=false;if(!(CAM.once&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
       CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
       v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
-    }).catch(e=>{CAM.busy=false;S.camOn=false;save();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
+    }).catch(e=>{CAM.busy=false;CAM.once=false;if(S.route==="play"&&!spinning)renderPlay();toast(e&&e.name==="NotAllowedError"?"Camera blocked. Allow it in Chrome's site settings.":"Couldn't start the camera.",4000)});
   }
   if(!want&&CAM.stream){if(CAM.rec)camStop();CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
 }
 document.addEventListener("visibilitychange",()=>camSync());
-setInterval(()=>{camSync();
+setInterval(()=>{
+  {const g=G();if(CAM.once&&!CAM.rec&&!spinning&&g&&g.target&&!($("sheet")&&$("sheet").open)&&Date.now()-(CAM.onceAt||0)>1500)CAM.once=false}   // backed out of the re-spin: no camera next time
+  camSync();
   if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
   if(!CAM.rec&&spinning){camStart();CAM.spun=true}
   else if(CAM.rec){if(spinning)CAM.spun=true;
@@ -3288,7 +3295,7 @@ function camSaved(blob,type,at){let p=$("camPop");if(p){clearTimeout(camPopT);p.
   let x0=null,dx=0;p.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;dx=0});p.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;p.style.translate=dx+"px 0"});
   p.addEventListener("pointerup",()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>60)bye();else p.style.translate=""});
   camPopT=setTimeout(bye,7000)}
-function camStop(drop){const r=CAM.rec;CAM.rec=null;if(r&&r.state!=="inactive"){r._drop=!!drop;if(!drop)CAM.saving=true;try{r.requestData()}catch(e){}r.stop()}}
+function camStop(drop){const r=CAM.rec;CAM.rec=null;if(!drop)CAM.once=false;if(r&&r.state!=="inactive"){r._drop=!!drop;if(!drop)CAM.saving=true;try{r.requestData()}catch(e){}r.stop()}}
 const svgImgs={};
 function svgImg(el,col){const k=el.outerHTML+col;if(svgImgs[k])return svgImgs[k].complete&&svgImgs[k].naturalWidth?svgImgs[k]:null;
   const im=new Image();let src=el.outerHTML.replace(/currentColor/g,col);if(!/xmlns=/.test(src))src=src.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"');
@@ -3599,18 +3606,16 @@ function openMenu(){
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
-    <button type="button" id="mCam">${I.camera}<span>Camera ${S.camOn?"on":"off"}<small>Films each spin with your reaction</small></span></button>
-    ${S.camOn?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when it's dark</small></span></button>`:""}
-    ${S.camOn||g.clipN?`<button type="button" id="mClips">${I.play||I.camera}<span>Clips<small>${g.clipN?`${g.clipN} from tonight`:"None yet. Spin to record one"}</small></span></button>`:""}
+    <button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>
+    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from tonight</small></span></button>`:""}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
-    $("mCam").onclick=()=>{S.camOn=!S.camOn;save();closeSheet();camSync(true);if(S.camOn&&g.target&&!spinning)toast("Camera's on. It opens when you spin.",3000)};
-    if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
-    if($("mClips"))$("mClips").onclick=()=>{if(g.clipN)clipsSheet(g.id)};
+    $("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
+    if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);
     $("mEnd").onclick=()=>sheet(`<h3>${cr?"Call it a night?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the night":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
@@ -3706,7 +3711,7 @@ function renderPlay(){
       ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap two"><div class="snapt">${I.camera}<span><b>Grab a photo for your card</b></span><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div><div class="row2"><button class="btn sm" type="button" id="snapIn">${I.camera} Camera</button><button class="btn sm dark" type="button" id="snapGal">${GAL} Gallery</button></div></div>`
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
-      <button class="btn" type="button" id="spinBtn">Spin for the next one</button>
+      <div class="spinrow"><button class="btn" type="button" id="spinBtn">Spin for the next one</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>
       ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
@@ -3721,7 +3726,7 @@ function renderPlay(){
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
-      <div class="again"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
+      <div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
       ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;
@@ -3730,7 +3735,7 @@ function renderPlay(){
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
-      <div id="reelBox"></div><div class="camswipe" id="camSwipe"><span>Swipe down to spin</span></div>
+      <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span>Swipe down to spin</span></div>
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}</div>`:""}
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
@@ -3744,6 +3749,10 @@ function renderPlay(){
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
+  {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
+    if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
+    CAM.once=true;CAM.onceAt=Date.now();const sb_=$("spinBtn"),sk_=$("skipBtn");
+    if(sb_)sb_.click();else if(sk_)sk_.click();else{camSync();renderPlay()}}}
   if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
   const snapGot=f=>shrink(f,1000).then(d=>{const gg=S.game;if(!gg)return;(gg.photos=gg.photos||[]).push(d);if(gg.photos.length>3)gg.photos.shift();gg.snapAsk=1;try{save()}catch(x){gg.photos.pop();toast("Couldn't save the photo. Phone storage is full.")}if(S.route==="play")renderPlay();setTimeout(()=>{if(S.game){S.game.snapSeen=1;save();if(S.route==="play")renderPlay()}},4000)});
   if($("snapIn")){$("snapIn").onclick=()=>pickPhoto(snapGot,true);$("snapGal").onclick=()=>pickPhoto(snapGot,false)}
