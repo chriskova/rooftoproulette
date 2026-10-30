@@ -3812,7 +3812,7 @@ async function storyCard(r,look){
       if(!mapP){o.save();o.translate(W/2,HH/2);o.rotate(-12*Math.PI/180);o.strokeStyle="rgba(255,255,255,.04)";o.lineWidth=2;for(let i=-1400;i<=1400;i+=90){o.beginPath();o.moveTo(i,-1400);o.lineTo(i,1400);o.stroke();o.beginPath();o.moveTo(-1400,i);o.lineTo(1400,i);o.stroke()}o.restore()}
       o.globalCompositeOperation="destination-in";const mg=o.createLinearGradient(380,0,720,0);mg.addColorStop(0,"rgba(0,0,0,0)");mg.addColorStop(1,"rgba(0,0,0,1)");o.fillStyle=mg;o.fillRect(0,0,W,HH);
       x.drawImage(oc,0,0);x._mapSrc=o._mapSrc;sideMap=true}}
-  else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
+  else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,mapc?{cx:W/2,cy:780,bw:860,bh:900}:null).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
   const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(.32,"rgba(11,13,18,0)");gr.addColorStop(.5,"rgba(11,13,18,.72)");gr.addColorStop(.75,"rgba(11,13,18,.86)");gr.addColorStop(1,"rgba(11,13,18,.92)")}else if(rund){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.55,"rgba(11,13,18,0)");gr.addColorStop(.85,"rgba(11,13,18,.8)");gr.addColorStop(1,BG)}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
@@ -3969,7 +3969,7 @@ async function storyCard(r,look){
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
-async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:mapc?780:670,bw:860,bh:mapc?900:540};
+async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
   const SC=2,BW=AR.bw,BH=AR.bh,cy0=AR.cy,cxp=AR.cx;let z=16;
