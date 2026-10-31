@@ -2806,7 +2806,10 @@ window.addEventListener("resize",()=>fitZoneLbl());
 const mixlineHTML=g=>CR(g)?""
   :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span></div>`;
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
-function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
+function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);
+  // first spin from a rooftop: don't send them to the one they're already standing in
+  const y=!g.visits.length&&!g.target?(you()||g.startPos):null,slack=y?Math.min(y.acc||0,40):0,here_=y?VENUES.filter(v=>dist(y,v)-slack<=CHECKIN_M).map(v=>v.id):[];
+  return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&!here_.includes(v.id)&&openOK(v,t))}
 const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
 // more than a 45-minute walk: show a rough drive time with a car instead
 const travelHTML=(a,b)=>{const w=walkMin(a,b);if(w<=45)return `${I.walk} ${w} min walk`;const d=Math.round(dist(a,b)/1000*1.25/50*60)+4;return `${I.car} ${d<60?d+" min":Math.floor(d/60)+"h"+(d%60?" "+d%60+"m":"")} drive`};
