@@ -498,6 +498,11 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.hseg{margin:20px 0 12px}.hnote{text-align:center;margin-top:10px}
+.scname{appearance:none;background:none;border:0;padding:0;margin:0 0 4px;font:inherit;font-size:15px;font-weight:700;color:var(--text);display:inline-flex;align-items:center;gap:6px;cursor:pointer;max-width:100%;text-align:left}
+.scname svg{width:14px;height:14px;color:var(--muted)}
+.scname.add{border:1.5px dashed rgba(245,183,59,.55);color:var(--amber);border-radius:999px;padding:4px 11px;font-size:13px}
+
 .scmore{appearance:none;background:none;border:0;padding:2px;color:var(--muted);display:grid;place-items:center;cursor:pointer}.scmore svg{width:22px;height:22px}
 .menu button.danger,.menu button.danger svg{color:#ff6b5e}
 .cnin{width:100%;margin:6px 0 14px;font:inherit;font-size:17px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--s1);color:var(--text)}
@@ -3492,13 +3497,13 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${r.title?esc(r.title)+" · ":""}${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
+      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
           :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
-        return `<div class="schead"><div class="sct"><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
+        return `<div class="schead"><div class="sct"><button class="scname${r.title?"":" add"}" type="button" id="scName">${r.title?esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`:"+ Name this crawl"}</button><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay)),cp=cardPhoto(b);
@@ -3529,7 +3534,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
-  $("doneBtn").onclick=()=>go("home");$("scMore").onclick=()=>crawlMenu(r);
+  $("doneBtn").onclick=()=>go("home");$("scMore").onclick=()=>crawlMenu(r);$("scName").onclick=()=>nameCrawl(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
@@ -4126,7 +4131,7 @@ function renderHist(){
   if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
   const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
-  const recs=records();
+  const recs=records(),ht=S.histTab==="bests"&&recs.length?"bests":"crawls";
   b.innerHTML=`<h1 class="q">History</h1>
     <div class="grid2 hstats">
       <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></div>
@@ -4134,10 +4139,11 @@ function renderHist(){
       <div class="stat"><small>Distance</small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></div>
       <div class="stat"><small>Time at bars</small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></div>
     </div>
-    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
-    <div class="eyebrow hsec">Crawls</div>
+    <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
+    ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that night.</p>`:`
     <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
-     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`}`;
+  b.querySelectorAll("[data-ht]").forEach(x=>x.onclick=()=>{if(S.histTab===x.dataset.ht)return;S.histTab=x.dataset.ht;save();renderHist()});
   b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
   // long-press a crawl for its options
   b.querySelectorAll(".hrow").forEach(x=>x.oncontextmenu=e=>{e.preventDefault();const r=H.find(y=>y.id===x.dataset.id);if(r){buzz(15);crawlMenu(r)}});
