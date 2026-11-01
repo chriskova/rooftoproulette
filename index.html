@@ -1164,6 +1164,17 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.ngmap{height:min(30dvh,220px);border-radius:16px;overflow:hidden;margin:8px 0 4px;background:var(--s2)}
+.nglist{display:flex;flex-direction:column;margin-top:6px}
+.ngrow{appearance:none;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 2px;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.ngrow:active{background:var(--s1)}.ngrow.x{opacity:.55}
+.ngrow .t{flex:1;min-width:0}.ngrow b{display:flex;align-items:center;gap:6px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ngrow small{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}.ngrow small.ok{color:var(--green)}
+.ngrow .d{flex:none;font-size:14px;font-weight:700}
+.fv{display:inline-flex;color:#FF7A9A}.rfv{margin-left:6px;vertical-align:-1px}.fv svg{width:13px;height:13px}
+.ngtip{margin-top:8px;font-size:12.5px}
+.toggle.fav[aria-checked="true"] .sw{background:#FF7A9A}
+
 .hseg{margin:20px 0 12px}.hnote{text-align:center;margin-top:10px}
 .scname{appearance:none;background:none;border:0;padding:0;margin:0 0 4px;font:inherit;font-size:15px;font-weight:700;color:var(--text);display:inline-flex;align-items:center;gap:6px;cursor:pointer;max-width:100%;text-align:left}
 .scname svg{width:14px;height:14px;color:var(--muted)}
@@ -1819,7 +1830,7 @@ html.fl .app{visibility:hidden}
 .toast.on{transform:none;opacity:1;pointer-events:auto}
 .toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}
 .toast button{flex:none;background:none;border:1px solid rgba(245,184,61,.6);color:var(--amber);font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
-.blists{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.blists{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.blist.fav b{color:#FF7A9A}
 .nfulink{grid-column:1/-1;justify-self:start;padding:2px 2px 0;font-size:13.5px}
 .blist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--s1);border:1px solid var(--line);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font:inherit}
 .blist b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1}
@@ -2101,7 +2112,7 @@ const tabIcons={play:I.dice,bars:I.pin,hist:'<svg viewBox="0 0 24 24" fill="none
 /* ---------- state ---------- */
 let S={route:null,onboarded:false,intro:0,wiz:null,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null,tips:{},barsFilter:"all",last:{radius:1.5,len:60,newOnly:false},been:{},nfu:{},reports:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
-S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.city=S.city||"Sydney";S.reports=S.reports||[];
+S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.fav=S.fav||{};S.city=S.city||"Sydney";S.reports=S.reports||[];
 if(/[?&]test\b/.test(location.search))S.test=true;
 // Real games and test games keep separate histories. H is whichever one matches the current mode.
 const TKEY="rr-history-test";
@@ -2125,6 +2136,10 @@ function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=r
 const now=()=>Date.now()+(S.test?(S.ff||0):0);
 // a time from a game as the phone's clock showed it (test games remember how far time travel had moved the clock)
 const rt=(r,t)=>t-((r&&r.ff0)||0);
+const HRTF='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
+// a heart only for bars you've actually been to (in a game, ticked as Been, or arrived at in this one)
+const beenTo=id=>!!(collectedMap()[id]||S.been[id]||(S.game&&S.game.visits.some(v=>v.id===id&&v.arrivedAt!=null)));
+function toggleFav(id){if(S.fav[id])delete S.fav[id];else{S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id];buzz(15)}save()}
 const isEve=ts=>{const m=sydAt(ts).min;return m>=17*60||m<4*60};
 const dayWord=ts=>isEve(ts)?"tonight":"today";
 
@@ -2427,6 +2442,7 @@ function render(){
   const live=$("tPlay").querySelector(".live");if(live)live.hidden=!S.game;
   $("cta").hidden=true;$("app").classList.remove("has-cta");
   $("testFab").hidden=!S.test;
+  $("gearBar").hidden=r==="play";
   ({intro:renderIntro,ob:renderOb,home:renderHome,wiz:renderWiz,perm:renderPerm,quick:renderQuick,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
   $("v-"+r).scrollTop=0;
 }
@@ -3685,16 +3701,27 @@ function rackUp(box,n){
   at(shut+300+(n-1)*110+520,finish);
 }
 /* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
+let ngMap=null;
 function nightSheet(){
   const g=G();if(!g)return;if(!S.tips.night){S.tips.night=1;save();renderPlay()}
-  const t=now(),left=basePool().length,cr=CR(g),c=countShown(g);
-  const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
-    return `<div class="li"><span>${i+1}. ${esc(b.name)}</span><span class="small ${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</span></div>`}).join("");
-  sheet(`<h3>Your crawl</h3>
+  const t=now(),left=basePool().length,cr=CR(g),c=countShown(g),arr=g.visits.filter(v=>v.arrivedAt!=null);
+  const rows=g.visits.map((v,i)=>{const b=byId(v.id),here=v.leftAt==null&&v.arrivedAt!=null,ms=v.arrivedAt!=null?(v.leftAt||t)-v.arrivedAt:0;
+    const st=here?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
+    return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</small></span><span class="d">${v.arrivedAt!=null?hmm(ms):""}</span></button>`}).join("");
+  sheet(`<h3 tabindex="-1" autofocus style="outline:0">Your crawl</h3>
     <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
     <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
-    ${rows?`<div class="card" style="padding:4px 16px"><div class="list">${rows}</div></div>`:`<p class="note">No bars yet. Get spinning.</p>`}
-    <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>$("ngX").onclick=closeSheet);
+    ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
+    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
+    <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
+    $("ngX").onclick=closeSheet;
+    $("sheetBody").querySelectorAll(".ngrow").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v)});
+    // the bars so far, joined bar to bar. The real walking route waits for the summary.
+    if(arr.length){try{ngMap&&ngMap.remove()}catch(e){}ngMap=null;
+      makeMap("ngMap",{}).then(m=>{if(!m||!$("ngMap"))return;ngMap=m;const pts=arr.map(v=>byId(v.id));
+        if(pts.length>1)m.route(pts,true);arr.forEach((v,i)=>m.num(byId(v.id),i+1,v.counted===false,byId(v.id).name));
+        const y=you(),all=y?pts.concat([y]):pts;if(y)m.me&&m.me(y);setTimeout(()=>m.fitPts(all,16,{top:28,left:28,right:28,bottom:28}),60)})}
+  });
 }
 $("pCount").onclick=nightSheet;
 function boardHTML(names,live){
@@ -4526,17 +4553,18 @@ let bMap=null,bMapP=null,bMapFit=false;
 const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of town">${[["all","All of "+S.city],...REG().map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Pass</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?`<span class="stamp been">${dayWord(now())==="tonight"?"Tonight":"Today"}</span>`:"";
-const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
+// the Hit list is a bookmark; the heart belongs to Favourites
+const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Add to Hit list">${HEART}</button>`;
-function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${esc(v.vibe||v.area)}</small></span><span class="rt">${o.open?(y&&dist(y,v)<50000?mOrKm(dist(y,v)):""):o.temp?"Temp. closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>${stampHTML(s)}${heartBtn(v)}</div>`}
+function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${S.fav[v.id]?`<i class="fv rfv">${HRTF}</i>`:""}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${esc(v.vibe||v.area)}</small></span><span class="rt">${o.open?(y&&dist(y,v)<50000?mOrKm(dist(y,v)):""):o.temp?"Temp. closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
   root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
     document.querySelectorAll(`[data-heart="${id}"]`).forEach(x=>x.setAttribute("aria-pressed",String(!!S.want[id])));paintLists()});
 }
 function paintLists(){
-  const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length;
-  $("barsLists").innerHTML=[["want","Hit list",nWant],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
+  const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nFav=VENUES.filter(v=>S.fav[v.id]&&inCity(v)).length;
+  $("barsLists").innerHTML=[["want","Hit list",nWant],["fav","Favourites",nFav],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
 function sfield(el){if(!el||el._sf)return el;el._sf=1;
@@ -4697,12 +4725,14 @@ function barSheet(v,night){
     <div class="acts">
       ${night&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
+      ${beenTo(v.id)?`<button class="toggle fav" type="button" id="tgFav" role="switch" aria-checked="${!!S.fav[v.id]}"><span class="t"><b>Favourite</b><small>One to come back to</small></span><span class="sw"></span></button>`:""}
       <button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Save for next time</small></span><span class="sw"></span></button>
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>`,()=>{bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
-    $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
+    if($("tgFav"))$("tgFav").onclick=()=>{toggleFav(v.id);barSheet(v,night);if(S.route==="bars")renderBars();if(S.route==="hist")renderHist()};
+    $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id];delete S.fav[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
     $("tgWant").onclick=()=>{if(S.want[v.id])delete S.want[v.id];else{S.want[v.id]=1;delete S.nfu[v.id]}save();barSheet(v,night);if(S.route==="bars")renderBars()};
   });
 }
@@ -4738,9 +4768,10 @@ function listSheet(k,msg,after){
   const c=collectedMap();
   const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Hit list</b> and the wheel only spins these."},
     been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
-    nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."}}[k];
+    nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
+    fav:{t:"Favourites",d:"Bars you've been to and loved. Only bars you've visited can go here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
-  const add=id=>{if(k==="been")S.been[id]=1;else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id]}save();buzz(10)};
+  const add=id=>{if(k==="been")S.been[id]=1;else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
   // opens full height on every rooftop: the ones on your list ticked at the top, the rest underneath.
   // Tap to tick or untick. Typing narrows it. The order holds while you tick, so nothing jumps.
@@ -4754,7 +4785,7 @@ function listSheet(k,msg,after){
     const sub=v=>{const o=openState(v,t);return `${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}`};
     let order=[];
     const sortNow=()=>{const s_=fold(q.value.trim());
-      order=VENUES.filter(v=>cityOf(v)===city).filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||(s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1):0)||a.name.localeCompare(b.name))};
+      order=VENUES.filter(v=>cityOf(v)===city).filter(v=>k!=="fav"||c[v.id]||S.been[v.id]).filter(v=>!s_||fold(v.name).includes(s_)||fold(v.area).startsWith(s_)).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||(s_?(fold(a.name).startsWith(s_)?0:1)-(fold(b.name).startsWith(s_)?0:1):0)||a.name.localeCompare(b.name))};
     const paint=()=>{
       $("lsClr").hidden=!q.value;$("lsCity").textContent="· "+city;
       const also=CITIES.map(x=>({x,n:VENUES.filter(v=>cityOf(v)===x.name&&has(v.id)).length})).filter(o=>o.x.name!==city&&o.n);
@@ -4863,7 +4894,7 @@ function visitsSheet(tab){
     list=vs.map(x=>{const mm=monthTxt(x.t),head=mm!==m?`<div class="vmon"><span>${mm.split(" ")[0]}${mm.split(" ")[1]!==String(new Date(now()).getFullYear())?" "+mm.split(" ")[1]:""}</span><small>${vs.filter(y=>monthTxt(y.t)===mm).length} visits</small></div>`:"";m=mm;
       return head+`<button class="vrow" type="button" data-g="${x.r.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}${x.r.barOfDay===x.b.id?" · ★":""}</small></span><span class="d">${hmm(x.ms)}</span></button>`}).join("");
   }else{const by={};vs.forEach(x=>{const o=by[x.b.id]||(by[x.b.id]={b:x.b,n:0,ms:0,last:0});o.n++;o.ms+=x.ms;o.last=Math.max(o.last,x.t)});
-    list=Object.values(by).sort((a,b)=>b.n-a.n||b.ms-a.ms||b.last-a.last).map((o,i)=>`<button class="vrow" type="button" data-b="${o.b.id}">${vthumb(o.b)}<span class="t"><b>${esc(o.b.name)}</b><small>${esc(o.b.area)} · ${hmm(o.ms)} total · last ${dateTxt(o.last)}</small></span><span class="d n">${o.n}<i>${o.n===1?"visit":"visits"}</i></span></button>`).join("")}
+    list=Object.values(by).sort((a,b)=>b.n-a.n||b.ms-a.ms||b.last-a.last).map((o,i)=>`<button class="vrow" type="button" data-b="${o.b.id}">${vthumb(o.b)}<span class="t"><b>${esc(o.b.name)}${S.fav[o.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${esc(o.b.area)} · ${hmm(o.ms)} total · last ${dateTxt(o.last)}</small></span><span class="d n">${o.n}<i>${o.n===1?"visit":"visits"}</i></span></button>`).join("")}
   sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"} · ${hmm(atBars)} at bars</p>
     <div class="seg vseg"><button type="button" data-vt="visits" aria-pressed="${tab==="visits"}">Visits</button><button type="button" data-vt="bars" aria-pressed="${tab==="bars"}">Rooftops</button></div>
     <div class="vlist2">${list}</div>`,()=>{
@@ -4889,7 +4920,7 @@ function settingsSheet(){
       ${tg("stTest",S.test,"Test mode","No real GPS: tap the map to move. Test crawls stay off your tab")}
     </div>
     ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
-    <p class="setv">Rooftop Roulette · v58-7</p>`,()=>{
+    <p class="setv">Rooftop Roulette · v58-8</p>`,()=>{
     $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
     $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
     if($("stHow"))$("stHow").onclick=()=>{closeSheet();S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
