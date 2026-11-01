@@ -4119,7 +4119,7 @@ function listSheet(k,msg,after){
   const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Hit list</b> and the wheel only spins these."},
     been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
     nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
-    fav:{t:"Favourites",d:"Bars you've been to and loved. Only bars you've visited can go here."}}[k];
+    fav:{t:"Favourites",d:"Bars you've been to and loved. You can pick from anything on your Been list: bars visited in a game or ticked as Been."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been")S.been[id]=1;else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
