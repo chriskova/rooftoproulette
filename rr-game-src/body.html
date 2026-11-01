@@ -1,0 +1,747 @@
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- INTRO (first open) -->
+  <section class="view" id="v-intro" hidden>
+    <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
+    <div class="intro" id="introBody"></div>
+    <div class="dots" id="introDots"><i></i><i></i><i></i></div>
+    <button class="btn" id="introNext" type="button">Next</button>
+  </section>
+
+  <!-- HOME -->
+  <section class="view" id="v-home" hidden>
+    <div class="hero">
+      <div class="brand">Rooftop<br><span>Roulette</span></div>
+      <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
+      <button class="btn" id="newGame" type="button">Start a new game</button>
+    </div>
+    <button class="colcard" type="button" id="homeCol"></button>
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:12px">How it works</div>
+      <div class="steps" id="homeSteps"></div>
+    </div>
+    <div class="city">${PIN} <span><b>Sydney</b> only, for now.</span></div>
+  </section>
+
+  <!-- WIZARD -->
+  <section class="view" id="v-wiz" hidden>
+    <div class="wtop">
+      <button class="iconbtn" id="wBack" type="button" aria-label="Back"></button>
+      <div class="prog"><i id="wProg"></i></div>
+      <button class="iconbtn" id="wClose" type="button" aria-label="Close"></button>
+    </div>
+    <div id="wBody" style="display:flex;flex-direction:column;gap:16px"></div>
+  </section>
+
+  <!-- LOCATION PRIMER -->
+  <section class="view" id="v-perm" hidden>
+    <div class="wtop"><button class="iconbtn" id="pBack" type="button" aria-label="Back"></button></div>
+    <div class="intro">
+      <div class="art" id="permArt"></div>
+      <h2 class="q">Turn on location</h2>
+      <p class="sub" style="max-width:320px;margin:0">So we can find rooftops near you and log each visit in the app when you arrive. Nothing to tap mid-crawl.</p>
+      <div class="alertbox" id="permWarn" hidden style="text-align:left"></div>
+    </div>
+    <button class="btn" id="permGo" type="button">Allow location</button>
+  </section>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play" hidden>
+    <div class="ptop">
+      <div class="count" id="pCount"></div>
+      <div class="clock" id="clock"><b id="clockT">60:00</b><small id="clockL">Left</small></div>
+      <button class="iconbtn" id="pMenu" type="button" aria-label="Game menu"></button>
+    </div>
+    <div class="tbar" id="tbar"><i id="tbarI"></i></div>
+    <div class="strip" id="strip"></div>
+    <div class="stage" id="stage"></div>
+    <div class="note" id="gpsNote" style="text-align:center"></div>
+  </section>
+
+  <!-- SCORECARD -->
+  <section class="view" id="v-end" hidden></section>
+
+  <!-- ROOFTOPS TAB -->
+  <section class="view" id="v-bars" hidden>
+    <h1 class="q">Rooftops</h1>
+    <button class="colcard" type="button" id="barsCol" style="cursor:default"></button>
+    <div class="areas" id="barsAreas"></div>
+    <div class="map"><div id="barsMap" style="height:34vh;min-height:220px"></div></div>
+    <div class="seg" id="barsSeg">
+      <button type="button" data-v="all" aria-pressed="true">All</button>
+      <button type="button" data-v="todo">Not yet</button>
+      <button type="button" data-v="done">Collected</button>
+      <button type="button" data-v="open">Open now</button>
+    </div>
+    <div class="list card" id="barsList" style="padding:4px 16px"></div>
+  </section>
+
+  <!-- HISTORY TAB -->
+  <section class="view" id="v-hist" hidden></section>
+
+  <nav class="tabs" id="tabs" role="tablist">
+    <button type="button" role="tab" data-tab="play" id="tPlay"></button>
+    <button type="button" role="tab" data-tab="bars" id="tBars"></button>
+    <button type="button" role="tab" data-tab="hist" id="tHist"></button>
+  </nav>
+  <div class="cta" id="cta" hidden></div>
+  <button class="testfab" id="testFab" type="button" hidden>TEST</button>
+</div>
+
+<dialog class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script>
+"use strict";
+const VENUES=__VENUES__;
+const AREAS=[
+ {name:"Town Hall",d:"City centre",lat:-33.8732,lng:151.2069},
+ {name:"Martin Place",d:"City centre",lat:-33.8678,lng:151.2113},
+ {name:"Wynyard",d:"City north",lat:-33.8659,lng:151.2059},
+ {name:"Circular Quay",d:"Harbour & The Rocks",lat:-33.8614,lng:151.2108},
+ {name:"Barangaroo",d:"Waterfront",lat:-33.8630,lng:151.2017},
+ {name:"Central",d:"City south",lat:-33.8832,lng:151.2063},
+ {name:"Darlinghurst",d:"Oxford St",lat:-33.8790,lng:151.2183},
+ {name:"Surry Hills",d:"Crown St",lat:-33.8857,lng:151.2122},
+ {name:"Potts Point",d:"Kings Cross",lat:-33.8730,lng:151.2235},
+ {name:"Pyrmont",d:"Darling Harbour",lat:-33.8705,lng:151.1947},
+ {name:"North Sydney",d:"North shore",lat:-33.8403,lng:151.2073},
+ {name:"Newtown",d:"Inner west",lat:-33.8978,lng:151.1793},
+ {name:"Manly",d:"Northern beaches",lat:-33.7988,lng:151.2860},
+ {name:"Coogee",d:"Eastern beaches",lat:-33.9205,lng:151.2560}
+];
+const RADII=[1,1.5,2],LENS=[60,120],SKIPS=3;
+const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=5,SOON=30,FINAL=30;
+const KEY="rr-app-v3",HKEY="rr-history-v2";
+const $=id=>document.getElementById(id);
+const byId=id=>VENUES.find(v=>v.id===id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- icons ---------- */
+const I={
+ dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+ trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+ x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+ nav:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>',
+ go:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12M12 6l6 6-6 6"/><path d="M20 5v14"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+ target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>',
+ city:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 21h18M5 21V8l5-3v16M10 21V3l6 3v15M16 21v-9l3 2v7"/></svg>',
+ ring:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+ bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+ hour2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5h5"/></svg>',
+ move:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+ flag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+ help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg>',
+ bulb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.5.4.9 1 .9 1.6V16h5.2v-.5c0-.6.4-1.2.9-1.6A6 6 0 0 0 12 3z"/></svg>',
+ glass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-7 8z"/><path d="M12 12v8M8 20h8"/></svg>',
+ camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+ sound:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg>',
+ sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>'
+};
+const tabIcons={play:I.dice,bars:I.pin,hist:I.trophy};
+
+/* ---------- state ---------- */
+let S={route:null,onboarded:false,intro:0,wiz:null,test:false,ff:0,fake:null,sound:true,game:null,lastEnd:null,tips:{},barsFilter:"all",last:{radius:1.5,len:60,newOnly:false},been:{},nfu:{},reports:[]};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
+S.been=S.been||{};S.nfu=S.nfu||{};S.reports=S.reports||[];
+if(/[?&]test\b/.test(location.search))S.test=true;
+let H=[];try{H=JSON.parse(localStorage.getItem(HKEY)||"[]")||[]}catch(e){H=[]}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H))}catch(e){for(let i=H.length-1;i>=0;i--){if(H[i].photo){H[i].photo=null;try{localStorage.setItem(HKEY,JSON.stringify(H));return}catch(_){}}}}};
+const now=()=>Date.now()+(S.ff||0);
+
+/* ---------- time + hours ---------- */
+function sydAt(ts){
+  const p=new Intl.DateTimeFormat("en-AU",{timeZone:"Australia/Sydney",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date(ts));
+  const g=t=>p.find(x=>x.type===t).value;let h=+g("hour");if(h===24)h=0;
+  return {day:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].indexOf(g("weekday")),min:h*60+ +g("minute")};
+}
+function openState(v,ts){
+  const {day,min}=sydAt(ts),prev=(day+6)%7;
+  for(const [o,c] of v.hours[prev]) if(c>1440&&min<c-1440) return {open:true,until:c-1440-min,closeAt:c-1440};
+  let opens=null;
+  for(const [o,c] of v.hours[day]){if(min>=o&&min<c) return {open:true,until:c-min,closeAt:c%1440};if(o>min&&(opens===null||o<opens))opens=o}
+  return {open:false,opens};
+}
+const openOK=(v,ts)=>{const s=openState(v,ts);return s.open&&s.until>SOON};
+function clock12(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60;const ap=h>=12?"pm":"am";h=h%12||12;return h+(mm?":"+String(mm).padStart(2,"0"):"")+ap}
+const mmss=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const hmm=ms=>{if(ms<60000)return "<1 min";const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m":m+" min"};
+const dateTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
+
+/* ---------- geo ---------- */
+function dist(a,b){const R=6371000,t=x=>x*Math.PI/180;return 2*R*Math.asin(Math.sqrt(Math.sin(t(b.lat-a.lat)/2)**2+Math.cos(t(a.lat))*Math.cos(t(b.lat))*Math.sin(t(b.lng-a.lng)/2)**2))}
+const km=m=>(m/1000).toFixed(m<10000?1:0)+" km";
+const mOrKm=m=>m<1000?Math.round(m/10)*10+" m":km(m);
+const nearestArea=p=>AREAS.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0].name;
+
+/* ---------- collection ---------- */
+function collectedMap(){ // id -> first date collected in a game
+  const m={};
+  const add=(v,t)=>{if(v.counted===true&&(!m[v.id]||t<m[v.id]))m[v.id]=t};
+  H.forEach(r=>r.visits.forEach(v=>add(v,v.arrivedAt)));
+  if(S.game)S.game.visits.forEach(v=>add(v,v.arrivedAt));
+  return m;
+}
+const listed=()=>VENUES.filter(v=>!S.nfu[v.id]);
+function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
+const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
+/* bars that can come up in a spin: not hidden, optionally only new */
+function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!S.nfu[v.id]&&(!newOnly||isNew(v.id,c)))}
+const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
+const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
+function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){s+=dist(list[i],list[j]);n++}return s/n}
+
+/* ---------- location ---------- */
+let here=null,watchId=null,locErr=null;
+const you=()=>S.test?(S.fake||null):here;
+function startWatch(){
+  if(S.test||watchId!==null||!navigator.geolocation)return;
+  watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;onLocation()},
+    e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+}
+function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+function getOnce(){
+  if(S.test)return Promise.resolve(S.fake||{lat:-33.8732,lng:151.2069});
+  return new Promise((res,rej)=>{
+    if(!navigator.geolocation)return rej({code:-1});
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+  });
+}
+async function permState(){if(S.test)return "granted";try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
+
+/* ---------- sound + haptics ---------- */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tick(p){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type="square";o.frequency.setValueAtTime(p,t);f.type="bandpass";f.frequency.value=p;f.Q.value=4;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.003);g.gain.exponentialRampToValueAtTime(.0001,t+.035);o.connect(f).connect(g).connect(a.destination);o.start(t);o.stop(t+.05)}
+function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(a.destination);[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+
+/* ---------- maps ---------- */
+const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+const ESRI_LBL="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+const OSM="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+let tilesFallback=false;
+function mkMap(el,opts){
+  const m=L.map(el,Object.assign({zoomControl:false,attributionControl:true,zoomSnap:.25},opts||{}));
+  const useOSM=()=>{m.eachLayer(l=>{if(l instanceof L.TileLayer)m.removeLayer(l)});m.getContainer().classList.add("osm");L.tileLayer(OSM,{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(m)};
+  if(tilesFallback){useOSM();return m}
+  let errs=0;
+  const base=L.tileLayer(ESRI,{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxNativeZoom:16,maxZoom:19});
+  base.on("tileerror",()=>{if(++errs===3){tilesFallback=true;useOSM()}});
+  base.addTo(m);
+  L.tileLayer(ESRI_LBL,{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
+  return m;
+}
+const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="off"?[13,13]:[20,20]});
+const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num${x?" x":""}">${n}</div>`,iconSize:[24,24]});
+const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
+const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
+function fitZone(m,c,r,extra){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.12);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,{animate:false,padding:[8,8]})}
+function setMe(m){const y=you();if(!m)return;if(!y){if(m._me){m.removeLayer(m._me);m._me=null}return}
+  if(!m._me)m._me=L.marker([y.lat,y.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else m._me.setLatLng([y.lat,y.lng])}
+
+/* ---------- router ---------- */
+const VIEWS=["intro","home","wiz","perm","play","end","bars","hist"];
+function go(route){S.route=route;save();render()}
+function render(){
+  if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
+  if(!S.route)S.route=S.game?"play":"home";
+  if(S.route==="play"&&!S.game)S.route="home";
+  const r=S.route;
+  VIEWS.forEach(v=>$("v-"+v).hidden=v!==r);
+  const tabbed=["home","play","end","bars","hist"].includes(r);
+  $("tabs").hidden=!tabbed;$("app").classList.toggle("has-tabs",tabbed);
+  const tab=r==="bars"?"bars":r==="hist"?"hist":"play";
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
+  const live=$("tPlay").querySelector(".live");if(live)live.hidden=!S.game;
+  $("cta").hidden=true;$("app").classList.remove("has-cta");
+  $("testFab").hidden=!S.test;
+  ({intro:renderIntro,home:renderHome,wiz:renderWiz,perm:renderPerm,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
+  $("v-"+r).scrollTop=0;
+}
+function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
+[["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","History"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`+(k==="play"?'<i class="live" hidden></i>':"");$(id).dataset.tab=k});
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(k==="play")go(S.game?"play":"home");else go(k)};
+
+/* ---------- shared copy ---------- */
+const RULES=[
+ ["Spin","You get a random rooftop in your zone. The clock starts on your first spin."],
+ ["Get there","Walk it, run it, train it, Uber it. Your visit is logged in the app when you arrive."],
+ ["Stay 5 minutes and it counts","Then spin again. Leave sooner and we'll ask if it should count."]
+];
+const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}</span><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join("");
+
+/* ---------- intro ---------- */
+const SLIDES=[
+ {art:I.dice,h:"Let the wheel pick",p:"One tap and Rooftop Roulette picks your next rooftop bar. No debating, no planning."},
+ {art:I.go,h:"Get there however you like",p:"Walk it, run it, train it, Uber it. Your visit is logged in the app the moment you arrive."},
+ {art:I.clock,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
+];
+function renderIntro(){
+  const i=S.intro||0,s=SLIDES[i];
+  $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0">${s.p}</p>`;
+  [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
+  $("introNext").textContent=i<SLIDES.length-1?"Next":"Set up my first game";
+  $("introSkip").hidden=i===SLIDES.length-1;
+}
+$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;startWizard()}};
+$("introSkip").onclick=()=>{S.onboarded=true;go("home")};
+(()=>{let x0=null;$("v-intro").addEventListener("touchstart",e=>x0=e.touches[0].clientX,{passive:true});$("v-intro").addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const i=S.intro||0;if(dx<0&&i<SLIDES.length-1)S.intro=i+1;else if(dx>0&&i>0)S.intro=i-1;else return;save();renderIntro()})})();
+
+/* ---------- home ---------- */
+function colCardHTML(){
+  const st=colStats(),pct=st.total?st.col/st.total*100:0;
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="eyebrow">Your collection</div><div class="big" style="margin-top:6px">${st.col}<span> / ${st.total}</span></div></div>
+    <span class="small" style="text-align:right">${st.col?"rooftops collected":"Every rooftop you hit<br>gets stamped here"}</span></div>
+    <div class="pbar"><i style="width:${pct}%"></i></div>`;
+}
+function renderHome(){
+  $("homeCol").innerHTML=colCardHTML()+`<span class="txtbtn amber" style="padding:0">See all rooftops →</span>`;
+  $("homeSteps").innerHTML=stepsHTML(RULES);
+}
+$("homeCol").onclick=()=>go("bars");
+$("newGame").onclick=()=>startWizard();
+document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
+
+/* ---------- wizard: where → how long → zone size → your zone ---------- */
+function startWizard(){S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
+const recRadius=len=>len===60?1:1.5;
+let zMap=null;
+function renderWiz(){
+  const w=S.wiz;if(!w){go("home");return}
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;
+  $("wProg").style.width=((w.step+1)/4*100)+"%";
+  const body=$("wBody"),t=now();
+  if(w.step===0){
+    const areas=AREAS.map(a=>({a,n:openIn(a,1.5,t).length})).filter(o=>o.n>=3).sort((x,y)=>y.n-x.n);
+    const meSel=w.start&&w.start.type==="me";
+    body.innerHTML=`<div><h1 class="q">Where are you starting?</h1><p class="sub" style="margin:6px 0 0">Your zone is drawn around this spot. Sydney only, for now.</p></div>
+      <div class="opts">
+        <button class="opt" type="button" id="optMe" role="radio" aria-checked="${meSel}"><span class="ic">${I.target}</span><span class="t"><b>Near me</b><small>${meSel?esc(w.start.sub):"Use where you are now"}</small></span>${meSel?`<span class="n"><b>${w.start.n}</b><small>open</small></span>`:""}</button>
+        <div class="note" id="meNote" hidden></div>
+        <div class="eyebrow" style="margin-top:8px">Or choose an area</div>
+        ${areas.map(o=>`<button class="opt" type="button" role="radio" data-a="${esc(o.a.name)}" aria-checked="${!!(w.start&&w.start.type==="area"&&w.start.name===o.a.name)}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${esc(o.a.d)}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}
+      </div>`;
+    body.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=AREAS.find(x=>x.name===b.dataset.a);w.start={type:"area",name:a.name,lat:a.lat,lng:a.lng};w.meNote=null;save();renderWiz()});
+    $("optMe").onclick=async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()};
+    if(w.meNote){$("meNote").hidden=false;$("meNote").innerHTML=w.meNote}
+    cta(`<button class="btn" id="wNext" type="button" ${w.start?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
+  }
+  if(w.step===1){
+    body.innerHTML=`<div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
+      <div class="opts">
+        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.bolt}</span><span class="t"><b>1 hour</b><small>Quick-fire. Keep it moving.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.hour2}</span><span class="t"><b>2 hours</b><small>More time, more rooftops. Room for a slower drink.</small></span></button>
+      </div>`;
+    body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;w.radius=null;save();renderWiz()});
+    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=2;save();renderWiz()});
+  }
+  if(w.step===2){
+    const c=w.start,rec=recRadius(w.len);if(w.radius==null)w.radius=rec;
+    const rows=RADII.map(r=>{const o=openIn(c,r,t);return {r,n:o.length,hop:avgHop(o)}});
+    const desc={1:"Bars close together. Quickest to get around.",1.5:"A good mix of choice and distance.",2:"The most choice. Longer trips between bars."};
+    body.innerHTML=`<div><h1 class="q">How big is your zone?</h1><p class="sub" style="margin:6px 0 0">Every spin lands inside a circle around ${esc(c.type==="me"?"you":c.name)}.</p></div>
+      <div class="opts">${rows.map(o=>`<button class="opt" type="button" role="radio" data-r="${o.r}" aria-checked="${w.radius===o.r}" ${o.n?"":"disabled"}><span class="ic">${I.ring}</span><span class="t"><b>${o.r} km${o.r===rec?`<span class="tag">Best for ${w.len===60?"1 hour":"2 hours"}</span>`:""}</b><small>${desc[o.r]}${o.hop?`<br>Average trip between bars: ${km(o.hop)}`:""}</small></span><span class="n"><b>${o.n}</b><small>open</small></span></button>`).join("")}</div>`;
+    body.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{w.radius=+b.dataset.r;save();renderWiz()});
+    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>$("wNext").onclick=()=>{w.step=3;save();renderWiz()});
+  }
+  if(w.step===3){
+    const c=w.start,open=openIn(c,w.radius,t,w.newOnly),all=playable(inCircle(c,w.radius),false);
+    const newCount=openIn(c,w.radius,t,true).length,col=collectedMap();
+    const hasHistory=Object.keys(col).length||Object.keys(S.been).length;
+    body.innerHTML=`<div><h1 class="q">Your zone</h1><p class="sub" style="margin:6px 0 0"><b style="color:var(--amber)">${open.length} rooftops</b> ready to spin within ${w.radius} km of ${esc(c.type==="me"?"you":c.name)}.</p></div>
+      <div class="map"><div id="zoneMap" style="height:280px"></div></div>
+      <div class="chips"><button class="chip" type="button" data-s="0">${esc(c.type==="me"?"Near me":c.name)}</button><button class="chip" type="button" data-s="1">${w.len===60?"1 hour":"2 hours"}</button><button class="chip" type="button" data-s="2">${w.radius} km</button></div>
+      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${w.newOnly}"><span class="t"><b>New rooftops only</b><small>Skip bars you've collected or been to before. ${newCount} new in this zone.</small></span><span class="sw"></span></button>`:""}
+      <div class="card"><div class="eyebrow" style="margin-bottom:12px">How it works</div><div class="steps">${stepsHTML(RULES)}</div></div>
+      <p class="note">Fancy a change of scenery mid-game? You can move your zone once.</p>
+      <details class="card"><summary class="small" style="cursor:pointer">See the ${open.length} rooftops in this zone</summary><div class="zlist" style="margin-top:6px">${open.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<div class="li"><span>${esc(v.name)}${isNew(v.id,col)?"":' <span class="small">· been</span>'}</span><span class="r">til ${clock12(openState(v,t).closeAt)}</span></div>`).join("")}</div></details>`;
+    body.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
+    if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();renderWiz()};
+    cta(`<button class="btn" id="wStart" type="button" ${open.length?"":"disabled"}>Let's go</button>`,()=>$("wStart").onclick=tryStart);
+    requestAnimationFrame(()=>{
+      if(zMap){zMap.remove();zMap=null}
+      zMap=mkMap("zoneMap");zoneCircle(c,w.radius).addTo(zMap);
+      const openIds=new Set(open.map(v=>v.id));
+      all.forEach(v=>L.marker([v.lat,v.lng],{icon:pinIcon(openIds.has(v.id)?"":"off")}).addTo(zMap).bindTooltip(v.name,{direction:"top",offset:[0,-10]}));
+      setMe(zMap);fitZone(zMap,c,w.radius);
+    });
+  }
+}
+async function useMe(){
+  const w=S.wiz;
+  try{
+    const p=await getOnce();const n=openIn(p,1.5).length;
+    if(n<2){const near=VENUES.slice().sort((a,b)=>dist(p,a)-dist(p,b))[0];w.start=null;w.meNote=`Not enough rooftops open around you right now (the nearest is ${km(dist(p,near))} away). Pick an area below and start from there.`}
+    else{w.start={type:"me",name:"you",lat:p.lat,lng:p.lng,n,sub:"Near "+nearestArea(p)};w.meNote=null}
+  }catch(e){w.meNote="Couldn't find you just now. Pick an area below instead."}
+  save();go("wiz");
+}
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
+$("wClose").onclick=()=>{S.wiz=null;go("home")};
+async function tryStart(){
+  ac();
+  if(!S.test){const st=await permState();if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
+  let pos;try{pos=await getOnce()}catch(e){S.permNext="start";go("perm");return}
+  const w=S.wiz;
+  S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
+  S.game={id:"g"+now(),started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,center:{lat:w.start.lat,lng:w.start.lng},
+    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestArea(w.start)],moves:[],voluntaryUsed:false,skips:SKIPS,
+    visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
+  S.wiz=null;save();startWatch();buzz(30);go("play");
+}
+
+/* ---------- permission primer ---------- */
+function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;$("permWarn").hidden=true}
+$("pBack").onclick=()=>go("wiz");
+$("permGo").onclick=async()=>{
+  try{await getOnce();
+    if(S.permNext==="wiz-me"){S.route="wiz";useMe()}
+    else if(S.permNext==="start"){S.route="wiz";save();tryStart()}
+    else go("wiz");
+  }catch(e){
+    const w=$("permWarn");w.hidden=false;
+    w.innerHTML=e&&e.code===1?`<b>Location is blocked.</b> In Chrome, tap the icon left of the web address → <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.`
+      :`<b>Couldn't find you.</b> Make sure Location is switched on for your phone, then try again.`;
+  }
+};
+
+/* ---------- game logic ---------- */
+const G=()=>S.game;
+const atVisit=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null)};
+const visited=id=>G().visits.some(v=>v.id===id);
+const remaining=()=>{const g=G();return g.started?g.endsAt-now():g.len*60000};
+function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
+function basePool(){const g=G(),t=now(),skipped=g.skipped||[];return playable(inCircle(g.center,g.radius),g.newOnly).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&openOK(v,t))}
+const tripMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80)); // walking pace, used only to keep final-stretch spins reachable
+function spinPool(){
+  const g=G(),rem=remaining()/60000,from=fromPoint();let P=basePool();
+  if(g.started&&rem<=FINAL){
+    const reach=P.filter(v=>tripMin(from,v)<=rem/2);if(reach.length)return {pool:reach,final:true};
+    let cand=P.length?P:playable(VENUES,false).filter(v=>!visited(v.id)&&v.id!==g.target&&openState(v,now()).open);
+    return {pool:cand.slice().sort((a,b)=>dist(from,a)-dist(from,b)).slice(0,3),final:true};
+  }
+  return {pool:P,final:false};
+}
+function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=t;if(reason==="end")v.counted=v.arrivedAt<G().endsAt;else v.counted=(t-v.arrivedAt)/60000>=DWELL_MIN?true:null}
+function onLocation(){
+  const g=G();[bMap,zMap].forEach(setMe);
+  if(!g||g.ended)return;
+  const y=you();if(!y)return;
+  const slack=Math.min(y.acc||0,40),a=atVisit();
+  if(a){if(dist(y,byId(a.id))-slack>LEAVE_M){closeVisit(a,now(),"walk");save()}}
+  else if(g.target&&g.started&&now()<g.endsAt){
+    const v=byId(g.target);
+    if(dist(y,v)-slack<=CHECKIN_M){g.visits.push({id:v.id,arrivedAt:now(),leftAt:null,counted:undefined});g.target=null;ding();buzz([60,40,60]);save()}
+  }
+  if(S.route==="play")renderPlay();
+}
+let spinning=false,animateId=null;
+function doSpin(){
+  const g=G();if(spinning||!g||g.ended)return;ac();
+  if(!g.started){const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  const a=atVisit();if(a)closeVisit(a,now(),"spin");
+  const {pool:P}=spinPool();
+  if(!P.length){save();renderPlay();openMove(true);return}
+  const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();
+  spinning=true;seen("spin");renderPlay();
+  const names=inCircle(g.center,g.radius).map(v=>v.name);if(names.length<5)VENUES.forEach(v=>names.push(v.name));
+  $("stage").innerHTML=`<div class="reel"><div class="reelrow" id="r0"></div><div class="reelrow mid" id="r1"></div><div class="reelrow" id="r2"></div></div>`;
+  const fast=18+Math.floor(Math.random()*4),delays=[...Array(fast).fill(42),58,78,104,136,176,220];
+  let i=0,k=Math.floor(Math.random()*names.length);
+  const step=()=>{
+    const last=i===delays.length-1,nm=j=>names[(k+j+names.length)%names.length];
+    $("r0").textContent=nm(-1);$("r1").textContent=last?pick.name:nm(0);$("r2").textContent=nm(1);
+    ["r0","r1","r2"].forEach(r=>{const el=$(r);el.classList.remove("flip");void el.offsetWidth;el.classList.add("flip")});
+    tick(last?900:600+Math.random()*80);buzz(5);k++;
+    if(!last){setTimeout(step,delays[i++]);return}
+    setTimeout(()=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};animateId=pick.id;spinning=false;ding();buzz(40);save();renderPlay();onLocation()},420);
+  };
+  step();
+}
+function answer(idx,yes){const v=G()&&G().visits[idx];if(v){v.counted=!!yes;save();renderPlay()}}
+
+/* ---------- tips (first game only) ---------- */
+const seen=k=>{if(!S.tips[k]){S.tips[k]=1;save()}};
+function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow?"":" nob"}" data-tip="${k}">${I.bulb}<span>${text}</span><button type="button">Got it</button></div>`}
+document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
+
+/* ---------- sheets ---------- */
+function sheet(html,bind){$("sheetBody").innerHTML=html;if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
+$("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
+
+function moveOptions(){
+  const g=G(),t=now(),from=fromPoint();
+  return AREAS.filter(a=>dist(a,g.center)>500).map(a=>({a,open:playable(inCircle(a,g.radius),g.newOnly).filter(v=>!visited(v.id)&&openOK(v,t)).length,m:dist(from,a)}))
+   .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
+}
+function openMove(free){
+  const g=G(),opts=moveOptions();
+  sheet(`<h3>${free?"Your zone's run dry":"Change of scenery?"}</h3>
+    <p class="note">${free?"Fewer than two bars are left open here, so this move is free.":"You can move your zone once per game. Spins land in the new area from now on."}</p>
+    <div class="opts">${opts.length?opts.map((o,i)=>`<button class="opt" type="button" data-i="${i}"><span class="ic">${I.city}</span><span class="t"><b>${esc(o.a.name)}</b><small>${mOrKm(o.m)} away</small></span><span class="n"><b>${o.open}</b><small>open</small></span></button>`).join(""):`<p class="note">No other area has two or more rooftops open right now.</p>`}</div>
+    <button class="btn dark" type="button" id="mvX" style="margin-top:14px">${free?"Close":"Stay here"}</button>`,()=>{
+    $("sheetBody").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>{const o=opts[+b.dataset.i];g.center={lat:o.a.lat,lng:o.a.lng};g.areas.push(o.a.name);g.moves.push({at:now(),to:o.a.name,free:!!free});if(!free)g.voluntaryUsed=true;save();closeSheet();renderPlay()});
+    $("mvX").onclick=closeSheet;
+  });
+}
+function howSheet(){
+  sheet(`<h3>How it works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+    ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin. In the last 30 minutes, spins only pick bars you can reach in time."],
+    ["Get there","However you like. Your visit is logged in the app when you arrive (within about 75 m of the bar)."],
+    ["Stay 5 minutes and it counts","Leave sooner and we'll ask if it should count. Your last bar counts if you get there before zero."],
+    ["Skips",`You get ${SKIPS} skips a game. If a bar's closed, tap "Closed?" for a free re-spin.`],
+    ["Change of scenery","Move your zone once per game from the ⋯ menu. If your zone runs dry, the move is free."]])}</div>
+    <button class="btn dark" type="button" style="margin-top:16px" id="howX">Got it</button>`,()=>$("howX").onclick=closeSheet);
+}
+function openMenu(){
+  const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
+  sheet(`<h3>Game menu</h3><div class="menu">
+    <button type="button" id="mMove" ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
+    <button type="button" id="mHow">${I.help}<span>How it works</span></button>
+    <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>End game<small>${g.started?"Your scorecard is saved":"Nothing's been played yet"}</small></span></button>
+  </div>`,()=>{
+    $("mMove").onclick=()=>{if(canMove)openMove(free)};
+    $("mHow").onclick=howSheet;
+    $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
+    $("mEnd").onclick=()=>sheet(`<h3>End the game now?</h3><p class="note">${g.started?"Your scorecard is saved. The bar you're at counts if your visit's been logged.":"You haven't spun yet, so nothing will be saved."}</p>
+      <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End game</button><button class="btn dark" type="button" id="eN">Keep playing</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
+  });
+}
+$("pMenu").onclick=openMenu;
+
+function endGame(at){
+  const g=G();if(!g||g.ended)return;
+  if(!g.started){S.game=null;save();stopWatch();go("home");return}
+  const before=collectedMap();
+  const t=Math.min(at,g.endsAt),early=at<g.endsAt;if(early)g.endsAt=at;
+  const a=atVisit();if(a)closeVisit(a,t,"end");
+  if(g.target){const y=you(),v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
+  g.ended=true;g.endedAt=t;g.early=early;
+  const rec=JSON.parse(JSON.stringify(g));
+  // which bars were new to the collection in this game
+  const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
+  rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
+  H.unshift(rec);saveH();
+  S.lastEnd=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");
+}
+
+/* ---------- play render ---------- */
+function renderPlay(){
+  const g=G();if(!g)return;
+  $("pMenu").innerHTML=I.more;
+  const counted=g.visits.filter(v=>v.counted===true).length;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b>`;
+  $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
+  $("strip").hidden=!g.visits.length;
+  renderClock();
+  if(spinning)return;
+  const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
+  const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
+  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
+  let banner="";
+  if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
+  if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> From now on, spins only pick bars you can reach before the clock runs out.</div>`;
+  if(a){
+    const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
+    st.innerHTML=ask+`<div class="bar at${animateId===("at:"+a.id)?" anim":""}"><span class="eyebrow">You're here${nw?'<span class="newpill">New</span>':""}</span><h2>${esc(v.name)}</h2>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
+      <div class="small" style="text-align:right">${ok?'<b style="color:var(--green)">Counts ✓</b>':`Counts at ${DWELL_MIN}:00`}${o.open?"<br>Closes "+clock12(o.closeAt):""}</div></div></div>
+      ${tip("atbar","Visit logged. Stay 5 minutes and it counts, then spin when you're ready to move on.",false)}
+      <button class="btn" type="button" id="spinBtn">Spin for the next one</button>`;
+    if(animateId===("at:"+a.id))animateId=null;
+  }else if(g.target){
+    const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id);
+    st.innerHTML=banner+ask+`<div class="bar${animateId===v.id?" anim":""}"><span class="eyebrow">Next rooftop${nw?'<span class="newpill" style="background:rgba(36,24,3,.15);color:var(--amber-ink)">New</span>':""}</span><h2>${esc(v.name)}</h2>
+      <div class="facts"><span>${I.pin} ${mOrKm(dm)} away</span>${o.open?`<span>${I.clock} Open til ${clock12(o.closeAt)}</span>`:""}</div>
+      <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      ${tip("enroute","Your visit is logged when you arrive. Nothing to tap.",true)}
+      <div class="links"><button class="txtbtn" type="button" id="skipBtn" ${g.skips>0?"":"disabled style='opacity:.4'"}>Skip · ${g.skips} left</button><button class="txtbtn" type="button" id="closedBtn">Closed?</button></div>`;
+    if(animateId===v.id)animateId=null;
+  }else{
+    st.innerHTML=banner+ask+`<button class="wheel" type="button" id="spinBtn">SPIN<small>${g.visits.length?"for the next rooftop":"for your first rooftop"}</small></button>
+      ${g.started?"":`<p class="note" style="text-align:center;margin:0">The clock starts when you spin.</p>`}`;
+  }
+  const sb=$("spinBtn");if(sb)sb.onclick=doSpin;
+  if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
+  const sk=$("skipBtn");if(sk)sk.onclick=()=>{if(g.skips<=0)return;sheet(`<h3>Skip ${esc(byId(g.target).name)}?</h3><p class="note">You'll get a different rooftop. ${g.skips-1} skip${g.skips-1===1?"":"s"} left after this.</p><div class="acts"><button class="btn" type="button" id="sY">Skip it</button><button class="btn dark" type="button" id="sN">Keep it</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();g.skips--;(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();doSpin()}})};
+  const cl=$("closedBtn");if(cl)cl.onclick=()=>sheet(`<h3>Is ${esc(byId(g.target).name)} closed?</h3><p class="note">You'll get a free re-spin, no skip used. We'll note it so the opening hours get checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, it's closed</button><button class="btn dark" type="button" id="cN">Cancel</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();S.reports.push({id:g.target,at:now()});(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();doSpin()}});
+  const gn=$("gpsNote");
+  if(S.test)gn.textContent="";
+  else if(locErr===1)gn.innerHTML=`<b style="color:var(--red)">Location is off.</b> Visits won't be logged until you turn it back on.`;
+  else if(!here)gn.textContent="Finding you…";
+  else gn.textContent=g.target?"Keep the app open on the way so your visit logs the moment you arrive.":"";
+}
+function renderClock(){
+  const g=G();if(!g)return;const r=remaining(),tot=g.len*60000;
+  $("clockT").textContent=mmss(r);
+  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL").textContent="Starts on spin";return}
+  const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
+  $("clock").className="clock"+(red?" red":warn?" warn":"");
+  $("tbar").className="tbar"+(red?" red":warn?" warn":"");
+  $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
+  $("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
+}
+
+/* ---------- stats + scorecard ---------- */
+function stats(r){
+  const arrived=r.visits.filter(v=>v.arrivedAt!=null),counted=arrived.filter(v=>v.counted===true);
+  const pts=[r.startPos,...arrived.map(v=>byId(v.id))];let total=0,legs=[];
+  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i-1],d})}
+  const longest=legs.slice().sort((a,b)=>b.d-a.d)[0];let quick=null;
+  for(let i=1;i<arrived.length;i++){const p=arrived[i-1];if(p.leftAt!=null){const dt=arrived[i].arrivedAt-p.leftAt;if(dt>=0&&(!quick||dt<quick.ms))quick={ms:dt,from:p.id,to:arrived[i].id}}}
+  return {arrived,counted,total,longest,quick,dur:(r.endedAt||r.endsAt)-r.startedAt,last:arrived[arrived.length-1]};
+}
+let eMap=null;
+function renderEnd(){
+  const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
+  const st=stats(r),n=st.counted.length,lenTxt=r.len===60?"1 hour":"2 hours",nw=(r.newIds||[]).length;
+  const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
+  let close="—";
+  if(r.missed){const v=byId(r.missed.id);close=r.missed.m!=null?`${esc(v.name)} was ${mOrKm(r.missed.m)} away at zero`:`Didn't make it to ${esc(v.name)}`}
+  else if(st.last&&!r.early)close=`Into ${esc(byId(st.last.id).name)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`;
+  const areas=r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ");
+  const cs=colStats();
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">${lenTxt} · ${dateTxt(r.startedAt)}</span><button class="txtbtn amber" type="button" id="doneBtn">Done</button></div>
+    <div class="score"><div class="big">${n}</div><div class="lbl">rooftop${n===1?"":"s"}</div>
+      <div class="small" style="margin-top:8px">${esc(areas)} · ${km(st.total)} · ${hmm(st.dur)}</div>
+      ${nw?`<div class="pb">+${nw} new to your collection</div>`:""}</div>
+    ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
+    <div class="map"><div id="endMap" style="height:240px"></div></div>
+    <div class="card" style="padding:4px 16px"><div class="list">${st.arrived.map((v,i)=>`<div class="li"><span>${i+1}. ${esc(byId(v.id).name)}${(r.newIds||[]).includes(v.id)?'<span class="newpill">New</span>':""}${v.counted===false?' <span class="small">(didn\'t count)</span>':v.counted===null?' <span class="small">(?)</span>':""}</span><span class="r">${v.leftAt?hmm(v.leftAt-v.arrivedAt):"—"}</span></div>`).join("")||`<div class="li"><span class="small">No visits logged this time.</span></div>`}</div></div>
+    <div class="grid2">
+      <div class="stat"><small>Pace</small><b>${n?Math.round(st.dur/60000/n)+" min a bar":"—"}</b></div>
+      <div class="stat"><small>Longest trip</small><b>${st.longest?km(st.longest.d):"—"}</b></div>
+      <div class="stat w"><small>Quickest turnaround</small><b>${st.quick?`${hmm(st.quick.ms)} · ${esc(byId(st.quick.from).name)} → ${esc(byId(st.quick.to).name)}`:"—"}</b></div>
+      <div class="stat w"><small>Closest call</small><b>${close}</b></div>
+    </div>
+    <button class="colcard" type="button" id="endCol">${colCardHTML()}</button>
+    ${n?`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Bar of the day</div><div class="chips">${st.counted.map(v=>`<button class="chip" type="button" data-b="${v.id}" aria-pressed="${r.barOfDay===v.id}">${esc(byId(v.id).name)}</button>`).join("")}</div></div>`:""}
+    <div class="card photo"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="eyebrow">Crew photo</div><div class="small">Saved on this phone only</div></div>
+      <label class="btn sm dark" style="width:auto;padding:0 14px">${I.camera} ${r.photo?"Replace":"Add"}<input type="file" accept="image/*" id="photoIn" hidden></label></div>${r.photo?`<img src="${r.photo}" alt="Crew photo">`:""}</div>
+    <button class="btn" type="button" id="againBtn">Play again</button>`;
+  box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
+    const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
+    r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
+  box.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{r.barOfDay=r.barOfDay===b.dataset.b?null:b.dataset.b;saveH();renderEnd()});
+  $("photoIn").onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)shrink(f,900).then(d=>{r.photo=d;saveH();renderEnd()})};
+  $("againBtn").onclick=()=>startWizard();
+  $("doneBtn").onclick=()=>go("home");
+  $("endCol").onclick=()=>go("bars");
+  requestAnimationFrame(()=>{
+    if(eMap){eMap.remove();eMap=null}eMap=mkMap("endMap");
+    const pts=[[r.startPos.lat,r.startPos.lng],...st.arrived.map(v=>{const b=byId(v.id);return [b.lat,b.lng]})];
+    L.polyline(pts,{color:"#F5B83D",weight:3.5,opacity:.95,dashArray:"2 8",lineCap:"round"}).addTo(eMap);
+    L.marker(pts[0],{icon:meIcon}).addTo(eMap);
+    st.arrived.forEach((v,i)=>{const b=byId(v.id);L.marker([b.lat,b.lng],{icon:numIcon(i+1,v.counted!==true)}).addTo(eMap).bindTooltip(b.name)});
+    eMap.fitBounds(L.latLngBounds(pts).pad(.3),{animate:false,maxZoom:16});
+  });
+}
+function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.createObjectURL(file);img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.72))};img.src=u})}
+
+/* ---------- rooftops tab (collection) ---------- */
+let bMap=null,bMarks=[];
+function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
+const stampHTML=s=>s==="col"?'<span class="stamp col">Collected</span>':s==="been"?'<span class="stamp been">Been</span>':s==="nfu"?'<span class="stamp nfu">Not for us</span>':"";
+function renderBars(){
+  const t=now(),y=you(),f=S.barsFilter||"all",c=collectedMap();
+  $("barsCol").innerHTML=colCardHTML()+`<div class="small">${(()=>{const s=colStats();const h=VENUES.length-s.total;return `${s.been} been before${h?` · ${h} hidden as not for us`:""}`})()}</div>`;
+  // per-area progress
+  const groups={};listed().forEach(v=>{(groups[v.area]=groups[v.area]||[]).push(v)});
+  $("barsAreas").innerHTML=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([a,l])=>{const d=l.filter(v=>c[v.id]).length;return `<div class="achip${d===l.length?" done":""}"><b>${esc(a)}</b><small>${d} of ${l.length}</small><div class="pbar"><i style="width:${d/l.length*100}%"></i></div></div>`}).join("");
+  $("barsSeg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===f)));
+  let list=VENUES.map(v=>({v,o:openState(v,t),s:barStatus(v,c)}));
+  if(f==="todo")list=list.filter(x=>x.s===""||x.s==="been");
+  if(f==="done")list=list.filter(x=>x.s==="col");
+  if(f==="open")list=list.filter(x=>x.o.open&&x.s!=="nfu");
+  list.sort((a,b)=>(a.s==="nfu")-(b.s==="nfu")||(y?dist(y,a.v)-dist(y,b.v):a.v.name.localeCompare(b.v.name)));
+  $("barsList").innerHTML=list.map(({v,o,s})=>`<button class="barrow${s==="nfu"?" hid":""}" type="button" data-id="${v.id}"><span class="dot${o.open?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${stampHTML(s)}</button>`).join("")||`<div class="empty" style="padding:24px">${f==="done"?"Nothing collected yet. Play a game and every bar that counts gets stamped here.":"Nothing here right now."}</div>`;
+  $("barsList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.id)));
+  requestAnimationFrame(()=>{
+    if(!bMap){bMap=mkMap("barsMap",{center:[-33.8732,151.2069],zoom:13.25});bMap.on("click",e=>{if(S.test){S.fake={lat:e.latlng.lat,lng:e.latlng.lng};save();onLocation();renderBars()}})}else bMap.invalidateSize();
+    bMarks.forEach(m=>bMap.removeLayer(m));bMarks=[];
+    list.forEach(({v,o,s})=>{if(s==="nfu")return;bMarks.push(L.marker([v.lat,v.lng],{icon:pinIcon(s==="col"?"done":o.open?"":"off")}).addTo(bMap).on("click",()=>barSheet(v)))});
+    setMe(bMap);
+  });
+}
+$("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.barsFilter=b.dataset.v;save();renderBars()};
+function barSheet(v){
+  const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
+  if(bMap&&S.route==="bars")bMap.setView([v.lat,v.lng],16,{animate:true});
+  sheet(`<h3>${esc(v.name)}</h3><p class="note">${esc(v.area)} · ${esc(v.address)}${y?" · "+mOrKm(dist(y,v))+" away":""}</p>
+    <p class="note" style="color:${o.open?"var(--green)":"var(--muted)"};margin-top:6px">${o.open?"Open now til "+clock12(o.closeAt):o.opens!=null?"Opens today at "+clock12(o.opens):"Closed today"}</p>
+    ${c[v.id]?`<p class="note" style="margin-top:6px"><span class="stamp col">Collected</span> on ${dateTxt(c[v.id])}</p>`:""}
+    <div class="acts">
+      ${c[v.id]?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>I've been here before</b><small>"New rooftops only" games will skip it.</small></span><span class="sw"></span></button>`}
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Not for us</b><small>Never comes up in a spin, and doesn't count toward your collection.</small></span><span class="sw"></span></button>
+      <a class="btn dark" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Open in Google Maps</a>
+    </div>`,()=>{
+    if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
+    $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else S.nfu[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
+  });
+}
+
+/* ---------- history tab ---------- */
+function renderHist(){
+  const b=$("v-hist");
+  if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
+  const games=H.length,bars=H.reduce((s,r)=>s+stats(r).counted.length,0),dist_=H.reduce((s,r)=>s+stats(r).total,0);
+  const best=l=>{const x=H.filter(r=>r.len===l).map(r=>stats(r).counted.length);return x.length?Math.max(...x):null};
+  b.innerHTML=`<h1 class="q">History</h1>
+    <div class="grid2"><div class="stat"><small>Crawls</small><b style="font-size:24px">${games}</b></div><div class="stat"><small>Rooftop visits</small><b style="font-size:24px">${bars}</b></div>
+    <div class="stat"><small>Distance covered</small><b>${km(dist_)}</b></div><div class="stat"><small>Most in one game</small><b>${LENS.filter(l=>best(l)!=null).map(l=>`${best(l)} <span class="small">(${l/60} hr)</span>`).join(" · ")}</b></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px">${H.map(r=>{const st=stats(r),bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(r.startedAt)} · ${r.len===60?"1 hr":"2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+  b.querySelectorAll(".hrow").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+}
+
+/* ---------- test mode ---------- */
+$("testFab").onclick=()=>{
+  const s=sydAt(now());
+  sheet(`<h3>Test mode</h3><p class="note">Sydney ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"][s.day]} ${clock12(s.min)}${S.ff?` (+${Math.round(S.ff/60000)} min)`:""}. Tap the Rooftops map to move yourself.</p>
+   <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
+   ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div>`:""}
+   <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
+   <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
+    $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
+    if($("tA"))$("tA").onclick=()=>{const g=G();if(!g||!g.target)return;const v=byId(g.target);S.fake={lat:v.lat+.0002,lng:v.lng};save();closeSheet();animateId="at:"+v.id;onLocation()};
+    if($("tL"))$("tL").onclick=()=>{const y=you();if(!y)return;S.fake={lat:y.lat+.0018,lng:y.lng};save();closeSheet();onLocation()};
+    $("tJ").onchange=e=>{const v=byId(e.target.value);if(v){S.fake={lat:v.lat,lng:v.lng};save();closeSheet();onLocation();render()}};
+    $("tR").onclick=()=>{S.ff=0;save();closeSheet();render()};
+    $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};save();closeSheet();go("intro")};
+    $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY)}catch(e){}location.reload()};
+    $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
+  });
+};
+
+/* ---------- loop ---------- */
+function loop(){
+  const g=G();
+  if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
+  if(S.route==="play"&&g){
+    renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=mmss(now()-a.arrivedAt);
+    if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
+    if(!spinning&&g.started&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
+  }
+}
+setInterval(loop,1000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){loop();if(S.route==="play")renderPlay()}});
+
+/* ---------- boot ---------- */
+if(S.game&&!S.test)startWatch();
+if(!S.test&&navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{[zMap,bMap].forEach(setMe);if(S.route==="bars")renderBars()}).catch(()=>{})});
+render();loop();
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
