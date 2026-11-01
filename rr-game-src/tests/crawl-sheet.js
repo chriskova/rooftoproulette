@@ -10,7 +10,12 @@ await p.evaluate(()=>{S.onboarded=true;S.sound=false;{const d=new Date();d.setHo
  save();go('play')});
 await p.waitForTimeout(1200);await p.evaluate(()=>nightSheet());await p.waitForTimeout(1800);await p.screenshot({path:'out/c1.png'});
 await p.click('.ngrow[data-b="smoke-bar"]');await p.waitForTimeout(600);await p.screenshot({path:'out/c2.png'});
-await p.click('#tgFav');await p.waitForTimeout(300);console.log('fav',await p.evaluate(()=>JSON.stringify(Object.keys(S.fav))));
+await p.click('#bsFav');await p.waitForTimeout(500);await p.screenshot({path:'out/c2b.png'});
+console.log('hit list shown on visited bar',!!(await p.$('#tgWant')),'fact shown',!!(await p.$('.wordis')),'back',!!(await p.$('#bsBack')));
+await p.click('#bsBack');await p.waitForTimeout(1200);
+// tap pin 1 on the mini map
+await p.evaluate(()=>{const n=[...document.querySelectorAll('#ngMap .num')].find(x=>x.textContent.trim()==='1');(n.closest('.leaflet-marker-icon')||n).click()});await p.waitForTimeout(600);
+console.log('pin opened',await p.evaluate(()=>document.querySelector('#sheetBody h2')&&document.querySelector('#sheetBody h2').textContent));console.log('fav',await p.evaluate(()=>JSON.stringify(Object.keys(S.fav))));
 await p.evaluate(()=>{closeSheet();nightSheet()});await p.waitForTimeout(1200);
 console.log('heart in list',await p.evaluate(()=>!!document.querySelector('.ngrow[data-b="smoke-bar"] .fv')));
 await p.evaluate(()=>{closeSheet();go('bars')});await p.waitForTimeout(800);await p.screenshot({path:'out/c3.png'});
