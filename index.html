@@ -1159,6 +1159,11 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.scmore{appearance:none;background:none;border:0;padding:2px;color:var(--muted);display:grid;place-items:center;cursor:pointer}.scmore svg{width:22px;height:22px}
+.menu button.danger,.menu button.danger svg{color:#ff6b5e}
+.cnin{width:100%;margin:6px 0 14px;font:inherit;font-size:17px;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--s1);color:var(--text)}
+.tundo{appearance:none;background:none;border:0;color:var(--amber);font:inherit;font-weight:800;margin-left:10px;padding:2px 4px;cursor:pointer}
+
 .hstats .stat{display:flex;flex-direction:column}.hstats .stat b{font-size:24px}
 .hstats .stat em{font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat.tap{appearance:none;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:transform .12s,border-color .12s}.stat.tap:active{transform:scale(.97)}
@@ -4153,7 +4158,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
+      <div class="sc-top"><span class="eyebrow">${r.title?esc(r.title)+" · ":""}${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -4190,7 +4195,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
-  $("doneBtn").onclick=()=>go("home");
+  $("doneBtn").onclick=()=>go("home");$("scMore").onclick=()=>crawlMenu(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
@@ -4798,10 +4803,45 @@ function renderHist(){
     ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
     <div class="eyebrow hsec">Crawls</div>
     <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
-     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(rt(r,r.startedAt))} · ${r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
   b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+  // long-press a crawl for its options
+  b.querySelectorAll(".hrow").forEach(x=>x.oncontextmenu=e=>{e.preventDefault();const r=H.find(y=>y.id===x.dataset.id);if(r){buzz(15);crawlMenu(r)}});
   $("hVisits").onclick=()=>visitsSheet();
 }
+// ⋯ on a crawl: name it, move it between real and test, or delete it
+const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg>',
+  bin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>'};
+function crawlMenu(r){const n=stats(r).counted.length,isT=!!r.test;
+  sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} bar${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
+    <div class="menu">
+      <button type="button" id="cmName">${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows in History instead of the date</small></span></button>
+      <button type="button" id="cmMove">${IC.swap}<span>${isT?"Move to real crawls":"Move to test crawls"}<small>${isT?"Counts in your History and stats":"Takes it out of your History and stats"}</small></span></button>
+      <button type="button" id="cmDel" class="danger">${IC.bin}<span>Delete crawl<small>You can undo for a few seconds</small></span></button>
+    </div>`,()=>{
+    $("cmName").onclick=()=>nameCrawl(r);
+    $("cmMove").onclick=()=>{closeSheet();moveCrawl(r)};
+    $("cmDel").onclick=()=>{closeSheet();deleteCrawl(r)};
+  })}
+function nameCrawl(r){
+  sheet(`<h3>Name this crawl</h3><input id="cnIn" class="cnin" type="text" maxlength="40" placeholder="${esc(dateTxt(rt(r,r.startedAt)))}" value="${esc(r.title||"")}" enterkeyhint="done" autocomplete="off">
+    <div class="acts"><button class="btn" type="button" id="cnSave">Save</button>${r.title?`<button class="btn line" type="button" id="cnClr">Remove name</button>`:""}</div>`,()=>{
+    const q=$("cnIn");setTimeout(()=>{q.focus();q.select()},120);
+    const done=v=>{v=(v||"").trim();if(v)r.title=v;else delete r.title;saveH();closeSheet();render()};
+    $("cnSave").onclick=()=>done(q.value);q.onkeydown=e=>{if(e.key==="Enter")done(q.value)};
+    if($("cnClr"))$("cnClr").onclick=()=>done("");
+  })}
+function moveCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
+  H.splice(i,1);saveH();r.test=!r.test;const k=r.test?TKEY:HKEY,L=readH(k);L.push(r);L.sort((a,b)=>b.startedAt-a.startedAt);writeH(k,L);
+  if(S.lastEnd===r.id){S.lastEnd=null;save()}
+  go("hist");toast(`Moved to ${r.test?"test":"real"} crawls <button type="button" class="tundo">Undo</button>`,6000,t=>{t.querySelector(".tundo").onclick=()=>{
+    const L2=readH(k).filter(x=>x.id!==r.id);writeH(k,L2);r.test=!r.test;H.splice(Math.min(i,H.length),0,r);saveH();hideToast();render()}})}
+function deleteCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
+  H.splice(i,1);saveH();if(S.lastEnd===r.id){S.lastEnd=null;save()}let undone=false;
+  go("hist");toast(`Crawl deleted <button type="button" class="tundo">Undo</button>`,6000,t=>{t.querySelector(".tundo").onclick=()=>{undone=true;H.splice(Math.min(i,H.length),0,r);saveH();hideToast();render()}});
+  // its clips go once the undo has passed
+  setTimeout(()=>{if(undone||H.some(x=>x.id===r.id))return;clipList(r.id).then(L=>L.forEach(c=>clipDel(c.id))).catch(()=>{})},7000)}
 // Every bar visit, like a ride history: by month, newest first. Second tab ranks the rooftops.
 function visitsSheet(tab){
   tab=tab||"visits";const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0);
