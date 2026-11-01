@@ -2088,10 +2088,28 @@ let S={route:null,onboarded:false,intro:0,wiz:null,test:false,ff:0,fake:null,sou
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s)}catch(e){}
 S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.city=S.city||"Sydney";S.reports=S.reports||[];
 if(/[?&]test\b/.test(location.search))S.test=true;
-let H=[];try{H=JSON.parse(localStorage.getItem(HKEY)||"[]")||[]}catch(e){H=[]}
+// Real games and test games keep separate histories. H is whichever one matches the current mode.
+const TKEY="rr-history-test";
+const readH=k=>{try{return JSON.parse(localStorage.getItem(k)||"[]")||[]}catch(e){return []}};
+const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(let i=L.length-1;i>=0;i--){if(L[i].photo){L[i].photo=null;try{localStorage.setItem(k,JSON.stringify(L));return}catch(_){}}}}};
+// One-off: before the split, test games went into the real history. A test game is one marked as test, dated in the
+// future (time travel), or whose start point is exactly the first bar (test mode puts it there; real GPS never lands on it).
+(()=>{try{if(localStorage.getItem("rr-hsplit"))return;const all=readH(HKEY),real=[],test=[];
+  all.forEach(r=>{const a=(r.visits||[]).find(v=>v.arrivedAt!=null),b=a&&byId(a.id),sp=r.startPos;
+    const atBar=b&&sp&&Math.abs(sp.lat-b.lat)<1e-5&&Math.abs(sp.lng-b.lng)<1e-5;
+    if(r.test||r.startedAt>Date.now()+3600000||atBar){r.test=true;test.push(r)}else{r.test=false;real.push(r)}});
+  if(test.length){writeH(TKEY,test.concat(readH(TKEY)).sort((x,y)=>y.startedAt-x.startedAt));writeH(HKEY,real)}
+  localStorage.setItem("rr-hsplit","1")}catch(e){}})();
+let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
+function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const saveH=()=>{try{localStorage.setItem(HKEY,JSON.stringify(H))}catch(e){for(let i=H.length-1;i>=0;i--){if(H[i].photo){H[i].photo=null;try{localStorage.setItem(HKEY,JSON.stringify(H));return}catch(_){}}}}};
-const now=()=>Date.now()+(S.ff||0);
+const saveH=()=>writeH(hTest?TKEY:HKEY,H);
+// a game goes into the history of the mode it was played in
+function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
+// Time travel only ever applies in test mode, so a real game always runs on the phone's clock.
+const now=()=>Date.now()+(S.test?(S.ff||0):0);
+// a time from a game as the phone's clock showed it (test games remember how far time travel had moved the clock)
+const rt=(r,t)=>t-((r&&r.ff0)||0);
 
 /* ---------- time + hours ---------- */
 const TZ={Sydney:"Australia/Sydney",Brisbane:"Australia/Brisbane",Melbourne:"Australia/Melbourne",Perth:"Australia/Perth"};
@@ -2377,6 +2395,7 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
 function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
+  syncH();
   if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
   if(!S.route)S.route=S.game?"play":"home";
@@ -2633,7 +2652,7 @@ async function startCruise(){
   let pos;try{pos=await getOnce()}catch(e){S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"||f.type==="spot"?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
   const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
-  S.game={id:"g"+now(),city:S.city,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"?f.lat:null,lng:f.type==="spot"?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
+  S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"?f.lat:null,lng:f.type==="spot"?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:{lat:pos.lat,lng:pos.lng},areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
   S.quick=null;save();startWatch();buzz(30);go("play");
@@ -2765,7 +2784,7 @@ async function tryStart(){
   let pos;try{pos=await getOnce()}catch(e){S.permNext="start";go("perm");return}
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
-  S.game={id:"g"+now(),city:S.city,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
+  S.game={id:"g"+now(),city:S.city,test:!!S.test,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
     startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   S.wiz=null;save();startWatch();buzz(30);go("play");
@@ -3065,7 +3084,7 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
-  if(!g.started){prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  if(!g.started){prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
   if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
@@ -3815,7 +3834,7 @@ function endGame(at){
   // which bars were new to the collection in this game
   const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
   rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
-  H.unshift(rec);saveH();
+  rec.test=!!(g.test||S.test);pushH(rec);syncH();
   S.lastEnd=g.id;S.rackEnd=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");confetti();
 }
 
@@ -4134,7 +4153,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(r.startedAt)}</span><span class="sctr"><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
+      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -4270,11 +4289,11 @@ async function storyCard(r,look){
     if(WV==="foot"){const ar=r.areas[r.areas.length-1],pl=(ar==="you"?"Near you":ar).toUpperCase();x.font=`700 23px ${U}`;x.letterSpacing="2.4px";const pw=x.measureText(pl).width;x.letterSpacing="0px";
       x.save();x.translate(W-64-pw-34,1786);x.scale(26/24,26/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
       x.fillStyle="rgba(244,241,234,.9)";sp(pl,W-64,1808,2.4,"right");
-      x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"),dateTxt(r.startedAt)].join(" · "),W-64,1840);x.textAlign="left";return}
+      x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"),dateTxt(rt(r,r.startedAt))].join(" · "),W-64,1840);x.textAlign="left";return}
     x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1832,3,"right")};
   // where and when, with a pin, sitting just above the title
   const WV=window.WHERE_VAR||"foot";
-  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(r.startedAt)].filter(Boolean).join(" · ").toUpperCase();
+  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
     x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
     x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
@@ -4641,7 +4660,7 @@ function renderBars(){
 $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
   if(b.hasAttribute("data-open")){S.barsOpen=b.getAttribute("aria-pressed")!=="true";S.barsOpenDay=new Date().toDateString();save();renderBars();return}
   const w=b.dataset.w;if(w==="zone")S.barsFilter="zone";else{S.barsFilter="all";S.barsRegion=w;bMapFit=true}save();renderBars()};
-function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:x.arrivedAt,d:Math.max(0,(x.leftAt||r.endedAt||now())-x.arrivedAt)})};
+function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:rt(r,x.arrivedAt),d:Math.max(0,(x.leftAt||r.endedAt||now())-x.arrivedAt)})};
   H.forEach(add);if(S.game&&!S.game.ended)add(S.game);return out.sort((a,b)=>b.t-a.t)}
 const stayTxt=ms=>{const m=Math.max(1,Math.round(ms/60000));if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" hr"+(r?" "+r:"")};
 const gameLbl=x=>(x.r.mode==="cruise"?"R&amp;R":"Rush Hour")+" · "+stayTxt(x.d);
@@ -4743,7 +4762,7 @@ function listSheet(k,msg,after){
 /* ---------- history tab ---------- */
 // every counted bar visit across finished crawls, newest first
 function allVisits(){const out=[];H.forEach(r=>{const st=stats(r);st.counted.forEach((v,i)=>{const b=byId(v.id);if(!b)return;
-  out.push({r,v,b,n:st.arrived.indexOf(v)+1,t:v.arrivedAt,ms:Math.max(0,(v.leftAt||r.endedAt||r.endsAt)-v.arrivedAt)})})});return out.sort((a,b)=>b.t-a.t)}
+  out.push({r,v,b,n:st.arrived.indexOf(v)+1,t:rt(r,v.arrivedAt),ms:Math.max(0,(v.leftAt||r.endedAt||r.endsAt)-v.arrivedAt)})})});return out.sort((a,b)=>b.t-a.t)}
 const modeTxt=r=>r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr";
 const monthTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{month:"long",year:"numeric",timeZone:"Australia/Sydney"});
 // a small square: the bar's photo if we already have it (no new photo loads), otherwise its initial
@@ -4752,26 +4771,26 @@ const vthumb=(b,txt)=>{const ph=phMem[b.id];return `<span class="vth${ph?" ph":"
 function records(){
   const R=[],best=(lbl,ic,list,val,fmt,sub,lowest)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id})};
   const nights=H.map(r=>({r,st:stats(r)}));
-  [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(x.r.startedAt)));
-  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(x.r.startedAt));
-  best("Longest night","moon",nights.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(x.r.startedAt)+" · "+modeTxt(x.r));
-  best("Furthest night","route",nights,x=>x.st.total,km,x=>dateTxt(x.r.startedAt)+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
+  [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
+  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)));
+  best("Longest night","moon",nights.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
+  best("Furthest night","route",nights,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
   const vs=allVisits().filter(x=>x.v.leftAt!=null);
   best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
   best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
   const legs=[],hops=[];nights.forEach(({r,st})=>{if(st.longest&&st.longest.to)legs.push({r,d:st.longest.d,to:st.longest.to.id});if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
-  best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(x.r.startedAt));
+  best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(rt(x.r,x.r.startedAt)));
   best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true);
   return R}
 function renderHist(){
   const b=$("v-hist");
   if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
-  const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(r.startedAt)===mk).length;
+  const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records();
   b.innerHTML=`<h1 class="q">History</h1>
     <div class="grid2 hstats">
-      <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(H[0].startedAt)}</em></div>
+      <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></div>
       <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
       <div class="stat"><small>Distance</small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></div>
       <div class="stat"><small>Time at bars</small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></div>
@@ -4779,7 +4798,7 @@ function renderHist(){
     ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
     <div class="eyebrow hsec">Crawls</div>
     <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
-     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(r.startedAt)} · ${r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
+     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(rt(r,r.startedAt))} · ${r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
   b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
   $("hVisits").onclick=()=>visitsSheet();
 }
@@ -4824,7 +4843,7 @@ $("testFab").onclick=()=>{
     $("sheetBody").querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const [dd,mm]=b.dataset.to.split(",").map(Number),s0=sydAt(now());let d=((dd-s0.day+7)%7)*1440+(mm-s0.min);if(d<=0)d+=7*1440;S.ff=(S.ff||0)+d*60000;save();closeSheet();render()});
     $("tP").onclick=()=>{try{localStorage.removeItem("rr-ph");localStorage.removeItem("rr-ph-b")}catch(e){}for(const k in phMem)delete phMem[k];closeSheet();render()};
     $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();closeSheet();go("intro")};
-    $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY)}catch(e){}location.reload()};
+    $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY);localStorage.removeItem(TKEY)}catch(e){}location.reload()};
     $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
   });
 };
