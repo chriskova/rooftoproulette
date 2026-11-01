@@ -2424,7 +2424,7 @@ function render(){
   $("v-"+r).scrollTop=0;
 }
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
-[["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","History"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`+(k==="play"?'<i class="live" hidden></i>':"");$(id).dataset.tab=k});
+[["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","Rounds"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`+(k==="play"?'<i class="live" hidden></i>':"");$(id).dataset.tab=k});
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(k==="play")go(S.game?"play":"home");else go(k)};
 
 /* ---------- shared copy ---------- */
@@ -3806,12 +3806,12 @@ function openMenu(){
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
-    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to History</small></span></button>`:""}
+    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to Rounds</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>
     ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from tonight</small></span></button>`:""}
-    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your night is saved to History":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your crawl is saved to Rounds":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
@@ -4783,8 +4783,8 @@ function records(){
   const nights=H.map(r=>({r,st:stats(r)}));
   [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
   best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)));
-  best("Longest night","moon",nights.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
-  best("Furthest night","route",nights,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
+  best("Longest crawl","moon",nights.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
+  best("Furthest crawl","route",nights,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
   const vs=allVisits().filter(x=>x.v.leftAt!=null);
   best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
   best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
@@ -4794,11 +4794,11 @@ function records(){
   return R}
 function renderHist(){
   const b=$("v-hist");
-  if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
+  if(!H.length){b.innerHTML=`<h1 class="q">Rounds</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
   const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records(),ht=S.histTab==="bests"&&recs.length?"bests":"crawls";
-  b.innerHTML=`<h1 class="q">History</h1>
+  b.innerHTML=`<h1 class="q">Rounds</h1>
     <div class="grid2 hstats">
       <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></div>
       <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
@@ -4822,8 +4822,8 @@ const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function crawlMenu(r){const n=stats(r).counted.length,isT=!!r.test;
   sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} bar${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
     <div class="menu">
-      <button type="button" id="cmName">${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows in History instead of the date</small></span></button>
-      <button type="button" id="cmMove">${IC.swap}<span>${isT?"Move to real crawls":"Move to test crawls"}<small>${isT?"Counts in your History and stats":"Takes it out of your History and stats"}</small></span></button>
+      <button type="button" id="cmName">${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows in Rounds instead of the date</small></span></button>
+      <button type="button" id="cmMove">${IC.swap}<span>${isT?"Move to real crawls":"Move to test crawls"}<small>${isT?"Counts in Rounds and your stats":"Takes it out of Rounds and your stats"}</small></span></button>
       <button type="button" id="cmDel" class="danger">${IC.bin}<span>Delete crawl<small>You can undo for a few seconds</small></span></button>
     </div>`,()=>{
     $("cmName").onclick=()=>nameCrawl(r);
