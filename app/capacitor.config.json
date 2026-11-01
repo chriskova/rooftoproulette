@@ -1,0 +1,8 @@
+{
+  "appId": "com.rooftoproulette.app",
+  "appName": "Rooftop Roulette",
+  "webDir": "www",
+  "backgroundColor": "#0B0D12",
+  "android": { "backgroundColor": "#0B0D12" },
+  "ios": { "backgroundColor": "#0B0D12", "contentInset": "never" }
+}

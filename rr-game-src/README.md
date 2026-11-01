@@ -27,3 +27,12 @@ They need Node with `playwright` and Chromium. Run them from `rr-game-src/tests/
   - Check the clip with `ffprobe` (it should be 1080x1920, a plain MP4 and the right length).
 
 Add `?test` to the URL for test mode: no real GPS, tap the map to fake your location, and nothing is saved to History. Tests set the clock to 7pm so bars are open.
+
+## Native app (app/)
+
+`app/` wraps the built web app in Capacitor (app ID `com.rooftoproulette.app`) for Android and iOS.
+
+- `node app/sync-web.js` copies the built site into `app/www`; `npm run sync` (in `app/`) also runs `cap sync`.
+- `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`. Placeholder for now: swap those for the final logo and re-run.
+- Every push to `main` that changes `index.html` or `app/` builds an Android test APK on GitHub Actions and puts it on the `android-test` release (download it on the phone and install).
+- iOS needs the Apple Developer account before builds can be signed.

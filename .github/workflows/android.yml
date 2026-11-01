@@ -1,0 +1,50 @@
+# Builds the Android test app on every push to main that touches the app or the built web app,
+# and puts the APK on the "android-test" release so it can be downloaded straight to a phone.
+name: Android test build
+on:
+  push:
+    branches: [main]
+    paths: ["index.html", "app/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: android-test
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Copy the web app into the native project
+        working-directory: app
+        run: npm ci && npm run sync -- android
+      - name: Build the APK
+        working-directory: app/android
+        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - name: Name it
+        run: |
+          N=$(git rev-list --count HEAD)
+          cp app/android/app/build/outputs/apk/debug/app-debug.apk "rooftop-roulette-test.apk"
+          echo "N=$N" >> $GITHUB_ENV
+      - name: Publish to the android-test release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTE="Test build $N · $(git log -1 --format=%s | head -c 120)"
+          if gh release view android-test >/dev/null 2>&1; then
+            gh release upload android-test rooftop-roulette-test.apk --clobber
+            gh release edit android-test --notes "$NOTE"
+          else
+            gh release create android-test rooftop-roulette-test.apk --prerelease --title "Android test build" --notes "$NOTE"
+          fi
