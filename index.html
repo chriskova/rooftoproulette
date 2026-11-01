@@ -1026,6 +1026,11 @@ body.camon #v-play #pCount{visibility:hidden}
 body.camon #v-play .tbar,body.camon #v-play #strip,body.camon #v-play #gpsNote,body.camon #v-play .poolnum,body.camon #v-play .mixline,body.camon #v-play .reelnote,body.camon #v-play .banner,body.camon #v-play .tip{display:none!important}
 body.camon #tabs{display:none!important}
 .camloc{display:none}.cammark{display:none}
+.gear{appearance:none;background:none;border:0;margin-left:auto;padding:6px;color:var(--muted);display:grid;place-items:center;cursor:pointer;border-radius:50%}.gear svg{width:22px;height:22px}.gear:active{background:var(--s1)}
+body.camon .gear{display:none}
+#v-home .hero{position:relative}#v-home .hero .brand{padding-right:40px}.hgear{position:absolute;right:-4px;top:12px}
+.setv{text-align:center;color:var(--muted);font-size:12px;margin:18px 0 6px}
+.sheet .tlist{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 body.camon #logo{display:none}
 body.camon .cammark{display:flex;align-items:baseline;gap:9px}
 .cammark b{font-family:var(--display);font-weight:800;font-size:26px;letter-spacing:.04em;line-height:1;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5)}.cammark b span{color:var(--amber)}
@@ -1896,7 +1901,7 @@ setTimeout(done,1200)})();</script>
 </head>
 <body>
 <div class="app" id="app">
-  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="cammark" id="camMark"><b>R<span>R</span></b><small id="camMode"></small></div><div class="camloc" id="camLoc"></div></header>
+  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="cammark" id="camMark"><b>R<span>R</span></b><small id="camMode"></small></div><div class="camloc" id="camLoc"></div><button class="gear" type="button" id="gearBar" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></header>
 
   <!-- INTRO (first open) -->
   <section class="view" id="v-intro" hidden>
@@ -1915,7 +1920,7 @@ setTimeout(done,1200)})();</script>
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
     <div class="hero">
-      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div>
+      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div><button class="gear hgear" type="button" id="gearHome" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
     </div>
     <div class="card mode">
@@ -2120,6 +2125,8 @@ function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=r
 const now=()=>Date.now()+(S.test?(S.ff||0):0);
 // a time from a game as the phone's clock showed it (test games remember how far time travel had moved the clock)
 const rt=(r,t)=>t-((r&&r.ff0)||0);
+const isEve=ts=>{const m=sydAt(ts).min;return m>=17*60||m<4*60};
+const dayWord=ts=>isEve(ts)?"tonight":"today";
 
 /* ---------- time + hours ---------- */
 const TZ={Sydney:"Australia/Sydney",Brisbane:"Australia/Brisbane",Melbourne:"Australia/Melbourne",Perth:"Australia/Perth"};
@@ -2165,7 +2172,7 @@ const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||
 const RUN=Date.now()+":"+Math.random();
 function pickCity(p){if(!p||(S.cityManual&&S.cityManualRun===RUN))return;S.cityManual=false;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
 const cityBtn=()=>`<button class="citybtn" type="button" data-city>${esc(S.city)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
-function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a night somewhere else.</p>
+function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a crawl somewhere else.</p>
   <div class="opts">${CITIES.map(c=>`<button class="opt" type="button" data-c="${c.name}" ${c.live?"":"disabled"} role="radio" aria-checked="${S.city===c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?(S.city===c.name?"You're here":"Rooftops ready to spin"):"Coming soon"}</small></span></button>`).join("")}</div>`,
   ()=>$("sheetBody").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{S.city=b.dataset.c;S.cityManual=true;S.cityManualRun=RUN;save();closeSheet();render()}))}
 document.addEventListener("click",e=>{if(e.target.closest("[data-city]"))citySheet()});
@@ -2244,7 +2251,7 @@ function sfx(kind){if(!S.sound)return;const a=ac();if(!a)return;const t=a.curren
 function boom(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(38,t+.7);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.5,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g).connect(OUTJ(a));o.start(t);o.stop(t+1)}
 function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTime,lp=a.createBiquadFilter();lp.type="lowpass";lp.frequency.value=3200;lp.connect(OUT(a));[[659.25,0],[987.77,.06],[1318.5,.13]].forEach(([hz,dt])=>{const o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.value=hz;const st=t+dt;g.gain.setValueAtTime(.0001,st);g.gain.exponentialRampToValueAtTime(.14,st+.015);g.gain.exponentialRampToValueAtTime(.0001,st+.9);o.connect(g).connect(lp);o.start(st);o.stop(st+.95)})}
-const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const buzz=ms=>{if(S.vib===false)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
 /* ---------- maps ---------- */
 const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
@@ -2478,7 +2485,7 @@ function colCardHTML(){
 }
 function renderHome(){
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
-  const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your night":"Play R&R";
+  const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your crawl":"Play R&R";
 }
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
@@ -2734,7 +2741,7 @@ function renderWiz(){
         <button class="zreveal" type="button" id="zShow" aria-expanded="${!!w.showList}"><span>${w.showList?"Hide the bars":"See the bars in your zone"}</span><small>${w.showList?"":"Spoilers. Or keep it a surprise."}</small></button>
         <div id="zListWrap" ${w.showList?"":"hidden"}>
         <div class="zhead"><h3>Rooftops in your zone</h3><span class="small" id="zOut"></span></div>
-        <p class="note" style="margin:2px 0 10px">Everything ticked is in. You get ${MAXOUT} vetoes: untick a bar to sit it out tonight. Tap a name for the details.</p>
+        <p class="note" style="margin:2px 0 10px">Everything ticked is in. You get ${MAXOUT} vetoes: untick a bar to sit it out this crawl. Tap a name for the details.</p>
         <div class="card zlist" id="zList"></div></div>
       </div>`;
     const paint=()=>{
@@ -2744,7 +2751,7 @@ function renderWiz(){
       $("zOut").textContent=excl.length?`${excl.length} of ${MAXOUT} vetoes used`:"";
       const sorted=all.slice().sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
       $("zList").innerHTML=sorted.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
-        const status=out?"Vetoed tonight":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+        const status=out?"Vetoed":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
         const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
         return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></button>${tick}</div>`}).join("");
       $("zList").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();paint()});
@@ -2775,7 +2782,7 @@ function zoneBarSheet(v){
   const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
   const zf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
   sheet(`${sheetCard(v,zf)}
-    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in":"Sit this one out tonight"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
+    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in":"Sit this one out"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
     $("zc").onclick=closeSheet;bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();closeSheet();if(zonePaint&&w.step===2)zonePaint();else renderWiz()}});
 }
 async function useMe(){
@@ -3082,7 +3089,7 @@ setTimeout(()=>{gload().catch(()=>{})},1200);
 function reelNote(){return "Flick it down. Harder flick, longer spin."}
 
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
-function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Call it a night, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the night</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
+function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Wrap it up, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the crawl</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
 function askDrink(a0,then){const v=byId(a0.id);
   sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><p class="note">You've been here under ${DWELL_MIN} minutes. It only counts if you had a drink.</p><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
     $("dS").onclick=closeSheet;
@@ -3557,7 +3564,7 @@ function clipFile(blob,type,at){const ext=/mp4/.test(type)?"mp4":"webm",d=new Da
 function clipSave(blob,type,at){const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function clipShare(blob,type,at){const f=clipFile(blob,type,at);if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else clipSave(blob,type,at)}
 function clipsSheet(gid){clipList(gid).then(L=>{const urls=L.map(c=>URL.createObjectURL(c.blob));
-  sheet(`<h3>Clips</h3><p class="note">Your spins from tonight. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
+  sheet(`<h3>Clips</h3><p class="note">Your spins from this crawl. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
     document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cs];clipShare(c.blob,c.type,c.at)});
     document.querySelectorAll("[data-cv]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cv];clipSave(c.blob,c.type,c.at)});
     document.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cd];clipDel(c.id).then(()=>{closeSheet();if(S.route==="end")renderEnd();clipList(gid).then(n=>{if(n.length)clipsSheet(gid)})})});
@@ -3683,7 +3690,7 @@ function nightSheet(){
   const t=now(),left=basePool().length,cr=CR(g),c=countShown(g);
   const rows=g.visits.map((v,i)=>{const b=byId(v.id),st=v.leftAt==null?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
     return `<div class="li"><span>${i+1}. ${esc(b.name)}</span><span class="small ${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</span></div>`}).join("");
-  sheet(`<h3>Your night</h3>
+  sheet(`<h3>Your crawl</h3>
     <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
     <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
     ${rows?`<div class="card" style="padding:4px 16px"><div class="list">${rows}</div></div>`:`<p class="note">No bars yet. Get spinning.</p>`}
@@ -3806,12 +3813,12 @@ function openMenu(){
   sheet(`<h3>${cr?"Menu":"Game menu"}</h3><div class="menu">
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this game":"Change of scenery. 1 move per game"}</small></span></button>
-    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"night":"game"}. Nothing's saved to Rounds</small></span></button>`:""}
+    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this ${cr?"crawl":"game"}. Nothing's saved to Rounds</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>
-    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from tonight</small></span></button>`:""}
-    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the night":"End game"}<small>${g.started?(cr?"Your crawl is saved to Rounds":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
+    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the crawl":"End game"}<small>${g.started?(cr?"Your crawl is saved to Rounds":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
@@ -3819,8 +3826,8 @@ function openMenu(){
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     $("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);
-    $("mEnd").onclick=()=>sheet(`<h3>${cr?"Call it a night?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
-      <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the night":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
+    $("mEnd").onclick=()=>sheet(`<h3>${cr?"End the crawl?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
+      <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the crawl":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
 $("pMenu").onclick=openMenu;
@@ -3829,7 +3836,7 @@ document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mi
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
   ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
   ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
-  ["Spin when you're ready","One bar or five. End the night from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
+  ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
@@ -3893,7 +3900,7 @@ function renderPlay(){
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
   $("pMenu").innerHTML=I.more;
   const counted=countShown(g);
-  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your night</span>`:""}`;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
@@ -4101,7 +4108,7 @@ function cruiseAwards(r,st){
   if(n>=4)add("Grand Tour",`${n} rooftops, ${km(st.total)}`);
   if(n>=2&&stays.length&&stays.every(s=>s.ms>=30*60000))add("Slow Burn","At least half an hour at every bar");
   const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
-  if(!L.length)add(n?"Good Night Out":"Quiet One",n?`${n} bar${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
+  if(!L.length)add(n?(isEve(r.startedAt)?"Good Night Out":"Good Day Out"):"Quiet One",n?`${n} bar${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
   return L;
 }
 // shrink text until it sits on one line (never cut off)
@@ -4152,7 +4159,7 @@ function renderEnd(){
   // just finished, 2+ bars, no pick yet: ask for bar of the day before the scorecard rolls in
   const reopen=S.bodOpen===r.id;
   if(reopen||(S.rackEnd===r.id&&n>=2&&!r.barOfDay&&!r.bodDone)){
-    box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} bar${n===1?"":"s"} tonight</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
+    box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} bar${n===1?"":"s"} ${dayWord(r.startedAt)}</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
       <div class="bodgrid">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
     box.scrollTop=0;
     box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;saveH();buzz(15);renderEnd()});
@@ -4160,12 +4167,12 @@ function renderEnd(){
     st.counted.forEach(v=>{const b=byId(v.id);if(phMem[b.id]===undefined&&phAllowed(b.id,"play"))barPhoto(b).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;const t=box.querySelector(`[data-bp="${b.id}"]`);if(t&&ph){t.classList.add("photo");t.style.backgroundImage=`url('${ph.url}')`}})});
     return}
   box.innerHTML=`
-    ${still?`<div class="still"><b>Still going?</b><span>We wrapped your night at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's the night</button></div></div>`:""}
+    ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
-        const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
+        const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
           :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
@@ -4285,7 +4292,7 @@ async function storyCard(r,look){
   if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText(x._mapSrc==="google"?"Map data © Google":x._mapSrc==="carto"?"© OpenStreetMap © CARTO":"Esri, HERE, Garmin, © OpenStreetMap",W-64,mapc?1290:rund?T4-260:1140);x.textAlign="left"}
   const ICP={roof:"M4 4h16l1.5 5h-19z M2.5 9a2.4 2.4 0 0 0 4.8 0 2.4 2.4 0 0 0 4.7 0 2.4 2.4 0 0 0 4.7 0 2.4 2.4 0 0 0 4.8 0 M4 11.5V20h16v-8.5 M9.5 20v-5h5v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
     glass:"M5 4h14l-7 8z M12 12v7 M8 20h8",cheers:"M2.8 6.2l6.6-1.8 1.4 7.6a3.3 3.3 0 0 1-6.4 1.7z M7 13.6l1.4 5.6 M5.6 20l5.2-1.4 M21.2 6.2l-6.6-1.8-1.4 7.6a3.3 3.3 0 0 0 6.4 1.7z M17 13.6l-1.4 5.6 M18.4 20l-5.2-1.4",walk:"M14 6.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M9.5 21l2.5-7 3 3v4 M8 12l2.5-3.5 4 1.5 2 3.5 M12 14l-1.5-5",bolt:"M13 2L4 14h7l-1 8 9-12h-7z",
-    span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
+    span:"M3 12h18 M7 8l-4 4 4 4 M17 8l4 4-4 4",moon:"M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z",sun:"M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8z M12 2v2 M12 20v2 M4.9 4.9l1.4 1.4 M17.7 17.7l1.4 1.4 M2 12h2 M20 12h2 M4.9 19.1l1.4-1.4 M17.7 6.3l1.4-1.4",hour:"M7 3h10 M7 21h10 M8 3c0 5 8 5 8 9s-8 4-8 9 M16 3c0 5-8 5-8 9s8 4 8 9",clock:"M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2"};
   const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),atBars=st.arrived.reduce((a,v)=>a+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars),lng=stays.length?Math.max(...stays):0;
   const SCH=window.STORY_SCHEME||"d",NS=window.STORY_NUMS||"dim";
   const stat=(v,l,ic,X,Y,sz)=>{x.font=`800 ${sz}px ${D}`;
@@ -4363,7 +4370,7 @@ async function storyCard(r,look){
     const top4=listTop-265;
     if(RV==="photo"&&r.photo){const f0=top4-170,g5=x.createLinearGradient(0,f0,0,Hh);g5.addColorStop(0,"rgba(11,13,18,0)");g5.addColorStop(Math.min(.9,180/(Hh-f0)),"rgba(11,13,18,.5)");g5.addColorStop(Math.min(.95,(listTop-50-f0)/(Hh-f0)),"rgba(11,13,18,.8)");g5.addColorStop(1,"rgba(11,13,18,.93)");x.fillStyle=g5;x.fillRect(0,f0,W,Hh-f0)}
     x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=16;where(top4-94);x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
-    (cr?[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(st.dur),"Night","moon"]]:[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
+    (cr?[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"]]:[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
     x.strokeStyle="rgba(244,241,234,.12)";x.lineWidth=2;x.beginPath();x.moveTo(64,listTop-62);x.lineTo(W-64,listTop-62);x.stroke();
     list.forEach((v,i)=>{const Y=listTop+i*gap4,b=byId(v.id),ok=v.counted===true,stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":hmm(Math.max(0,stay));
       x.fillStyle=ok?"rgba(244,241,234,.14)":"rgba(107,114,128,.2)";x.beginPath();x.arc(88,Y-12,24,0,7);x.fill();x.fillStyle=ok?INK:"#6B7280";x.font=`800 24px ${U}`;x.textAlign="center";x.fillText(String(i+1),88,Y-3);x.textAlign="left";
@@ -4379,7 +4386,7 @@ async function storyCard(r,look){
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
         if(r.barOfDay===v.id){x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const tw2=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(X+w-50,W-64-tw2),Y-34,4);x.font=`700 32px ${U}`}X+=w+14;if(i<bars.length-1){if(X+30>W-64){X=64;Y+=50}gl(X+11,Y-2);X+=36}});
       sy=Y+96}
-    (cr?[[n,"Bars","glass"],[hmm(st.dur),"Night","moon"],[hmm(atBars),"Bar time","clock"]]:[[n,"Bars","glass"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","clock"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
+    (cr?[[n,"Bars","glass"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"],[hmm(atBars),"Bar time","clock"]]:[[n,"Bars","glass"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","clock"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
     if(!FV&&r.barOfDay&&byId(r.barOfDay)){x.font=`700 34px ${U}`;x.fillStyle=INK;const bn=fit(byId(r.barOfDay).name,W-128-120);x.fillText(bn,64,1508);const ex=64+x.measureText(bn).width;
       x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-w*.3,W-64-w),1508-38);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}
@@ -4388,9 +4395,9 @@ async function storyCard(r,look){
   let fs=84;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>44){fs-=4;x.font=`800 ${fs}px ${D}`}
   x.fillStyle=SCH==="c"?AMB:INK;where(943);x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,1035);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1092);
   // stats
-  const S6=cr?[[n,"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Night"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+  const S6=cr?[[n,"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
     :[[n,"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-  const SIC=cr?["glass","route","moon","clock","hour","span"]:["glass","route","walk","clock","bolt","span"];
+  const SIC=cr?["glass","route",isEve(r.startedAt)?"moon":"sun","clock","hour","span"]:["glass","route","walk","clock","bolt","span"];
   S6.forEach(([v,l],i)=>stat(v,l,SIC[i],64+(i%3)*320,1205+Math.floor(i/3)*118,68));
   // bars, two columns, with time at each
   const list=st.arrived.slice(0,8),rows=Math.max(3,Math.ceil(list.length/2)),gap=rows>3?62:72,cw=(W-128-40)/2;
@@ -4518,7 +4525,7 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 let bMap=null,bMapP=null,bMapFit=false;
 const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of town">${[["all","All of "+S.city],...REG().map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
-const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Pass</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?'<span class="stamp been">Tonight</span>':"";
+const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Pass</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?`<span class="stamp been">${dayWord(now())==="tonight"?"Tonight":"Today"}</span>`:"";
 const HEART='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
 const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria-pressed="${!!S.want[v.id]}" aria-label="Add to Hit list">${HEART}</button>`;
 function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${esc(v.vibe||v.area)}</small></span><span class="rt">${o.open?(y&&dist(y,v)<50000?mOrKm(dist(y,v)):""):o.temp?"Temp. closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>${stampHTML(s)}${heartBtn(v)}</div>`}
@@ -4806,7 +4813,7 @@ function renderHist(){
       <div class="stat"><small>Time at bars</small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></div>
     </div>
     <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
-    ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that night.</p>`:`
+    ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that crawl.</p>`:`
     <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
      return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`}`;
   b.querySelectorAll("[data-ht]").forEach(x=>x.onclick=()=>{if(S.histTab===x.dataset.ht)return;S.histTab=x.dataset.ht;save();renderHist()});
@@ -4866,6 +4873,31 @@ function visitsSheet(tab){
     $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(!v)return;barSheet(v);if(typeof bindVisits==="function")bindVisits()});
   });
 }
+
+/* ---------- settings (the gear) ---------- */
+function settingsSheet(){
+  const tg=(id,on,t,sub)=>`<button class="toggle" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b><small>${sub}</small></span><span class="sw"></span></button>`;
+  const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended);
+  sheet(`<h3>Settings</h3><div class="tlist">
+      ${tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot")}
+      ${tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")}
+    </div>
+    <div class="menu" style="margin-top:14px">
+      ${live?"":`<button type="button" id="stHow">${I.help}<span>How to play<small>Replay the intro and the tips</small></span></button>`}
+    </div>
+    <div class="eyebrow" style="margin:20px 0 4px">Testing</div><div class="tlist">
+      ${tg("stTest",S.test,"Test mode","No real GPS: tap the map to move. Test crawls are kept apart from your Rounds")}
+    </div>
+    ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
+    <p class="setv">Rooftop Roulette · v58-6</p>`,()=>{
+    $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
+    $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
+    if($("stHow"))$("stHow").onclick=()=>{closeSheet();S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
+    $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(null,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
+    if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real Rounds aren't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
+      $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render()};$("stClrN").onclick=settingsSheet});
+  })}
+["gearBar","gearHome"].forEach(id=>$(id).onclick=()=>settingsSheet());
 
 /* ---------- test mode ---------- */
 $("testFab").onclick=()=>{
