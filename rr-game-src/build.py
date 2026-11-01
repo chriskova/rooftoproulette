@@ -1,9 +1,10 @@
 import json,os,shutil
-D=os.path.dirname(os.path.abspath(__file__));S=os.path.dirname(D);OUT=os.path.join(S,'rr-game')
-V=json.load(open(os.path.join(S,'research','venues.json')))
+# Builds the app into the repo root (index.html, manifest, sw.js). Bump CACHE below on every release.
+D=os.path.dirname(os.path.abspath(__file__));OUT=os.path.dirname(D)
+V=json.load(open(os.path.join(D,'data','venues.json')))
 t=open(os.path.join(D,'index.template.html')).read()
 open(os.path.join(OUT,'index.html'),'w').write(t.replace('__VENUES__',json.dumps(V,separators=(',',':'),ensure_ascii=False)))
-m=json.load(open(os.path.join(S,'rr-site','manifest.webmanifest')))
+m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
 open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v57-1";

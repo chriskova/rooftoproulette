@@ -1,0 +1,16 @@
+const {chromium,devices}=require('playwright');const fs=require('fs');
+(async()=>{const b=await chromium.launch();const p=await (await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:790}})).newPage();const e=[];p.on('pageerror',x=>e.push(x.message));
+await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(300);
+await p.evaluate(()=>{S.onboarded=true;{const d=new Date();d.setHours(19,0,0,0);S.ff=d.getTime()-Date.now();}S.test=true;S.sound=false;const t0=now()-3600000;const ids=['the-glenmore','harbour-view-hotel','the-mercantile','henry-deane','smoke-bar','untied'];
+ const visits=ids.map((id,i)=>({id,arrivedAt:t0+i*9*60000+4*60000,leftAt:t0+i*9*60000+11*60000,counted:i!==3}));const st={lat:-33.8590,lng:151.2070};
+ const r={id:'gx',city:'Sydney',mode:'rush',len:60,radius:.8,startedAt:t0,endsAt:t0+3600000,endedAt:t0+3600000,started:true,ended:true,startPos:st,center:st,areas:['The Rocks'],visits,trail:[],moves:[]};
+ H.unshift(r);saveH();S.lastEnd='gx';S.rackEnd='gx';save();go('end')});await p.waitForTimeout(1200);
+await p.screenshot({path:'out/r1.png'});
+await p.click('#bodSkip');await p.waitForTimeout(1500);
+console.log('sum1',await p.evaluate(()=>[$('v-end').scrollHeight,$('v-end').clientHeight]));await p.screenshot({path:'out/r2.png'});
+await p.click('.bodbtn');await p.waitForTimeout(500);await p.click('[data-bp="harbour-view-hotel"]');await p.waitForTimeout(1500);
+console.log('sum2',await p.evaluate(()=>[$('v-end').scrollHeight,$('v-end').clientHeight]));await p.screenshot({path:'out/r3.png'});
+await p.click('#shareBtn');await p.waitForTimeout(600);await p.screenshot({path:'out/r4.png'});
+await p.click('#shvSkip');await p.waitForTimeout(8000);await p.screenshot({path:'out/r5.png'});
+console.log('car',await p.evaluate(()=>{const c=document.querySelector('.shv-car'),i=c.querySelector('img');return [c.scrollHeight,c.clientHeight,i.getBoundingClientRect().height,document.querySelector('.sharev').scrollHeight,innerHeight]}));
+console.log(e);await b.close()})();
