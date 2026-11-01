@@ -1159,6 +1159,27 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.hstats .stat{display:flex;flex-direction:column}.hstats .stat b{font-size:24px}
+.hstats .stat em{font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat.tap{appearance:none;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:transform .12s,border-color .12s}.stat.tap:active{transform:scale(.97)}
+.stat.tap small{display:flex;justify-content:space-between;align-items:center}.stat.tap .chev{color:var(--amber);font-size:20px;line-height:.6}
+.hsec{margin:22px 2px 10px}
+.recs{background:var(--s1);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.rec{appearance:none;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:11px 12px 11px 14px;display:flex;align-items:center;gap:10px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.rec:first-child{border-top:0}.rec:active{background:var(--s2)}
+.rec .t{flex:1;min-width:0}.rec small{display:block;font-size:14px;font-weight:650;color:var(--text)}
+.rec .t span{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.rec b{font-family:var(--display);font-weight:800;font-size:22px;color:var(--amber);white-space:nowrap}.rec .chev{color:var(--muted);font-size:18px}
+.vsum{margin:2px 0 12px}.vseg{margin-bottom:6px}
+.vlist2{display:flex;flex-direction:column;padding-bottom:28px}
+.vmon{display:flex;justify-content:space-between;align-items:baseline;padding:18px 2px 6px;font-weight:800;font-size:17px}.vmon small{font-size:12.5px;font-weight:600;color:var(--muted)}
+.vrow{appearance:none;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 2px;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.vrow:active{background:var(--s1)}
+.vth{flex:none;width:44px;height:44px;border-radius:11px;background:var(--s2) center/cover no-repeat;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:20px;color:var(--amber);text-transform:uppercase}
+.vrow .t{flex:1;min-width:0}.vrow b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrow small{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.vrow .d{flex:none;font-size:14px;font-weight:700;color:var(--text)}.vrow .d.n{font-family:var(--display);font-size:24px;color:var(--amber);text-align:center;line-height:1}.vrow .d.n i{display:block;font-family:inherit;font-style:normal;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+
 .hrow{appearance:none;width:100%;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:14px;text-align:left}
 .hrow .n{font-family:var(--display);font-weight:800;font-size:38px;color:var(--amber);width:44px;text-align:center;line-height:1}
 .hrow .t{flex:1;min-width:0}
@@ -4720,17 +4741,65 @@ function listSheet(k,msg,after){
 }
 
 /* ---------- history tab ---------- */
+// every counted bar visit across finished crawls, newest first
+function allVisits(){const out=[];H.forEach(r=>{const st=stats(r);st.counted.forEach((v,i)=>{const b=byId(v.id);if(!b)return;
+  out.push({r,v,b,n:st.arrived.indexOf(v)+1,t:v.arrivedAt,ms:Math.max(0,(v.leftAt||r.endedAt||r.endsAt)-v.arrivedAt)})})});return out.sort((a,b)=>b.t-a.t)}
+const modeTxt=r=>r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr";
+const monthTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{month:"long",year:"numeric",timeZone:"Australia/Sydney"});
+// a small square: the bar's photo if we already have it (no new photo loads), otherwise its initial
+const vthumb=(b,txt)=>{const ph=phMem[b.id];return `<span class="vth${ph?" ph":""}"${ph?` style="background-image:url('${ph.url}')"`:""}>${ph?"":esc(txt!=null?String(txt):b.name.replace(/^the\s+/i,"")[0]||"·")}</span>`};
+// Strava-style personal bests. Each one links back to the night it happened.
+function records(){
+  const R=[],best=(lbl,ic,list,val,fmt,sub,lowest)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id})};
+  const nights=H.map(r=>({r,st:stats(r)}));
+  [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(x.r.startedAt)));
+  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(x.r.startedAt));
+  best("Longest night","moon",nights.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(x.r.startedAt)+" · "+modeTxt(x.r));
+  best("Furthest night","route",nights,x=>x.st.total,km,x=>dateTxt(x.r.startedAt)+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
+  const vs=allVisits().filter(x=>x.v.leftAt!=null);
+  best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
+  best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
+  const legs=[],hops=[];nights.forEach(({r,st})=>{if(st.longest&&st.longest.to)legs.push({r,d:st.longest.d,to:st.longest.to.id});if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
+  best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(x.r.startedAt));
+  best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true);
+  return R}
 function renderHist(){
   const b=$("v-hist");
   if(!H.length){b.innerHTML=`<h1 class="q">History</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a game and your scorecard lands here.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
-  const games=H.length,bars=H.reduce((s,r)=>s+stats(r).counted.length,0),dist_=H.reduce((s,r)=>s+stats(r).total,0);
-  const best=l=>{const x=H.filter(r=>r.len===l).map(r=>stats(r).counted.length);return x.length?Math.max(...x):null};
+  const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
+  const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(r.startedAt)===mk).length;
+  const recs=records();
   b.innerHTML=`<h1 class="q">History</h1>
-    <div class="grid2"><div class="stat"><small>Crawls</small><b style="font-size:24px">${games}</b></div><div class="stat"><small>Bar visits</small><b style="font-size:24px">${bars}</b></div>
-    <div class="stat"><small>Distance covered</small><b>${km(dist_)}</b></div><div class="stat"><small>Most in one game</small><b>${LENS.filter(l=>best(l)!=null).map(l=>`${best(l)} <span class="small">(${l/60} hr)</span>`).join(" · ")}</b></div></div>
-    <div style="display:flex;flex-direction:column;gap:10px">${H.map(r=>{const st=stats(r),bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
+    <div class="grid2 hstats">
+      <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(H[0].startedAt)}</em></div>
+      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
+      <div class="stat"><small>Distance</small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></div>
+      <div class="stat"><small>Time at bars</small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></div>
+    </div>
+    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
+    <div class="eyebrow hsec">Crawls</div>
+    <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
      return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${dateTxt(r.startedAt)} · ${r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`;
-  b.querySelectorAll(".hrow").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+  b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+  $("hVisits").onclick=()=>visitsSheet();
+}
+// Every bar visit, like a ride history: by month, newest first. Second tab ranks the rooftops.
+function visitsSheet(tab){
+  tab=tab||"visits";const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0);
+  let list="";
+  if(tab==="visits"){let m=null;
+    list=vs.map(x=>{const mm=monthTxt(x.t),head=mm!==m?`<div class="vmon"><span>${mm.split(" ")[0]}${mm.split(" ")[1]!==String(new Date(now()).getFullYear())?" "+mm.split(" ")[1]:""}</span><small>${vs.filter(y=>monthTxt(y.t)===mm).length} visits</small></div>`:"";m=mm;
+      return head+`<button class="vrow" type="button" data-g="${x.r.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}${x.r.barOfDay===x.b.id?" · ★":""}</small></span><span class="d">${hmm(x.ms)}</span></button>`}).join("");
+  }else{const by={};vs.forEach(x=>{const o=by[x.b.id]||(by[x.b.id]={b:x.b,n:0,ms:0,last:0});o.n++;o.ms+=x.ms;o.last=Math.max(o.last,x.t)});
+    list=Object.values(by).sort((a,b)=>b.n-a.n||b.ms-a.ms||b.last-a.last).map((o,i)=>`<button class="vrow" type="button" data-b="${o.b.id}">${vthumb(o.b)}<span class="t"><b>${esc(o.b.name)}</b><small>${esc(o.b.area)} · ${hmm(o.ms)} total · last ${dateTxt(o.last)}</small></span><span class="d n">${o.n}<i>${o.n===1?"visit":"visits"}</i></span></button>`).join("")}
+  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"} · ${hmm(atBars)} at bars</p>
+    <div class="seg vseg"><button type="button" data-vt="visits" aria-pressed="${tab==="visits"}">Visits</button><button type="button" data-vt="bars" aria-pressed="${tab==="bars"}">Rooftops</button></div>
+    <div class="vlist2">${list}</div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;
+    $("sheetBody").querySelectorAll("[data-vt]").forEach(x=>x.onclick=()=>{if(x.dataset.vt!==tab)visitsSheet(x.dataset.vt)});
+    $("sheetBody").querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{closeSheet();S.lastEnd=x.dataset.g;go("end")});
+    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(!v)return;barSheet(v);if(typeof bindVisits==="function")bindVisits()});
+  });
 }
 
 /* ---------- test mode ---------- */
