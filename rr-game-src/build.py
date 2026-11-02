@@ -8,11 +8,11 @@ VER=re.search(r'const CACHE="rr-app-(v[\d-]+)"',open(__file__).read()).group(1)
 import time
 VV=int(time.time())   # bar list version: the app swaps in a newer venues.json from the site without an app update
 open(os.path.join(OUT,'venues.json'),'w').write(json.dumps({'v':VV,'bars':V},separators=(',',':'),ensure_ascii=False))
-open(os.path.join(OUT,'index.html'),'w').write(t.replace('__VENUES_V__',str(VV)).replace('__VENUES__',json.dumps(V,separators=(',',':'),ensure_ascii=False)).replace('__VERSION__',VER))
+open(os.path.join(OUT,'index.html'),'w').write(t.replace('__VENUES_V__',str(VV)).replace('__VENUES__',json.dumps(V,separators=(',',':'),ensure_ascii=False)).replace('__VERSION__',VER).replace('__ANALYTICS__',json.dumps({k:v for k,v in json.load(open(os.path.join(D,'data','config.json'))).items() if not k.startswith('_')})))
 m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v59-0";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v59-1";
 const ASSETS=["./","index.html","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",

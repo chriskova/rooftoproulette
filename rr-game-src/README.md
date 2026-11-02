@@ -12,7 +12,11 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 
 ## Updating bars without an app release
 
-`build.py` also writes `venues.json` to the repo root with a version stamp. The app (web and native) checks it on launch and whenever it's reopened, and swaps in a newer list on the spot. To fix hours, add a bar or close one: edit `data/venues.json`, run the build, and push. Phones pick it up the next time the app opens, with no store update. Reports from "Wrong hours or info?" on each bar card arrive as emails to chris@rooftoproulette.com.
+`build.py` also writes `venues.json` to the repo root with a version stamp. The app (web and native) checks it on launch and whenever it's reopened, and swaps in a newer list on the spot. To fix hours, add a bar or close one: edit `data/venues.json`, run the build, and push. Phones pick it up the next time the app opens, with no store update. Reports from "Wrong hours or info?" on each bar card arrive as emails to hello@rooftoproulette.com.
+
+## Analytics and crash reports
+
+The app sends anonymous usage events and crash reports to PostHog: a random install ID, the app version and platform, and what happened (`app_open`, `crawl_start`, `spin`-level events like `jackpot` and `arrive`, `crawl_end` with bar count and minutes, `share_open`/`share_sent`, `camera_open`, `clip_recorded`, `report_change`, `backup`, and `$exception` for errors). It never sends names, coordinates, photos or clips, and sends nothing in test mode. It's off until a project API key is set in `data/config.json` (`posthogKey`, plus `posthogHost`: `https://us.i.posthog.com` or `https://eu.i.posthog.com`). Then rebuild and push.
 
 ## Build and release
 

@@ -1419,6 +1419,17 @@ const areaOf=v=>{const c=v.city||"Sydney",L=AREAS.filter(a=>areaCity(a)===c);ret
 const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const KEY="rr-app-v3",HKEY="rr-history-v2";
+const AN=__ANALYTICS__,APPV="__VERSION__";
+/* Usage and crash reports, anonymous: a random install ID, the app version and what happened (e.g. "crawl ended, 4 bars").
+   Never names, coordinates, photos or clips. Off in test mode, and off entirely until a PostHog key is set in data/config.json. */
+const anId=(()=>{try{let i=localStorage.getItem("rr-anon");if(!i){i=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem("rr-anon",i)}return i}catch(e){return "na"}})();
+const anPlat=()=>{try{return window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()?Capacitor.getPlatform():"web"}catch(e){return "web"}};
+function track(event,props){try{if(!AN.posthogKey||(typeof S!=="undefined"&&S&&S.test))return;
+  const body=JSON.stringify({api_key:AN.posthogKey,event,distinct_id:anId,timestamp:new Date().toISOString(),properties:Object.assign({app_version:APPV,platform:anPlat(),$lib:"rr-app"},props||{})});
+  fetch(AN.posthogHost.replace(/\/$/,"")+"/i/v0/e/",{method:"POST",headers:{"Content-Type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}}
+let anErrs=0;const anErr=(type,msg,stack)=>{if(anErrs++>=10)return;track("$exception",{$exception_type:type||"Error",$exception_message:String(msg||"").slice(0,500),$exception_stack_trace_raw:String(stack||"").slice(0,3000),$exception_list:[{type:type||"Error",value:String(msg||"").slice(0,500),mechanism:{handled:false}}]})};
+addEventListener("error",e=>anErr(e.error&&e.error.name,e.message,e.error&&e.error.stack));
+addEventListener("unhandledrejection",e=>{const r=e.reason||{};anErr(r.name||"UnhandledRejection",r.message||String(r),r.stack)});
 const $=id=>document.getElementById(id);
 const byId=id=>VENUES.find(v=>v.id===id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -2470,7 +2481,7 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
-  if(!g.started){prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  if(!g.started){track("crawl_start",{mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
   if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
@@ -2505,7 +2516,7 @@ const JACKPOTS=[
   {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next bar.",go:"Pick it"}];
 function jackpotSpin(vel){
   const g=G(),opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(S.test&&S.forceJP&&JACKPOTS.find(x=>x.k===S.forceJP))||opts[Math.floor(Math.random()*opts.length)];
-  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;spinning=true;save();
+  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;spinning=true;save();track("jackpot",{kind:j.k,leg:g.visits.length});
   if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
     $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum">&nbsp;</div></div>`;
     reel=makeReel($("reelBox"),gameReelNames(),{});
@@ -2765,6 +2776,7 @@ function camStart(){
   rec.onstop=async()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.g);mix.g.disconnect();OUTJ(a).disconnect(mix.j);mix.j.disconnect()}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;let type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
     if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
     const at=Date.now();const auto=NATIVE&&S.clipAuto!==false?nativeSaveVideo(blob,clipFile(blob,type,at).name).then(()=>true).catch(e=>{console.warn(e);return false}):Promise.resolve(false);
+    track("clip_recorded",{seconds:Math.round((Date.now()-CAM.t0)/1000),gallery:NATIVE&&S.clipAuto!==false});
     clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>auto).then(inGal=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at,inGal)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   let next=0;const FR=1000/30,frame=()=>{camDraw();if(vtrack&&vtrack.requestFrame)vtrack.requestFrame()};
@@ -3236,6 +3248,7 @@ function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sh
 function endGame(at){
   const g=G();if(!g||g.ended)return;
   if(!g.started){S.game=null;save();stopWatch();go("home");return}
+  track("crawl_end",{mode:CR(g)?"rr":"rush",bars:g.visits.filter(v=>v.counted===true||(v.leftAt==null&&v.arrivedAt!=null)).length,minutes:Math.round((Math.min(at,g.endsAt)-g.startedAt)/60000),ended_early:at<g.endsAt,city:g.city||null});
   const before=collectedMap();
   const t=Math.min(at,g.endsAt),early=at<g.endsAt;if(early)g.endsAt=at;
   const a=atVisit();if(a)closeVisit(a,t,"end");
@@ -3264,7 +3277,7 @@ function needManual(g){
   return now()-g.targetAt>(exp*1.5+5)*60000;
 }
 function logArrival(manual){
-  const g=G();if(!g||!g.target)return;const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
+  const g=G();if(!g||!g.target)return;track("arrive",{manual:!!manual,leg:g.visits.length+1});const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
   // the phone was away for a while and we only just found out they're here: assume they've done their 3 minutes
   const late=!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;
   let at=now();const d=leaving();
@@ -3362,7 +3375,7 @@ function renderPlay(){
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
-    CAM.once=true;CAM.onceAt=Date.now();document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
+    CAM.once=true;CAM.onceAt=Date.now();track("camera_open");document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
     if(sb_)sb_.click();else if(sk_)sk_.click();else{camSync();renderPlay()}}}
   if($("snapX"))$("snapX").onclick=()=>{g.snapAsk=1;save();renderPlay()};
   const snapGot=f=>shrink(f,1000).then(d=>{const gg=S.game;if(!gg)return;(gg.photos=gg.photos||[]).push(d);if(gg.photos.length>3)gg.photos.shift();gg.snapAsk=1;try{save()}catch(x){gg.photos.pop();toast("Couldn't save the photo. Phone storage is full.")}if(S.route==="play")renderPlay();setTimeout(()=>{if(S.game){S.game.snapSeen=1;save();if(S.route==="play")renderPlay()}},4000)});
@@ -3842,7 +3855,7 @@ async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,b
   x.fillStyle="rgba(11,13,18,.25)";x.fillRect(0,0,W,HH);x.restore();
   return P;
 }
-async function shareStory(r){
+async function shareStory(r){track("share_open",{has_photo:!!r.photo});
   const ov=document.createElement("div");ov.className="sharev";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   let urls=[],blobs=[],looks=[],cur=0;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{ov.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250)};
@@ -3876,7 +3889,7 @@ async function shareStory(r){
     ov.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.ph];saveH();cards(0)});
     if($("shvAdd2"))$("shvAdd2").onclick=()=>photoSheet(r,()=>cards(0));
     $("shvSave").onclick=()=>{const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at)};
-    $("shvGo").onclick=async()=>{if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
+    $("shvGo").onclick=async()=>{track("share_sent",{kind:looks[cur]});if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
       if(NATIVE){nativeShare(blobs[cur],file.name).catch(e=>console.warn(e));return}
       if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
       else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
@@ -4099,7 +4112,7 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
-    $("rpBar").onclick=()=>{const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:chris@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
+    $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     if($("bsBack"))$("bsBack").onclick=opt.back;
@@ -4280,7 +4293,7 @@ function visitsSheet(tab){
 }
 
 /* ---------- back up / restore: crawls, stats and lists as one file ---------- */
-function backupTab(){
+function backupTab(){track("backup");
   const keep=["been","nfu","want","fav","names","clipAuto","camLight","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
   const data={app:"rooftop-roulette",kind:"tab-backup",v:1,at:Date.now(),history:readH(HKEY),settings:st},d=new Date(),name=`rooftop-roulette-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
   const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
@@ -4394,7 +4407,7 @@ document.addEventListener("visibilitychange",()=>{
 if(S.game&&!S.test)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
-render();loop();setTimeout(refreshVenues,1500);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
+render();loop();setTimeout(refreshVenues,1500);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
