@@ -32,6 +32,8 @@
 	<string>Record mode captures sound with your spin clips.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save your share cards and spin clips to your photos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Saves your filmed spins to a Rooftop Roulette album in your photos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

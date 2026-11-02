@@ -425,6 +425,7 @@ body.recspun .camfab.ontop{visibility:hidden}
 .shv-snd{position:absolute;right:30px;bottom:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--muted);display:grid;place-items:center;opacity:.9}.shv-snd svg{width:20px;height:20px}.shv-snd.on{color:var(--amber)}
 .shv-go{display:flex;gap:10px}.shv-go .btn{flex:1}.shv-go .btn[hidden]{display:none}
 .shv-dots .cdot{border-radius:2px}
+.reportbtn{display:block;margin:14px auto 0;color:var(--muted);font-size:13.5px}
 .campop{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:2700;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:translateY(130%);transition:transform .25s cubic-bezier(.3,.75,.2,1);touch-action:pan-y}
 .campop.on{transform:none}
 .campop video{width:40px;height:56px;border-radius:9px;object-fit:cover;background:#000;flex:none}
@@ -1369,7 +1370,15 @@ setTimeout(done,1200)})();</script>
 <script src="vendor/leaflet/leaflet.js"></script>
 <script>
 "use strict";
-const VENUES=__VENUES__;
+const VENUES=__VENUES__,VENUES_V=__VENUES_V__;
+let venuesV=VENUES_V;
+(()=>{try{const c=JSON.parse(localStorage.getItem("rr-venues")||"null");if(c&&c.v>VENUES_V&&Array.isArray(c.bars)&&c.bars.length>20){VENUES.splice(0,VENUES.length,...c.bars);venuesV=c.v}}catch(e){}})();
+function refreshVenues(){
+  const url=/github\.io$|rooftoproulette\.com/.test(location.hostname)?"venues.json":"https://chriskova.github.io/rooftoproulette/venues.json";
+  fetch(url+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+    if(!d||!(d.v>venuesV)||!Array.isArray(d.bars)||d.bars.length<20||!d.bars.every(v=>v&&v.id&&v.name&&isFinite(v.lat)&&isFinite(v.lng)))return;
+    VENUES.splice(0,VENUES.length,...d.bars);venuesV=d.v;try{localStorage.setItem("rr-venues",JSON.stringify(d))}catch(e){}
+    if(!spinning&&(S.route==="bars"||S.route==="home"))render()}).catch(()=>{})}
 /* Places, grouped into regions. Each bar belongs to one area (from its suburb).
    Areas with enough rooftops close together can be a game's starting point; the rest are still on the map,
    in their region, and in Just the one. */
@@ -2755,7 +2764,8 @@ function camStart(){
   const parts=[],gid=G().id;rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
   rec.onstop=async()=>{setTimeout(()=>{CAM.saving=false},400);if(mix){try{OUT(a).disconnect(mix.g);mix.g.disconnect();OUTJ(a).disconnect(mix.j);mix.j.disconnect()}catch(e){}try{mix.m&&mix.m.disconnect()}catch(e){}}if(rec._drop)return;let type=rec.mimeType||mt||"video/webm",blob=new Blob(parts,{type});if(blob.size<2000)return;
     if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
-    const at=Date.now();clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
+    const at=Date.now();const auto=NATIVE&&S.clipAuto!==false?nativeSaveVideo(blob,clipFile(blob,type,at).name).then(()=>true).catch(e=>{console.warn(e);return false}):Promise.resolve(false);
+    clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>auto).then(inGal=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at,inGal)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   let next=0;const FR=1000/30,frame=()=>{camDraw();if(vtrack&&vtrack.requestFrame)vtrack.requestFrame()};
   const loop=t=>{if(CAM.rec!==rec)return;if(!next)next=t;if(t>=next-6){frame();next+=FR;if(t-next>FR*2)next=t+FR}requestAnimationFrame(loop)};frame();requestAnimationFrame(loop);   // 30fps on a fixed beat, so playback doesn't stutter
@@ -2804,12 +2814,12 @@ function mp4Flat(buf){
   T.forEach(x=>x.t.smp.forEach(s=>{out.set(u.subarray(s.off,s.off+s.sz),k);k+=s.sz}));
   return out.buffer}
 let camPopT=null;
-function camSaved(blob,type,at){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
+function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
   p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
-  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><b>Clip saved</b><button type="button" data-a="save">Save</button><button type="button" data-a="share" class="pri">Share</button>`;
+  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><b>${inGal?"Saved to your gallery":"Clip saved"}</b>${inGal?"":`<button type="button" data-a="save">Save</button>`}<button type="button" data-a="share" class="pri">Share</button>`;
   document.body.appendChild(p);requestAnimationFrame(()=>p.classList.add("on"));
   const bye=()=>{clearTimeout(camPopT);p.classList.remove("on");setTimeout(()=>{p.remove();URL.revokeObjectURL(u)},250)};
-  p.querySelector('[data-a="save"]').onclick=()=>{clipSave(blob,type,at);p.querySelector("b").textContent="Saved to your phone";clearTimeout(camPopT);camPopT=setTimeout(bye,2200)};
+  if(p.querySelector('[data-a="save"]'))p.querySelector('[data-a="save"]').onclick=()=>{clipSave(blob,type,at);p.querySelector("b").textContent="Saved to your phone";clearTimeout(camPopT);camPopT=setTimeout(bye,2200)};
   p.querySelector('[data-a="share"]').onclick=()=>{bye();clipShare(blob,type,at)};
   let x0=null,dx=0;p.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;dx=0});p.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;p.style.translate=dx+"px 0"});
   p.addEventListener("pointerup",()=>{if(x0===null)return;x0=null;if(Math.abs(dx)>60)bye();else p.style.translate=""});
@@ -2920,9 +2930,20 @@ const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.
 const clipPut=o=>clipDB().then(db=>new Promise((res,rej)=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").put(o);t.oncomplete=res;t.onerror=()=>rej(t.error)}));
 const clipList=gid=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
 const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
+/* in the native app the browser's share and download don't exist: use the phone's own share sheet and gallery */
+const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform()),PLG=NATIVE?CAPX.Plugins:{};
+const b64of=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
+async function nativeFile(blob,name){const r=await PLG.Filesystem.writeFile({path:name,data:await b64of(blob),directory:"CACHE"});return r.uri}
+async function nativeShare(blob,name,title){const uri=await nativeFile(blob,name);await PLG.Share.share({files:[uri],title:title||"Rooftop Roulette"})}
+let galleryAlbum=null;
+async function nativeSaveVideo(blob,name){const uri=await nativeFile(blob,name),opt={path:uri};
+  if(CAPX.getPlatform()==="android"){if(!galleryAlbum){const find=async()=>((await PLG.Media.getAlbums()).albums||[]).find(a=>a.name==="Rooftop Roulette");let a=await find();if(!a){await PLG.Media.createAlbum({name:"Rooftop Roulette"});a=await find()}galleryAlbum=a&&a.identifier}
+    if(galleryAlbum)opt.albumIdentifier=galleryAlbum;opt.fileName=name.replace(/\.\w+$/,"")}
+  return PLG.Media.saveVideo(opt)}
 function clipFile(blob,type,at){const ext=/mp4/.test(type)?"mp4":"webm",d=new Date(at||Date.now());return new File([blob],`rooftop-roulette-${d.getHours()}${String(d.getMinutes()).padStart(2,"0")}${String(d.getSeconds()).padStart(2,"0")}.${ext}`,{type:type.split(";")[0]})}
-function clipSave(blob,type,at){const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
-function clipShare(blob,type,at){const f=clipFile(blob,type,at);if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else clipSave(blob,type,at)}
+function clipSave(blob,type,at){if(NATIVE){const f=clipFile(blob,type,at);return nativeSaveVideo(blob,f.name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)})}
+  const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function clipShare(blob,type,at){const f=clipFile(blob,type,at);if(NATIVE){nativeShare(blob,f.name).catch(e=>console.warn(e));return}if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else clipSave(blob,type,at)}
 function clipsSheet(gid){clipList(gid).then(L=>{const urls=L.map(c=>URL.createObjectURL(c.blob));
   sheet(`<h3>Clips</h3><p class="note">Your spins from this crawl. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
     document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cs];clipShare(c.blob,c.type,c.at)});
@@ -3856,6 +3877,7 @@ async function shareStory(r){
     if($("shvAdd2"))$("shvAdd2").onclick=()=>photoSheet(r,()=>cards(0));
     $("shvSave").onclick=()=>{const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at)};
     $("shvGo").onclick=async()=>{if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
+      if(NATIVE){nativeShare(blobs[cur],file.name).catch(e=>console.warn(e));return}
       if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
       else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
   }
@@ -4075,7 +4097,9 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
       ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Save for next time</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
-    </div>`,()=>{bindSheetCard(v,bf);bindVisits();
+    </div>
+    <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
+    $("rpBar").onclick=()=>{const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:chris@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     if($("bsBack"))$("bsBack").onclick=opt.back;
@@ -4255,6 +4279,26 @@ function visitsSheet(tab){
   });
 }
 
+/* ---------- back up / restore: crawls, stats and lists as one file ---------- */
+function backupTab(){
+  const keep=["been","nfu","want","fav","names","clipAuto","camLight","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
+  const data={app:"rooftop-roulette",kind:"tab-backup",v:1,at:Date.now(),history:readH(HKEY),settings:st},d=new Date(),name=`rooftop-roulette-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
+  const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+  if(NATIVE){nativeShare(blob,name,"My Tab backup").catch(e=>console.warn(e));return}
+  const f=new File([blob],name,{type:"application/json"});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(()=>{});return}
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+function restoreTab(){const i=document.createElement("input");i.type="file";i.accept="application/json,.json";
+  i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;f.text().then(t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}
+    if(!d||d.kind!=="tab-backup"||!Array.isArray(d.history)){toast("That's not a Rooftop Roulette backup.",3500);return}
+    const cur=readH(HKEY),ids=new Set(cur.map(r=>r.id)),add=d.history.filter(r=>r&&r.id&&!ids.has(r.id));
+    sheet(`<h3>Restore My Tab?</h3><p class="note">${add.length?`Adds ${add.length} crawl${add.length===1?"":"s"} from ${new Date(d.at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}. Nothing already on this phone is removed.`:"Everything in this backup is already on this phone."}</p><div class="acts">${add.length?`<button class="btn" type="button" id="rsY">Restore</button>`:""}<button class="btn line" type="button" id="rsN">${add.length?"Cancel":"Close"}</button></div>`,()=>{
+      $("rsN").onclick=settingsSheet;
+      if($("rsY"))$("rsY").onclick=()=>{const all=cur.concat(add).sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,all);
+        const st=d.settings||{};["been","nfu","want","fav"].forEach(k=>{if(st[k]&&typeof st[k]==="object")S[k]=Object.assign({},st[k],S[k]||{})});save();
+        if(!hTest){H=readH(HKEY)}closeSheet();toast(`Restored ${add.length} crawl${add.length===1?"":"s"}.`,3000);render()}})})};
+  i.click()}
+
 /* ---------- settings (the gear) ---------- */
 function settingsSheet(){
   const tg=(id,on,t,sub)=>`<button class="toggle" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b><small>${sub}</small></span><span class="sw"></span></button>`;
@@ -4262,6 +4306,12 @@ function settingsSheet(){
   sheet(`<h3>Settings</h3><div class="tlist">
       ${tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot")}
       ${tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")}
+      ${NATIVE?tg("stGal",S.clipAuto!==false,"Save clips to gallery","Every filmed spin goes straight to your photos"):""}
+    </div>
+    <div class="eyebrow" style="margin:20px 0 4px">Your tab</div>
+    <div class="menu">
+      <button type="button" id="stBk">${I.share}<span>Back up My Tab<small>A file with your crawls, stats and lists</small></span></button>
+      <button type="button" id="stRs">${IC.tab||I.redo}<span>Restore My Tab<small>From a backup file</small></span></button>
     </div>
     <div class="menu" style="margin-top:14px">
       ${live?"":`<button type="button" id="stHow">${I.help}<span>How to play<small>Replay the intro and the tips</small></span></button>`}
@@ -4272,6 +4322,8 @@ function settingsSheet(){
     ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
     <p class="setv">Rooftop Roulette · __VERSION__</p>`,()=>{
     $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
+    if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
+    $("stBk").onclick=backupTab;$("stRs").onclick=restoreTab;
     $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
     if($("stHow"))$("stHow").onclick=()=>{closeSheet();S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
     $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(null,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
@@ -4342,7 +4394,7 @@ document.addEventListener("visibilitychange",()=>{
 if(S.game&&!S.test)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
-render();loop();
+render();loop();setTimeout(refreshVenues,1500);document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phone backups (Android 11 and older) keep My Tab, settings and lists, but not the spin clips:
+     they're big, they're already in the gallery, and Android stops backing up an app that goes over 25 MB. -->
+<full-backup-content>
+    <exclude domain="root" path="app_webview/Default/IndexedDB/" />
+</full-backup-content>

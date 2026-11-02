@@ -10,6 +10,10 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 - `build.py` writes `../index.html`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts so the page works as a single file.
 - `tests/` holds Playwright checks (see below).
 
+## Updating bars without an app release
+
+`build.py` also writes `venues.json` to the repo root with a version stamp. The app (web and native) checks it on launch and whenever it's reopened, and swaps in a newer list on the spot. To fix hours, add a bar or close one: edit `data/venues.json`, run the build, and push. Phones pick it up the next time the app opens, with no store update. Reports from "Wrong hours or info?" on each bar card arrive as emails to chris@rooftoproulette.com.
+
 ## Build and release
 
 1. Edit `index.template.html` (or `data/venues.json`).
