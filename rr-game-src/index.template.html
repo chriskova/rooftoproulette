@@ -1792,6 +1792,7 @@ const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"
 function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
+  if(SHARED&&S.route==="end"){VIEWS.forEach(v=>$("v-"+v).hidden=v!=="end");$("appbar").hidden=false;$("tabs").hidden=false;$("app").classList.add("has-tabs");renderEnd();return}
   if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
   if(!S.route)S.route=S.game?"play":"home";
@@ -2825,6 +2826,36 @@ function mp4Flat(buf){
   const out=new Uint8Array(ft.length+mv.length+mdatHead+total);out.set(ft,0);out.set(mv,ft.length);let k=ft.length+mv.length;new DataView(out.buffer).setUint32(k,mdatHead+total);out.set([109,100,97,116],k+4);k+=8;
   T.forEach(x=>x.t.smp.forEach(s=>{out.set(u.subarray(s.off,s.off+s.sz),k);k+=s.sz}));
   return out.buffer}
+/* ---------- crawl links: the whole crawl packed into the link, so mates can see it and add it to their tab ---------- */
+const SHARE_BASE="https://chriskova.github.io/rooftoproulette/";
+const b64u=bytes=>{let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
+const unb64u=str=>{const s=atob(str.replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))};
+async function packCrawl(r){const t0=r.startedAt,sec=t=>t==null?-1:Math.round((t-t0)/1000);
+  const o={i:r.id,m:r.mode==="cruise"?"c":"r",l:r.len,ra:r.radius,c:r.city,a:r.areas,s:Math.round(t0/1000),e:sec(r.endedAt),d:sec(r.endsAt),
+    p:r.startPos?[+r.startPos.lat.toFixed(5),+r.startPos.lng.toFixed(5)]:null,ce:r.center?[+r.center.lat.toFixed(4),+r.center.lng.toFixed(4)]:null,
+    v:r.visits.filter(v=>v.arrivedAt!=null).map(v=>[v.id,sec(v.arrivedAt),sec(v.leftAt),v.counted===true?1:v.counted===false?0:-1,v.cant?1:0]),
+    b:r.barOfDay||null,j:r.jp&&r.jp.k||null,n:r.title||null,cz:r.cz||null,ae:r.autoEnded?1:0};
+  const raw=new TextEncoder().encode(JSON.stringify(o));
+  if(window.CompressionStream){try{const z=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer());return "z"+b64u(z)}catch(e){}}
+  return "j"+b64u(raw)}
+async function unpackCrawl(str){let raw=unb64u(str.slice(1));
+  if(str[0]==="z")raw=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+  const o=JSON.parse(new TextDecoder().decode(raw)),t0=o.s*1000,at=x=>x<0?null:t0+x*1000;
+  if(!o||!o.i||!Array.isArray(o.v))throw new Error("bad crawl link");
+  return {id:o.i,mode:o.m==="c"?"cruise":"rush",len:o.l,radius:o.ra,city:o.c,areas:o.a||[],startedAt:t0,endedAt:at(o.e),endsAt:at(o.d),started:true,ended:true,
+    startPos:o.p?{lat:o.p[0],lng:o.p[1]}:null,center:o.ce?{lat:o.ce[0],lng:o.ce[1]}:null,
+    visits:o.v.filter(v=>byId(v[0])).map(v=>({id:v[0],arrivedAt:at(v[1]),leftAt:at(v[2]),counted:v[3]===1?true:v[3]===0?false:null,cant:v[4]?true:undefined})),
+    barOfDay:o.b||null,jp:o.j?{k:o.j,claimed:true}:null,title:o.n||undefined,cz:o.cz||undefined,autoEnded:!!o.ae,trail:[],moves:[],bodDone:true,stillAsked:true,shared:true}}
+async function crawlLink(r){try{return SHARE_BASE+"#crawl="+(await packCrawl(r))}catch(e){return SHARE_BASE}}
+const crawlLine=r=>{const st=stats(r),n=st.counted.length;return `${r.title?r.title+": ":""}${n} bar${n===1?"":"s"} on Rooftop Roulette.`};
+let SHARED=null;
+async function openSharedFromHash(){const m=location.hash.match(/crawl=([A-Za-z0-9_-]+)/);if(!m)return;
+  try{const r=await unpackCrawl(m[1]);SHARED=r;S.lastEnd=r.id;S.route="end";track("crawl_link_open",{in_tab:readH(HKEY).some(x=>x.id===r.id)});render()}
+  catch(e){toast("That crawl link didn't work.",3500)}
+  history.replaceState(null,"",location.pathname+location.search)}
+function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.some(x=>x.id===r.id)){L.push(r);L.sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,L)}
+  if(!hTest)H=readH(HKEY);track("crawl_link_add");SHARED=null;toast("Added to your tab.",2500);
+  if(hTest){go("home")}else{S.lastEnd=r.id;save();renderEnd()}}
 let camPopT=null;
 function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
   p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
@@ -2946,16 +2977,20 @@ const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("cl
 const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform()),PLG=NATIVE?CAPX.Plugins:{};
 const b64of=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
 async function nativeFile(blob,name){const r=await PLG.Filesystem.writeFile({path:name,data:await b64of(blob),directory:"CACHE"});return r.uri}
-async function nativeShare(blob,name,title){const uri=await nativeFile(blob,name);await PLG.Share.share({files:[uri],title:title||"Rooftop Roulette"})}
+async function nativeShare(blob,name,title,text){const uri=await nativeFile(blob,name),o={files:[uri],title:title||"Rooftop Roulette"};if(text)o.text=text;await PLG.Share.share(o)}
 let galleryAlbum=null;
 async function nativeSaveVideo(blob,name){const uri=await nativeFile(blob,name),opt={path:uri};
   if(CAPX.getPlatform()==="android"){if(!galleryAlbum){const find=async()=>((await PLG.Media.getAlbums()).albums||[]).find(a=>a.name==="Rooftop Roulette");let a=await find();if(!a){await PLG.Media.createAlbum({name:"Rooftop Roulette"});a=await find()}galleryAlbum=a&&a.identifier}
     if(galleryAlbum)opt.albumIdentifier=galleryAlbum;opt.fileName=name.replace(/\.\w+$/,"")}
   return PLG.Media.saveVideo(opt)}
+async function nativeSavePhoto(blob,name){const uri=await nativeFile(blob,name),opt={path:uri};
+  if(CAPX.getPlatform()==="android"){await nativeAlbum();if(galleryAlbum)opt.albumIdentifier=galleryAlbum;opt.fileName=name.replace(/\.\w+$/,"")}
+  return PLG.Media.savePhoto(opt)}
+async function nativeAlbum(){if(galleryAlbum)return galleryAlbum;const find=async()=>((await PLG.Media.getAlbums()).albums||[]).find(a=>a.name==="Rooftop Roulette");let a=await find();if(!a){await PLG.Media.createAlbum({name:"Rooftop Roulette"});a=await find()}galleryAlbum=a&&a.identifier;return galleryAlbum}
 function clipFile(blob,type,at){const ext=/mp4/.test(type)?"mp4":"webm",d=new Date(at||Date.now());return new File([blob],`rooftop-roulette-${d.getHours()}${String(d.getMinutes()).padStart(2,"0")}${String(d.getSeconds()).padStart(2,"0")}.${ext}`,{type:type.split(";")[0]})}
 function clipSave(blob,type,at){if(NATIVE){const f=clipFile(blob,type,at);return nativeSaveVideo(blob,f.name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)})}
   const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
-function clipShare(blob,type,at){const f=clipFile(blob,type,at);if(NATIVE){nativeShare(blob,f.name).catch(e=>console.warn(e));return}if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else clipSave(blob,type,at)}
+function clipShare(blob,type,at,text){const f=clipFile(blob,type,at);if(NATIVE){nativeShare(blob,f.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}const o=text?{files:[f],text}:{files:[f]};if(navigator.canShare&&navigator.canShare(o))navigator.share(o).catch(()=>{});else clipSave(blob,type,at)}
 function clipsSheet(gid){clipList(gid).then(L=>{const urls=L.map(c=>URL.createObjectURL(c.blob));
   sheet(`<h3>Clips</h3><p class="note">Your spins from this crawl. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
     document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cs];clipShare(c.blob,c.type,c.at)});
@@ -3558,7 +3593,8 @@ function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)r
   el.style.height=Math.max(140,Math.min(460,h))+"px";if(eMap){const m=eMap;m.resize&&m.resize();m._fit&&setTimeout(()=>{if(eMap===m&&document.contains(el)&&!box.hidden)try{m._fit()}catch(e){}},60)}}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
-  const r=H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){go("home");return}
+  const r=(SHARED&&SHARED.id===S.lastEnd&&!H.some(x=>x.id===SHARED.id))?SHARED:H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){SHARED=null;go("home");return}
+  const isShared=r===SHARED;
   const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours",aw=cr?cruiseAwards(r,st):awards(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
@@ -3598,7 +3634,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
             <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
-    <div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>
+    ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>`
+      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -3615,10 +3652,11 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
-  $("doneBtn").onclick=()=>go("home");$("scMore").onclick=()=>crawlMenu(r);$("scName").onclick=()=>nameCrawl(r);
+  $("doneBtn").onclick=()=>{SHARED=null;go("home")};if($("addTab"))$("addTab").onclick=addSharedToTab;
+  if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card$("scMore").onclick=()=>crawlMenu(r);$("scName").onclick=()=>nameCrawl(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
-  $("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
+  if($("runBack"))$("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
   if(S.rackEnd===r.id){delete S.rackEnd;save();if(n){const nb=box.querySelector(".tri>div b");if(nb)nb.textContent="0";setTimeout(()=>rackUp(box,n),700)}}
   requestAnimationFrame(async()=>{
@@ -3881,17 +3919,21 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const vids=[...ov.querySelectorAll(".shv-s")].map(sl=>sl.querySelector("video"));
     const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="clip"?"hidden":"visible";
-      $("shvSave").hidden=looks[cur]!=="clip";vids.forEach((v,i)=>{if(!v)return;if(i===cur)v.play().catch(()=>{});else v.pause()})};
+      $("shvSave").hidden=false;vids.forEach((v,i)=>{if(!v)return;if(i===cur)v.play().catch(()=>{});else v.pause()})};
     ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
     car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;mark()}},{passive:true});
     dots.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));
     ov.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.ph];saveH();cards(0)});
     if($("shvAdd2"))$("shvAdd2").onclick=()=>photoSheet(r,()=>cards(0));
-    $("shvSave").onclick=()=>{const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at)};
-    $("shvGo").onclick=async()=>{track("share_sent",{kind:looks[cur]});if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
-      if(NATIVE){nativeShare(blobs[cur],file.name).catch(e=>console.warn(e));return}
-      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]}).catch(()=>{})}
+    $("shvSave").onclick=()=>{track("card_saved",{kind:looks[cur]});if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at);return}
+      const name=`rooftop-roulette-${looks[cur]}.png`;if(NATIVE){nativeSavePhoto(blobs[cur],name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)});return}
+      const a=document.createElement("a");a.href=urls[cur];a.download=name;document.body.appendChild(a);a.click();a.remove()};
+    const linkP=r.shared?Promise.resolve(null):crawlLink(r);
+    $("shvGo").onclick=async()=>{track("share_sent",{kind:looks[cur]});const link=await linkP,text=link?`${crawlLine(r)}\n${link}`:"";
+      if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at,text);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
+      if(NATIVE){nativeShare(blobs[cur],file.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}
+      if(navigator.canShare&&navigator.canShare(text?{files:[file],text}:{files:[file]})){await navigator.share(text?{files:[file],text}:{files:[file]}).catch(()=>{})}
       else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
   }
   if(r.photo)cards(0);else ask();
@@ -4407,7 +4449,7 @@ document.addEventListener("visibilitychange",()=>{
 if(S.game&&!S.test)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
-render();loop();setTimeout(refreshVenues,1500);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
+render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
