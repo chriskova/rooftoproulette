@@ -1,5 +1,5 @@
 {
   "_note": "Public analytics settings baked into the app at build time. The PostHog project API key is meant to be public (it can only send events, not read them). Leave it empty to turn analytics off.",
-  "posthogKey": "",
-  "posthogHost": "https://us.i.posthog.com"
+  "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
+  "posthogHost": "https://eu.i.posthog.com"
 }
