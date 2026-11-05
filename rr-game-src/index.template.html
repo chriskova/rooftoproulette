@@ -1101,11 +1101,13 @@ h1.q.modename{font-size:46px}
 #v-home .hero .sub{font-size:16px;opacity:.85}
 #v-home .card.mode{flex:1 0 auto;justify-content:flex-start;padding:20px 18px 8px;gap:14px}
 #v-home .mode .btn{margin-top:auto}
-#v-home .mode .mtop{gap:16px}
-#v-home .mode h2.q{font-size:36px;margin:2px 0 8px}
-#v-home .mode .modeline{font-size:15px;line-height:1.45}
-#v-home .mode .mic{width:46px;height:46px;border-radius:14px}
-#v-home .mode .mic svg{width:24px;height:24px}
+/* the type grows with the screen's height so tall phones don't leave a gap in each card */
+#v-home .mode .mtop{gap:clamp(16px,calc(16px + (100dvh - 720px)*.03),22px)}
+#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*.13),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*.03),14px)}
+#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*.032),20px);line-height:1.45;text-wrap:pretty}
+#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*.08),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*.08),60px);border-radius:clamp(14px,1.8dvh,18px)}
+#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*.04),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*.04),30px)}
+#v-home .mode .btn{height:clamp(52px,calc(52px + (100dvh - 720px)*.04),60px);font-size:clamp(16px,calc(16px + (100dvh - 720px)*.015),18px)}
 #v-home .mode .howlink{padding:6px 0 8px;margin-top:-6px;font-size:14px}
 .mbtns{display:flex;gap:10px;align-items:center}
 .mbtns .btn{flex:1}
