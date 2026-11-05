@@ -48,3 +48,7 @@ Add `?test` to the URL for test mode: no real GPS, tap the map to fake your loca
 - `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`. Placeholder for now: swap those for the final logo and re-run.
 - Every push to `main` that changes `index.html` or `app/` builds an Android test APK on GitHub Actions and puts it on the `android-test` release (download it on the phone and install).
 - iOS needs the Apple Developer account before builds can be signed.
+
+## Site pages (site/)
+
+`site/privacy.html`, `site/terms.html` and `site/support.html` are the pages Settings links to. `build.py` copies them to the repo root next to the app. The app finds them through the `SITE` constant in `index.template.html`: change that one line when the pages move to rooftoproulette.com.

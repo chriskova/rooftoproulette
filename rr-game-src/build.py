@@ -12,7 +12,7 @@ open(os.path.join(OUT,'index.html'),'w').write(t.replace('__VENUES_V__',str(VV))
 m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v59-12";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v59-14";
 const ASSETS=["./","index.html","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
@@ -27,6 +27,9 @@ self.addEventListener("fetch",e=>{
 ''')
 open(os.path.join(OUT,'.nojekyll'),'w').write('')
 print('built',len(V))
+# support, privacy and terms pages: served next to the app (linked from Settings)
+for f in os.listdir(os.path.join(D,'site')):
+    if f.endswith('.html'):shutil.copy(os.path.join(D,'site',f),os.path.join(OUT,f))
 # inline Leaflet so the page also works as a single downloaded file
 p=os.path.join(OUT,'index.html');s=open(p).read()
 css=open(os.path.join(OUT,'vendor/leaflet/leaflet.css')).read()

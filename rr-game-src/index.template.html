@@ -506,6 +506,10 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.plist{display:flex;flex-direction:column;margin:12px 0 4px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.plist div{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line);font-size:15px}.plist div:first-child{border-top:0}
+.pst{font-size:13px;color:var(--muted);font-weight:600}.pst.ok{color:var(--green)}.pst.no{color:var(--red)}
+
 .sc-top{gap:6px}.sc-top .scttl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;letter-spacing:.08em}
 .scback{appearance:none;flex:none;background:none;border:0;padding:4px;margin-left:-6px;color:var(--text);display:grid;place-items:center;cursor:pointer}.scback svg{width:22px;height:22px}
 .phclips{position:absolute;right:3px;bottom:3px;font-style:normal;font-size:10px;font-weight:800;background:rgba(11,13,18,.78);color:#fff;border-radius:6px;padding:1px 4px;pointer-events:none}
@@ -1455,6 +1459,7 @@ const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const AN=__ANALYTICS__,APPV="__VERSION__";
+const SITE="https://chriskova.github.io/rooftoproulette/",SUPPORT="hello@rooftoproulette.com",IG="https://www.instagram.com/rooftoproulette/",TT="https://www.tiktok.com/@rooftoproulette",PLAY="https://play.google.com/store/apps/details?id=com.rooftoproulette.app";
 /* Usage and crash reports, anonymous: a random install ID, the app version and what happened (e.g. "crawl ended, 4 bars").
    Never names, coordinates, photos or clips. Off in test mode, and off entirely until a PostHog key is set in data/config.json. */
 const anId=(()=>{try{let i=localStorage.getItem("rr-anon");if(!i){i=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem("rr-anon",i)}return i}catch(e){return "na"}})();
@@ -1470,7 +1475,7 @@ const anDev=(()=>{const u=navigator.userAgent||"";
   return {$os:os,$browser:br,$device_type:/Mobi|Android|iPhone/i.test(u)?"Mobile":/iPad|Tablet/i.test(u)?"Tablet":"Desktop",$raw_user_agent:u.slice(0,400),
     $referrer:ref||"$direct",$referring_domain:ref?(()=>{try{return new URL(ref).host}catch(e){return "$direct"}})():"$direct",
     $screen_width:screen.width,$screen_height:screen.height}})();
-function track(event,props){try{if(!AN.posthogKey||(typeof S!=="undefined"&&S&&S.test))return;
+function track(event,props){try{if(!AN.posthogKey||(typeof S!=="undefined"&&S&&(S.test||S.anOff)))return;
   const base={app_version:APPV,platform:anPlat(),$lib:"web",$session_id:anSess(),$host:location.host||"app",$current_url:location.href.split("#")[0],$pathname:location.pathname,$viewport_width:innerWidth,$viewport_height:innerHeight};
   const body=JSON.stringify({api_key:AN.posthogKey,event,distinct_id:anId,timestamp:new Date().toISOString(),properties:Object.assign(base,anDev,props||{})});
   fetch(AN.posthogHost.replace(/\/$/,"")+"/i/v0/e/",{method:"POST",headers:{"Content-Type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}}
@@ -2876,7 +2881,7 @@ function camStart(){
     if(/mp4/.test(type)){try{const flat=mp4Flat(await blob.arrayBuffer());if(flat){blob=new Blob([flat],{type:"video/mp4"});type="video/mp4"}}catch(e){console.warn("clip: couldn't flatten",e)}}   // proper length in the gallery and on Instagram
     const at=Date.now();const auto=NATIVE&&S.clipAuto!==false?nativeSaveVideo(blob,clipFile(blob,type,at).name).then(()=>true).catch(e=>{console.warn(e);return false}):Promise.resolve(false);
     track("clip_recorded",{seconds:Math.round((Date.now()-CAM.t0)/1000),gallery:NATIVE&&S.clipAuto!==false});
-    clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>auto).then(inGal=>{const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at,inGal)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
+    clipPut({id:"c"+at,game:gid,at,type,blob}).then(()=>auto).then(inGal=>{if(inGal)clipPut({id:"c"+at,game:gid,at,type,blob,gal:true}).catch(()=>{});const g_=G();if(g_&&g_.id===gid){g_.clipN=(g_.clipN||0)+1;save()}camSaved(blob,type,at,inGal)}).catch(()=>toast("Couldn't save the clip. Phone storage might be full.",4000))};
   CAM.rec=rec;CAM.t0=Date.now();CAM.idleAt=0;rec.start(1000);
   let next=0;const FR=1000/30,frame=()=>{camDraw();if(vtrack&&vtrack.requestFrame)vtrack.requestFrame()};
   const loop=t=>{if(CAM.rec!==rec)return;if(!next)next=t;if(t>=next-6){frame();next+=FR;if(t-next>FR*2)next=t+FR}requestAnimationFrame(loop)};frame();requestAnimationFrame(loop);   // 30fps on a fixed beat, so playback doesn't stutter
@@ -3069,6 +3074,8 @@ function camDraw(){
 /* clips: kept on the phone (IndexedDB), grouped by night */
 const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
 const clipPut=o=>clipDB().then(db=>new Promise((res,rej)=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").put(o);t.oncomplete=res;t.onerror=()=>rej(t.error)}));
+const clipAll=()=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])})).catch(()=>[]);
+const mbTxt=b=>b<1e6?Math.max(1,Math.round(b/1e3))+" KB":b<1e9?(b/1e6).toFixed(b<1e7?1:0)+" MB":(b/1e9).toFixed(1)+" GB";
 const clipList=gid=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
 const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
 /* in the native app the browser's share and download don't exist: use the phone's own share sheet and gallery */
@@ -4507,34 +4514,79 @@ function restoreTab(){const i=document.createElement("input");i.type="file";i.ac
 /* ---------- settings (the gear) ---------- */
 function settingsSheet(){
   const tg=(id,on,t,sub)=>`<button class="toggle" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b><small>${sub}</small></span><span class="sw"></span></button>`;
-  const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended);
+  const lk=(id,ic,t,sub)=>`<button type="button" id="${id}">${ic}<span>${t}${sub?`<small>${sub}</small>`:""}</span></button>`;
+  const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat();
   sheet(`<h3>Settings</h3><div class="tlist">
       ${tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot")}
       ${tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")}
       ${NATIVE?tg("stGal",S.clipAuto!==false,"Save clips to gallery","Every filmed spin goes straight to your photos"):""}
     </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Your tab</div>
-    <div class="menu">
-      <button type="button" id="stBk">${I.share}<span>Back up My Tab<small>A file with your crawls, stats and lists</small></span></button>
-      <button type="button" id="stRs">${IC.tab||I.redo}<span>Restore My Tab<small>From a backup file</small></span></button>
+    <div class="eyebrow" style="margin:20px 0 4px">Your tab</div><div class="menu">
+      ${lk("stBk",I.share||I.check,"Back up My Tab","A file with your crawls, stats and lists")}
+      ${lk("stRs",I.redo||I.back,"Restore My Tab","From a backup file")}
+      <button type="button" id="stClips">${I.camera}<span>Clips on this phone<small id="stClipsS">Checking…</small></span></button>
     </div>
-    <div class="menu" style="margin-top:14px">
-      ${live?"":`<button type="button" id="stHow">${I.help}<span>How to play<small>Replay the intro and the tips</small></span></button>`}
+    <div class="eyebrow" style="margin:20px 0 4px">Privacy</div><div class="tlist">
+      ${tg("stAn",!S.anOff,"Share usage data","Anonymous: which screens get used and when crawls start and end. Never names, locations, photos or clips")}
+    </div><div class="menu">
+      <button type="button" id="stPerm">${I.pin}<span>Permissions<small id="stPermS">Location, camera and mic</small></span></button>
+      ${lk("stPriv",I.help,"Privacy policy","")}
+    </div>
+    <div class="eyebrow" style="margin:20px 0 4px">Help</div><div class="menu">
+      ${live?"":lk("stHow",I.help,"How to play","Replay the intro and the tips")}
+      ${lk("stSup",I.help,"Contact us",SUPPORT)}
+      ${lk("stBug",I.flag,"Report a problem","Something broken? Tell us what happened")}
+      ${lk("stTerms",I.help,"Terms of use","")}
+    </div>
+    <div class="eyebrow" style="margin:20px 0 4px">Follow along</div><div class="menu">
+      ${lk("stIG",I.camera,"Instagram","@rooftoproulette")}
+      ${lk("stTT",I.camera,"TikTok","@rooftoproulette")}
+      ${plat==="android"?lk("stRate",I.sparkle||I.check,"Rate Rooftop Roulette","On Google Play"):""}
     </div>
     <div class="eyebrow" style="margin:20px 0 4px">Testing</div><div class="tlist">
       ${tg("stTest",S.test,"Test mode","No real GPS: tap the map to move. Test crawls stay off your tab")}
     </div>
     ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
     <p class="setv">Rooftop Roulette · __VERSION__</p>`,()=>{
+    const ext=u=>{try{window.open(u,"_blank","noopener")}catch(e){location.href=u}};
     $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
-    if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
-    $("stBk").onclick=backupTab;$("stRs").onclick=restoreTab;
     $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
+    if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
+    $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
+    $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();
+    clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
+      el.textContent=L.length?`${L.length} clip${L.length===1?"":"s"} · ${mbTxt(bytes)}`:"None yet";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
+    $("stPerm").onclick=permSheet;
+    $("stPriv").onclick=()=>ext(SITE+"privacy.html");$("stTerms").onclick=()=>ext(SITE+"terms.html");
     if($("stHow"))$("stHow").onclick=()=>{closeSheet();S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
+    $("stSup").onclick=()=>{location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}`};
+    $("stBug").onclick=()=>{const body=`What happened:\n\n\nWhat you expected:\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
+      location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Problem report")}&body=${encodeURIComponent(body)}`};
+    $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
     $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(null,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
     if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
       $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render()};$("stClrN").onclick=settingsSheet});
   })}
+// Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
+function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
+  sheet(`<h3>Clips on this phone</h3><p class="note">${L.length} clip${L.length===1?"":"s"} · ${sz(L)}. Clearing them here doesn't touch copies in your photos.</p>
+    <div class="acts">${inGal.length?`<button class="btn" type="button" id="ccGal">Clear the ${inGal.length} already in your photos (${sz(inGal)})</button>`:""}
+    <button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all clips (${sz(L)})</button><button class="btn line" type="button" id="ccNo">Back</button></div>`,()=>{
+    const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${a.length} clip${a.length===1?"":"s"}`,2500);settingsSheet();if(S.route==="end")renderEnd()});
+    if($("ccGal"))$("ccGal").onclick=()=>del(inGal);
+    $("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${L.length-inGal.length?`${L.length-inGal.length} of them aren't in your photos, so they'll be gone for good.`:"They're all in your photos too."}</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
+    $("ccNo").onclick=settingsSheet})}
+// What the app is allowed to use, and a way to change it.
+async function permSheet(){
+  const q=async n=>{try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
+  const [loc,cam,mic]=await Promise.all([q("geolocation"),q("camera"),q("microphone")]);
+  const lab=st=>st==="granted"?`<span class="pst ok">Allowed</span>`:st==="denied"?`<span class="pst no">Off</span>`:st==="prompt"?`<span class="pst">Asks when needed</span>`:`<span class="pst">—</span>`;
+  const NS=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.NativeSettings;
+  sheet(`<h3>Permissions</h3><p class="note">Location checks you in at bars. Camera and mic are only for filming spins.</p>
+    <div class="plist"><div><b>Location</b>${lab(loc)}</div><div><b>Camera</b>${lab(cam)}</div><div><b>Microphone</b>${lab(mic)}</div></div>
+    <div class="acts">${NS?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:`<p class="note">To change these, open your browser's site settings for Rooftop Roulette.</p>`}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
+    if($("pmOpen"))$("pmOpen").onclick=()=>{try{NS.open({optionAndroid:"application_details",optionIOS:"App"})}catch(e){}};
+    $("pmBack").onclick=settingsSheet})}
 ["gearBar","gearHome"].forEach(id=>$(id).onclick=()=>settingsSheet());
 
 /* ---------- test mode ---------- */
