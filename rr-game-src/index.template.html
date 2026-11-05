@@ -506,6 +506,12 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.slist{display:flex;flex-direction:column;margin-top:4px}
+.srow{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}.srow.x{opacity:.55}
+.srow .t{flex:1;min-width:0;text-align:left}.srow small{display:block;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500;text-align:left}.srow b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .d{flex:none;font-weight:700;font-size:14px}
+.vrow .n2{flex:none;width:34px;text-align:center;font-family:var(--display);font-weight:800;font-size:26px;color:var(--amber);line-height:1}
+
 .hwant{appearance:none;display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--s2);color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer}
 .hwant svg{width:16px;height:16px;color:var(--amber);flex:none}.hwant span{flex:1}.hwant b{color:var(--amber)}.hwant .chev{font-style:normal;color:var(--muted);font-size:18px;line-height:1}
 
@@ -4216,7 +4222,8 @@ const stayTxt=ms=>{const m=Math.max(1,Math.round(ms/60000));if(m<60)return m+" m
 const gameLbl=x=>(x.r.mode==="cruise"?"R&amp;R":"Rush Hour")+" · "+stayTxt(x.d);
 function visitsHTML(v){const vs=visitsOf(v.id);if(!vs.length)return "";
   if(vs.length===1)return `<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> ${dateTxt(vs[0].t)} · ${gameLbl(vs[0])}</p>`;
-  return `<button class="vhist" type="button" id="vHist" aria-expanded="false"><span class="stamp col">Visited</span> ${vs.length} times · last ${dateTxt(vs[0].t)} <span class="chev">›</span></button>
+  const tot=vs.reduce((s,x)=>s+x.d,0);
+  return `<button class="vhist" type="button" id="vHist" aria-expanded="false"><span class="stamp col">Visited</span> ${vs.length} times · ${hmm(tot)} all up <span class="chev">›</span></button>
     <div class="vlist" id="vList">${vs.map(x=>`<button type="button" data-g="${x.r.id||""}">${dateTxt(x.t)}<span>${gameLbl(x)}</span></button>`).join("")}</div>`}
 function bindVisits(){const b=$("vHist");if(!b)return;b.onclick=()=>{const on=b.getAttribute("aria-expanded")!=="true";b.setAttribute("aria-expanded",String(on));$("vList").classList.toggle("on",on)};
   $("vList").querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{const id=x.dataset.g;if(!id||!H.some(r=>r.id===id))return;closeSheet();S.lastEnd=id;go("end")})}
@@ -4346,13 +4353,13 @@ function renderHist(){
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
   const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records(),ht=S.histTab==="bests"&&recs.length?"bests":"crawls";
-  const topRoof=(()=>{const c={};vs.forEach(x=>{(c[x.b.id]||(c[x.b.id]={b:x.b,n:0})).n++});return Object.values(c).sort((a,b)=>b.n-a.n)[0]||null})();
+  const topRoof=(()=>{const c={};vs.forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0});o.ms+=x.ms});return Object.values(c).sort((a,b)=>b.ms-a.ms)[0]||null})();
   b.innerHTML=`<h1 class="q">My Tab</h1>
     <div class="grid2 hstats">
       <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${thisMonth?thisMonth+" crawl"+(thisMonth===1?"":"s")+" this month":"Last crawl "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
-      <button class="stat tap" type="button" id="hRoofs"><small>Rooftops <span class="chev">›</span></small><b>${uniq}</b><em>${topRoof?esc(topRoof.b.name)+" ×"+topRoof.n:"—"}</em></button>
-      <button class="stat tap" type="button" data-tobest="1"><small>Distance <span class="chev">›</span></small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></button>
-      <button class="stat tap" type="button" data-tobest="1"><small>Time at bars <span class="chev">›</span></small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></button>
+      <button class="stat tap" type="button" id="hMost"><small>Most time at <span class="chev">›</span></small><b>${topRoof?hmm(topRoof.ms):"—"}</b><em>${topRoof?esc(topRoof.b.name):"—"}</em></button>
+      <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></button>
+      <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></button>
     </div>
     <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls · ${games}</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
     ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that crawl.</p>`:`
@@ -4362,8 +4369,9 @@ function renderHist(){
   b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
   // long-press a crawl for its options
   b.querySelectorAll(".hrow").forEach(x=>longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)}));
-  $("hVisits").onclick=()=>visitsSheet();$("hRoofs").onclick=()=>visitsSheet("bars");
-  b.querySelectorAll("[data-tobest]").forEach(x=>x.onclick=()=>{if(!recs.length)return;S.histTab="bests";save();renderHist();const sg=$("v-hist").querySelector(".hseg");if(sg)sg.scrollIntoView({behavior:"smooth",block:"start"})});
+  $("hVisits").onclick=()=>visitsSheet();
+  $("hMost").onclick=()=>{if(topRoof)barSheet(topRoof.b)};
+  $("hDist").onclick=()=>crawlStatSheet("dist");$("hTime").onclick=()=>crawlStatSheet("time");
 }
 // ⋯ on a crawl: name it, move it between real and test, or delete it
 const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
@@ -4399,22 +4407,35 @@ function deleteCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
   // its clips go once the undo has passed
   setTimeout(()=>{if(undone||H.some(x=>x.id===r.id))return;clipList(r.id).then(L=>L.forEach(c=>clipDel(c.id))).catch(()=>{})},7000)}
 // Every bar visit, like a ride history: by month, newest first. Second tab ranks the rooftops.
-function visitsSheet(tab){
-  tab=tab||"visits";const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0);
-  let list="";
-  if(tab==="visits"){let m=null;
-    list=vs.map(x=>{const mm=monthTxt(x.t),head=mm!==m?`<div class="vmon"><span>${mm.split(" ")[0]}${mm.split(" ")[1]!==String(new Date(now()).getFullYear())?" "+mm.split(" ")[1]:""}</span><small>${vs.filter(y=>monthTxt(y.t)===mm).length} visits</small></div>`:"";m=mm;
-      return head+`<button class="vrow" type="button" data-g="${x.r.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}${x.r.barOfDay===x.b.id?" · ★":""}</small></span><span class="d">${hmm(x.ms)}</span></button>`}).join("");
-  }else{const by={};vs.forEach(x=>{const o=by[x.b.id]||(by[x.b.id]={b:x.b,n:0,ms:0,last:0});o.n++;o.ms+=x.ms;o.last=Math.max(o.last,x.t)});
-    list=Object.values(by).sort((a,b)=>b.n-a.n||b.ms-a.ms||b.last-a.last).map((o,i)=>`<button class="vrow" type="button" data-b="${o.b.id}">${vthumb(o.b)}<span class="t"><b>${esc(o.b.name)}${S.fav[o.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${esc(o.b.area)} · ${hmm(o.ms)} total · last ${dateTxt(o.last)}</small></span><span class="d n">${o.n}<i>${o.n===1?"visit":"visits"}</i></span></button>`).join("")}
-  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"} · ${hmm(atBars)} at bars</p>
-    <div class="seg vseg"><button type="button" data-vt="visits" aria-pressed="${tab==="visits"}">Visits</button><button type="button" data-vt="bars" aria-pressed="${tab==="bars"}">Rooftops</button></div>
-    <div class="vlist2">${list}</div>`,()=>{
+function visitsSheet(){
+  const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0),yr=String(new Date(now()).getFullYear());let m=null;
+  const list=vs.map(x=>{const mm=monthTxt(x.t),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
+    return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}</small></span><span class="d">${hmm(x.ms)}</span></button>`}).join("");
+  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"} · ${hmm(atBars)} at bars</p><div class="vlist2">${list}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    $("sheetBody").querySelectorAll("[data-vt]").forEach(x=>x.onclick=()=>{if(x.dataset.vt!==tab)visitsSheet(x.dataset.vt)});
-    $("sheetBody").querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{closeSheet();S.lastEnd=x.dataset.g;go("end")});
-    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(!v)return;barSheet(v);if(typeof bindVisits==="function")bindVisits()});
+    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bar visits"})});
   });
+}
+// Distance or time, crawl by crawl. Tap a crawl for its legs (distance) or its bars (time).
+function crawlStatSheet(kind,id){
+  const isD=kind==="dist",N=H.map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at bars";
+  const name=r=>r.title?esc(r.title):dateTxt(rt(r,r.startedAt));
+  if(id){const x=N.find(o=>o.r.id===id);if(!x){crawlStatSheet(kind);return}const r=x.r,st=x.st;
+    let rows;
+    if(isD){const pts=[{name:"Start"}].concat(st.arrived.map(v=>byId(v.id)));
+      rows=st.arrived.map((v,i)=>{const leg=st.legs?st.legs[i]:null,d=leg?leg.d:dist(i?byId(st.arrived[i-1].id):r.startPos,byId(v.id))*1.3;
+        return `<div class="srow"><span class="t"><small>${i?esc(pts[i].name):"Start"} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")}
+    else rows=st.arrived.map((v,i)=>{const ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt),b_=byId(v.id);
+        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${hmm(ms)}</span></div>`}).join("");
+    sheet(`<button class="txtbtn bsback" type="button" id="csBack">‹ ${lbl}</button><h3>${name(r)}</h3><p class="note vsum">${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" bar"+(st.counted.length===1?"":"s")}</p>
+      <div class="slist">${rows||'<p class="note">No bars on this one.</p>'}</div><button class="btn line" type="button" id="csOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
+      $("csBack").onclick=()=>crawlStatSheet(kind);$("csOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")}});
+    return}
+  const tot=N.reduce((s,x)=>s+val(x),0);
+  sheet(`<h3>${lbl}</h3><p class="note vsum">${fmt(tot)} across ${N.length} crawl${N.length===1?"":"s"} · ${fmt(tot/Math.max(1,N.length))} a crawl</p>
+    <div class="vlist2">${N.map(x=>`<button class="vrow" type="button" data-cs="${x.r.id}"><span class="n2">${x.st.counted.length}</span><span class="t"><b>${name(x.r)}</b><small>${modeTxt(x.r)}${x.r.title?" · "+dateTxt(rt(x.r,x.r.startedAt)):""}</small></span><span class="d">${fmt(val(x))}</span></button>`).join("")}</div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;
+    $("sheetBody").querySelectorAll("[data-cs]").forEach(b_=>b_.onclick=()=>crawlStatSheet(kind,b_.dataset.cs))});
 }
 
 /* ---------- back up / restore: crawls, stats and lists as one file ---------- */

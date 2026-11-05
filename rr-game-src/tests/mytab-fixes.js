@@ -19,8 +19,8 @@ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bx[
 await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(500);
 console.log('long-press menu:',await p.evaluate(()=>$('sheet').open&&!!$('cmDel')),'route still my-tab:',await p.evaluate(()=>S.route),'selection:',JSON.stringify(await p.evaluate(()=>String(getSelection()))));
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
-await p.click('#hRoofs');await p.waitForTimeout(400);console.log('rooftops tile:',await p.evaluate(()=>document.querySelector('[data-vt="bars"]').getAttribute('aria-pressed')));
-await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);await p.click('[data-tobest]');await p.waitForTimeout(500);console.log('distance tile → bests:',await p.evaluate(()=>S.histTab));
+await p.click('#hDist');await p.waitForTimeout(400);console.log('distance tile:',await p.evaluate(()=>document.querySelector('#sheetBody h3').textContent));
+await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 // Hit list line + R&R default
 await p.evaluate(()=>{S.want={'the-glenmore':1,'untied':1,'smoke-bar':1};S.histTab='crawls';save();go('home')});await p.waitForTimeout(400);
 console.log('home line:',await p.evaluate(()=>!$('homeWant').hidden&&$('homeWant').textContent.trim()));await p.screenshot({path:'out/t2.png'});
