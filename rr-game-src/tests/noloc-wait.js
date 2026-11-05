@@ -8,11 +8,11 @@ await p.evaluate(()=>{S.onboarded=true;const t=Date.now(),st={lat:-33.8688,lng:1
  S.game={id:'gw',city:'Sydney',mode:'rush',len:60,radius:1,noLoc:true,started:true,startedAt:t-6e4,endsAt:t+59*6e4,startPos:st,center:st,areas:['Sydney CBD'],moves:[],visits:[],trail:[],zone:{lat:st.lat,lng:st.lng},target:'the-glenmore',targetAt:t,targetFrom:st};save();go('play')});
 await p.waitForTimeout(500);
 const walk=await p.evaluate(()=>walkMin(S.game.targetFrom,byId('the-glenmore')));
-console.log('walk min',walk,'| button now:',await p.evaluate(()=>$('hereBtn').disabled+' "'+$('hereBtn').textContent.trim()+'" | why: '+(($('hereWhy')||{}).textContent||'none')));
+console.log('walk min',walk,'| button now:',await p.evaluate(()=>$('hereBtn').classList.contains('locked')+' "'+$('hereBtn').textContent.trim()+'" | why: '+(($('hereWhy')||{}).textContent||'none')));
 await p.screenshot({path:'out/w1.png'});
 // jump the clock past half the walk
 await p.evaluate(w=>{S.game.targetAt-=Math.ceil(w/3)*60000+1000;save()},walk);await p.waitForTimeout(1300);
-console.log('after a third of the walk:',await p.evaluate(()=>$('hereBtn').disabled+' "'+$('hereBtn').textContent.trim()+'" | why: '+(($('hereWhy')||{}).textContent||'none')));
+console.log('after a third of the walk:',await p.evaluate(()=>$('hereBtn').classList.contains('locked')+' "'+$('hereBtn').textContent.trim()+'" | why: '+(($('hereWhy')||{}).textContent||'none')));
 await p.click('#hereBtn');await p.waitForTimeout(400);
 await p.evaluate(()=>{const a=S.game.visits[0];a.arrivedAt-=4*6e4;save();loop()});await p.waitForTimeout(1200);
 await p.evaluate(()=>endGame(now()));await p.waitForTimeout(800);
