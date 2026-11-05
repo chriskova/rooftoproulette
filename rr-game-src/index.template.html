@@ -1103,10 +1103,10 @@ h1.q.modename{font-size:46px}
 #v-home .mode .btn{margin-top:auto}
 /* the type grows with the screen's height so tall phones don't leave a gap in each card */
 #v-home .mode .mtop{gap:clamp(16px,calc(16px + (100dvh - 720px)*.03),22px)}
-#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*.13),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*.03),14px)}
-#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*.032),20px);line-height:1.45;text-wrap:pretty}
-#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*.08),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*.08),60px);border-radius:clamp(14px,1.8dvh,18px)}
-#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*.04),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*.04),30px)}
+#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*.24),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*.03),14px)}
+#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*.05),20px);line-height:1.45;text-wrap:pretty}
+#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*.12),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*.12),60px);border-radius:clamp(14px,1.8dvh,18px)}
+#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*.06),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*.06),30px)}
 #v-home .mode .btn{height:clamp(52px,calc(52px + (100dvh - 720px)*.04),60px);font-size:clamp(16px,calc(16px + (100dvh - 720px)*.015),18px)}
 #v-home .mode .howlink{padding:6px 0 8px;margin-top:-6px;font-size:14px}
 .mbtns{display:flex;gap:10px;align-items:center}
@@ -4755,6 +4755,10 @@ if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="gra
 if(S.onboarded&&S.route!=="intro"){S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
 render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+// Phones keep the app open in the background for days. Coming back to it (not mid-crawl), pick up a newer version if there is one.
+{let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
+  if(!hidAt||Date.now()-hidAt<60000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
+  fetch("sw.js",{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/rr-app-(v[\d-]+)/);if(m&&m[1]!==APPV)location.reload()}).catch(()=>{})})}
 </script>
 </body>
 </html>
