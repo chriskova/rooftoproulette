@@ -19,7 +19,7 @@ await p.screenshot({path:'out/nl2.png'});
 console.log('buttons:',await p.evaluate(()=>[...document.querySelectorAll('#stage button')].map(b=>b.id+':'+b.textContent.trim()).filter(x=>!x.startsWith(':')).join(' | ')),'leaving bar:',!!(await p.$('#leaveBtn')));
 await p.click('#hereBtn');await p.waitForTimeout(500);console.log('logged on tap:',await p.evaluate(()=>S.game.visits.length+' '+S.game.visits[0].id));
 await p.evaluate(()=>{const a=S.game.visits[0];a.arrivedAt-=5*6e4;a.counted=true;S.game.target=null;save();renderPlay()});await p.waitForTimeout(300);
-await p.evaluate(()=>{S.game.target='untied';S.game.targetAt=Date.now();S.game.visits[0].dep=Date.now();save();renderPlay()});await p.waitForTimeout(300);
+await p.evaluate(()=>{S.game.target='untied';S.game.targetAt=Date.now()-30*6e4;S.game.visits[0].dep=Date.now();save();renderPlay()});await p.waitForTimeout(300);
 console.log('next leg, leaving bar shown:',!!(await p.$('#leaveBtn')));await p.screenshot({path:'out/nl2.png'});
 await p.click('#hereBtn');await p.waitForTimeout(300);await p.evaluate(()=>endGame(now()));await p.waitForTimeout(800);if(await p.$('#bodSkip'))await p.click('#bodSkip');await p.waitForTimeout(1500);
 await p.screenshot({path:'out/nl3.png'});
