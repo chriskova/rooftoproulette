@@ -1102,12 +1102,12 @@ h1.q.modename{font-size:46px}
 #v-home .card.mode{flex:1 0 auto;justify-content:flex-start;padding:20px 18px 8px;gap:14px}
 #v-home .mode .btn{margin-top:auto}
 /* the type grows with the screen's height so tall phones don't leave a gap in each card */
-#v-home .mode .mtop{gap:clamp(16px,calc(16px + (100dvh - 720px)*.03),22px)}
-#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*.24),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*.03),14px)}
-#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*.05),20px);line-height:1.45;text-wrap:pretty}
-#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*.12),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*.12),60px);border-radius:clamp(14px,1.8dvh,18px)}
-#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*.06),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*.06),30px)}
-#v-home .mode .btn{height:clamp(52px,calc(52px + (100dvh - 720px)*.04),60px);font-size:clamp(16px,calc(16px + (100dvh - 720px)*.015),18px)}
+#v-home .mode .mtop{gap:clamp(16px,calc(16px + (100dvh - 720px)*var(--hs,1)*.03),22px)}
+#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*var(--hs,1)*.24),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*var(--hs,1)*.03),14px)}
+#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*var(--hs,1)*.05),20px);line-height:1.45;text-wrap:pretty}
+#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*var(--hs,1)*.12),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*var(--hs,1)*.12),60px);border-radius:clamp(14px,1.8dvh,18px)}
+#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*var(--hs,1)*.06),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*var(--hs,1)*.06),30px)}
+#v-home .mode .btn{height:clamp(52px,calc(52px + (100dvh - 720px)*var(--hs,1)*.04),60px);font-size:clamp(16px,calc(16px + (100dvh - 720px)*var(--hs,1)*.015),18px)}
 #v-home .mode .howlink{padding:6px 0 8px;margin-top:-6px;font-size:14px}
 .mbtns{display:flex;gap:10px;align-items:center}
 .mbtns .btn{flex:1}
@@ -1192,7 +1192,7 @@ html.fl .app{visibility:hidden}
 .clock.frozen b{text-shadow:0 0 8px rgba(190,230,255,.8),0 0 24px rgba(143,211,255,.5);animation:frostin 1s ease-out}
 @keyframes frostin{from{color:var(--cream);text-shadow:none;filter:blur(0)}50%{filter:blur(.6px)}to{filter:blur(0)}}
 
-#v-home{overflow:hidden}
+#v-home{overflow-x:hidden;overflow-y:auto}
 
 .mv.on>.opt{border-color:var(--amber)}
 .ap{background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);overflow:hidden;transition:border-color .12s}
@@ -2068,7 +2068,12 @@ function renderHome(){
   {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(cityIn(S.city))}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
   const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your crawl":"Play R&R";
+  requestAnimationFrame(fitHome);
 }
+// The mode cards' type grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
+function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
+  while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}}
+addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
 // Away from the cities we cover, starting a game goes to the "not in your city yet" sheet instead.
