@@ -530,7 +530,7 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .estnote{margin:8px 2px 0;font-size:12.5px;color:var(--muted)}
 
 .plist{display:flex;flex-direction:column;margin:12px 0 4px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.plist div{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line);font-size:15px}.plist div:first-child{border-top:0}
+.plist .prow{appearance:none;width:100%;background:none;border:0;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:13px 14px;color:var(--text);font:inherit;font-size:15px;text-align:left;cursor:pointer}.plist .prow:first-child{border-top:0}.plist .prow:active{background:var(--s2)}.plist .prow b{flex:1;font-weight:650}.plist .chev{font-style:normal;color:var(--muted);font-size:18px;line-height:1}
 .pst{font-size:13px;color:var(--muted);font-weight:600}.pst.ok{color:var(--green)}.pst.no{color:var(--red)}
 
 .sc-top{gap:6px}.sc-top .scttl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;letter-spacing:.08em}
@@ -1693,7 +1693,13 @@ const you=()=>DEMO()?S.game.dpos:S.test?(S.fake||here):here;   // test mode: a f
 // the blue pill on iPhone), so arrivals and departures are logged on time with the phone in a pocket.
 // Only while a game is on: stopWatch() ends it with the crawl.
 let bgWatch=null;
-function bgGeo(){const C=window.Capacitor;return C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.BackgroundGeolocation}
+function bgGeo(){const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()))return null;
+  if(C.Plugins&&C.Plugins.BackgroundGeolocation&&C.Plugins.BackgroundGeolocation.addWatcher)return C.Plugins.BackgroundGeolocation;
+  // no JS object: talk to the native plugin through the bridge directly
+  if(typeof C.nativeCallback==="function"&&typeof C.nativePromise==="function")return {
+    addWatcher:(o,cb)=>Promise.resolve(C.nativeCallback("BackgroundGeolocation","addWatcher",o,(res,err)=>cb(res,err))),
+    removeWatcher:o=>C.nativePromise("BackgroundGeolocation","removeWatcher",o)};
+  return null}
 function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
@@ -2340,7 +2346,7 @@ async function tryStart(noLoc){
 function noLocSheet(go_){
   sheet(`<h3>Location's off</h3><p class="note" style="margin:6px 0 14px">Without it, we can't check you in at each bar. You'll tap <b>I'm here</b> when you arrive, and your crawl card will show your bars and total time, but no route or timings.</p>
     <div class="acts"><button class="btn" type="button" id="nlOn">Turn on location</button><button class="btn line" type="button" id="nlGo">Play without it</button></div>`,()=>{
-    $("nlOn").onclick=()=>{if(window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.NativeSettings)permSheet();else{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")}};
+    $("nlOn").onclick=()=>{if(NATIVE)permSheet();else{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")}};
     $("nlGo").onclick=()=>{closeSheet();go_(true)}})}
 /* ---------- permission primer ---------- */
 function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;$("permWarn").hidden=true}
@@ -3137,7 +3143,10 @@ const mbTxt=b=>b<1e6?Math.max(1,Math.round(b/1e3))+" KB":b<1e9?(b/1e6).toFixed(b
 const clipList=gid=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
 const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
 /* in the native app the browser's share and download don't exist: use the phone's own share sheet and gallery */
-const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform()),PLG=NATIVE?CAPX.Plugins:{};
+const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform());
+// Native plugins: the plugin's own object when the bridge made one, otherwise straight calls through the bridge
+const PLG=NATIVE?new Proxy({},{get:(_,pl)=>{const o=CAPX.Plugins&&CAPX.Plugins[pl];if(o)return o;
+  return new Proxy({},{get:(_,m)=>opts=>typeof CAPX.nativePromise==="function"?CAPX.nativePromise(pl,m,opts||{}):Promise.reject(new Error("no bridge"))})}}):{};
 const b64of=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
 async function nativeFile(blob,name){const r=await PLG.Filesystem.writeFile({path:name,data:await b64of(blob),directory:"CACHE"});return r.uri}
 async function nativeShare(blob,name,title,text){const uri=await nativeFile(blob,name),o={files:[uri],title:title||"Rooftop Roulette"};if(text)o.text=text;await PLG.Share.share(o)}
@@ -4633,16 +4642,32 @@ function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce(
     $("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${L.length-inGal.length?`${L.length-inGal.length} of them aren't in your photos, so they'll be gone for good.`:"They're all in your photos too."}</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
     $("ccNo").onclick=closeSheet})}
 // What the app is allowed to use, and a way to change it.
+// Call a native plugin method whether or not its JS object was set up (the bridge always has nativePromise).
+function natCall(plugin,method,opts){const C=window.Capacitor;if(!C||!C.isNativePlatform||!C.isNativePlatform())return Promise.reject(new Error("web"));
+  const P=C.Plugins&&C.Plugins[plugin];if(P&&typeof P[method]==="function")return P[method](opts||{});
+  if(typeof C.nativePromise==="function")return C.nativePromise(plugin,method,opts||{});return Promise.reject(new Error("no bridge"))}
+const openAppSettings=()=>natCall("NativeSettings","open",{optionAndroid:"application_details",optionIOS:"app"});
+// Permissions: apps can only ask; switching one off (or back on after a no) happens in the phone's settings.
+// Each row: not asked yet → tap asks; allowed or off → tap opens this app's page in the phone's settings.
 async function permSheet(){
   const q=async n=>{try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
   const [loc,cam,mic]=await Promise.all([q("geolocation"),q("camera"),q("microphone")]);
-  const lab=st=>st==="granted"?`<span class="pst ok">Allowed</span>`:st==="denied"?`<span class="pst no">Off</span>`:st==="prompt"?`<span class="pst">Asks when needed</span>`:`<span class="pst">—</span>`;
-  const NS=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.NativeSettings;
-  sheet(`<h3>Permissions</h3><p class="note">Location checks you in at bars. Camera and mic are only for filming spins.</p>
-    <div class="plist"><div><b>Location</b>${lab(loc)}</div><div><b>Camera</b>${lab(cam)}</div><div><b>Microphone</b>${lab(mic)}</div></div>
-    <div class="acts">${NS?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:`<p class="note">To change these, open your browser's site settings for Rooftop Roulette.</p>`}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
-    if($("pmOpen"))$("pmOpen").onclick=()=>{try{NS.open({optionAndroid:"application_details",optionIOS:"App"})}catch(e){}};
-    $("pmBack").onclick=closeSheet})}
+  const lab=st=>st==="granted"?`<span class="pst ok">Allowed</span>`:st==="denied"?`<span class="pst no">Off</span>`:`<span class="pst">Tap to allow</span>`;
+  const row=(k,t,st)=>`<button class="prow" type="button" data-pm="${k}" data-st="${st}"><b>${t}</b>${lab(st)}<i class="chev">›</i></button>`;
+  sheet(`<h3>Permissions</h3><p class="note">Location checks you in at bars. Camera and mic are only for filming spins.${NATIVE?" Your phone's settings are where you switch these on or off.":""}</p>
+    <div class="plist">${row("loc","Location",loc)}${row("cam","Camera",cam)}${row("mic","Microphone",mic)}</div>
+    <div class="acts">${NATIVE?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:`<p class="note">On the website, change these in your browser's settings for this site.</p>`}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
+    const open=()=>openAppSettings().catch(()=>toast("Open your phone's Settings → Apps → Rooftop Roulette → Permissions.",4500));
+    if($("pmOpen"))$("pmOpen").onclick=open;
+    $("pmBack").onclick=closeSheet;
+    $("sheetBody").querySelectorAll("[data-pm]").forEach(b=>b.onclick=async()=>{const k=b.dataset.pm,st=b.dataset.st;
+      if(st==="granted"||st==="denied"){if(NATIVE)open();else toast("Change this in your browser's site settings.",3500);return}
+      try{if(k==="loc")await getOnce();else{const sm=await navigator.mediaDevices.getUserMedia(k==="cam"?{video:true}:{audio:true});sm.getTracks().forEach(t=>t.stop())}}
+      catch(e){if(NATIVE)open()}
+      permSheet()})});
+  // back from the phone's settings: show what changed
+  if(!permSheet._vis){permSheet._vis=1;document.addEventListener("visibilitychange",()=>{if(!document.hidden&&$("sheet").open&&$("sheetBody").querySelector("[data-pm]"))permSheet()})}
+}
 ["gearBar","gearHome"].forEach(id=>$(id).onclick=()=>settingsSheet());
 
 /* ---------- test mode ---------- */
