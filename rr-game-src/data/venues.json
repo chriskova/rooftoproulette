@@ -4647,5 +4647,3724 @@
   ],
   "pid": "ChIJ--er3QNXkWsRWFzCMpyC7Es",
   "city": "Brisbane"
+ },
+ {
+  "id": "mel-rooftop-bar-curtin-house",
+  "name": "Curtin House Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.812014,
+  "lng": 144.965261,
+  "rating": 4.4,
+  "address": "Level 7, Curtin House, 252 Swanston St",
+  "hours": [
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ],
+   [
+    [
+     600,
+     1620
+    ]
+   ]
+  ],
+  "pid": "ChIJwYzOQcpC1moRbm5SF7RuCm0",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-her-rooftop",
+  "name": "Her Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.811498,
+  "lng": 144.964155,
+  "rating": 4,
+  "address": "Level 4, 270 Lonsdale St",
+  "hours": [
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ]
+  ],
+  "pid": "ChIJ7SeQ6ZBD1moR7P9hvzDvNrQ",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-union-electric",
+  "name": "Union Electric Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.81179,
+  "lng": 144.966705,
+  "rating": 4.6,
+  "address": "13 Heffernan Ln",
+  "hours": [
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJ7_FCh8lC1moRPc7-4Iwg5WE",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-rooftop-at-qt",
+  "name": "Rooftop at QT",
+  "area": "Melbourne CBD",
+  "lat": -37.813428,
+  "lng": 144.967824,
+  "rating": 4.4,
+  "address": "Level 11, 133 Russell St",
+  "hours": [
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJt7f_wMlC1moR78AaroNklv4",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-loop-roof",
+  "name": "Loop Roof",
+  "area": "Melbourne CBD",
+  "lat": -37.812176,
+  "lng": 144.97219,
+  "rating": 4.3,
+  "address": "Level 3, 23 Meyers Pl",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     840,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     780,
+     1200
+    ]
+   ]
+  ],
+  "pid": "ChIJG86Ln8hC1moRgRVvzbmC6iI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-inuman",
+  "name": "Inuman",
+  "area": "Melbourne CBD",
+  "lat": -37.811701,
+  "lng": 144.970111,
+  "rating": 4.8,
+  "address": "167 Exhibition St",
+  "hours": [
+   [],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJc9OhfQBD1moR99BjnibW_BQ",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-santana",
+  "name": "Santana Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.813046,
+  "lng": 144.968622,
+  "rating": 4.7,
+  "address": "Level 3, 169 Melbourne Pl",
+  "hours": [
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJoYXGtY9D1moRRcp2-gnXHnI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-farmers-daughters",
+  "name": "Farmer's Daughters",
+  "area": "Melbourne CBD",
+  "lat": -37.813554,
+  "lng": 144.971025,
+  "rating": 4.4,
+  "address": "80 Collins, 95 Exhibition St",
+  "hours": [
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     690,
+     1290
+    ]
+   ],
+   [
+    [
+     690,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJbVfLiJdD1moRk7I8Ws1zp7w",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-fleet",
+  "name": "Fleet Rooftop Bar",
+  "area": "Melbourne CBD",
+  "lat": -37.818788,
+  "lng": 144.962035,
+  "rating": 4.6,
+  "address": "Level 22, Vibe Hotel, 1 Queen St",
+  "hours": [
+   [],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJiVHlaQBD1moRD3FgRMTmjAc",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-imperial-hotel",
+  "name": "Imperial Hotel",
+  "area": "Melbourne CBD",
+  "lat": -37.81124,
+  "lng": 144.97277,
+  "rating": 4.2,
+  "address": "2-8 Bourke St",
+  "hours": [
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1560
+    ]
+   ],
+   [
+    [
+     660,
+     1560
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ0y4DB8ZC1moRRnezTs9hzKs",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-morris-house",
+  "name": "Morris House",
+  "area": "Melbourne CBD",
+  "lat": -37.812869,
+  "lng": 144.971197,
+  "rating": 4.1,
+  "address": "120 Exhibition St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJDea8Si9D1moRvFKUQfX7iAk",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-hickens-hotel",
+  "name": "Hickens Hotel",
+  "area": "Melbourne CBD",
+  "lat": -37.813723,
+  "lng": 144.968295,
+  "rating": 4.5,
+  "address": "127 Russell St",
+  "hours": [
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1620
+    ]
+   ],
+   [
+    [
+     660,
+     1620
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJ-5_Hj5dD1moRLf5AmJkXZVo",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-good-heavens",
+  "name": "Good Heavens",
+  "area": "Melbourne CBD",
+  "lat": -37.812076,
+  "lng": 144.971143,
+  "rating": 4.3,
+  "address": "Level 2, 79 Bourke St",
+  "hours": [
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJ7cO7k8hC1moRgZW5lxx0mDI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-fable",
+  "name": "Fable",
+  "area": "Melbourne CBD",
+  "lat": -37.810561,
+  "lng": 144.967408,
+  "rating": 4.1,
+  "address": "Level 13, 168 Lonsdale St",
+  "hours": [
+   [],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1350
+    ]
+   ]
+  ],
+  "pid": "ChIJNcMQVv5D1moRl98V2jj-Xpc",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-goldilocks",
+  "name": "Goldilocks",
+  "area": "Melbourne CBD",
+  "lat": -37.811823,
+  "lng": 144.965131,
+  "rating": 4.4,
+  "address": "Level 5, 264 Swanston St",
+  "hours": [
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJFxQqR8pC1moRtrCWdmUuFTU",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-transit",
+  "name": "Transit Rooftop Bar",
+  "area": "Melbourne CBD",
+  "lat": -37.818426,
+  "lng": 144.968406,
+  "rating": 4.2,
+  "address": "Level 2, Transport Hotel, Federation Square",
+  "hours": [
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJh1-3NCRo1moR-z74M9dBDP4",
+  "city": "Melbourne",
+  "tempClosed": true
+ },
+ {
+  "id": "mel-bomba",
+  "name": "Bomba",
+  "area": "Melbourne CBD",
+  "lat": -37.810404,
+  "lng": 144.969197,
+  "rating": 4.5,
+  "address": "103 Lonsdale St",
+  "hours": [
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ9yEuL8lC1moRpVtvu92LyWA",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-siglo",
+  "name": "Siglo",
+  "area": "Melbourne CBD",
+  "lat": -37.81091,
+  "lng": 144.972536,
+  "rating": 4.1,
+  "address": "Level 2, 161 Spring St",
+  "hours": [
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJVUlb_MVC1moReBMBN5F84vw",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-doms-social-club",
+  "name": "Dom's Social Club",
+  "area": "Melbourne CBD",
+  "lat": -37.811056,
+  "lng": 144.964241,
+  "rating": 4.7,
+  "address": "Level 1, 301 Swanston St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJLzCh9TBD1moRSUAqm95HPlA",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-heroes",
+  "name": "Heroes",
+  "area": "Melbourne CBD",
+  "lat": -37.812678,
+  "lng": 144.967615,
+  "rating": 4.3,
+  "address": "188 Bourke St",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1620
+    ]
+   ],
+   [
+    [
+     960,
+     1620
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJPyZRld5D1moRQjRYEJV4tyc",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-cleo",
+  "name": "Cleo",
+  "area": "Melbourne CBD",
+  "lat": -37.813279,
+  "lng": 144.968525,
+  "rating": 3.9,
+  "address": "Level 12, Melbourne Place, 130 Russell St",
+  "hours": [
+   [
+    [
+     390,
+     1350
+    ]
+   ],
+   [
+    [
+     390,
+     1350
+    ]
+   ],
+   [
+    [
+     390,
+     1350
+    ]
+   ],
+   [
+    [
+     390,
+     1350
+    ]
+   ],
+   [
+    [
+     390,
+     1440
+    ]
+   ],
+   [
+    [
+     420,
+     1440
+    ]
+   ],
+   [
+    [
+     420,
+     1350
+    ]
+   ]
+  ],
+  "pid": "ChIJI9ItHcFD1moRwjW0Zud3kwg",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-state-of-grace",
+  "name": "State of Grace",
+  "area": "Melbourne CBD",
+  "lat": -37.819752,
+  "lng": 144.956983,
+  "rating": 4.6,
+  "address": "27 King St",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJmfW-qk1d1moRewnuCAqvfY4",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-disuko",
+  "name": "Disuko",
+  "area": "Melbourne CBD",
+  "lat": -37.811999,
+  "lng": 144.971523,
+  "rating": 4.4,
+  "address": "Level 3, 59-63 Bourke St",
+  "hours": [
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     1020,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJS8y9tTVD1moRayt85yADL6g",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-waterside-hotel",
+  "name": "The Waterside Hotel",
+  "area": "Melbourne CBD",
+  "lat": -37.820225,
+  "lng": 144.957261,
+  "rating": 4.1,
+  "address": "508 Flinders St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJqXync1Jd1moRsFcec9xZZuo",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-hotel-nacional",
+  "name": "Hotel Nacional",
+  "area": "Melbourne CBD",
+  "lat": -37.814085,
+  "lng": 144.961334,
+  "rating": 4.2,
+  "address": "23-25 Hardware Ln",
+  "hours": [
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJ_1DxAkJD1moRmusslphummc",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-top-yard",
+  "name": "Top Yard Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.81888,
+  "lng": 144.957329,
+  "rating": 4,
+  "address": "2 Geddes Ln",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     1080,
+     1620
+    ]
+   ],
+   [
+    [
+     1200,
+     1800
+    ]
+   ],
+   [
+    [
+     1080,
+     1800
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJp80KPZld1moRAQM98kREfVU",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-blossom",
+  "name": "Blossom Rooftop Bar",
+  "area": "Melbourne CBD",
+  "lat": -37.81282,
+  "lng": 144.964754,
+  "rating": 4,
+  "address": "Level 14, Pullman, 265 Little Bourke St",
+  "hours": [
+   [],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJm8sqwlFD1moRiBJRkbSrL48",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-carlton-rooftop",
+  "name": "The Carlton Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.813229,
+  "lng": 144.967663,
+  "rating": 4,
+  "address": "193 Bourke St",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   [
+    [
+     1020,
+     1620
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJISCTFkpD1moRuloSfN8hGsg",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-stolen-gem",
+  "name": "The Stolen Gem",
+  "area": "Melbourne CBD",
+  "lat": -37.814398,
+  "lng": 144.962108,
+  "rating": 4.3,
+  "address": "Level 8, 388 Bourke St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     840,
+     1440
+    ]
+   ],
+   [
+    [
+     840,
+     1140
+    ]
+   ]
+  ],
+  "pid": "ChIJU9snJLVC1moRT946l1nLJF8",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-q-rooftop",
+  "name": "The Q Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.819588,
+  "lng": 144.956905,
+  "rating": 4.3,
+  "address": "Level 28, 509 Flinders Ln",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJEe-HAC5d1moRGMPc4lhJArY",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-garden-state-rooftop",
+  "name": "Garden State Rooftop",
+  "area": "Melbourne CBD",
+  "lat": -37.81542,
+  "lng": 144.971164,
+  "rating": 4.1,
+  "address": "Garden State Hotel, 101 Flinders Ln",
+  "hours": [
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ17FTBFxD1moRafdxQd8z_wQ",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-emerald-peacock",
+  "name": "The Emerald Peacock",
+  "area": "Melbourne CBD",
+  "lat": -37.811449,
+  "lng": 144.965539,
+  "rating": 4.3,
+  "address": "233 Lonsdale St",
+  "hours": [
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ5fBdNspC1moRAXDdMcwkKYw",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-young-and-jacksons",
+  "name": "Young and Jackson",
+  "area": "Melbourne CBD",
+  "lat": -37.817341,
+  "lng": 144.967163,
+  "rating": 4.2,
+  "address": "1 Swanston St",
+  "hours": [
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJ3VlKn7ZC1moRnOHqo_15M_I",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-duke-of-wellington",
+  "name": "The Duke of Wellington",
+  "area": "Melbourne CBD",
+  "lat": -37.816443,
+  "lng": 144.970121,
+  "rating": 4.3,
+  "address": "146 Flinders St",
+  "hours": [
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ9YePsLdC1moRhmhASJxsSqk",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-quarterhouse",
+  "name": "Quarterhouse",
+  "area": "Docklands",
+  "lat": -37.819768,
+  "lng": 144.952252,
+  "rating": 4.7,
+  "address": "693 Collins St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJX5nuSEZd1moRWe7HSa_uM7o",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-johnnys-green-room",
+  "name": "Johnny's Green Room",
+  "area": "Carlton",
+  "lat": -37.798381,
+  "lng": 144.967062,
+  "rating": 4,
+  "address": "Level 2, 293-297 Lygon St",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJS3c_WtBD1moRSdoTjZt7llI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-prince-alfred",
+  "name": "Prince Alfred Rooftop",
+  "area": "Carlton",
+  "lat": -37.800423,
+  "lng": 144.962229,
+  "rating": 4.2,
+  "address": "191 Grattan St",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJN5RQIdNC1moRs1htswJSRJY",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-wolfs-lair",
+  "name": "Wolf's Lair",
+  "area": "Carlton",
+  "lat": -37.797466,
+  "lng": 144.967034,
+  "rating": 4.5,
+  "address": "Jimmy Watson's, Little Elgin St",
+  "hours": [
+   [],
+   [
+    [
+     630,
+     1380
+    ]
+   ],
+   [
+    [
+     630,
+     1380
+    ]
+   ],
+   [
+    [
+     630,
+     1380
+    ]
+   ],
+   [
+    [
+     630,
+     1380
+    ]
+   ],
+   [
+    [
+     630,
+     1380
+    ]
+   ],
+   [
+    [
+     630,
+     1140
+    ]
+   ]
+  ],
+  "pid": "ChIJ052tZkVD1moRD-4Z7TFIaKk",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-runner-up",
+  "name": "Runner Up",
+  "area": "Collingwood",
+  "lat": -37.799271,
+  "lng": 144.986514,
+  "rating": 4.5,
+  "address": "Level 2, 35 Johnston St",
+  "hours": [
+   [],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1500
+    ]
+   ],
+   [
+    [
+     780,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJIZCRcZpD1moRghAETO0nWIw",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-slowpoke",
+  "name": "Slowpoke",
+  "area": "Collingwood",
+  "lat": -37.804023,
+  "lng": 144.988493,
+  "rating": 4.4,
+  "address": "Level 4, 50 Gipps St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     840,
+     1380
+    ]
+   ],
+   [
+    [
+     840,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJOxf46OFD1moR7Jysyy_g0rM",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-easeys",
+  "name": "Easey's",
+  "area": "Collingwood",
+  "lat": -37.797615,
+  "lng": 144.986443,
+  "rating": 4.3,
+  "address": "Level 3, 48 Easey St",
+  "hours": [
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJI0eazx5D1moRIPxFYpXoeCM",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-naked-in-the-sky",
+  "name": "Naked in the Sky",
+  "area": "Fitzroy",
+  "lat": -37.798765,
+  "lng": 144.978198,
+  "rating": 4.4,
+  "address": "Naked for Satan, 285 Brunswick St",
+  "hours": [
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJZTxgryBD1moRLY4a4APof1Q",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-marquis-of-lorne",
+  "name": "Marquis of Lorne",
+  "area": "Fitzroy",
+  "lat": -37.797213,
+  "lng": 144.981978,
+  "rating": 4.6,
+  "address": "411 George St",
+  "hours": [
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJE4WnxyFD1moRW-Pvjv626S4",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-punters-club",
+  "name": "Punters Club",
+  "area": "Fitzroy",
+  "lat": -37.796129,
+  "lng": 144.979114,
+  "rating": 4.2,
+  "address": "376 Brunswick St",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJVwgHFiFD1moRjEUxXNu23yY",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-provincial-hotel",
+  "name": "The Provincial Hotel",
+  "area": "Fitzroy",
+  "lat": -37.79813,
+  "lng": 144.978303,
+  "rating": 4.2,
+  "address": "299 Brunswick St",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJ7bx8tyBD1moRcvM39mhnAag",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-full-moon-fever",
+  "name": "Full Moon Fever",
+  "area": "Abbotsford",
+  "lat": -37.800078,
+  "lng": 144.993596,
+  "rating": 4.6,
+  "address": "Lulie Tavern, 225 Johnston St",
+  "hours": [
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJj5-OpwRD1moRTc2_PgcPgWg",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-cornish-arms",
+  "name": "The Cornish Arms",
+  "area": "Brunswick",
+  "lat": -37.773403,
+  "lng": 144.960877,
+  "rating": 4.4,
+  "address": "163A Sydney Rd",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJRwm4S7Vc1moRsQe2HMiLwyE",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-gigi-rooftop",
+  "name": "Gigi Rooftop",
+  "area": "Thornbury",
+  "lat": -37.752655,
+  "lng": 145.001404,
+  "rating": 4.2,
+  "address": "Level 2, 917 High St",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     990,
+     1320
+    ]
+   ],
+   [
+    [
+     990,
+     1320
+    ]
+   ],
+   [
+    [
+     840,
+     1320
+    ]
+   ],
+   [
+    [
+     840,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJs8PXoiNF1moRx4wmmRLulE0",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-harlow",
+  "name": "Harlow",
+  "area": "Richmond",
+  "lat": -37.826822,
+  "lng": 144.997996,
+  "rating": 4.3,
+  "address": "447 Church St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJR6q2WIxC1moRcGVICR5pTVY",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-corner-hotel",
+  "name": "Corner Hotel",
+  "area": "Richmond",
+  "lat": -37.824965,
+  "lng": 144.992759,
+  "rating": 4.4,
+  "address": "57 Swan St",
+  "hours": [
+   [],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJ3br785JC1moR963nGxdKAcA",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-union-house",
+  "name": "Union House",
+  "area": "Richmond",
+  "lat": -37.826066,
+  "lng": 144.999266,
+  "rating": 4.4,
+  "address": "270 Swan St",
+  "hours": [
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJUSklooxC1moRHCZgAhznvBc",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-fargo-and-co",
+  "name": "Fargo and Co",
+  "area": "Richmond",
+  "lat": -37.82569,
+  "lng": 144.996788,
+  "rating": 4.4,
+  "address": "216 Swan St",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJ--7iHI1C1moRWVDDY6tdkF8",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-public-house",
+  "name": "Public House",
+  "area": "Richmond",
+  "lat": -37.826205,
+  "lng": 144.99811,
+  "rating": 4,
+  "address": "433-435 Church St",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1560
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJlwPh8YxC1moRgekC18r1aWw",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-mt-view-hotel",
+  "name": "Mt View Hotel",
+  "area": "Richmond",
+  "lat": -37.818011,
+  "lng": 144.992156,
+  "rating": 4.3,
+  "address": "68-70 Bridge Rd",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ2cdr2O1C1moRANQmeH32rzE",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-harvie",
+  "name": "Harvie",
+  "area": "Armadale",
+  "lat": -37.862093,
+  "lng": 145.027839,
+  "rating": 4.1,
+  "address": "109 Wattletree Rd",
+  "hours": [
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1290
+    ]
+   ],
+   [
+    [
+     900,
+     1290
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1410
+    ]
+   ],
+   [
+    [
+     780,
+     1410
+    ]
+   ],
+   [
+    [
+     780,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJI5HbIt9p1moRNU7lc-3bk5Q",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-beverly",
+  "name": "Beverly",
+  "area": "South Yarra",
+  "lat": -37.838328,
+  "lng": 144.995393,
+  "rating": 4.2,
+  "address": "Level 24, 627 Chapel St",
+  "hours": [
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJXWvslBpD1moRI2sVjMgpSgE",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-stella",
+  "name": "Stella",
+  "area": "South Yarra",
+  "lat": -37.8446,
+  "lng": 144.994347,
+  "rating": 4.7,
+  "address": "427 Chapel St",
+  "hours": [
+   [],
+   [
+    [
+     1020,
+     1350
+    ]
+   ],
+   [
+    [
+     1020,
+     1350
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     1020,
+     1350
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     1020,
+     1470
+    ]
+   ],
+   [
+    [
+     660,
+     900
+    ],
+    [
+     1020,
+     1470
+    ]
+   ],
+   [
+    [
+     660,
+     900
+    ],
+    [
+     1020,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJCYXsF6Bp1moRZHx4J6WPlUs",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-tetto-di-carolina",
+  "name": "Tetto di Carolina",
+  "area": "South Yarra",
+  "lat": -37.83869,
+  "lng": 144.988074,
+  "rating": 4.5,
+  "address": "48 Toorak Rd",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   [
+    [
+     900,
+     1500
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJYSyX_bRD1moRQHmXTaEQXog",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-arcadia-hotel",
+  "name": "Arcadia Hotel",
+  "area": "South Yarra",
+  "lat": -37.838539,
+  "lng": 144.98666,
+  "rating": 4.3,
+  "address": "2 Toorak Rd",
+  "hours": [
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ],
+   [
+    [
+     690,
+     1620
+    ]
+   ]
+  ],
+  "pid": "ChIJETsOOp5C1moRYCqryEDomLg",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-the-emerson",
+  "name": "The Emerson",
+  "area": "South Yarra",
+  "lat": -37.846366,
+  "lng": 144.99121,
+  "rating": 3.6,
+  "address": "141-145 Commercial Rd",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1140,
+     1740
+    ]
+   ],
+   [
+    [
+     900,
+     1740
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJh1-3NCRo1moR7dxH9c4IIbE",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-osborne-rooftop",
+  "name": "The Osborne Rooftop",
+  "area": "South Yarra",
+  "lat": -37.846184,
+  "lng": 144.989993,
+  "rating": 3.9,
+  "address": "119 Commercial Rd",
+  "hours": [
+   [],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJsQogFSRo1moR2h7D4KpX3TM",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-rufio",
+  "name": "Rufio",
+  "area": "St Kilda",
+  "lat": -37.868178,
+  "lng": 144.990158,
+  "rating": 4.7,
+  "address": "188 Carlisle St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJyR9Yc-pp1moRSGY0m1zvR68",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-the-espy",
+  "name": "The Espy",
+  "area": "St Kilda",
+  "lat": -37.864218,
+  "lng": 144.972853,
+  "rating": 4.3,
+  "address": "11 The Esplanade",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJZwv6MGVo1moRnQQHiuprVB0",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-baxter",
+  "name": "Baxter",
+  "area": "St Kilda",
+  "lat": -37.865428,
+  "lng": 144.972347,
+  "rating": 4.4,
+  "address": "St Kilda Sea Baths, 10-18 Jacka Blvd",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJQwVGMXto1moRxnE3KLpu7Ls",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-local-taphouse",
+  "name": "The Local Taphouse",
+  "area": "St Kilda",
+  "lat": -37.868121,
+  "lng": 144.989994,
+  "rating": 4.6,
+  "address": "184 Carlisle St",
+  "hours": [
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJeyLgtURo1moR73XjND_zHZ8",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-ellora",
+  "name": "Ellora",
+  "area": "St Kilda",
+  "lat": -37.862743,
+  "lng": 144.972902,
+  "rating": 4.7,
+  "address": "1 Fitzroy St",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1350
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     750,
+     1530
+    ]
+   ],
+   [
+    [
+     750,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJFdOgJLFp1moReS2oh8DGwGI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-mirror-mirror",
+  "name": "Mirror Mirror",
+  "area": "South Melbourne",
+  "lat": -37.830914,
+  "lng": 144.959879,
+  "rating": 4.7,
+  "address": "Level 3, 209 Clarendon St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1200
+    ]
+   ]
+  ],
+  "pid": "ChIJscqLAs9n1moRjeTLzaf3J8s",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-brewmanity",
+  "name": "Brewmanity",
+  "area": "South Melbourne",
+  "lat": -37.830548,
+  "lng": 144.962937,
+  "rating": 4.7,
+  "address": "50 Tope St",
+  "hours": [
+   [
+    [
+     540,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJoXOSxPtD1moRg2_8h_A3INs",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-albion-rooftop",
+  "name": "The Albion Rooftop",
+  "area": "South Melbourne",
+  "lat": -37.831577,
+  "lng": 144.95602,
+  "rating": 4.1,
+  "address": "172 York St",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     1020,
+     1740
+    ]
+   ],
+   [
+    [
+     900,
+     1740
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJZ2Hf0_5n1moR3lowcrH6WS8",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-skinny-dog",
+  "name": "Skinny Dog Hotel",
+  "area": "Kew",
+  "lat": -37.806724,
+  "lng": 145.030375,
+  "rating": 4.2,
+  "address": "155 High St",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJvZ8YLsZD1moRkIifV7ZSlR4",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-nineteenforty",
+  "name": "Nineteenforty Rooftop",
+  "area": "Hawthorn East",
+  "lat": -37.830655,
+  "lng": 145.055772,
+  "rating": 4,
+  "address": "200 Camberwell Rd",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1200
+    ]
+   ]
+  ],
+  "pid": "ChIJ4-ezGoRB1moRIFnFIj2ixwo",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-olympia",
+  "name": "Olympia",
+  "area": "Oakleigh",
+  "lat": -37.899894,
+  "lng": 145.089444,
+  "rating": 4.7,
+  "address": "16-18 Portman St",
+  "hours": [
+   [
+    [
+     990,
+     1380
+    ]
+   ],
+   [
+    [
+     990,
+     1290
+    ]
+   ],
+   [
+    [
+     990,
+     1290
+    ]
+   ],
+   [
+    [
+     990,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1380
+    ]
+   ],
+   [
+    [
+     780,
+     1410
+    ]
+   ],
+   [
+    [
+     780,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJWVS19Ihr1moRASEJayFHLtI",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-suburban-rooftop",
+  "name": "The Suburban Rooftop",
+  "area": "Ringwood",
+  "lat": -37.814255,
+  "lng": 145.228441,
+  "rating": 4.2,
+  "address": "Town Square, Eastland, Maroondah Hwy",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJfzJ_ZtY71moRF2jbA7goSXA",
+  "city": "Melbourne"
+ },
+ {
+  "id": "mel-hobsons-bay-hotel",
+  "name": "Hobson's Bay Hotel",
+  "area": "Williamstown",
+  "lat": -37.858999,
+  "lng": 144.900326,
+  "rating": 4.1,
+  "address": "28 Ferguson St",
+  "hours": [
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJNRvmysJn1moRj0w40Ct7Oys",
+  "city": "Melbourne"
  }
 ]

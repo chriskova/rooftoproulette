@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Rooftop Roulette</title>
-<meta name="description" content="Spin. Walk. Drink. Beat the clock. A rooftop bar crawl game for Sydney and Brisbane.">
+<meta name="description" content="Spin. Walk. Drink. Beat the clock. A rooftop bar crawl game for Sydney, Melbourne and Brisbane.">
 <meta name="theme-color" content="#0B0D12">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -1362,7 +1362,7 @@ setTimeout(done,1200)})();</script>
       <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
       <button class="hwant" id="homeWant" type="button" hidden></button>
     </div>
-    <div class="city">${PIN} <span><b>Sydney</b> and <b>Brisbane</b>, for now.</span></div>
+    <div class="city">${PIN} <span><b>Sydney</b>, <b>Melbourne</b> and <b>Brisbane</b>, for now.</span></div>
   </section>
 
   <!-- WIZARD -->
@@ -1452,6 +1452,11 @@ function refreshVenues(){
    Areas with enough rooftops close together can be a game's starting point; the rest are still on the map,
    in their region, and in Just the one. */
 const REGIONS=[
+ {name:"CBD",city:"Melbourne",d:"Melbourne CBD, Docklands"},
+ {name:"North",city:"Melbourne",d:"Fitzroy, Collingwood, Carlton, Abbotsford, Brunswick, Thornbury"},
+ {name:"Richmond",city:"Melbourne",d:"Swan St, Church St, Bridge Rd"},
+ {name:"South",city:"Melbourne",d:"South Yarra, St Kilda, South Melbourne"},
+ {name:"Further out",city:"Melbourne",d:"Armadale, Kew, Hawthorn East, Oakleigh, Ringwood, Williamstown"},
  {name:"CBD",city:"Brisbane",d:"Queen St, Edward St, Howard Smith Wharves, Petrie Terrace"},
  {name:"The Valley",city:"Brisbane",d:"Fortitude Valley, New Farm"},
  {name:"South Side",city:"Brisbane",d:"South Brisbane, South Bank, Kangaroo Point, Woolloongabba"},
@@ -1461,6 +1466,21 @@ const REGIONS=[
  {name:"Inner West",d:"Newtown, Erskineville, Glebe, Chippendale, Marrickville"},
  {name:"North",d:"North Sydney, Neutral Bay, Mosman, Willoughby, Manly"}];
 const AREAS=[
+ {name:"Melbourne CBD",city:"Melbourne",reg:"CBD",d:"Swanston St, Bourke St, Flinders Ln, Docklands",lat:-37.8136,lng:144.9650,src:["Melbourne CBD","Docklands"]},
+ {name:"Fitzroy & Collingwood",city:"Melbourne",reg:"North",d:"Brunswick St, Johnston St, Smith St",lat:-37.7990,lng:144.9840,src:["Fitzroy","Collingwood","Abbotsford"]},
+ {name:"Carlton",city:"Melbourne",reg:"North",d:"Lygon St, Grattan St",lat:-37.7990,lng:144.9660,src:["Carlton"]},
+ {name:"Brunswick",city:"Melbourne",reg:"North",d:"Sydney Rd",lat:-37.7734,lng:144.9609,src:["Brunswick"]},
+ {name:"Thornbury",city:"Melbourne",reg:"North",d:"High St",lat:-37.7527,lng:145.0014,src:["Thornbury"]},
+ {name:"Richmond",city:"Melbourne",reg:"Richmond",d:"Swan St, Church St, Bridge Rd",lat:-37.8250,lng:144.9960,src:["Richmond"]},
+ {name:"South Yarra",city:"Melbourne",reg:"South",d:"Chapel St, Toorak Rd, Commercial Rd",lat:-37.8410,lng:144.9910,src:["South Yarra"]},
+ {name:"St Kilda",city:"Melbourne",reg:"South",d:"Fitzroy St, Carlisle St, the foreshore",lat:-37.8655,lng:144.9790,src:["St Kilda"]},
+ {name:"South Melbourne",city:"Melbourne",reg:"South",d:"Clarendon St, York St",lat:-37.8310,lng:144.9600,src:["South Melbourne"]},
+ {name:"Armadale",city:"Melbourne",reg:"Further out",d:"Wattletree Rd",lat:-37.8621,lng:145.0278,src:["Armadale"]},
+ {name:"Kew",city:"Melbourne",reg:"Further out",d:"High St",lat:-37.8067,lng:145.0304,src:["Kew"]},
+ {name:"Hawthorn East",city:"Melbourne",reg:"Further out",d:"Camberwell Rd",lat:-37.8307,lng:145.0558,src:["Hawthorn East"]},
+ {name:"Oakleigh",city:"Melbourne",reg:"Further out",d:"Portman St",lat:-37.8999,lng:145.0894,src:["Oakleigh"]},
+ {name:"Ringwood",city:"Melbourne",reg:"Further out",d:"Eastland",lat:-37.8143,lng:145.2284,src:["Ringwood"]},
+ {name:"Williamstown",city:"Melbourne",reg:"Further out",d:"Ferguson St",lat:-37.8590,lng:144.9003,src:["Williamstown"]},
  {name:"Brisbane CBD",city:"Brisbane",reg:"CBD",d:"Queen St, Edward St, Petrie Terrace",lat:-27.4690,lng:153.0245,src:["Brisbane City","Petrie Terrace"]},
  {name:"Fortitude Valley",city:"Brisbane",reg:"The Valley",d:"Ann St, Brunswick St, Constance St",lat:-27.4572,lng:153.0350,src:["Fortitude Valley"]},
  {name:"New Farm",city:"Brisbane",reg:"The Valley",d:"Merthyr Rd, Brunswick St",lat:-27.4671,lng:153.0458,src:["New Farm"]},
@@ -1643,7 +1663,7 @@ function collectedMap(){ // id -> first date collected in a game
   return m;
 }
 /* Cities: picked up from where you are, changeable from "Sydney ▾". Your lists are per bar, so per city. */
-const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613}];
+const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631,live:true},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613}];
 const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||CITIES[0],inCityNow=v=>cityOf(v)===S.city;
 const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
@@ -1886,7 +1906,7 @@ function phBump(id,k){k=k||"play";try{const d=phDayK(k);if(!d.ids.includes(id))d
 async function placeId(v){
   if(v.pid)return v.pid;S.pids=S.pids||{};if(S.pids[v.id])return S.pids[v.id];
   const {Place}=await google.maps.importLibrary("places");
-  const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, ${cityOf(v)==="Brisbane"?"Brisbane QLD":"Sydney NSW"}`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
+  const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, ${{Brisbane:"Brisbane QLD",Melbourne:"Melbourne VIC"}[cityOf(v)]||"Sydney NSW"}`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
   const id=r&&r.places&&r.places[0]&&r.places[0].id;if(id){S.pids[v.id]=id;save()}return id;
 }
 function barPhoto(v,kind){
@@ -2003,7 +2023,7 @@ $("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;go("home")};
 function renderOb(){
   const body=$("obBody");$("obProg").style.width="100%";
   {
-    body.innerHTML=`<div><h1 class="q">Which city?</h1><p class="sub" style="margin:6px 0 0">Sydney and Brisbane so far. More cities are on the way.</p></div>
+    body.innerHTML=`<div><h1 class="q">Which city?</h1><p class="sub" style="margin:6px 0 0">Sydney, Melbourne and Brisbane so far. More cities are on the way.</p></div>
       <div class="opts">
         ${CITIES.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;return `<button class="opt" type="button" role="radio" data-obc="${c.name}" aria-checked="${c.live&&S.city===c.name}" ${c.live?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?n+" rooftop bars":"Coming soon"}</small></span></button>`}).join("")}
       </div>`;
@@ -3567,12 +3587,12 @@ function renderPlay(){
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
-      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
+      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
     else{const d=g.noLoc?null:leaving();st.innerHTML=banner+ask+(d?`<div class="leavebar"><span>${I.clock}<span>At <b>${esc(byId(d.id).name)}</b> <i id="lvT">${mmss(now()-d.arrivedAt)}</i></span></span><button class="btn sm" type="button" id="leaveBtn">Leaving now</button></div>`:"")+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
-      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn${now()<hereAt(g)?" locked":""}" type="button" id="hereBtn" aria-disabled="${now()<hereAt(g)}">${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
       ${g.noLoc?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
