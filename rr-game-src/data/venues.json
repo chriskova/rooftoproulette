@@ -5496,8 +5496,7 @@
    ]
   ],
   "pid": "ChIJh1-3NCRo1moR-z74M9dBDP4",
-  "city": "Melbourne",
-  "tempClosed": true
+  "city": "Melbourne"
  },
  {
   "id": "mel-bomba",
@@ -6839,61 +6838,6 @@
    ]
   ],
   "pid": "ChIJE4WnxyFD1moRW-Pvjv626S4",
-  "city": "Melbourne"
- },
- {
-  "id": "mel-punters-club",
-  "name": "Punters Club",
-  "area": "Fitzroy",
-  "lat": -37.796129,
-  "lng": 144.979114,
-  "rating": 4.2,
-  "address": "376 Brunswick St",
-  "hours": [
-   [
-    [
-     720,
-     1380
-    ]
-   ],
-   [
-    [
-     720,
-     1380
-    ]
-   ],
-   [
-    [
-     720,
-     1380
-    ]
-   ],
-   [
-    [
-     720,
-     1380
-    ]
-   ],
-   [
-    [
-     720,
-     1620
-    ]
-   ],
-   [
-    [
-     720,
-     1620
-    ]
-   ],
-   [
-    [
-     720,
-     1380
-    ]
-   ]
-  ],
-  "pid": "ChIJVwgHFiFD1moRjEUxXNu23yY",
   "city": "Melbourne"
  },
  {
