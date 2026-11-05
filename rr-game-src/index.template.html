@@ -1573,16 +1573,16 @@ const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
 // Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
 function farSheet(){track("far_from_city",{});
-  sheet(`<h3>We're not in your city yet</h3><p class="note" style="margin:4px 0 14px">More cities are on the way. In the meantime, take it for a spin or scope out the rooftops for your next trip.</p>
+  sheet(`<h3>We're not in your city yet</h3><p class="note" style="margin:4px 0 14px">More cities soon.</p>
     <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Try a demo crawl</button>
-    <button class="btn line" type="button" id="fsTrip">${I.pin} Plan a trip</button></div>`,()=>{
+    <button class="btn line" type="button" id="fsTrip">${I.pin} Explore another city</button></div>`,()=>{
     $("fsDemo").onclick=()=>{closeSheet();startDemo()};
     $("fsTrip").onclick=tripSheet})}
-// Plan a trip: pick a city, then its rooftops open on the Rooftops tab.
+// Explore another city: pick one, then its rooftops open on the Rooftops tab.
 function tripSheet(){const live=CITIES.filter(x=>x.live);
-  sheet(`<h3>Where are you headed?</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
+  sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
-    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("plan_trip",{city:S.city});closeSheet();go("bars")})})}
+    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour Rush Hour from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
