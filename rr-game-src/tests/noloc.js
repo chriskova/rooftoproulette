@@ -16,8 +16,14 @@ console.log('playing:',await p.evaluate(()=>S.route+' noLoc='+S.game.noLoc),'tag
 await p.evaluate(()=>{S.test=false});
 await p.evaluate(()=>{const g=S.game,t=Date.now();g.started=true;g.startedAt=t-30*6e4;g.endsAt=t+30*6e4;g.target='the-glenmore';g.targetAt=t-12*6e4;g.targetFrom=g.startPos;save();renderPlay()});await p.waitForTimeout(400);
 await p.screenshot({path:'out/nl2.png'});
-console.log('manual button shown:',await p.evaluate(()=>!!document.querySelector('#stage button')&&[...document.querySelectorAll('#stage button')].map(b=>b.textContent.trim()).filter(Boolean).slice(0,4).join(' | ')));
-await p.evaluate(()=>{logArrival(true);const g=S.game,a=g.visits[0];a.arrivedAt-=20*6e4;closeVisit(a,Date.now()-2*6e4,"walk");save();endGame(now())});await p.waitForTimeout(1500);
+console.log('buttons:',await p.evaluate(()=>[...document.querySelectorAll('#stage button')].map(b=>b.id+':'+b.textContent.trim()).filter(x=>!x.startsWith(':')).join(' | ')),'leaving bar:',!!(await p.$('#leaveBtn')));
+await p.click('#hereBtn');await p.waitForTimeout(500);console.log('logged on tap:',await p.evaluate(()=>S.game.visits.length+' '+S.game.visits[0].id));
+await p.evaluate(()=>{const a=S.game.visits[0];a.arrivedAt-=5*6e4;a.counted=true;S.game.target=null;save();renderPlay()});await p.waitForTimeout(300);
+await p.evaluate(()=>{S.game.target='untied';S.game.targetAt=Date.now();S.game.visits[0].dep=Date.now();save();renderPlay()});await p.waitForTimeout(300);
+console.log('next leg, leaving bar shown:',!!(await p.$('#leaveBtn')));await p.screenshot({path:'out/nl2.png'});
+await p.click('#hereBtn');await p.waitForTimeout(300);await p.evaluate(()=>endGame(now()));await p.waitForTimeout(800);if(await p.$('#bodSkip'))await p.click('#bodSkip');await p.waitForTimeout(1500);
 await p.screenshot({path:'out/nl3.png'});
-console.log('card:',await p.evaluate(()=>[(document.querySelector('.estnote')||{}).textContent,[...document.querySelectorAll('#v-end .tm')].map(x=>x.textContent).join(',')].join(' | ')));
+console.log('card:',await p.evaluate(()=>[(document.querySelector('.estnote')||{}).textContent,'times['+[...document.querySelectorAll('#v-end .tm')].map(x=>x.textContent).join(',')+']','stats['+[...document.querySelectorAll('#v-end .scov small')].map(x=>x.textContent).join(',')+']','award '+document.querySelector('#v-end .aw-t').textContent].join(' | ')));
+const cv=await p.evaluate(async()=>{const r=H[0];const bl=await storyCard(r,'a').catch(e=>'ERR '+e.message);return typeof bl==='string'?bl:'card ok '+(bl&&bl.size)});console.log('share card:',cv);
+await p.evaluate(()=>go('hist'));await p.waitForTimeout(400);console.log('my tab:',await p.evaluate(()=>[...document.querySelectorAll('.hstats .stat')].map(x=>x.querySelector('small').textContent.replace('›','').trim()+'='+x.querySelector('b').textContent).join(', ')));
 console.log(e);await b.close()})();
