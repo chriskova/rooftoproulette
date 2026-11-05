@@ -1306,7 +1306,7 @@ setTimeout(done,1200)})();</script>
 </head>
 <body>
 <div class="app" id="app">
-  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="cammark" id="camMark"><b>R<span>R</span></b><small id="camMode"></small></div><div class="camloc" id="camLoc"></div><button class="gear" type="button" id="gearBar" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></header>
+  <header class="appbar" id="appbar"><div class="logo" id="logo">ROOFTOP <span>ROULETTE</span></div><div class="cammark" id="camMark"><b>R<span>R</span></b><small id="camMode"></small></div><div class="camloc" id="camLoc"></div><button class="gear" type="button" id="gearBar" aria-label="Menu and settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></header>
 
   <!-- INTRO (first open) -->
   <section class="view" id="v-intro" hidden>
@@ -1325,7 +1325,7 @@ setTimeout(done,1200)})();</script>
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
     <div class="hero">
-      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div><button class="gear hgear" type="button" id="gearHome" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div><button class="gear hgear" type="button" id="gearHome" aria-label="Menu and settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="sub" style="color:var(--text)">Spin. Go. Drink. Repeat.</div>
     </div>
     <div class="card mode">
@@ -4145,8 +4145,8 @@ function photoSheet(r,after){
     ${ph.length?`<div class="phgrid">${ph.map((p,i)=>`<button type="button" data-pp="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:""}
     <div class="acts"><button class="btn" type="button" id="phCam">${I.camera} Take a photo</button><button class="btn dark" type="button" id="phGal">${GAL} Choose from gallery</button>
     ${r.photo?`<button class="txtbtn" type="button" id="phNo">No photo, use the map</button>`:""}</div>`,()=>{
-    const got=f=>shrink(f,1000).then(d=>{(r.photos=r.photos||[]).push(d);if(r.photos.length>3)r.photos.shift();r.photo=d;delete r.noPhoto;try{saveH()}catch(e){}closeSheet();after&&after()});
-    $("phCam").onclick=()=>pickPhoto(got,true);$("phGal").onclick=()=>pickPhoto(got,false);
+    const got=(f,cam)=>{if(cam&&NATIVE&&S.clipAuto!==false)nativeSavePhoto(f,`rooftop-roulette-${Date.now()}.jpg`).catch(e=>console.warn("photo to gallery",e));return shrink(f,1000).then(d=>{(r.photos=r.photos||[]).push(d);if(r.photos.length>3)r.photos.shift();r.photo=d;delete r.noPhoto;try{saveH()}catch(e){}closeSheet();after&&after()})};
+    $("phCam").onclick=()=>pickPhoto(f=>got(f,true),true);$("phGal").onclick=()=>pickPhoto(got,false);
     document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{r.photo=ph[+b.dataset.pp];delete r.noPhoto;saveH();closeSheet();after&&after()});
     if($("phNo"))$("phNo").onclick=()=>{r.photo=null;r.noPhoto=true;saveH();closeSheet();after&&after()}})}
 function pickPhoto(cb,cam){let i=document.getElementById("pickIn");if(!i){i=document.createElement("input");i.type="file";i.accept="image/*";i.id="pickIn";i.style.display="none";document.body.appendChild(i)}
@@ -4568,7 +4568,7 @@ function settingsSheet(){
   sheet(`<h3>Settings</h3><div class="tlist">
       ${tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot")}
       ${tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")}
-      ${NATIVE?tg("stGal",S.clipAuto!==false,"Save clips to gallery","Every filmed spin goes straight to your photos"):""}
+      ${NATIVE?tg("stGal",S.clipAuto!==false,"Save photos and clips to gallery","Photos and spins you film in the app go straight to your phone's photos"):""}
     </div>
     <div class="eyebrow" style="margin:20px 0 4px">Your tab</div><div class="menu">
       ${lk("stBk",I.share||I.check,"Back up My Tab","A file with your crawls, stats and lists")}
@@ -4597,6 +4597,7 @@ function settingsSheet(){
     </div>
     ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
     <p class="setv">Rooftop Roulette · __VERSION__</p>`,()=>{
+    $("sheet").classList.add("full");
     const ext=u=>{try{window.open(u,"_blank","noopener")}catch(e){location.href=u}};
     $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
     $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
