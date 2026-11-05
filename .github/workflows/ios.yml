@@ -1,0 +1,69 @@
+# Builds the iPhone app on GitHub's Macs and uploads it to TestFlight.
+# Needs these repository secrets (Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID   — 10-character Team ID (developer.apple.com → Account → Membership details)
+#   ASC_KEY_ID      — App Store Connect API key ID
+#   ASC_ISSUER_ID   — App Store Connect API issuer ID
+#   ASC_KEY_P8      — the whole contents of the downloaded AuthKey_XXXX.p8 file
+# Runs on every push to main that changes the app, or by hand from the Actions tab.
+name: iOS TestFlight build
+on:
+  push:
+    branches: [main]
+    paths: ["index.html", "app/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+concurrency:
+  group: ios-testflight
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-latest
+    env:
+      HAS_KEYS: ${{ secrets.ASC_KEY_P8 != '' && secrets.APPLE_TEAM_ID != '' }}
+    steps:
+      - name: Waiting on Apple keys
+        if: env.HAS_KEYS != 'true'
+        run: echo "::notice::iOS build skipped until the App Store Connect secrets are added."
+      - uses: actions/checkout@v4
+        if: env.HAS_KEYS == 'true'
+      - uses: actions/setup-node@v4
+        if: env.HAS_KEYS == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Copy the web app into the iOS project
+        if: env.HAS_KEYS == 'true'
+        working-directory: app
+        run: npm ci && npm run sync -- ios
+      - name: Archive
+        if: env.HAS_KEYS == 'true'
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          mkdir -p ~/private_keys && printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey.p8
+          BUILD=$(( 100 + ${{ github.run_number }} ))
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
+          xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath $RUNNER_TEMP/App.xcarchive \
+            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=$BUILD \
+            $AUTH archive | tail -40
+          cat > $RUNNER_TEMP/export.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath $RUNNER_TEMP/App.xcarchive \
+            -exportOptionsPlist $RUNNER_TEMP/export.plist -exportPath $RUNNER_TEMP/out $AUTH | tail -40
+          echo "::notice::Build $BUILD uploaded to App Store Connect. It shows in TestFlight after Apple's processing (usually 5–30 min)."
+      - name: Clean up the key
+        if: always()
+        run: rm -rf ~/private_keys
