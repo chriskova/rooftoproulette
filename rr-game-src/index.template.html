@@ -506,6 +506,22 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.setpage{position:fixed;inset:0;z-index:2400;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.setpage.on{transform:none}
+.sphead{flex:none;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px;border-bottom:1px solid var(--line)}
+.sphead b{font-size:18px}.spback{appearance:none;background:none;border:0;color:var(--text);padding:6px;display:grid;place-items:center;cursor:pointer}.spback svg{width:22px;height:22px}
+.spbody{flex:1;overflow-y:auto;padding:4px 16px calc(env(safe-area-inset-bottom,0px) + 28px);-webkit-overflow-scrolling:touch}
+.sgh{margin:22px 4px 8px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sgrp{background:var(--s1);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.strow{appearance:none;width:100%;display:flex;align-items:center;gap:12px;padding:13px 14px;background:none;border:0;border-top:1px solid var(--line);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.strow:first-child{border-top:0}.strow:active{background:var(--s2)}
+.strow .t{flex:1;min-width:0}.strow b{display:block;font-size:15.5px;font-weight:650}.strow small{display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.35}
+.strow .chev{font-style:normal;color:var(--muted);font-size:20px;line-height:1}.strow.danger b{color:var(--red)}
+.strow.tgl[aria-checked="true"] .sw{background:var(--amber)}.strow.tgl[aria-checked="true"] .sw::after{transform:translateX(20px)}
+.spfoot{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:30px}
+.spsoc{display:flex;gap:18px}.spsoc button{appearance:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--s1);color:var(--text);display:grid;place-items:center;cursor:pointer}.spsoc svg{width:21px;height:21px}
+.sprate{color:var(--amber);font-weight:700;font-size:14px}
+
 #hereBtn.locked{opacity:.45;filter:grayscale(.6)}#hereBtn .hin{font-size:13px;font-weight:600;margin-left:6px;opacity:.85}
 
 .skiplink{display:block;margin:8px auto 0;color:var(--muted);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
@@ -4554,78 +4570,68 @@ function restoreTab(){const i=document.createElement("input");i.type="file";i.ac
     if(!d||d.kind!=="tab-backup"||!Array.isArray(d.history)){toast("That's not a Rooftop Roulette backup.",3500);return}
     const cur=readH(HKEY),ids=new Set(cur.map(r=>r.id)),add=d.history.filter(r=>r&&r.id&&!ids.has(r.id));
     sheet(`<h3>Restore My Tab?</h3><p class="note">${add.length?`Adds ${add.length} crawl${add.length===1?"":"s"} from ${new Date(d.at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}. Nothing already on this phone is removed.`:"Everything in this backup is already on this phone."}</p><div class="acts">${add.length?`<button class="btn" type="button" id="rsY">Restore</button>`:""}<button class="btn line" type="button" id="rsN">${add.length?"Cancel":"Close"}</button></div>`,()=>{
-      $("rsN").onclick=settingsSheet;
+      $("rsN").onclick=closeSheet;
       if($("rsY"))$("rsY").onclick=()=>{const all=cur.concat(add).sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,all);
         const st=d.settings||{};["been","nfu","want","fav"].forEach(k=>{if(st[k]&&typeof st[k]==="object")S[k]=Object.assign({},st[k],S[k]||{})});save();
         if(!hTest){H=readH(HKEY)}closeSheet();toast(`Restored ${add.length} crawl${add.length===1?"":"s"}.`,3000);render()}})})};
   i.click()}
 
 /* ---------- settings (the gear) ---------- */
+// Settings: a full page that slides in from the right (back arrow, or the phone's back gesture, to close).
+// Grouped like the phone's own settings; links and version at the bottom.
+const IGI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg>';
+const TTI='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.2c-1.4.1-2.7-.3-3.9-1.1v5.9c0 3.6-2.6 6.1-6 6.1-3.3 0-5.9-2.6-5.9-5.8 0-3.6 3.1-6.3 6.8-5.7v3.3c-1.6-.4-3.3.6-3.3 2.4 0 1.4 1.1 2.5 2.5 2.5 1.6 0 2.6-1.1 2.6-2.8V3z"/></svg>';
 function settingsSheet(){
-  const tg=(id,on,t,sub)=>`<button class="toggle" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b><small>${sub}</small></span><span class="sw"></span></button>`;
-  const lk=(id,ic,t,sub)=>`<button type="button" id="${id}">${ic}<span>${t}${sub?`<small>${sub}</small>`:""}</span></button>`;
-  const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat();
-  sheet(`<h3>Settings</h3><div class="tlist">
-      ${tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot")}
-      ${tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")}
-      ${NATIVE?tg("stGal",S.clipAuto!==false,"Save photos and clips to gallery","Photos and spins you film in the app go straight to your phone's photos"):""}
-    </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Your tab</div><div class="menu">
-      ${lk("stBk",I.share||I.check,"Back up My Tab","A file with your crawls, stats and lists")}
-      ${lk("stRs",I.redo||I.back,"Restore My Tab","From a backup file")}
-      <button type="button" id="stClips">${I.camera}<span>Clips on this phone<small id="stClipsS">Checking…</small></span></button>
-    </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Privacy</div><div class="tlist">
-      ${tg("stAn",!S.anOff,"Share usage data","Anonymous: which screens get used and when crawls start and end. Never names, locations, photos or clips")}
-    </div><div class="menu">
-      <button type="button" id="stPerm">${I.pin}<span>Permissions<small id="stPermS">Location, camera and mic</small></span></button>
-      ${lk("stPriv",I.help,"Privacy policy","")}
-    </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Help</div><div class="menu">
-      ${live?"":lk("stHow",I.help,"How to play","Replay the intro and the tips")}
-      ${lk("stSup",I.help,"Contact us",SUPPORT)}
-      ${lk("stBug",I.flag,"Report a problem","Something broken? Tell us what happened")}
-      ${lk("stTerms",I.help,"Terms of use","")}
-    </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Follow along</div><div class="menu">
-      ${lk("stIG",I.camera,"Instagram","@rooftoproulette")}
-      ${lk("stTT",I.camera,"TikTok","@rooftoproulette")}
-      ${plat==="android"?lk("stRate",I.sparkle||I.check,"Rate Rooftop Roulette","On Google Play"):""}
-    </div>
-    <div class="eyebrow" style="margin:20px 0 4px">Testing</div><div class="tlist">
-      ${tg("stTest",S.test,"Test mode","No real GPS: tap the map to move. Test crawls stay off your tab")}
-    </div>
-    ${nT?`<div class="menu"><button type="button" class="danger" id="stClr">${IC.bin}<span>Clear test crawls<small>${nT} saved</small></span></button></div>`:""}
-    <p class="setv">Rooftop Roulette · __VERSION__</p>`,()=>{
-    $("sheet").classList.add("full");
-    const ext=u=>{try{window.open(u,"_blank","noopener")}catch(e){location.href=u}};
-    $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
-    $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
-    if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
-    $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
-    $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();
-    clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
-      el.textContent=L.length?`${L.length} clip${L.length===1?"":"s"} · ${mbTxt(bytes)}`:"None yet";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
-    $("stPerm").onclick=permSheet;
-    $("stPriv").onclick=()=>ext(SITE+"privacy.html");$("stTerms").onclick=()=>ext(SITE+"terms.html");
-    if($("stHow"))$("stHow").onclick=()=>{closeSheet();S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
-    $("stSup").onclick=()=>{location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}`};
-    $("stBug").onclick=()=>{const body=`What happened:\n\n\nWhat you expected:\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
-      location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Problem report")}&body=${encodeURIComponent(body)}`};
-    $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
-    $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(null,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
-    if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
-      $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render()};$("stClrN").onclick=settingsSheet});
-  })}
+  let pg=$("setPage");const fresh=!pg;
+  if(fresh){pg=document.createElement("div");pg.id="setPage";pg.className="setpage";document.body.appendChild(pg);
+    try{history.pushState({setPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
+  if($("sheet").open)closeSheet();
+  const tg=(id,on,t,sub)=>`<button class="strow tgl" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span><span class="sw"></span></button>`;
+  const lk=(id,t,sub,cls)=>`<button class="strow${cls?" "+cls:""}" type="button" id="${id}"><span class="t"><b>${t}</b>${sub?`<small id="${id}S">${sub}</small>`:""}</span><i class="chev">›</i></button>`;
+  const grp=(h,rows)=>rows.filter(Boolean).length?`<div class="sgh">${h}</div><div class="sgrp">${rows.filter(Boolean).join("")}</div>`:"";
+  const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat(),top=pg.querySelector(".spbody")?pg.querySelector(".spbody").scrollTop:0;
+  pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="spBack" aria-label="Back">${I.back}</button><b>Settings</b></div><div class="spbody">
+    ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound","Spin clicks, arrival chime and the jackpot"),tg("stVib",S.vib!==false,"Vibration","A buzz when you arrive and when a bar counts")])}
+    ${grp("Photos and clips",[NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and spins you film in the app go straight to your phone's photos"):"",lk("stClips","Clips on this phone","Checking…")])}
+    ${grp("Your tab",[lk("stBk","Back up My Tab","A file with your crawls, stats and lists"),lk("stRs","Restore My Tab","From a backup file")])}
+    ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous: which screens get used and when crawls start and end. Never names, locations, photos or clips"),lk("stPerm","Permissions","Location, camera and mic"),lk("stPriv","Privacy policy")])}
+    ${grp("Help",[live?"":lk("stHow","How to play","Replay the intro and the tips"),lk("stSup","Contact us",SUPPORT),lk("stBug","Report a problem","Something broken? Tell us what happened"),lk("stTerms","Terms of use")])}
+    ${grp("Testing",[tg("stTest",S.test,"Test mode","No real GPS: tap the map to move. Test crawls stay off your tab"),nT?lk("stClr",`Clear test crawls`,`${nT} saved`,"danger"):""])}
+    <div class="spfoot"><div class="spsoc"><button type="button" id="stIG" aria-label="Instagram">${IGI}</button><button type="button" id="stTT" aria-label="TikTok">${TTI}</button></div>
+      ${plat==="android"?`<button class="txtbtn sprate" type="button" id="stRate">Rate Rooftop Roulette</button>`:""}
+      <p class="setv">Rooftop Roulette · __VERSION__</p></div></div>`;
+  pg.querySelector(".spbody").scrollTop=top;
+  const ext=u=>{try{window.open(u,"_blank","noopener")}catch(e){location.href=u}};
+  $("spBack").onclick=()=>{try{if(history.state&&history.state.setPage)history.back();else closeSettings()}catch(e){closeSettings()}};
+  $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
+  $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
+  if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
+  $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
+  $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();
+  clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
+    el.textContent=L.length?`${L.length} clip${L.length===1?"":"s"} · ${mbTxt(bytes)}`:"None yet";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
+  $("stPerm").onclick=permSheet;
+  $("stPriv").onclick=()=>ext(SITE+"privacy.html");$("stTerms").onclick=()=>ext(SITE+"terms.html");
+  if($("stHow"))$("stHow").onclick=()=>{closeSettings(true);S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
+  $("stSup").onclick=()=>{location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}`};
+  $("stBug").onclick=()=>{const body=`What happened:\n\n\nWhat you expected:\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
+    location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Problem report")}&body=${encodeURIComponent(body)}`};
+  $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
+  $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(history.state,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
+  if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
+    $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render();settingsSheet()};$("stClrN").onclick=closeSheet});
+}
+function closeSettings(now_){const pg=$("setPage");if(!pg)return;pg.classList.remove("on");setTimeout(()=>pg.remove(),now_?0:260)}
+addEventListener("popstate",()=>{if($("setPage"))closeSettings()});
 // Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
 function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
   sheet(`<h3>Clips on this phone</h3><p class="note">${L.length} clip${L.length===1?"":"s"} · ${sz(L)}. Clearing them here doesn't touch copies in your photos.</p>
     <div class="acts">${inGal.length?`<button class="btn" type="button" id="ccGal">Clear the ${inGal.length} already in your photos (${sz(inGal)})</button>`:""}
     <button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all clips (${sz(L)})</button><button class="btn line" type="button" id="ccNo">Back</button></div>`,()=>{
-    const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${a.length} clip${a.length===1?"":"s"}`,2500);settingsSheet();if(S.route==="end")renderEnd()});
+    const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${a.length} clip${a.length===1?"":"s"}`,2500);closeSheet();if($("setPage"))settingsSheet();if(S.route==="end")renderEnd()});
     if($("ccGal"))$("ccGal").onclick=()=>del(inGal);
     $("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${L.length-inGal.length?`${L.length-inGal.length} of them aren't in your photos, so they'll be gone for good.`:"They're all in your photos too."}</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
-    $("ccNo").onclick=settingsSheet})}
+    $("ccNo").onclick=closeSheet})}
 // What the app is allowed to use, and a way to change it.
 async function permSheet(){
   const q=async n=>{try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
@@ -4636,7 +4642,7 @@ async function permSheet(){
     <div class="plist"><div><b>Location</b>${lab(loc)}</div><div><b>Camera</b>${lab(cam)}</div><div><b>Microphone</b>${lab(mic)}</div></div>
     <div class="acts">${NS?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:`<p class="note">To change these, open your browser's site settings for Rooftop Roulette.</p>`}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
     if($("pmOpen"))$("pmOpen").onclick=()=>{try{NS.open({optionAndroid:"application_details",optionIOS:"App"})}catch(e){}};
-    $("pmBack").onclick=settingsSheet})}
+    $("pmBack").onclick=closeSheet})}
 ["gearBar","gearHome"].forEach(id=>$(id).onclick=()=>settingsSheet());
 
 /* ---------- test mode ---------- */
