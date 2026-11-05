@@ -506,6 +506,8 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.clist{display:flex;flex-direction:column;gap:10px;padding-bottom:28px}.clist .vmon{padding:12px 2px 0}
+
 .slist{display:flex;flex-direction:column;margin-top:4px}
 .srow{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}.srow.x{opacity:.55}
 .srow .t{flex:1;min-width:0;text-align:left}.srow small{display:block;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500;text-align:left}.srow b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -4343,6 +4345,8 @@ function records(){
   const vs=allVisits().filter(x=>x.v.leftAt!=null);
   best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
   best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
+  {const c={};allVisits().forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0,n:0});o.ms+=x.ms;o.n++});const top=Object.values(c).sort((a,b)=>b.ms-a.ms)[0];
+    if(top&&top.ms>0)R.push({lbl:"Most time at a bar",ic:"clock",v:hmm(top.ms),sub:esc(top.b.name)+" · "+top.n+" visit"+(top.n===1?"":"s"),bar:top.b.id})}
   const legs=[],hops=[];nights.forEach(({r,st})=>{if(st.longest&&st.longest.to)legs.push({r,d:st.longest.d,to:st.longest.to.id});if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
   best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(rt(x.r,x.r.startedAt)));
   best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true);
@@ -4352,25 +4356,19 @@ function renderHist(){
   if(!H.length){b.innerHTML=`<h1 class="q">My Tab</h1><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a crawl and it goes on your tab.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new game</button></div>`;$("hStart").onclick=startWizard;return}
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
   const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
-  const recs=records(),ht=S.histTab==="bests"&&recs.length?"bests":"crawls";
-  const topRoof=(()=>{const c={};vs.forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0});o.ms+=x.ms});return Object.values(c).sort((a,b)=>b.ms-a.ms)[0]||null})();
+  const recs=records();
   b.innerHTML=`<h1 class="q">My Tab</h1>
     <div class="grid2 hstats">
-      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${thisMonth?thisMonth+" crawl"+(thisMonth===1?"":"s")+" this month":"Last crawl "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
-      <button class="stat tap" type="button" id="hMost"><small>Most time at <span class="chev">›</span></small><b>${topRoof?hmm(topRoof.ms):"—"}</b><em>${topRoof?esc(topRoof.b.name):"—"}</em></button>
+      <button class="stat tap" type="button" id="hCrawls"><small>Crawls <span class="chev">›</span></small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
+      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
       <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></button>
       <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></button>
     </div>
-    <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls · ${games}</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
-    ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that crawl.</p>`:`
-    <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
-     return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`}`;
-  b.querySelectorAll("[data-ht]").forEach(x=>x.onclick=()=>{if(S.histTab===x.dataset.ht)return;S.histTab=x.dataset.ht;save();renderHist()});
-  b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
-  // long-press a crawl for its options
-  b.querySelectorAll(".hrow").forEach(x=>longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)}));
+    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
+  b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+  b.querySelectorAll(".rec[data-bar]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.bar);if(v)barSheet(v)});
+  $("hCrawls").onclick=()=>crawlsSheet();
   $("hVisits").onclick=()=>visitsSheet();
-  $("hMost").onclick=()=>{if(topRoof)barSheet(topRoof.b)};
   $("hDist").onclick=()=>crawlStatSheet("dist");$("hTime").onclick=()=>crawlStatSheet("time");
 }
 // ⋯ on a crawl: name it, move it between real and test, or delete it
@@ -4416,6 +4414,12 @@ function visitsSheet(){
     $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bar visits"})});
   });
 }
+function crawlsSheet(){const N=H.map(stats);let m=null;const yr=String(new Date(now()).getFullYear());
+  const rows=H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length,mm=monthTxt(rt(r,r.startedAt)),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
+    return head+`<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,j)=>a!==r.areas[j-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("");
+  sheet(`<h3>Crawls</h3><p class="note vsum">Tap one to see it. Hold for options.</p><div class="clist">${rows}</div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;
+    $("sheetBody").querySelectorAll(".hrow").forEach(x=>{x.onclick=()=>{closeSheet();S.lastEnd=x.dataset.id;go("end")};longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)})})})}
 // Distance or time, crawl by crawl. Tap a crawl for its legs (distance) or its bars (time).
 function crawlStatSheet(kind,id){
   const isD=kind==="dist",N=H.map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at bars";

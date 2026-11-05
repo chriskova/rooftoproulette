@@ -13,7 +13,8 @@ await p.tap('#scMore');await p.waitForTimeout(500);console.log('⋯ opens:',awai
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);await p.tap('#scName');await p.waitForTimeout(400);console.log('name opens:',await p.evaluate(()=>!!$('cnIn')));
 await p.evaluate(()=>{closeSheet();go('hist')});await p.waitForTimeout(500);await p.screenshot({path:'out/t1.png'});
 // long press with touch
-const bx=await p.evaluate(()=>{const r=document.querySelector('.hrow').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]});
+await p.click('#hCrawls');await p.waitForTimeout(500);
+const bx=await p.evaluate(()=>{const r=document.querySelector('#sheetBody .hrow').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]});
 const cdp=await ctx.newCDPSession(p);
 await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bx[0],y:bx[1]}]});await p.waitForTimeout(700);
 await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.waitForTimeout(500);

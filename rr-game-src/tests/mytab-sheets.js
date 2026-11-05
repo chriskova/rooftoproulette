@@ -12,7 +12,9 @@ await p.click('#hVisits');await p.waitForTimeout(400);await p.screenshot({path:'
 await p.click('.vrow[data-b="the-glenmore"]');await p.waitForTimeout(500);await p.screenshot({path:'out/s3.png'});
 console.log('bar card visits line:',await p.evaluate(()=>($('vHist')||{}).textContent),'back:',!!(await p.$('#bsBack')));
 await p.click('#bsBack');await p.waitForTimeout(300);await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
-await p.click('#hMost');await p.waitForTimeout(400);console.log('most time at opens:',await p.evaluate(()=>document.querySelector('#sheetBody h2')&&document.querySelector('#sheetBody h2').textContent));
+await p.click('#hCrawls');await p.waitForTimeout(400);await p.screenshot({path:'out/s7.png'});console.log('crawls sheet rows:',await p.evaluate(()=>document.querySelectorAll('#sheetBody .hrow').length));
+await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
+await p.click('.rec[data-bar]');await p.waitForTimeout(400);console.log('most time PB opens:',await p.evaluate(()=>document.querySelector('#sheetBody h2')&&document.querySelector('#sheetBody h2').textContent));
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 await p.click('#hDist');await p.waitForTimeout(400);await p.screenshot({path:'out/s4.png'});
 await p.click('[data-cs="a"]');await p.waitForTimeout(400);await p.screenshot({path:'out/s5.png'});
