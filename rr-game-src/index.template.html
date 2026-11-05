@@ -506,6 +506,19 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.sc-top{gap:6px}.sc-top .scttl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;letter-spacing:.08em}
+.scback{appearance:none;flex:none;background:none;border:0;padding:4px;margin-left:-6px;color:var(--text);display:grid;place-items:center;cursor:pointer}.scback svg{width:22px;height:22px}
+.phclips{position:absolute;right:3px;bottom:3px;font-style:normal;font-size:10px;font-weight:800;background:rgba(11,13,18,.78);color:#fff;border-radius:6px;padding:1px 4px;pointer-events:none}
+.schead .scph,.sctop .scph{position:relative}
+.mview{position:fixed;inset:0;z-index:2700;background:#000;opacity:0;transition:opacity .2s;display:flex;flex-direction:column}.mview.on{opacity:1}
+.mv-car{flex:1;min-height:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.mv-car::-webkit-scrollbar{display:none}
+.mv-s{flex:none;width:100%;height:100%;scroll-snap-align:center;display:grid;place-items:center}
+.mv-s img,.mv-s video{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.mv-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:2}
+.mv-bar{display:flex;align-items:center;gap:10px;padding:12px 16px calc(env(safe-area-inset-bottom) + 14px);color:#fff}
+.mv-n{font-size:13px;color:rgba(255,255,255,.7);flex:none}.mv-acts{flex:1;display:flex;justify-content:flex-end;gap:8px;align-items:center}
+.mv-acts .btn.sm{width:auto;padding:9px 14px;font-size:13.5px}.mv-on{font-size:13px;color:var(--amber);font-weight:700}
+
 .vrow .vch{flex:none;color:var(--muted);font-size:18px;line-height:1}
 .clist{display:flex;flex-direction:column;gap:10px;padding-bottom:28px}.clist .vmon{padding:12px 2px 0}
 
@@ -1868,7 +1881,7 @@ let anLastPage=null;
 function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;const base=location.pathname.replace(/\/(index\.html)?$/,"");
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
-function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+function go(route){if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
   if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
@@ -1882,7 +1895,7 @@ function render(){
   $("appbar").hidden=r==="home";
   const tabbed=["home","play","end","bars","hist"].includes(r);
   $("tabs").hidden=!tabbed;$("app").classList.toggle("has-tabs",tabbed);
-  const tab=r==="bars"?"bars":r==="hist"?"hist":"play";
+  const tab=r==="bars"?"bars":r==="hist"||(r==="end"&&S.endBack==="hist")?"hist":"play";
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
   const live=$("tPlay").querySelector(".live");if(live)live.hidden=!S.game;
   $("cta").hidden=true;$("app").classList.remove("has-cta");
@@ -3345,7 +3358,7 @@ function openMenu(){
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     <button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>
     ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
-    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the crawl":"End game"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your scorecard is saved"):"Nothing's been played yet"}</small></span></button>
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>${cr?"End the crawl":"End game"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
@@ -3353,7 +3366,7 @@ function openMenu(){
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     $("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);
-    $("mEnd").onclick=()=>sheet(`<h3>${cr?"End the crawl?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your scorecard is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
+    $("mEnd").onclick=()=>sheet(`<h3>${cr?"End the crawl?":"End the game now?"}</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your crawl card is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the crawl":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
@@ -3701,7 +3714,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><span class="eyebrow">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button><button class="txtbtn amber" type="button" id="doneBtn">Done</button></span></div>
+      <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -3729,7 +3742,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
   box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
-  $("scPh").onclick=()=>photoSheet(r,renderEnd);
+  $("scPh").onclick=()=>r.photo?mediaView(r):photoSheet(r,renderEnd);
+  if(!isShared&&!r.demo)clipList(r.id).then(L=>{const ph=$("scPh");if(L.length&&ph&&document.contains(ph)){ph.insertAdjacentHTML("beforeend",`<i class="phclips">▶ ${L.length}</i>`);if(!r.photo)ph.onclick=()=>mediaView(r)}}).catch(()=>{});
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(phMem[b.id]===undefined)phMem[b.id]=ph||null;if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
   if($("scar2")){const car=$("scar2"),ds=[...box.querySelectorAll("#scdots2 [data-p]")];let cur=0;
@@ -3739,7 +3753,10 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
-  $("doneBtn").onclick=()=>{SHARED=null;go("home")};if($("addTab"))$("addTab").onclick=addSharedToTab;
+  $("doneBtn").onclick=()=>{SHARED=null;const to=["hist","bars"].includes(S.endBack)?S.endBack:"home";go(to)};
+  fitLine(box.querySelector(".scttl"),9);
+  // an old crawl: no "Play again", Share takes the row
+  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card
@@ -3987,7 +4004,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
   const ov=document.createElement("div");ov.className="sharev";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   let urls=[],blobs=[],looks=[],cur=0;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{ov.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250)};
-  const top=`<div class="shv-top"><b>Share</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>`;
+  const top=`<div class="shv-top"><b>Your crawl card</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>`;
   const bindX=()=>ov.querySelector(".shv-x").onclick=close;
   const addPhoto=cam=>pickPhoto(f=>shrink(f,1000).then(d=>{(r.photos=r.photos||[]).push(d);if(r.photos.length>3)r.photos.shift();r.photo=d;delete r.noPhoto;try{saveH()}catch(e){}cards(0)}),cam);
   // no photo yet: offer one first, the map card is the fallback
@@ -4045,9 +4062,30 @@ function drawRoute(x,r,st,bx,by,bw,bh){
   st.arrived.forEach((v,i)=>{const [X,Y]=P(byId(v.id));x.fillStyle=v.counted===true?"#F5B83D":"#6B7280";x.beginPath();x.arc(X,Y,20,0,7);x.fill();x.strokeStyle="#0B0D12";x.lineWidth=5;x.stroke();x.fillStyle="#241803";x.font='800 22px system-ui,Arial';x.textAlign="center";x.fillText(String(i+1),X,Y+8);x.textAlign="left"});
 }
 const GAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg>';
+// Full-size photos and clips from one crawl, swipe between them.
+async function mediaView(r,start){
+  let clips=[];try{clips=await clipList(r.id)}catch(e){}
+  const items=(r.photos||[]).map(p=>({k:"p",src:p})).concat(clips.map(c=>({k:"c",c,src:URL.createObjectURL(c.blob)})));if(!items.length){photoSheet(r,renderEnd);return}
+  let cur=Math.max(0,start!=null?start:items.findIndex(x=>x.k==="p"&&x.src===r.photo));
+  const ov=document.createElement("div");ov.className="mview";
+  ov.innerHTML=`<div class="mv-car">${items.map(x=>`<div class="mv-s">${x.k==="p"?`<img src="${x.src}" alt="">`:`<video src="${x.src}#t=0.1" controls playsinline preload="metadata"></video>`}</div>`).join("")}</div>
+    <button class="shv-x mv-x" type="button" aria-label="Close">${I.x}</button><div class="mv-bar"><span class="mv-n"></span><span class="mv-acts"></span></div>`;
+  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
+  const car=ov.querySelector(".mv-car"),acts=ov.querySelector(".mv-acts");
+  const close=()=>{ov.querySelectorAll("video").forEach(v=>v.pause());ov.classList.remove("on");setTimeout(()=>{items.forEach(x=>{if(x.k==="c")URL.revokeObjectURL(x.src)});ov.remove()},220)};
+  ov.querySelector(".mv-x").onclick=close;
+  const paint=()=>{const x=items[cur];ov.querySelector(".mv-n").textContent=`${cur+1} / ${items.length}`;
+    acts.innerHTML=x.k==="p"?(r.photo===x.src?`<span class="mv-on">On your crawl card</span>`:`<button class="btn sm" type="button" data-a="use">Use on crawl card</button>`)+`<button class="btn sm line" type="button" data-a="add">Add photo</button>`
+      :`<button class="btn sm" type="button" data-a="share">Share</button><button class="btn sm line" type="button" data-a="save">Save</button>`;
+    acts.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;
+      if(a==="use"){r.photo=x.src;delete r.noPhoto;saveH();paint();if(S.route==="end")renderEnd()}
+      else if(a==="add"){close();photoSheet(r,renderEnd)}
+      else if(a==="share")clipShare(x.c.blob,x.c.type,x.c.at);else if(a==="save")clipSave(x.c.blob,x.c.type,x.c.at)})};
+  car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;ov.querySelectorAll("video").forEach(v=>v.pause());paint()}},{passive:true});
+  requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;paint()})}
 function photoSheet(r,after){
   const ph=r.photos||[];
-  sheet(`<h3>Photo for your card</h3><p class="note">The group, the view, whatever's in your glass.</p>
+  sheet(`<h3>Photo for your crawl card</h3><p class="note">The group, the view, whatever's in your glass.</p>
     ${ph.length?`<div class="phgrid">${ph.map((p,i)=>`<button type="button" data-pp="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:""}
     <div class="acts"><button class="btn" type="button" id="phCam">${I.camera} Take a photo</button><button class="btn dark" type="button" id="phGal">${GAL} Choose from gallery</button>
     ${r.photo?`<button class="txtbtn" type="button" id="phNo">No photo, use the map</button>`:""}</div>`,()=>{
@@ -4379,11 +4417,14 @@ const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function crawlMenu(r){const n=stats(r).counted.length,isT=!!r.test;
   sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} bar${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
     <div class="menu">
+      <button type="button" id="cmMedia" hidden>${I.camera}<span>Photos &amp; clips<small id="cmMediaS"></small></span></button>
       <button type="button" id="cmName">${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows on your tab instead of the date</small></span></button>
       <button type="button" id="cmMove">${IC.swap}<span>${isT?"Move to real crawls":"Move to test crawls"}<small>${isT?"Goes on your tab and counts in your stats":"Takes it off your tab and out of your stats"}</small></span></button>
       <button type="button" id="cmDel" class="danger">${IC.bin}<span>Delete crawl<small>You can undo for a few seconds</small></span></button>
     </div>`,()=>{
     $("cmName").onclick=()=>nameCrawl(r);
+    clipList(r.id).catch(()=>[]).then(L=>{const np=(r.photos||[]).length,b=$("cmMedia");if(!b||!(np+L.length))return;b.hidden=false;
+      $("cmMediaS").textContent=[np?np+" photo"+(np===1?"":"s"):"",L.length?L.length+" clip"+(L.length===1?"":"s"):""].filter(Boolean).join(" · ");b.onclick=()=>{closeSheet();mediaView(r)}});
     $("cmMove").onclick=()=>{closeSheet();moveCrawl(r)};
     $("cmDel").onclick=()=>{closeSheet();deleteCrawl(r)};
   })}
