@@ -5,7 +5,7 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 ## Files
 
 - `index.template.html` is the whole app: markup, CSS and JS. The venue list is injected at `__VENUES__`.
-- `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane and Perth).
+- `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane, Perth and the Gold Coast).
 - `data/manifest.webmanifest` is the PWA manifest.
 - `build.py` writes `../index.html`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts so the page works as a single file.
 - `tests/` holds Playwright checks (see below).

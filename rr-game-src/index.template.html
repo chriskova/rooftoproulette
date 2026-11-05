@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Rooftop Roulette</title>
-<meta name="description" content="Spin. Walk. Drink. Beat the clock. A rooftop bar crawl game for Sydney, Melbourne, Brisbane and Perth.">
+<meta name="description" content="Spin. Walk. Drink. Beat the clock. A rooftop bar crawl game for Sydney, Melbourne, Brisbane, Perth and the Gold Coast.">
 <meta name="theme-color" content="#0B0D12">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -1362,7 +1362,7 @@ setTimeout(done,1200)})();</script>
       <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
       <button class="hwant" id="homeWant" type="button" hidden></button>
     </div>
-    <div class="city">${PIN} <span><b>Sydney</b>, <b>Melbourne</b>, <b>Brisbane</b> and <b>Perth</b>, for now.</span></div>
+    <div class="city">${PIN} <span><b>Sydney</b>, <b>Melbourne</b>, <b>Brisbane</b>, <b>Perth</b> and the <b>Gold Coast</b>, for now.</span></div>
   </section>
 
   <!-- WIZARD -->
@@ -1452,6 +1452,10 @@ function refreshVenues(){
    Areas with enough rooftops close together can be a game's starting point; the rest are still on the map,
    in their region, and in Just the one. */
 const REGIONS=[
+ {name:"Surfers Paradise",city:"Gold Coast",d:"Orchid Ave, Cavill Ave, Bundall"},
+ {name:"Broadbeach",city:"Gold Coast",d:"Broadbeach, Mermaid Beach"},
+ {name:"Burleigh",city:"Gold Coast",d:"Burleigh Heads, Palm Beach"},
+ {name:"Southport",city:"Gold Coast",d:"Nerang St, Main Beach"},
  {name:"City",city:"Perth",d:"Perth CBD, Elizabeth Quay, East Perth"},
  {name:"Northbridge",city:"Perth",d:"Northbridge, Highgate"},
  {name:"Fremantle",city:"Perth",d:"Fremantle, East Fremantle"},
@@ -1470,6 +1474,12 @@ const REGIONS=[
  {name:"Inner West",d:"Newtown, Erskineville, Glebe, Chippendale, Marrickville"},
  {name:"North",d:"North Sydney, Neutral Bay, Mosman, Willoughby, Manly"}];
 const AREAS=[
+ {name:"Surfers Paradise",city:"Gold Coast",reg:"Surfers Paradise",d:"Orchid Ave, Cavill Ave, Surfers Paradise Blvd",lat:-28.0015,lng:153.4280,src:["Surfers Paradise"]},
+ {name:"Broadbeach",city:"Gold Coast",reg:"Broadbeach",d:"The Star, Casino Dr",lat:-28.0313,lng:153.4292,src:["Broadbeach"]},
+ {name:"Mermaid Beach",city:"Gold Coast",reg:"Broadbeach",d:"Gold Coast Hwy, Nobby Beach",lat:-28.0540,lng:153.4375,src:["Mermaid Beach"]},
+ {name:"Burleigh Heads",city:"Gold Coast",reg:"Burleigh",d:"Gold Coast Hwy, Goodwin Tce",lat:-28.0890,lng:153.4530,src:["Burleigh Heads"]},
+ {name:"Palm Beach",city:"Gold Coast",reg:"Burleigh",d:"Gold Coast Hwy",lat:-28.1200,lng:153.4718,src:["Palm Beach"]},
+ {name:"Southport",city:"Gold Coast",reg:"Southport",d:"Nerang St, Main Beach",lat:-27.9650,lng:153.4050,src:["Southport"]},
  {name:"Perth CBD",city:"Perth",reg:"City",d:"Murray St, William St, St Georges Tce",lat:-31.9530,lng:115.8575,src:["Perth CBD"]},
  {name:"Elizabeth Quay",city:"Perth",reg:"City",d:"Barrack St, The Esplanade",lat:-31.9580,lng:115.8580,src:["Elizabeth Quay"]},
  {name:"East Perth",city:"Perth",reg:"City",d:"Riverside Dr",lat:-31.9648,lng:115.8782,src:["East Perth"]},
@@ -1638,7 +1648,7 @@ const isEve=ts=>{const m=sydAt(ts).min;return m>=17*60||m<4*60};
 const dayWord=ts=>isEve(ts)?"tonight":"today";
 
 /* ---------- time + hours ---------- */
-const TZ={Sydney:"Australia/Sydney",Brisbane:"Australia/Brisbane",Melbourne:"Australia/Melbourne",Perth:"Australia/Perth"};
+const TZ={Sydney:"Australia/Sydney",Brisbane:"Australia/Brisbane",Melbourne:"Australia/Melbourne",Perth:"Australia/Perth","Gold Coast":"Australia/Brisbane"};
 function sydAt(ts,tz){
   const p=new Intl.DateTimeFormat("en-AU",{timeZone:tz||"Australia/Sydney",weekday:"short",hour:"numeric",minute:"numeric",hour12:false}).formatToParts(new Date(ts));
   const g=t=>p.find(x=>x.type===t).value;let h=+g("hour");if(h===24)h=0;
@@ -1676,7 +1686,8 @@ function collectedMap(){ // id -> first date collected in a game
   return m;
 }
 /* Cities: picked up from where you are, changeable from "Sydney ▾". Your lists are per bar, so per city. */
-const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631,live:true},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613,live:true}];
+const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631,live:true},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613,live:true},{name:"Gold Coast",lat:-28.0167,lng:153.4000,live:true}];
+const cityIn=c=>c==="Gold Coast"?"the Gold Coast":c;   // "in the Gold Coast", "all of the Gold Coast"
 const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||CITIES[0],inCityNow=v=>cityOf(v)===S.city;
 const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
@@ -1919,7 +1930,7 @@ function phBump(id,k){k=k||"play";try{const d=phDayK(k);if(!d.ids.includes(id))d
 async function placeId(v){
   if(v.pid)return v.pid;S.pids=S.pids||{};if(S.pids[v.id])return S.pids[v.id];
   const {Place}=await google.maps.importLibrary("places");
-  const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, ${{Brisbane:"Brisbane QLD",Melbourne:"Melbourne VIC",Perth:"Perth WA"}[cityOf(v)]||"Sydney NSW"}`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
+  const r=await Place.searchByText({textQuery:`${v.name}, ${v.address}, ${{Brisbane:"Brisbane QLD",Melbourne:"Melbourne VIC",Perth:"Perth WA","Gold Coast":"Gold Coast QLD"}[cityOf(v)]||"Sydney NSW"}`,fields:["id"],locationBias:{lat:v.lat,lng:v.lng},maxResultCount:1});
   const id=r&&r.places&&r.places[0]&&r.places[0].id;if(id){S.pids[v.id]=id;save()}return id;
 }
 function barPhoto(v,kind){
@@ -2036,7 +2047,7 @@ $("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;go("home")};
 function renderOb(){
   const body=$("obBody");$("obProg").style.width="100%";
   {
-    body.innerHTML=`<div><h1 class="q">Which city?</h1><p class="sub" style="margin:6px 0 0">Sydney, Melbourne, Brisbane and Perth so far. More cities are on the way.</p></div>
+    body.innerHTML=`<div><h1 class="q">Which city?</h1><p class="sub" style="margin:6px 0 0">Sydney, Melbourne, Brisbane, Perth and the Gold Coast so far. More cities are on the way.</p></div>
       <div class="opts">
         ${CITIES.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;return `<button class="opt" type="button" role="radio" data-obc="${c.name}" aria-checked="${c.live&&S.city===c.name}" ${c.live?"":"disabled"}><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${c.live?n+" rooftop bars":"Coming soon"}</small></span></button>`}).join("")}
       </div>`;
@@ -2054,7 +2065,7 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
-  {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(S.city)}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
+  {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(cityIn(S.city))}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
   const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your crawl":"Play R&R";
 }
@@ -2110,7 +2121,7 @@ window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitM
 let SUBS=null;const subs=()=>SUBS||(SUBS=Object.values(VENUES.reduce((m,v)=>{const k=cityOf(v)+"|"+v.area,o=m[k]||(m[k]={name:v.area,city:cityOf(v),lat:0,lng:0,n:0});o.lat+=v.lat;o.lng+=v.lng;o.n++;return m},{})).map(o=>({...o,lat:o.lat/o.n,lng:o.lng/o.n})));
 // whichever city the circle sits in becomes the app's city (like changing your address in Uber Eats)
 function cityAt(p){let b=null,bd=1e12;VENUES.forEach(v=>{const d=dist(p,v);if(d<bd){bd=d;b=v}});return b&&bd<40000?cityOf(b):null}
-function followCity(p){const c=cityAt(p);if(!c||c===S.city)return false;S.city=c;S.cityManual=true;S.cityManualRun=RUN;save();toast(`<span>Now in <b>${esc(c)}</b></span>`,2500);return true}
+function followCity(p){const c=cityAt(p);if(!c||c===S.city)return false;S.city=c;S.cityManual=true;S.cityManualRun=RUN;save();toast(`<span>Now in <b>${esc(cityIn(c))}</b></span>`,2500);return true}
 // a smooth range lo..hi km (log scale); R&R adds "All" at the end
 const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true};
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
@@ -3600,12 +3611,12 @@ function renderPlay(){
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
-      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
+      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
     else{const d=g.noLoc?null:leaving();st.innerHTML=banner+ask+(d?`<div class="leavebar"><span>${I.clock}<span>At <b>${esc(byId(d.id).name)}</b> <i id="lvT">${mmss(now()-d.arrivedAt)}</i></span></span><button class="btn sm" type="button" id="leaveBtn">Leaving now</button></div>`:"")+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
-      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn${now()<hereAt(g)?" locked":""}" type="button" id="hereBtn" aria-disabled="${now()<hereAt(g)}">${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
       ${g.noLoc?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
@@ -4230,7 +4241,7 @@ function shrink(file,max){return new Promise(res=>{const img=new Image(),u=URL.c
 
 /* ---------- rooftops tab ---------- */
 let bMap=null,bMapP=null,bMapFit=false;
-const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of town">${[["all","All of "+S.city],...REG().map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
+const regionChips=(rg,openOnly)=>`<div class="rgrow"><label class="dd"><select id="rgSel" aria-label="Part of town">${[["all","All of "+cityIn(S.city)],...REG().map(r=>[r.name,r.name])].map(([k,l])=>`<option value="${esc(k)}" ${k===rg?"selected":""}>${esc(l)}</option>`).join("")}</select><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></label><button class="chip" type="button" id="rgOpen" aria-pressed="${openOnly}">${I.clock} Open now</button></div>`;
 function barStatus(v,c){if(S.nfu[v.id])return "nfu";if(c[v.id])return "col";if(S.been[v.id])return "been";return ""}
 const stampHTML=s=>s==="col"||s==="been"?'':s==="nfu"?'<span class="stamp nfu">Pass</span>':s==="next"?'<span class="stamp col">Next</span>':s==="done"?`<span class="stamp been">${dayWord(now())==="tonight"?"Tonight":"Today"}</span>`:"";
 // the Hit list is a bookmark; the heart belongs to Favourites
@@ -4279,7 +4290,7 @@ function paintSearch(){
   const here=VENUES.filter(v=>inCityNow(v)&&hit(v)).sort(sortR),away=VENUES.filter(v=>!inCityNow(v)&&hit(v)).sort(sortR);
   const row=v=>rowHTML(v,openState(v,t),barStatus(v,c),inCityNow(v)?y:null);
   box.innerHTML=(here.length?`<div class="card list" style="padding:4px 16px">${here.map(row).join("")}</div>`
-      :`<div class="nores"><b>No rooftop called "${esc(q.value.trim())}" in ${esc(S.city)}</b><span>If it's a rooftop bar, it's not on Rooftop Roulette yet. Every bar here has been checked, so if it's missing we haven't got to it.</span></div>`)
+      :`<div class="nores"><b>No rooftop called "${esc(q.value.trim())}" in ${esc(cityIn(S.city))}</b><span>If it's a rooftop bar, it's not on Rooftop Roulette yet. Every bar here has been checked, so if it's missing we haven't got to it.</span></div>`)
     +(away.length?`<div class="shd">In ${[...new Set(away.map(cityOf))].join(" and ")}</div><div class="card list" style="padding:4px 16px">${away.map(row).join("")}</div>`:"");
   bindRows(box);
 }
@@ -4316,7 +4327,7 @@ function renderBars(){
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
   $("barsSeg").hidden=false;
   $("barsSeg").innerHTML=(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
-    +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(S.city)}</button>`
+    +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(cityIn(S.city))}</button>`
     +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}</button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
   const os=v=>openState(v,t);

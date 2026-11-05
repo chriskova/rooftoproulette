@@ -9855,5 +9855,799 @@
   ],
   "pid": "ChIJUyq0G2GhMioR8-W2KpIUmP4",
   "city": "Perth"
+ },
+ {
+  "id": "gc-lulu",
+  "name": "Lulu Rooftop",
+  "area": "Surfers Paradise",
+  "lat": -28.001643,
+  "lng": 153.429416,
+  "rating": 4.5,
+  "address": "Level 2, 4 Orchid Ave",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1620
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJqyVHxNAFkWsRSTLfaqNB8sc",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-cali-beach",
+  "name": "Cali Beach",
+  "area": "Surfers Paradise",
+  "lat": -27.998562,
+  "lng": 153.429156,
+  "rating": 4.1,
+  "address": "21a Elkhorn Ave",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     1020,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1500
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ7WPf7J0FkWsR-lGwI_zJTLM",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-island-rooftop",
+  "name": "The Island Rooftop",
+  "area": "Surfers Paradise",
+  "lat": -28.002898,
+  "lng": 153.428434,
+  "rating": 4.1,
+  "address": "The Island, 3128 Surfers Paradise Blvd",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJYQs1pM8FkWsRlqPnPFh-3So",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-beer-garden",
+  "name": "Surfers Paradise Beer Garden",
+  "area": "Surfers Paradise",
+  "lat": -28.002146,
+  "lng": 153.429393,
+  "rating": 4.7,
+  "address": "Cnr Cavill & Orchid Ave",
+  "hours": [
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ],
+   [
+    [
+     600,
+     1740
+    ]
+   ]
+  ],
+  "pid": "ChIJNZGbwXIFkWsR_Tf39ZhLhTY",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-skyline-rooftop",
+  "name": "Skyline Rooftop",
+  "area": "Surfers Paradise",
+  "lat": -28.000617,
+  "lng": 153.42815,
+  "rating": 4.1,
+  "address": "Waxy's, 3206 Surfers Paradise Blvd",
+  "hours": [
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ],
+   [
+    [
+     600,
+     1560
+    ]
+   ],
+   [
+    [
+     600,
+     1560
+    ]
+   ],
+   [
+    [
+     600,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJUxMdj3IFkWsRwD8sxDVMP2c",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-exhibitionist",
+  "name": "The Exhibitionist Bar",
+  "area": "Surfers Paradise",
+  "lat": -28.002498,
+  "lng": 153.416348,
+  "rating": 4.1,
+  "address": "Level 5, HOTA, 135 Bundall Rd",
+  "hours": [
+   [
+    [
+     600,
+     960
+    ]
+   ],
+   [
+    [
+     600,
+     960
+    ]
+   ],
+   [
+    [
+     600,
+     1320
+    ]
+   ],
+   [
+    [
+     600,
+     1320
+    ]
+   ],
+   [
+    [
+     600,
+     1320
+    ]
+   ],
+   [
+    [
+     600,
+     1320
+    ]
+   ],
+   [
+    [
+     600,
+     960
+    ]
+   ]
+  ],
+  "pid": "ChIJE3QPhV4FkWsRGy_qFEd_OU8",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-nineteen",
+  "name": "Nineteen at The Star",
+  "area": "Broadbeach",
+  "lat": -28.031323,
+  "lng": 153.429215,
+  "rating": 4.4,
+  "address": "Level 19, The Darling, 1 Casino Dr",
+  "hours": [
+   [],
+   [
+    [
+     1050,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ],
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJAQAAE_sEkWsRMrkPnAMI7LI",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-charlies-rooftop",
+  "name": "Charlie's Rooftop",
+  "area": "Mermaid Beach",
+  "lat": -28.045117,
+  "lng": 153.434806,
+  "rating": 4.9,
+  "address": "2460 Gold Coast Hwy",
+  "hours": [
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [],
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJsT0PpgEFkWsR2nB87TdUfrc",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-juju",
+  "name": "JuJu",
+  "area": "Mermaid Beach",
+  "lat": -28.058505,
+  "lng": 153.438705,
+  "rating": 4.2,
+  "address": "2235 Gold Coast Hwy",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJO6sDzUUFkWsRCcoEdiBcE1A",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-sueno",
+  "name": "Sueño Rooftop",
+  "area": "Mermaid Beach",
+  "lat": -28.059432,
+  "lng": 153.438553,
+  "rating": 4.5,
+  "address": "2217 Gold Coast Hwy",
+  "hours": [
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJYaBW7vUFkWsRXth6WaBMsME",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-justin-lane",
+  "name": "Justin Lane",
+  "area": "Burleigh Heads",
+  "lat": -28.08876,
+  "lng": 153.451592,
+  "rating": 4.1,
+  "address": "1708-1710 Gold Coast Hwy",
+  "hours": [
+   [
+    [
+     1020,
+     1260
+    ]
+   ],
+   [
+    [
+     1020,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJa7WfupADkWsRjbtHpFFyHUU",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-burleigh-pavilion",
+  "name": "Burleigh Pavilion",
+  "area": "Burleigh Heads",
+  "lat": -28.089596,
+  "lng": 153.454887,
+  "rating": 3.7,
+  "address": "3a/43 Goodwin Tce",
+  "hours": [
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJfwJxNNoDkWsRSyCoRDudOSM",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-the-collective",
+  "name": "The Collective",
+  "area": "Palm Beach",
+  "lat": -28.12122,
+  "lng": 153.472541,
+  "rating": 4.4,
+  "address": "1128 Gold Coast Hwy",
+  "hours": [
+   [
+    [
+     720,
+     1230
+    ]
+   ],
+   [
+    [
+     720,
+     1230
+    ]
+   ],
+   [
+    [
+     720,
+     1230
+    ]
+   ],
+   [
+    [
+     720,
+     1230
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1230
+    ]
+   ]
+  ],
+  "pid": "ChIJ_fGgzjICkWsRSPIuitWqiEw",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-frida-sol",
+  "name": "Frida Sol",
+  "area": "Palm Beach",
+  "lat": -28.118809,
+  "lng": 153.471048,
+  "rating": 4.4,
+  "address": "1176 Gold Coast Hwy",
+  "hours": [
+   [
+    [
+     1020,
+     1260
+    ]
+   ],
+   [
+    [
+     1020,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1290
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1230
+    ]
+   ]
+  ],
+  "pid": "ChIJYXxW0A0DkWsRlUQVJkepUv0",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-aviary-rooftop",
+  "name": "Aviary Rooftop Bar",
+  "area": "Southport",
+  "lat": -27.955926,
+  "lng": 153.384247,
+  "rating": 4.2,
+  "address": "Mantra at Sharks, 5 Melia Ct",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     960,
+     1260
+    ]
+   ],
+   [
+    [
+     960,
+     1260
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1380
+    ]
+   ],
+   [
+    [
+     960,
+     1260
+    ]
+   ]
+  ],
+  "pid": "ChIJg8ENFLwRkWsR4ECnrhwxxxE",
+  "city": "Gold Coast"
+ },
+ {
+  "id": "gc-mr-pps",
+  "name": "Mr PP's Rooftop",
+  "area": "Southport",
+  "lat": -27.967658,
+  "lng": 153.413431,
+  "rating": 4.6,
+  "address": "43 Nerang St",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJwWWanfIPkWsR9HalsvSh1d4",
+  "city": "Gold Coast"
  }
 ]
