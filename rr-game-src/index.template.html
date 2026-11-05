@@ -105,6 +105,7 @@ a.btn{text-decoration:none}
 .intro{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;padding:10px 6px}
 .intro .art{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(245,184,61,.22),transparent 70%);display:grid;place-items:center}
 .intro .art svg{width:120px;height:120px;color:var(--amber)}
+.intro .art.ok{background:radial-gradient(circle at 50% 40%,rgba(74,222,128,.2),transparent 70%)}.intro .art.ok svg{color:var(--green)}
 .dots{display:flex;gap:7px;justify-content:center}
 .dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
 .dots i.on{width:22px;background:var(--amber)}
@@ -147,7 +148,7 @@ a.btn{text-decoration:none}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 @media (max-height:680px){.rrnote{display:none}}
 .msub{display:none}
-body:has(.view:not([hidden]) .rrmap) #appbar{display:none}
+
 .view h1.q.qmap{font-size:26px}
 body.mapq .view .wtop~*:not(:has(.rrmap)):not(.rrmap),body.mapq .view :has(>.rrmap)>:not(.rrmap),body.mapq .rrsum,body.mapq .rrslide,body.mapq .rrnote,body.mapq #cta,body.mapq #wSum{display:none!important}
 body.mapq .view{padding-bottom:12px!important}
@@ -346,7 +347,7 @@ dialog.sheet.tq{height:75dvh;max-height:75dvh}
 .lsalso button{background:none;border:0;color:var(--amber);font:inherit;font-weight:700;padding:2px;cursor:pointer}
 .lsclr{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
 .lsclr svg{width:12px;height:12px}
-dialog.sheet::backdrop{background:rgba(0,0,0,.6)}
+dialog.sheet::backdrop{background:rgba(0,0,0,.6);top:env(safe-area-inset-top,0px)}   /* leave the phone's status bar undimmed */
 dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes up{from{transform:translateY(40%)}to{transform:none}}
 .grab{width:40px;height:5px;border-radius:99px;background:var(--s3);margin:0 auto 14px}
@@ -1381,8 +1382,8 @@ setTimeout(done,1200)})();</script>
     <div class="wtop"><button class="iconbtn" id="pBack" type="button" aria-label="Back"></button></div>
     <div class="intro">
       <div class="art" id="permArt"></div>
-      <h2 class="q">Turn on location</h2>
-      <p class="sub" style="max-width:320px;margin:0">So we can find rooftops near you and log each visit in the app when you arrive. Nothing to tap mid-crawl.</p>
+      <h2 class="q" id="permT">Turn on location</h2>
+      <p class="sub" id="permS" style="max-width:320px;margin:0">So we can find rooftops near you and log each visit in the app when you arrive. Nothing to tap mid-crawl.</p>
       <div class="alertbox" id="permWarn" hidden style="text-align:left"></div>
     </div>
     <button class="btn" id="permGo" type="button">Allow location</button>
@@ -2404,21 +2405,28 @@ async function tryStart(noLoc){
 function noLocSheet(go_){
   sheet(`<h3>Location's off</h3><p class="note" style="margin:6px 0 14px">Without it, we can't check you in at each bar. You'll tap <b>I'm here</b> when you arrive, and your crawl card will show your bars and total time, but no route or timings.</p>
     <div class="acts"><button class="btn" type="button" id="nlOn">Turn on location</button><button class="btn line" type="button" id="nlGo">Play without it</button></div>`,()=>{
-    $("nlOn").onclick=()=>{if(NATIVE)permSheet();else{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")}};
+    $("nlOn").onclick=()=>{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")};
     $("nlGo").onclick=()=>{closeSheet();go_(true)}})}
 /* ---------- permission primer ---------- */
-function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;$("permWarn").hidden=true}
-$("pBack").onclick=()=>go(S.permNext==="cruise"||S.permNext==="rr-me"?"quick":"wiz");
+const PERM_SUB="So we can find rooftops near you and log each visit in the app when you arrive. Nothing to tap mid-crawl.";
+let permOk=false;   // location came on after a trip to settings: show it, and let them carry on with Continue
+function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=permOk?I.check:I.pin;$("permArt").classList.toggle("ok",permOk);$("permWarn").hidden=true;
+  $("permT").textContent=permOk?"Location's on":"Turn on location";$("permS").textContent=permOk?"You're good to go.":PERM_SUB;$("permGo").textContent=permOk?"Continue":"Allow location"}
+$("pBack").onclick=()=>{permOk=false;go(S.permNext==="cruise"||S.permNext==="rr-me"?"quick":"wiz")};
 let permBack=false;
 document.addEventListener("visibilitychange",()=>{if(document.hidden||!permBack)return;permBack=false;if(S.route==="perm")permTry(true)});
-$("permGo").onclick=()=>permTry(false);
-async function permTry(fromSettings){const t0=Date.now();
-  try{await getOnce();
+$("permGo").onclick=()=>{if(permOk){permOk=false;permDone();return}permTry(false)};
+function permDone(){
     if(S.permNext==="cruise"){S.route="quick";startCruise()}
     else if(S.permNext==="rr-me"){S.route="quick";save();render();quickNearMe()}
     else if(S.permNext==="wiz-me"){S.route="wiz";useMe()}
     else if(S.permNext==="start"){S.route="wiz";save();tryStart()}
     else go("wiz");
+}
+async function permTry(fromSettings){const t0=Date.now();
+  try{await getOnce();
+    if(fromSettings){permOk=true;renderPerm();return}
+    permDone();
   }catch(e){
     const w=$("permWarn");w.hidden=false;
     w.innerHTML=e&&e.code===1?(NATIVE?`<b>Location is off for Rooftop Roulette.</b> Turn it on in settings, then come back.<button class="btn line sm" type="button" id="permSet" style="margin-top:10px">Open settings</button>`
@@ -4724,13 +4732,18 @@ function natCall(plugin,method,opts){const C=window.Capacitor;if(!C||!C.isNative
   const P=C.Plugins&&C.Plugins[plugin];if(P&&typeof P[method]==="function")return P[method](opts||{});
   if(typeof C.nativePromise==="function")return C.nativePromise(plugin,method,opts||{});return Promise.reject(new Error("no bridge"))}
 const openAppSettings=()=>natCall("NativeSettings","open",{optionAndroid:"application_details",optionIOS:"app"});
+// light status bar icons on our dark screens (the phone's default follows its own light/dark mode)
+if(NATIVE)natCall("SystemBars","setStyle",{style:"DARK"}).catch(()=>{});
 // Permissions: apps can only ask; switching one off (or back on after a no) happens in the phone's settings.
 // Each row: not asked yet → tap asks; allowed or off → tap opens this app's page in the phone's settings.
 async function permSheet(){
   const q=async n=>{try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
-  const [loc,cam,mic]=await Promise.all([q("geolocation"),q("camera"),q("microphone")]);
+  // Location: ask for a fix (instant if it's been turned off). Camera and mic: only a clear yes shows.
+  const locNow=()=>new Promise(r=>{try{navigator.geolocation.getCurrentPosition(()=>r("granted"),e=>r(e&&e.code===1?"denied":"granted"),{maximumAge:600000,timeout:4000})}catch(e){r("unknown")}});
+  let [loc,cam,mic]=await Promise.all([NATIVE?locNow():q("geolocation"),q("camera"),q("microphone")]);
+  if(NATIVE){if(cam!=="granted")cam="unknown";if(mic!=="granted")mic="unknown"}
   // In the app the web view's answers can lag the phone's real settings, so it only shows a clear yes or no
-  const lab=st=>st==="granted"?`<span class="pst ok">Allowed</span>`:st==="denied"?`<span class="pst no">Off</span>`:"";
+  const lab=st=>st==="granted"?`<span class="pst ok">On</span>`:st==="denied"?`<span class="pst no">Off</span>`:"";
   const row=(k,t,st)=>`<button class="prow" type="button" data-pm="${k}" data-st="${st}"><b>${t}</b>${lab(st)}<i class="chev">›</i></button>`;
   sheet(`<h3>Permissions</h3>
     <div class="plist">${row("loc","Location",loc)}${row("cam","Camera",cam)}${row("mic","Microphone",mic)}</div>

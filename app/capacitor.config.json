@@ -10,5 +10,10 @@
   "ios": {
     "backgroundColor": "#0B0D12",
     "contentInset": "never"
+  },
+  "plugins": {
+    "SystemBars": {
+      "style": "DARK"
+    }
   }
 }
