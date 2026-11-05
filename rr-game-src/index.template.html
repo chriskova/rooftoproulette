@@ -33,6 +33,8 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable],.sfield{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--ui);font-size:16px;line-height:1.4;overscroll-behavior:none}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -504,6 +506,9 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.hwant{appearance:none;display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--s2);color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.hwant svg{width:16px;height:16px;color:var(--amber);flex:none}.hwant span{flex:1}.hwant b{color:var(--amber)}.hwant .chev{font-style:normal;color:var(--muted);font-size:18px;line-height:1}
+
 #demoBar{margin:8px 0 0}
 .demobar{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border:1px dashed rgba(245,184,61,.55);border-radius:14px;background:rgba(245,184,61,.07);font-size:13px;color:var(--text)}
 .demobar span:not(.dtag){flex:1;min-width:0;line-height:1.3}
@@ -1299,6 +1304,7 @@ setTimeout(done,1200)})();</script>
       <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest &amp; roulette. No clock. All the stats, none of the rush.</p></div></div>
       <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
       <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
+      <button class="hwant" id="homeWant" type="button" hidden></button>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b> and <b>Brisbane</b>, for now.</span></div>
   </section>
@@ -1450,6 +1456,16 @@ let anErrs=0;const anErr=(type,msg,stack)=>{if(anErrs++>=10)return;track("$excep
 addEventListener("error",e=>anErr(e.error&&e.error.name,e.message,e.error&&e.error.stack));
 addEventListener("unhandledrejection",e=>{const r=e.reason||{};anErr(r.name||"UnhandledRejection",r.message||String(r),r.stack)});
 const $=id=>document.getElementById(id);
+// Long-press (iPhone doesn't send a context menu on hold). The finger lifting afterwards isn't a tap:
+// one shared guard swallows it wherever it lands, since a sheet's backdrop would close on it.
+let lpAt=0;
+addEventListener("click",e=>{if(lpAt&&Date.now()-lpAt<1500){e.stopImmediatePropagation();e.preventDefault();lpAt=0}},true);
+function longPress(el,fn,ms){let t=null,x0=0,y0=0;ms=ms||480;
+  const clear=()=>{clearTimeout(t);t=null};
+  el.addEventListener("pointerdown",e=>{x0=e.clientX;y0=e.clientY;clear();t=setTimeout(()=>{t=null;lpAt=Date.now();try{navigator.vibrate&&S.vib!==false&&navigator.vibrate(15)}catch(_){}fn()},ms)});
+  el.addEventListener("pointermove",e=>{if(t&&Math.hypot(e.clientX-x0,e.clientY-y0)>10)clear()});
+  ["pointerup","pointercancel","pointerleave"].forEach(k=>el.addEventListener(k,clear));
+  el.addEventListener("contextmenu",e=>e.preventDefault())}
 const byId=id=>VENUES.find(v=>v.id===id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -1862,7 +1878,7 @@ function render(){
   const live=$("tPlay").querySelector(".live");if(live)live.hidden=!S.game;
   $("cta").hidden=true;$("app").classList.remove("has-cta");
   $("testFab").hidden=!S.test;
-  $("gearBar").hidden=r==="play";
+  $("gearBar").hidden=r==="play"||r==="end";
   ({intro:renderIntro,ob:renderOb,home:renderHome,wiz:renderWiz,perm:renderPerm,quick:renderQuick,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
   $("v-"+r).scrollTop=0;
 }
@@ -1920,6 +1936,7 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
+  {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(S.city)}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
   const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your crawl":"Play R&R";
 }
@@ -2071,7 +2088,8 @@ function renderQuick(){
   if(farAway()&&!S.game){S.quick=null;go("home");setTimeout(farSheet,150);return}
   const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0;
   if(!S.game)$("stage").innerHTML="";
-  if(q.sel===undefined||q.sel==="*"||(q.sel&&q.sel!=="__me"&&q.sel!=="__want"))q.sel="__me";
+  if(q.sel===undefined)q.sel=wantList().filter(v=>openOK(v,now())).length>=2?"__want":"__me";   // saved a few here? start on them
+  if(q.sel==="*"||(q.sel&&q.sel!=="__me"&&q.sel!=="__want"))q.sel="__me";
   if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
   if(rrMap&&step!==1){rrMap.remove();rrMap=null}
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${step===0&&q.sel!=="__want"?50:100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
@@ -3715,7 +3733,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   $("doneBtn").onclick=()=>{SHARED=null;go("home")};if($("addTab"))$("addTab").onclick=addSharedToTab;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
-  if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card$("scMore").onclick=()=>crawlMenu(r);$("scName").onclick=()=>nameCrawl(r);
+  if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card
+  if($("scMore"))$("scMore").onclick=()=>crawlMenu(r);if($("scName")&&!isShared&&!r.demo)$("scName").onclick=()=>nameCrawl(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   if($("runBack"))$("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
@@ -4327,22 +4346,24 @@ function renderHist(){
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size;
   const dist_=N.reduce((s,x)=>s+x.total,0),atBars=vs.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records(),ht=S.histTab==="bests"&&recs.length?"bests":"crawls";
+  const topRoof=(()=>{const c={};vs.forEach(x=>{(c[x.b.id]||(c[x.b.id]={b:x.b,n:0})).n++});return Object.values(c).sort((a,b)=>b.n-a.n)[0]||null})();
   b.innerHTML=`<h1 class="q">My Tab</h1>
     <div class="grid2 hstats">
-      <div class="stat"><small>Crawls</small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></div>
-      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
-      <div class="stat"><small>Distance</small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></div>
-      <div class="stat"><small>Time at bars</small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></div>
+      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${thisMonth?thisMonth+" crawl"+(thisMonth===1?"":"s")+" this month":"Last crawl "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
+      <button class="stat tap" type="button" id="hRoofs"><small>Rooftops <span class="chev">›</span></small><b>${uniq}</b><em>${topRoof?esc(topRoof.b.name)+" ×"+topRoof.n:"—"}</em></button>
+      <button class="stat tap" type="button" data-tobest="1"><small>Distance <span class="chev">›</span></small><b>${km(dist_)}</b><em>${km(dist_/games)} a crawl</em></button>
+      <button class="stat tap" type="button" data-tobest="1"><small>Time at bars <span class="chev">›</span></small><b>${hmm(atBars)}</b><em>${bars?hmm(atBars/bars)+" a bar":"—"}</em></button>
     </div>
-    <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
+    <div class="seg hseg"><button type="button" data-ht="crawls" aria-pressed="${ht==="crawls"}">Crawls · ${games}</button><button type="button" data-ht="bests" aria-pressed="${ht==="bests"}">Personal bests</button></div>
     ${ht==="bests"?`<div class="recs">${recs.map(x=>`<button class="rec" type="button" data-id="${x.id}"><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div><p class="note hnote">Tap a best to see that crawl.</p>`:`
     <div style="display:flex;flex-direction:column;gap:10px">${H.map((r,i)=>{const st=N[i],bod=r.barOfDay?byId(r.barOfDay):null,nw=(r.newIds||[]).length;
      return `<button class="hrow" type="button" data-id="${r.id}"><span class="n">${st.counted.length}</span><span class="t"><b>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)}${nw?`<span class="newpill">+${nw} new</span>`:""}</b><small>${r.title?dateTxt(rt(r,r.startedAt))+" · "+modeTxt(r)+" · ":""}${esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → "))} · ${km(st.total)}${bod?" · ★ "+esc(bod.name):""}</small></span>${r.photo?`<img src="${r.photo}" alt="">`:""}</button>`}).join("")}</div>`}`;
   b.querySelectorAll("[data-ht]").forEach(x=>x.onclick=()=>{if(S.histTab===x.dataset.ht)return;S.histTab=x.dataset.ht;save();renderHist()});
   b.querySelectorAll(".hrow,.rec").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
   // long-press a crawl for its options
-  b.querySelectorAll(".hrow").forEach(x=>x.oncontextmenu=e=>{e.preventDefault();const r=H.find(y=>y.id===x.dataset.id);if(r){buzz(15);crawlMenu(r)}});
-  $("hVisits").onclick=()=>visitsSheet();
+  b.querySelectorAll(".hrow").forEach(x=>longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)}));
+  $("hVisits").onclick=()=>visitsSheet();$("hRoofs").onclick=()=>visitsSheet("bars");
+  b.querySelectorAll("[data-tobest]").forEach(x=>x.onclick=()=>{if(!recs.length)return;S.histTab="bests";save();renderHist();const sg=$("v-hist").querySelector(".hseg");if(sg)sg.scrollIntoView({behavior:"smooth",block:"start"})});
 }
 // ⋯ on a crawl: name it, move it between real and test, or delete it
 const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
