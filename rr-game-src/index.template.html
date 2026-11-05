@@ -1503,8 +1503,10 @@ const anDev=(()=>{const u=navigator.userAgent||"";
   return {$os:os,$browser:br,$device_type:/Mobi|Android|iPhone/i.test(u)?"Mobile":/iPad|Tablet/i.test(u)?"Tablet":"Desktop",$raw_user_agent:u.slice(0,400),
     $referrer:ref||"$direct",$referring_domain:ref?(()=>{try{return new URL(ref).host}catch(e){return "$direct"}})():"$direct",
     $screen_width:screen.width,$screen_height:screen.height}})();
+// what the app is running in: the store/test app (Capacitor), an installed web app, or a browser tab
+const anShell=()=>{try{if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())return "app";if(window.androidBridge||window.Capacitor)return "app-nobridge";return matchMedia("(display-mode: standalone)").matches?"home-screen":"browser"}catch(e){return "?"}};
 function track(event,props){try{if(!AN.posthogKey||(typeof S!=="undefined"&&S&&(S.test||S.anOff)))return;
-  const base={app_version:APPV,platform:anPlat(),$lib:"web",$session_id:anSess(),$host:location.host||"app",$current_url:location.href.split("#")[0],$pathname:location.pathname,$viewport_width:innerWidth,$viewport_height:innerHeight};
+  const base={app_version:APPV,platform:anPlat(),shell:anShell(),$lib:"web",$session_id:anSess(),$host:location.host||"app",$current_url:location.href.split("#")[0],$pathname:location.pathname,$viewport_width:innerWidth,$viewport_height:innerHeight};
   const body=JSON.stringify({api_key:AN.posthogKey,event,distinct_id:anId,timestamp:new Date().toISOString(),properties:Object.assign(base,anDev,props||{})});
   fetch(AN.posthogHost.replace(/\/$/,"")+"/i/v0/e/",{method:"POST",headers:{"Content-Type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}}
 let anErrs=0;const anErr=(type,msg,stack)=>{if(anErrs++>=10)return;track("$exception",{$exception_type:type||"Error",$exception_message:String(msg||"").slice(0,500),$exception_stack_trace_raw:String(stack||"").slice(0,3000),$exception_list:[{type:type||"Error",value:String(msg||"").slice(0,500),mechanism:{handled:false}}]})};
