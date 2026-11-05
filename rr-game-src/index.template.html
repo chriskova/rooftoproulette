@@ -1665,12 +1665,31 @@ function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<lis
 /* ---------- location ---------- */
 let here=null,watchId=null,locErr=null;
 const you=()=>DEMO()?S.game.dpos:S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
+// In the phone app, a crawl's location runs in the background too (an "Active crawl" notification on Android,
+// the blue pill on iPhone), so arrivals and departures are logged on time with the phone in a pocket.
+// Only while a game is on: stopWatch() ends it with the crawl.
+let bgWatch=null;
+function bgGeo(){const C=window.Capacitor;return C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins&&C.Plugins.BackgroundGeolocation}
 function startWatch(){
-  if(S.test||DEMO()||watchId!==null||!navigator.geolocation)return;
+  if(S.test||DEMO())return;
+  const BG=bgGeo();
+  if(BG&&S.game&&!S.bgSeen){   // first crawl in the app: say what's about to happen before the phone asks
+    S.bgSeen=1;save();sheet(`<h3>Pocket your phone</h3><p class="note" style="margin:6px 0 14px">During a crawl, Rooftop Roulette keeps checking you in as you reach each bar, even with your phone locked. You'll see an <b>Active crawl</b> notification while it's on. It stops the moment the crawl ends.</p><p class="note">Allow location and notifications when your phone asks.</p><div class="acts"><button class="btn" type="button" id="bgOk">Got it</button></div>`,()=>{$("bgOk").onclick=()=>{closeSheet();startWatch()}});
+    $("sheet").addEventListener("close",()=>{if(bgWatch===null&&S.game)startWatch()},{once:true});return}
+  if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
+    BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:true,stale:false,distanceFilter:10},(p,err)=>{
+      if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();return}
+      if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy};locErr=null;lastFix=Date.now();onLocation()
+    }).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
+    return}
+  webWatch()}
+function webWatch(){
+  if(watchId!==null||!navigator.geolocation)return;
   watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;lastFix=Date.now();onLocation()},
     e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
-function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}}
+function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+  const BG=bgGeo();if(BG&&bgWatch!==null){const id=bgWatch;bgWatch=null;if(id!=="pending")BG.removeWatcher({id}).catch(()=>{})}}
 function getOnce(){
   if(S.test&&S.fake){pickCity(S.fake);return Promise.resolve(S.fake)}
   return new Promise((res,rej)=>{
