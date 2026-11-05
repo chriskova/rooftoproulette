@@ -28,7 +28,11 @@ jobs:
           cache: gradle
       - name: Copy the web app into the native project
         working-directory: app
-        run: npm ci && npm run sync -- android
+        # The test app loads the live site, so changes show up on the next open without reinstalling.
+        # (Store builds leave this out and carry the app inside, as the stores expect.)
+        run: |
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://chriskova.github.io/rooftoproulette/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          npm ci && npm run sync -- android
       - name: Build the APK
         working-directory: app/android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
