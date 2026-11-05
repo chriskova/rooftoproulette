@@ -10,7 +10,7 @@ await p.evaluate(()=>{S.onboarded=true;save();go('home')});await p.waitForTimeou
 await p.click('#gearHome');await p.waitForTimeout(500);await p.click('#stPerm');await p.waitForTimeout(600);
 console.log('rows:',await p.evaluate(()=>[...document.querySelectorAll('.prow')].map(x=>x.innerText.replace(/\n/g,' ')).join(' | ')));
 await p.screenshot({path:'out/pm.png'});
-await p.click('[data-pm="loc"]');await p.waitForTimeout(500);console.log('tap allowed location →',await p.evaluate(()=>_calls.join(' ; ')));
+await p.click('[data-pm="cam"]');await p.waitForTimeout(500);console.log('tap camera →',await p.evaluate(()=>_calls.join(' ; ')));
 await p.click('#pmOpen');await p.waitForTimeout(300);console.log('open button →',await p.evaluate(()=>_calls.slice(-1)[0]));
 // background location through the bridge only
 await p.evaluate(()=>{closeSheet();closeSettings(true);const t=Date.now(),st={lat:-33.86,lng:151.21};S.bgSeen=1;S.game={id:'gx',city:'Sydney',mode:'rush',len:60,radius:1,started:true,startedAt:t,endsAt:t+36e5,startPos:st,center:st,areas:['x'],moves:[],visits:[],trail:[],target:'the-glenmore',targetAt:t,targetFrom:st};save();go('play');startWatch()});

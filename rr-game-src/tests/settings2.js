@@ -11,7 +11,7 @@ await p.click('#gearHome');await p.waitForTimeout(700);
 console.log('groups:',await p.evaluate(()=>[...document.querySelectorAll('#setPage .sgh')].map(x=>x.textContent).join(' | ')),'undefined?',await p.evaluate(()=>$('setPage').innerHTML.includes('undefined')));
 console.log('rows:',await p.evaluate(()=>[...document.querySelectorAll('#setPage .strow b')].map(x=>x.textContent).join(' | ')));
 console.log('full screen:',await p.evaluate(()=>{const r=$('setPage').getBoundingClientRect();return r.width+'x'+r.height+' at '+r.x}));
-console.log('clips line:',await p.evaluate(()=>$('stClipsS').textContent));
+console.log('clips value:',await p.evaluate(()=>$('stClipsS').textContent));console.log('sublines:',await p.evaluate(()=>[...document.querySelectorAll('#setPage .strow small')].map(x=>x.previousElementSibling.textContent).join(' | ')));
 await p.screenshot({path:'out/st1.png'});
 await p.evaluate(()=>document.querySelector('#setPage .spbody').scrollTop=2000);await p.waitForTimeout(200);await p.screenshot({path:'out/st2.png'});
 await p.click('#stClips');await p.waitForTimeout(400);console.log('clear sheet:',await p.evaluate(()=>$('sheetBody').innerText.split('\n').slice(0,4).join(' / ')));
