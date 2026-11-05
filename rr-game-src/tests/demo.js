@@ -12,7 +12,7 @@ console.log('after intro:',await p.evaluate(()=>S.route));
 await p.evaluate(async()=>{S.seenHow={rush:1,rr:1};save();await getOnce().catch(()=>{})});await p.waitForTimeout(300);
 await p.click('#newGame');await p.waitForTimeout(600);await p.screenshot({path:'out/d1.png'});
 console.log('far sheet:',await p.evaluate(()=>document.querySelector('#sheetBody h3')&&document.querySelector('#sheetBody h3').textContent));
-await p.click('#fsDemo');await p.waitForTimeout(1200);
+await p.click('#fsTrip');await p.waitForTimeout(400);await p.screenshot({path:'out/d1b.png'});await p.evaluate(()=>{closeSheet();farSheet()});await p.waitForTimeout(400);await p.click('#fsDemo');await p.waitForTimeout(1200);
 // make sure bars are open in the demo regardless of the real clock: jump the demo clock to 7pm Sydney
 await p.evaluate(()=>{const s=sydAt(now());let d=(19*60-s.min);if(d<0)d+=1440;S.game.dff=d*60000;save();renderPlay()});await p.waitForTimeout(500);
 await p.screenshot({path:'out/d2.png'});

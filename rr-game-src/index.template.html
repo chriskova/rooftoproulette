@@ -1572,12 +1572,17 @@ const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||
 const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
 // Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
-function farSheet(){const live=CITIES.filter(x=>x.live);track("far_from_city",{});
-  sheet(`<h3>We're not in your city yet</h3><p class="note" style="margin:4px 0 14px">Rooftop Roulette runs in ${live.map(c=>c.name).join(" and ")} for now. More cities soon.</p>
-    <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Try a demo crawl in Sydney</button>
-    ${live.map(c=>`<button class="btn line" type="button" data-fc="${c.name}">Look around ${c.name}</button>`).join("")}</div>`,()=>{
+function farSheet(){track("far_from_city",{});
+  sheet(`<h3>We're not in your city yet</h3><p class="note" style="margin:4px 0 14px">More cities are on the way. In the meantime, take it for a spin or scope out the rooftops for your next trip.</p>
+    <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Try a demo crawl</button>
+    <button class="btn line" type="button" id="fsTrip">${I.pin} Plan a trip</button></div>`,()=>{
     $("fsDemo").onclick=()=>{closeSheet();startDemo()};
-    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();closeSheet();go("bars")})})}
+    $("fsTrip").onclick=tripSheet})}
+// Plan a trip: pick a city, then its rooftops open on the Rooftops tab.
+function tripSheet(){const live=CITIES.filter(x=>x.live);
+  sheet(`<h3>Where are you headed?</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
+    return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
+    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("plan_trip",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour Rush Hour from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
@@ -1589,7 +1594,7 @@ function demoBar(g){const a=atVisit(),t=now();
   if(g.target&&g.started&&(!a||a.id!==g.target))return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
   if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>You're at the bar. It counts after 3 minutes.</span><button class="btn sm" type="button" id="dSkip">Skip 3 min</button></div>`;
   if(false)return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
-  return `<div class="demobar"><span class="dtag">Demo</span><span>Sydney from Circular Quay. Nothing here is saved.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
+  return `<div class="demobar"><span class="dtag">Demo</span><span>Spin to start. Nothing here is saved.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
 function bindDemoBar(g){
   if($("dHere"))$("dHere").onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};
   if($("dSkip"))$("dSkip").onclick=()=>{const a=atVisit();if(!a)return;g.dff=(g.dff||0)+Math.max(0,DWELL_MIN*60000+2000-(now()-a.arrivedAt));save();loop();renderPlay()};
