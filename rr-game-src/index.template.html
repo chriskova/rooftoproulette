@@ -506,6 +506,7 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.vrow .vch{flex:none;color:var(--muted);font-size:18px;line-height:1}
 .clist{display:flex;flex-direction:column;gap:10px;padding-bottom:28px}.clist .vmon{padding:12px 2px 0}
 
 .slist{display:flex;flex-direction:column;margin-top:4px}
@@ -4408,8 +4409,8 @@ function deleteCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
 function visitsSheet(){
   const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0),yr=String(new Date(now()).getFullYear());let m=null;
   const list=vs.map(x=>{const mm=monthTxt(x.t),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
-    return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}</small></span><span class="d">${hmm(x.ms)}</span></button>`}).join("");
-  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"} · ${hmm(atBars)} at bars</p><div class="vlist2">${list}</div>`,()=>{
+    return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}</small></span><span class="chev vch">›</span></button>`}).join("");
+  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"}</p><div class="vlist2">${list}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bar visits"})});
   });
