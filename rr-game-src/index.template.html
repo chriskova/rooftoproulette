@@ -335,6 +335,7 @@ body.mapq .view{padding-bottom:12px!important}
 /* sheets */
 dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;max-width:480px;width:100%;border:0;border-radius:24px 24px 0 0;background:var(--s1);color:var(--text);padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:85dvh;overflow-y:auto}
 dialog.sheet.full{height:92dvh;max-height:92dvh;padding-bottom:0}
+dialog.sheet.tq{height:75dvh;max-height:75dvh}
 .lshead{position:sticky;top:-10px;z-index:2;background:var(--s1);padding-top:10px;margin-top:-10px;padding-bottom:8px}
 .lsfoot{position:sticky;bottom:0;background:linear-gradient(rgba(20,24,32,0),var(--s1) 30%);padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));margin-top:4px}
 .cityrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -510,6 +511,7 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 
 .setpage{position:fixed;inset:0;z-index:2400;background:var(--bg);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .26s cubic-bezier(.2,.8,.2,1);will-change:transform}
 .setpage.on{transform:none}
+.docpage{z-index:2500}.docpage iframe{flex:1;width:100%;border:0;background:var(--bg)}
 .sphead{flex:none;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px;border-bottom:1px solid var(--line)}
 .sphead b{font-size:18px}.spback{appearance:none;background:none;border:0;color:var(--text);padding:6px;display:grid;place-items:center;cursor:pointer}.spback svg{width:22px;height:22px}
 .spbody{flex:1;overflow-y:auto;padding:4px 16px calc(env(safe-area-inset-bottom,0px) + 28px);-webkit-overflow-scrolling:touch}
@@ -1128,6 +1130,7 @@ html.fl .app{visibility:hidden}
 
 /* ---- gameplay fits on one screen: everything from the clock to "Can't get in?" without scrolling ---- */
 #v-play{gap:10px}
+.app.has-tabs #v-home{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 16px)}
 .app.has-tabs #v-play{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 8px)}
 #v-play .stage{gap:10px;padding:4px 0 0}
 #v-play .bar{padding:15px 16px;gap:8px}
@@ -3324,7 +3327,7 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){$("sheet").classList.remove("full");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
@@ -3413,14 +3416,22 @@ function bindDemo(afterHTML,landed,boxEl){
         reveal(info,box);afterReveal(()=>bindSheetCard(v,facts));$("demoAgain").onclick=mk;if(landed)landed()})}})};   // photo swaps in after the reveal, not mid-flight
   mk();
 }
-const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
-function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
-  sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
+const HOW={rush:()=>[
     ["Spin","You get a random open rooftop in your zone. The clock starts on your first spin."],
     ["Get there","Walk, run, train or Uber. Your visit logs itself when you arrive. Stuck somewhere quiet? Move your zone once a game, and if it's far, the clock waits."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, the wheel pays out."],
-    ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]])}</div>
+    ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
+  ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
+  ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
+  ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
+// How to play from settings: both modes in one sheet, three-quarters high
+function howToPlay(k){k=k||"rush";
+  sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Rush Hour</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>`,()=>{
+    $("sheet").classList.add("tq");$("sheetBody").querySelectorAll("[data-hw]").forEach(b=>b.onclick=()=>howToPlay(b.dataset.hw))})}
+const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
+function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
+  sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rush())}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>howSheet(next),next));
 }
 function openMenu(){
@@ -3449,10 +3460,7 @@ function openMenu(){
 $("pMenu").onclick=openMenu;
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
 
-function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML([
-  ["Spin","You get a random open rooftop near you. Not feeling it? Spin again, as often as you like."],
-  ["Stay as long as you like","Your visit is logged when you arrive, and we time how long you're there. No clock, no pressure."],
-  ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]])}</div>
+function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
@@ -4462,13 +4470,13 @@ function records(){
   const nights=H.map(r=>({r,st:stats(r)})),tn=nights.filter(x=>!x.r.noLoc);
   [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
   best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)));
-  best("Longest crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.dur,hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
+  best("Most bar time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
   best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
   const vs=allVisits().filter(x=>x.v.leftAt!=null&&!x.r.noLoc);
   best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
   best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
-  {const c={};allVisits().filter(x=>!x.r.noLoc).forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0,n:0});o.ms+=x.ms;o.n++});const top=Object.values(c).sort((a,b)=>b.ms-a.ms)[0];
-    if(top&&top.ms>0)R.push({lbl:"Most time at a bar",ic:"clock",v:hmm(top.ms),sub:esc(top.b.name)+" · "+top.n+" visit"+(top.n===1?"":"s"),bar:top.b.id})}
+  {const c={};allVisits().filter(x=>!x.r.noLoc).forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0,n:0});o.ms+=x.ms;o.n++});const top=Object.values(c).filter(o=>o.n>1).sort((a,b)=>b.n-a.n||b.ms-a.ms)[0];   // 2+ visits, so it's never just the longest stay again
+    if(top&&top.ms>0)R.push({lbl:"Your local",ic:"clock",v:hmm(top.ms),sub:esc(top.b.name)+" · "+top.n+" visit"+(top.n===1?"":"s"),bar:top.b.id})}
   const legs=[],hops=[];tn.forEach(({r,st})=>{if(st.longest&&st.longest.to)legs.push({r,d:st.longest.d,to:st.longest.to.id});if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
   best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(rt(x.r,x.r.startedAt)));
   best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true);
@@ -4482,9 +4490,9 @@ function renderHist(){
   b.innerHTML=`<h1 class="q">My Tab</h1>
     <div class="grid2 hstats">
       <button class="stat tap" type="button" id="hCrawls"><small>Crawls <span class="chev">›</span></small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
-      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>${uniq} rooftop${uniq===1?"":"s"}</em></button>
-      <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
-      <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
+      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
+      <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?"Avg "+km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
+      <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
     </div>
     ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
   b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
@@ -4572,10 +4580,10 @@ function backupTab(){track("backup");
   const keep=["been","nfu","want","fav","names","clipAuto","camLight","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
   const data={app:"rooftop-roulette",kind:"tab-backup",v:1,at:Date.now(),history:readH(HKEY),settings:st},d=new Date(),name=`rooftop-roulette-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
   const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
-  if(NATIVE){nativeShare(blob,name,"My Tab backup").catch(e=>console.warn(e));return}
-  const f=new File([blob],name,{type:"application/json"});
-  if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(()=>{});return}
-  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+  // in the app: the phone's share sheet (save to Files or Drive, send it anywhere). On the web: a download (phones won't share .json files)
+  if(NATIVE){nativeShare(blob,name,"My Tab backup").catch(e=>{if(e&&/cancel/i.test(e.message||""))return;anErr("Backup",(e&&e.message)||String(e),e&&e.stack);toast("Couldn't back up your tab.",3500)});return}
+  try{const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast("Backup saved to your downloads.",3000)}
+  catch(e){anErr("Backup",e.message,e.stack);toast("Couldn't back up your tab.",3500)}}
 function restoreTab(){const i=document.createElement("input");i.type="file";i.accept="application/json,.json";
   i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;f.text().then(t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}
     if(!d||d.kind!=="tab-backup"||!Array.isArray(d.history)){toast("That's not a Rooftop Roulette backup.",3500);return}
@@ -4622,8 +4630,8 @@ function settingsSheet(){
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
     el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
   $("stPerm").onclick=permSheet;
-  $("stPriv").onclick=()=>ext(SITE+"privacy.html");$("stTerms").onclick=()=>ext(SITE+"terms.html");
-  if($("stHow"))$("stHow").onclick=()=>{closeSettings(true);S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();go("intro")};
+  $("stPriv").onclick=()=>docPage("privacy.html","Privacy policy");$("stTerms").onclick=()=>docPage("terms.html","Terms of use");
+  if($("stHow"))$("stHow").onclick=()=>howToPlay(G()&&CR(G())?"rr":"rush");
   $("stSup").onclick=()=>{const body=`\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
     location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
   $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
@@ -4631,8 +4639,14 @@ function settingsSheet(){
   if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
     $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render();settingsSheet()};$("stClrN").onclick=closeSheet});
 }
+// Privacy policy and terms open on a page of their own inside the app; back comes back to settings
+function docPage(file,title){if($("docPage"))return;const pg=document.createElement("div");pg.id="docPage";pg.className="setpage docpage";
+  pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="dpBack" aria-label="Back">${I.back}</button><b>${title}</b></div><iframe src="${(location.hostname==="localhost"?SITE:"")+file}?embed" title="${title}"></iframe>`;
+  document.body.appendChild(pg);try{history.pushState({docPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")));
+  $("dpBack").onclick=()=>{try{if(history.state&&history.state.docPage)history.back();else closeDoc()}catch(e){closeDoc()}}}
+function closeDoc(){const pg=$("docPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
 function closeSettings(now_){const pg=$("setPage");if(!pg)return;pg.classList.remove("on");setTimeout(()=>pg.remove(),now_?0:260)}
-addEventListener("popstate",()=>{if($("setPage"))closeSettings()});
+addEventListener("popstate",()=>{if($("docPage"))closeDoc();else if($("setPage"))closeSettings()});
 // Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
 function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
   sheet(`<h3>Clips on this phone</h3><p class="note">${L.length} clip${L.length===1?"":"s"} · ${sz(L)}. Clearing them here doesn't touch copies in your photos.</p>
@@ -4656,7 +4670,7 @@ async function permSheet(){
   // In the app the web view's answers can lag the phone's real settings, so it only shows a clear yes or no
   const lab=st=>st==="granted"?`<span class="pst ok">Allowed</span>`:st==="denied"?`<span class="pst no">Off</span>`:"";
   const row=(k,t,st)=>`<button class="prow" type="button" data-pm="${k}" data-st="${st}"><b>${t}</b>${lab(st)}<i class="chev">›</i></button>`;
-  sheet(`<h3>Permissions</h3><p class="note">${NATIVE?"Switch these on or off in your phone's settings.":"Change these in your browser's settings for this site."}</p>
+  sheet(`<h3>Permissions</h3>
     <div class="plist">${row("loc","Location",loc)}${row("cam","Camera",cam)}${row("mic","Microphone",mic)}</div>
     <div class="acts">${NATIVE?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:""}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
     const open=()=>openAppSettings().catch(err=>{anErr("SettingsOpen",(err&&err.message)||String(err),err&&err.stack);toast("Couldn't open settings. Go to Settings → Apps → Rooftop Roulette → Permissions.",5000)});
