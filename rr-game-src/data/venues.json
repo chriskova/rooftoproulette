@@ -9490,5 +9490,394 @@
   ],
   "pid": "ChIJ87HmJ0ikMioR1jGfwNNN6Lo",
   "city": "Perth"
+ },
+ {
+  "id": "per-oyster-bar",
+  "name": "Oyster Bar",
+  "area": "Elizabeth Quay",
+  "lat": -31.957225,
+  "lng": 115.856255,
+  "rating": 3.9,
+  "address": "21 Geoffrey Bolton Ave",
+  "hours": [
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ],
+   [
+    [
+     660,
+     1410
+    ]
+   ]
+  ],
+  "pid": "ChIJp9lobCq7MioRycw_yBgJ8DU",
+  "city": "Perth"
+ },
+ {
+  "id": "per-hello-rooftop",
+  "name": "Hello Rooftop",
+  "area": "Northbridge",
+  "lat": -31.948656,
+  "lng": 115.859882,
+  "rating": 3.8,
+  "address": "The Rechabite, 224 William St",
+  "hours": [
+   [
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     1020,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJj1ilOcC7MioRPZZLeZg-KL8",
+  "city": "Perth"
+ },
+ {
+  "id": "per-bobs-bar",
+  "name": "Bob's Bar",
+  "area": "Perth CBD",
+  "lat": -31.95527,
+  "lng": 115.85698,
+  "rating": 5,
+  "address": "Level 11, Print Hall, 125 St Georges Tce",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJpZINGQC7MioRgF1J5vsa55M",
+  "city": "Perth"
+ },
+ {
+  "id": "per-sixty-cats",
+  "name": "Sixty Cats",
+  "area": "Perth CBD",
+  "lat": -31.955634,
+  "lng": 115.858067,
+  "rating": 5,
+  "address": "77 St Georges Tce",
+  "hours": [
+   [
+    [
+     720,
+     1080
+    ]
+   ],
+   [
+    [
+     660,
+     1260
+    ]
+   ],
+   [
+    [
+     660,
+     1260
+    ]
+   ],
+   [
+    [
+     660,
+     1290
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     990,
+     1290
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJM6IL5Lm7MioRbGSYCebwqac",
+  "city": "Perth"
+ },
+ {
+  "id": "per-baha",
+  "name": "BAHA",
+  "area": "Perth CBD",
+  "lat": -31.95193,
+  "lng": 115.852766,
+  "rating": 4,
+  "address": "Level 1, 900 Hay St",
+  "hours": [
+   [
+    [
+     390,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     420,
+     600
+    ],
+    [
+     690,
+     1260
+    ]
+   ],
+   [
+    [
+     420,
+     600
+    ]
+   ]
+  ],
+  "pid": "ChIJDYHe6kC7MioR9Qu0_UIRsWM",
+  "city": "Perth"
+ },
+ {
+  "id": "per-generous-squire",
+  "name": "The Generous Squire",
+  "area": "Perth CBD",
+  "lat": -31.951447,
+  "lng": 115.853879,
+  "rating": 4.4,
+  "address": "397 Murray St",
+  "hours": [
+   [
+    [
+     630,
+     1320
+    ]
+   ],
+   [
+    [
+     630,
+     1320
+    ]
+   ],
+   [
+    [
+     630,
+     1320
+    ]
+   ],
+   [
+    [
+     630,
+     1320
+    ]
+   ],
+   [
+    [
+     630,
+     1440
+    ]
+   ],
+   [
+    [
+     630,
+     1440
+    ]
+   ],
+   [
+    [
+     630,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJJ1nHotS6MioR0RrYzidYDbI",
+  "city": "Perth"
+ },
+ {
+  "id": "per-mr-chapple",
+  "name": "Mr Chapple",
+  "area": "Fremantle",
+  "lat": -32.056813,
+  "lng": 115.749677,
+  "rating": 4,
+  "address": "92 South Tce",
+  "hours": [
+   [
+    [
+     480,
+     1380
+    ]
+   ],
+   [
+    [
+     480,
+     1380
+    ]
+   ],
+   [
+    [
+     480,
+     1380
+    ]
+   ],
+   [
+    [
+     480,
+     1380
+    ]
+   ],
+   [
+    [
+     480,
+     1500
+    ]
+   ],
+   [
+    [
+     480,
+     1500
+    ]
+   ],
+   [
+    [
+     480,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJUyq0G2GhMioR8-W2KpIUmP4",
+  "city": "Perth"
  }
 ]
