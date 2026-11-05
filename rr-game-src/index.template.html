@@ -1424,8 +1424,20 @@ const AN=__ANALYTICS__,APPV="__VERSION__";
    Never names, coordinates, photos or clips. Off in test mode, and off entirely until a PostHog key is set in data/config.json. */
 const anId=(()=>{try{let i=localStorage.getItem("rr-anon");if(!i){i=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem("rr-anon",i)}return i}catch(e){return "na"}})();
 const anPlat=()=>{try{return window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()?Capacitor.getPlatform():"web"}catch(e){return "web"}};
+// A session: a new one after 30 minutes without activity (UUIDv7, as PostHog expects), so Web analytics can count visits.
+const uuid7=()=>{const t=Date.now(),h=t.toString(16).padStart(12,"0"),r=[...crypto.getRandomValues(new Uint8Array(10))].map(b=>b.toString(16).padStart(2,"0")).join("");
+  return `${h.slice(0,8)}-${h.slice(8,12)}-7${r.slice(0,3)}-${((parseInt(r.slice(3,4),16)&3)|8).toString(16)}${r.slice(4,7)}-${r.slice(7,19)}`};
+const anSess=()=>{try{const now=Date.now();let o=JSON.parse(localStorage.getItem("rr-sess")||"null");if(!o||now-o.t>30*60000)o={id:uuid7(),t:now};o.t=now;localStorage.setItem("rr-sess",JSON.stringify(o));return o.id}catch(e){return null}};
+const anDev=(()=>{const u=navigator.userAgent||"";
+  const os=/Android/i.test(u)?"Android":/iPhone|iPad|iPod/i.test(u)?"iOS":/Mac OS X/i.test(u)?"Mac OS X":/Windows/i.test(u)?"Windows":/Linux/i.test(u)?"Linux":"Other";
+  const br=/EdgA?\//.test(u)?"Microsoft Edge":/SamsungBrowser/.test(u)?"Samsung Internet":/CriOS|Chrome\//.test(u)?"Chrome":/FxiOS|Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"Other";
+  let ref="";try{ref=document.referrer||""}catch(e){}
+  return {$os:os,$browser:br,$device_type:/Mobi|Android|iPhone/i.test(u)?"Mobile":/iPad|Tablet/i.test(u)?"Tablet":"Desktop",$raw_user_agent:u.slice(0,400),
+    $referrer:ref||"$direct",$referring_domain:ref?(()=>{try{return new URL(ref).host}catch(e){return "$direct"}})():"$direct",
+    $screen_width:screen.width,$screen_height:screen.height}})();
 function track(event,props){try{if(!AN.posthogKey||(typeof S!=="undefined"&&S&&S.test))return;
-  const body=JSON.stringify({api_key:AN.posthogKey,event,distinct_id:anId,timestamp:new Date().toISOString(),properties:Object.assign({app_version:APPV,platform:anPlat(),$lib:"rr-app"},props||{})});
+  const base={app_version:APPV,platform:anPlat(),$lib:"web",$session_id:anSess(),$host:location.host||"app",$current_url:location.href.split("#")[0],$pathname:location.pathname,$viewport_width:innerWidth,$viewport_height:innerHeight};
+  const body=JSON.stringify({api_key:AN.posthogKey,event,distinct_id:anId,timestamp:new Date().toISOString(),properties:Object.assign(base,anDev,props||{})});
   fetch(AN.posthogHost.replace(/\/$/,"")+"/i/v0/e/",{method:"POST",headers:{"Content-Type":"application/json"},body,keepalive:true}).catch(()=>{})}catch(e){}}
 let anErrs=0;const anErr=(type,msg,stack)=>{if(anErrs++>=10)return;track("$exception",{$exception_type:type||"Error",$exception_message:String(msg||"").slice(0,500),$exception_stack_trace_raw:String(stack||"").slice(0,3000),$exception_list:[{type:type||"Error",value:String(msg||"").slice(0,500),mechanism:{handled:false}}]})};
 addEventListener("error",e=>anErr(e.error&&e.error.name,e.message,e.error&&e.error.stack));
@@ -1789,9 +1801,14 @@ const phBox=(v,cls)=>{const ph=phMem[v.id];return ph?`<div class="bph on ${cls||
 
 /* ---------- router ---------- */
 const VIEWS=["intro","ob","home","wiz","perm","play","end","bars","hist","quick"];
+let anLastPage=null;
+function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;const base=location.pathname.replace(/\/(index\.html)?$/,"");
+  const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
+  track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
 function go(route){if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
+  if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
   if(SHARED&&S.route==="end"){VIEWS.forEach(v=>$("v-"+v).hidden=v!=="end");$("appbar").hidden=false;$("tabs").hidden=false;$("app").classList.add("has-tabs");renderEnd();return}
   if($("logo"))$("logo").classList.toggle("tap",SETUP_ROUTES.includes(S.route));
   if(!S.onboarded&&S.route!=="intro"&&!S.game)S.route="intro";
@@ -4449,7 +4466,7 @@ document.addEventListener("visibilitychange",()=>{
 if(S.game&&!S.test)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
-render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
+render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
