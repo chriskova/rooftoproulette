@@ -504,6 +504,13 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+#demoBar{margin:8px 0 0}
+.demobar{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border:1px dashed rgba(245,184,61,.55);border-radius:14px;background:rgba(245,184,61,.07);font-size:13px;color:var(--text)}
+.demobar span:not(.dtag){flex:1;min-width:0;line-height:1.3}
+.demobar .dtag{flex:none;background:var(--amber);color:#1a1204;font-weight:800;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;border-radius:6px;padding:3px 6px}
+.demobar .btn.sm{flex:none;width:auto;padding:8px 12px;font-size:13px}
+.scname.scdemo{display:inline-block;align-self:flex-start;flex:none;height:auto;width:auto;max-width:100%;border:1.5px dashed rgba(245,184,61,.55);color:var(--amber);border-radius:999px;padding:4px 11px;margin:0 0 6px;font-size:13px;font-weight:700;cursor:default;white-space:nowrap}
+
 .bswrap{position:relative}
 .favbtn{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;border:0;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;cursor:pointer;z-index:3}
 .bswrap .sheetbar:not(.photo)~.favbtn{background:rgba(36,24,3,.12);color:var(--amber-ink)}
@@ -1508,7 +1515,9 @@ const saveH=()=>writeH(hTest?TKEY:HKEY,H);
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
 // Time travel only ever applies in test mode, so a real game always runs on the phone's clock.
-const now=()=>Date.now()+(S.test?(S.ff||0):0);
+const DEMO=()=>!!(S.game&&S.game.demo);
+// Time travel applies in test mode, and in the demo (its "skip 3 minutes"); a real game always runs on the phone's clock.
+const now=()=>Date.now()+(S.test?(S.ff||0):0)+(DEMO()?(S.game.dff||0):0);
 // a time from a game as the phone's clock showed it (test games remember how far time travel had moved the clock)
 const rt=(r,t)=>t-((r&&r.ff0)||0);
 const HRT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>';
@@ -1561,6 +1570,30 @@ function collectedMap(){ // id -> first date collected in a game
 const CITIES=[{name:"Sydney",lat:-33.8688,lng:151.2093,live:true},{name:"Melbourne",lat:-37.8136,lng:144.9631},{name:"Brisbane",lat:-27.4698,lng:153.0251,live:true},{name:"Perth",lat:-31.9523,lng:115.8613}];
 const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||CITIES[0],inCityNow=v=>cityOf(v)===S.city;
 const RUN=Date.now()+":"+Math.random();
+const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
+// Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
+function farSheet(){const live=CITIES.filter(x=>x.live);track("far_from_city",{});
+  sheet(`<h3>We're not in your city yet</h3><p class="note" style="margin:4px 0 14px">Rooftop Roulette runs in ${live.map(c=>c.name).join(" and ")} for now. More cities soon.</p>
+    <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Try a demo crawl in Sydney</button>
+    ${live.map(c=>`<button class="btn line" type="button" data-fc="${c.name}">Look around ${c.name}</button>`).join("")}</div>`,()=>{
+    $("fsDemo").onclick=()=>{closeSheet();startDemo()};
+    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();closeSheet();go("bars")})})}
+// The demo: a 1-hour Rush Hour from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
+const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
+function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
+  S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
+    zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:["The Rocks"],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
+    zone:{lat:st.lat,lng:st.lng,name:nearestArea(st)},visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false,dpos:{lat:st.lat,lng:st.lng,acc:5},dff:0};
+  track("demo_start",{});save();buzz(30);go("play")}
+function demoBar(g){const a=atVisit(),t=now();
+  if(g.target&&g.started&&(!a||a.id!==g.target))return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
+  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>You're at the bar. It counts after 3 minutes.</span><button class="btn sm" type="button" id="dSkip">Skip 3 min</button></div>`;
+  if(false)return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
+  return `<div class="demobar"><span class="dtag">Demo</span><span>Sydney from Circular Quay. Nothing here is saved.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
+function bindDemoBar(g){
+  if($("dHere"))$("dHere").onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};
+  if($("dSkip"))$("dSkip").onclick=()=>{const a=atVisit();if(!a)return;g.dff=(g.dff||0)+Math.max(0,DWELL_MIN*60000+2000-(now()-a.arrivedAt));save();loop();renderPlay()};
+  if($("dEnd"))$("dEnd").onclick=()=>{if(g.started&&g.visits.length)endGame(now());else{S.game=null;save();go("home")}}}
 function pickCity(p){if(!p||(S.cityManual&&S.cityManualRun===RUN))return;S.cityManual=false;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];if(c&&c.d<80000&&S.city!==c.x.name){S.city=c.x.name;save()}}
 const cityBtn=()=>`<button class="citybtn" type="button" data-city>${esc(S.city)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
 function citySheet(){sheet(`<h3>Which city?</h3><p class="note" style="margin:4px 0 12px">We pick this up from where you are. Change it to plan a crawl somewhere else.</p>
@@ -1583,9 +1616,9 @@ function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<lis
 
 /* ---------- location ---------- */
 let here=null,watchId=null,locErr=null;
-const you=()=>S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
+const you=()=>DEMO()?S.game.dpos:S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
 function startWatch(){
-  if(S.test||watchId!==null||!navigator.geolocation)return;
+  if(S.test||DEMO()||watchId!==null||!navigator.geolocation)return;
   watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;lastFix=Date.now();onLocation()},
     e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
@@ -1853,11 +1886,11 @@ function renderIntro(){
   $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
   $("introSkip").hidden=i===SLIDES.length-1;
 }
-$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=0;go("ob")}};
+$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=2;go("home")}};
 // The logo takes you home from game setup and R&R setup (not the first-time city and been-to screens).
 const SETUP_ROUTES=["wiz","quick"];
 $("logo").onclick=()=>{if(SETUP_ROUTES.includes(S.route)){closeSheet();go("home")}};
-$("introSkip").onclick=()=>{S.onboarded=true;S.ob=0;go("ob")};
+$("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;go("home")};
 (()=>{let x0=null;$("v-intro").addEventListener("touchstart",e=>x0=e.touches[0].clientX,{passive:true});$("v-intro").addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const i=S.intro||0;if(dx<0&&i<SLIDES.length-1)S.intro=i+1;else if(dx>0&&i>0)S.intro=i-1;else return;save();renderIntro()})})();
 
 /* ---------- first-time setup ---------- */
@@ -1887,8 +1920,10 @@ function renderHome(){
 }
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
-$("newGame").onclick=()=>{if(S.game){go("play");return}firstRules("rush",howSheet,startWizard)};
-$("quickGo").onclick=()=>{if(S.game){go("play");return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
+// Away from the cities we cover, starting a game goes to the "not in your city yet" sheet instead.
+const farAway=()=>!S.test&&here&&!nearLive(here);
+$("newGame").onclick=()=>{if(S.game){go("play");return}if(farAway()){farSheet();return}firstRules("rush",howSheet,startWizard)};
+$("quickGo").onclick=()=>{if(S.game){go("play");return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?I.glass:I.clock);
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
@@ -2028,6 +2063,7 @@ function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="q
   });
 }
 function renderQuick(){
+  if(farAway()&&!S.game){S.quick=null;go("home");setTimeout(farSheet,150);return}
   const q=S.quick||(S.quick={step:0,from:null}),b=$("v-quick"),t=now(),step=q.step||0;
   if(!S.game)$("stage").innerHTML="";
   if(q.sel===undefined||q.sel==="*"||(q.sel&&q.sel!=="__me"&&q.sel!=="__want"))q.sel="__me";
@@ -2089,7 +2125,7 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}if(w.step>2)w.step=2;if(w.step===2&&(!w.start||!w.radius))w.step=0;
+  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&(!w.start||!w.radius))w.step=0;
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}
   $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
@@ -2499,7 +2535,7 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
-  if(!g.started){track("crawl_start",{mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
+  if(!g.started){track("crawl_start",{demo:!!g.demo,mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
   if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
@@ -3311,6 +3347,7 @@ function endGame(at){
   // which bars were new to the collection in this game
   const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
   rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
+  if(g.demo){DEMO_REC=rec;track("demo_end",{bars:rec.visits.filter(v=>v.counted===true).length});S.lastEnd=g.id;S.rackEnd=null;S.game=null;save();closeSheet();ding();go("end");confetti();return}
   rec.test=!!(g.test||S.test);pushH(rec);syncH();
   S.lastEnd=g.id;S.rackEnd=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");confetti();
 }
@@ -3320,7 +3357,7 @@ function endGame(at){
 const SKIP_COST=2;
 let lastFix=Date.now();
 function needManual(g){
-  if(S.test||!g.target)return false;
+  if(S.test||g.demo||!g.target)return false;
   if(locErr!=null)return true;
   if(!here)return now()-g.targetAt>60000;
   if(here.acc>100)return true;
@@ -3336,7 +3373,7 @@ function logArrival(manual){
   if(d){const W=walkMin(byId(d.id),v)*60000;let L=late?leftGuess(d):Math.max(d.dep,now()-W);if(late)at=Math.min(now()-DWELL_MIN*60000,Math.max(L+W,d.dep));L=Math.min(L,at);closeVisit(d,L,"walk")}
   else if(late){const est=(g.targetAt||at)+walkMin(g.targetFrom||v,v)*60000;at=Math.min(now()-DWELL_MIN*60000,Math.max(now()-awayGap,est))}
   g.visits.push({id:v.id,arrivedAt:at,leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
-  if(S.test&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
+  if((S.test||g.demo)&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
   if(late){catchUp(v.id);return}
@@ -3367,6 +3404,7 @@ function renderPlay(){
   renderClock();
   {const cm=$("camMode");if(cm)cm.innerHTML=CR(g)?"R&amp;R":"Rush Hour"}
   {const lv=g.visits.filter(x=>!x.cant&&x.counted!==false).pop(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(lv?byId(lv.id).name:nearestSuburb(you()||g.center))}</i>`}   // the bar you're at (or just left); the suburb before the first one
+  {let db=$("demoBar");if(g.demo){if(!db){db=document.createElement("div");db.id="demoBar";$("v-play").insertBefore(db,$("v-play").children[2]||null)}db.innerHTML=demoBar(g);bindDemoBar(g)}else if(db)db.remove()}
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
@@ -3610,7 +3648,7 @@ function fitEnd(){const box=$("v-end"),el=$("endMap");if(!box||!el||box.hidden)r
   el.style.height=Math.max(140,Math.min(460,h))+"px";if(eMap){const m=eMap;m.resize&&m.resize();m._fit&&setTimeout(()=>{if(eMap===m&&document.contains(el)&&!box.hidden)try{m._fit()}catch(e){}},60)}}
 addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
-  const r=(SHARED&&SHARED.id===S.lastEnd&&!H.some(x=>x.id===SHARED.id))?SHARED:H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){SHARED=null;go("home");return}
+  const r=(DEMO_REC&&DEMO_REC.id===S.lastEnd)?DEMO_REC:(SHARED&&SHARED.id===S.lastEnd&&!H.some(x=>x.id===SHARED.id))?SHARED:H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){SHARED=null;go("home");return}
   const isShared=r===SHARED;
   const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours",aw=cr?cruiseAwards(r,st):awards(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
@@ -3670,6 +3708,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
   $("doneBtn").onclick=()=>{SHARED=null;go("home")};if($("addTab"))$("addTab").onclick=addSharedToTab;
+  if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
+    const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card$("scMore").onclick=()=>crawlMenu(r);$("scName").onclick=()=>nameCrawl(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
@@ -4463,7 +4503,7 @@ document.addEventListener("visibilitychange",()=>{
 });
 
 /* ---------- boot ---------- */
-if(S.game&&!S.test)startWatch();
+if(S.game&&!S.test&&!S.game.demo)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
