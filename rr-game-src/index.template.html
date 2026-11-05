@@ -2409,7 +2409,10 @@ function noLocSheet(go_){
 /* ---------- permission primer ---------- */
 function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;$("permWarn").hidden=true}
 $("pBack").onclick=()=>go(S.permNext==="cruise"||S.permNext==="rr-me"?"quick":"wiz");
-$("permGo").onclick=async()=>{
+let permBack=false;
+document.addEventListener("visibilitychange",()=>{if(document.hidden||!permBack)return;permBack=false;if(S.route==="perm")permTry(true)});
+$("permGo").onclick=()=>permTry(false);
+async function permTry(fromSettings){const t0=Date.now();
   try{await getOnce();
     if(S.permNext==="cruise"){S.route="quick";startCruise()}
     else if(S.permNext==="rr-me"){S.route="quick";save();render();quickNearMe()}
@@ -2418,10 +2421,14 @@ $("permGo").onclick=async()=>{
     else go("wiz");
   }catch(e){
     const w=$("permWarn");w.hidden=false;
-    w.innerHTML=e&&e.code===1?(NATIVE?`<b>Location is off for Rooftop Roulette.</b> In your phone's settings, go to <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.<button class="btn line sm" type="button" id="permSet" style="margin-top:10px">Open phone settings</button>`
+    w.innerHTML=e&&e.code===1?(NATIVE?`<b>Location is off for Rooftop Roulette.</b> Turn it on in settings, then come back.<button class="btn line sm" type="button" id="permSet" style="margin-top:10px">Open settings</button>`
         :`<b>Location is blocked.</b> In Chrome, tap the icon left of the web address → <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.`)
       :`<b>Couldn't find you.</b> Make sure Location is switched on for your phone, then try again.`;
-    if($("permSet"))$("permSet").onclick=()=>openAppSettings().catch(err=>{anErr("SettingsOpen",(err&&err.message)||String(err),err&&err.stack);toast("Couldn't open settings. Go to Settings → Apps → Rooftop Roulette.",4000)});
+    // In the app: go straight to the app's settings page, and try again by itself when they come back
+    const toSettings=()=>{permBack=true;openAppSettings().catch(err=>{permBack=false;anErr("SettingsOpen",(err&&err.message)||String(err),err&&err.stack);toast("Couldn't open settings. Go to Settings → Apps → Rooftop Roulette.",4000)})};
+    if($("permSet"))$("permSet").onclick=toSettings;
+    // a refusal that comes back instantly means the phone didn't even ask (it's been turned off), so open settings for them
+    if(NATIVE&&e&&e.code===1&&!fromSettings&&Date.now()-t0<900)toSettings();
     if(e&&e.code===1&&(S.permNext==="start"||S.permNext==="cruise")){const fn=S.permNext==="start"?tryStart:startCruise;
       w.insertAdjacentHTML("beforeend",`<button class="btn line sm" type="button" id="permNo" style="margin-top:10px">Play without location</button>`);
       $("permNo").onclick=()=>{S.route=fn===tryStart?"wiz":"quick";save();noLocSheet(fn)}}
