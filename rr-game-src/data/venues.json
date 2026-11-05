@@ -8310,5 +8310,1185 @@
   ],
   "pid": "ChIJNRvmysJn1moRj0w40Ct7Oys",
   "city": "Melbourne"
+ },
+ {
+  "id": "per-lils-rooftop",
+  "name": "Lil's Rooftop",
+  "area": "Perth CBD",
+  "lat": -31.951371,
+  "lng": 115.852685,
+  "rating": 4.7,
+  "address": "437 Murray St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ],
+   [
+    [
+     660,
+     1560
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJ3aSBl267MioRxVd1gK7B6rw",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-aviary",
+  "name": "The Aviary",
+  "area": "Perth CBD",
+  "lat": -31.952232,
+  "lng": 115.857766,
+  "rating": 4.5,
+  "address": "Level 1, 140 William St",
+  "hours": [
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJk1isoNa6MioRDmqv9PMsjBA",
+  "city": "Perth"
+ },
+ {
+  "id": "per-rooftop-at-qt",
+  "name": "Rooftop at QT",
+  "area": "Perth CBD",
+  "lat": -31.953867,
+  "lng": 115.860998,
+  "rating": 4.3,
+  "address": "Level 18, 133 Murray St",
+  "hours": [
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   [
+    [
+     840,
+     1440
+    ]
+   ],
+   [
+    [
+     840,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJcbycEp27MioRxcQldySJRxo",
+  "city": "Perth"
+ },
+ {
+  "id": "per-terrarium",
+  "name": "Terrarium",
+  "area": "Perth CBD",
+  "lat": -31.955343,
+  "lng": 115.857298,
+  "rating": 4.8,
+  "address": "99 St Georges Tce, entry via Howard St",
+  "hours": [
+   [],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     840,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJb55yQwK7MioRf4832Vp-mEI",
+  "city": "Perth"
+ },
+ {
+  "id": "per-stories",
+  "name": "Stories",
+  "area": "Perth CBD",
+  "lat": -31.950605,
+  "lng": 115.85844,
+  "rating": 4.6,
+  "address": "Yagan Square, 420 Wellington St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ],
+   [
+    [
+     690,
+     1560
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJfbWjzii7MioRfvwhO6oxJJw",
+  "city": "Perth"
+ },
+ {
+  "id": "per-farra",
+  "name": "Farra",
+  "area": "Perth CBD",
+  "lat": -31.954581,
+  "lng": 115.862279,
+  "rating": 4.3,
+  "address": "Hyde Perth, 37 Pier St",
+  "hours": [
+   [],
+   [
+    [
+     720,
+     870
+    ],
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     870
+    ],
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     870
+    ],
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     870
+    ],
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     870
+    ],
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     900
+    ]
+   ]
+  ],
+  "pid": "ChIJER6tWgK7MioR8ax35-UkT-4",
+  "city": "Perth"
+ },
+ {
+  "id": "per-aurora-rooftop",
+  "name": "Aurora Rooftop Bar",
+  "area": "Perth CBD",
+  "lat": -31.95135,
+  "lng": 115.851688,
+  "rating": 4.2,
+  "address": "The Melbourne Hotel, 33 Milligan St",
+  "hours": [
+   [],
+   [],
+   [],
+   [],
+   [
+    [
+     960,
+     1350
+    ]
+   ],
+   [],
+   []
+  ],
+  "pid": "ChIJDRyeMP6lMioRa5sisY-akbU",
+  "city": "Perth"
+ },
+ {
+  "id": "per-songbird",
+  "name": "Songbird Bar",
+  "area": "Elizabeth Quay",
+  "lat": -31.958441,
+  "lng": 115.858161,
+  "rating": 4.2,
+  "address": "Ritz-Carlton, 1 Barrack St",
+  "hours": [
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJ72Mb8q67MioRog8tSi0lfrM",
+  "city": "Perth"
+ },
+ {
+  "id": "per-hq-bar",
+  "name": "HQ Bar + Kitchen",
+  "area": "Elizabeth Quay",
+  "lat": -31.956232,
+  "lng": 115.857605,
+  "rating": 4.4,
+  "address": "Rooftop, 18 The Esplanade",
+  "hours": [
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     900,
+     1320
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJwR-xwrK7MioRKnqPFYfN8t4",
+  "city": "Perth"
+ },
+ {
+  "id": "per-18-knots",
+  "name": "18 Knots",
+  "area": "Elizabeth Quay",
+  "lat": -31.959377,
+  "lng": 115.859151,
+  "rating": 4.2,
+  "address": "Level 18, DoubleTree, 1 Barrack Square",
+  "hours": [
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJZbksfa27MioRLqfcShcRmnU",
+  "city": "Perth"
+ },
+ {
+  "id": "per-henrys-rooftop",
+  "name": "Henry's Rooftop",
+  "area": "Elizabeth Quay",
+  "lat": -31.958383,
+  "lng": 115.85749,
+  "rating": 3.9,
+  "address": "The Reveley, Ophir Walk",
+  "hours": [
+   [
+    [
+     660,
+     1290
+    ]
+   ],
+   [
+    [
+     660,
+     1290
+    ]
+   ],
+   [
+    [
+     660,
+     1290
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ]
+  ],
+  "pid": "ChIJ-UpOKSq7MioRS2qPIs_Gp5Y",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-point",
+  "name": "The Point Rooftop",
+  "area": "East Perth",
+  "lat": -31.964762,
+  "lng": 115.878151,
+  "rating": 4.1,
+  "address": "306 Riverside Dr",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJmbdEARe7MioRuvDxtipqfnA",
+  "city": "Perth"
+ },
+ {
+  "id": "per-mechanics-institute",
+  "name": "Mechanics Institute",
+  "area": "Northbridge",
+  "lat": -31.948779,
+  "lng": 115.859924,
+  "rating": 4.5,
+  "address": "Rear, 222 William St",
+  "hours": [
+   [],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ],
+   [
+    [
+     900,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJHTUdFdG6MioRzgZ0kEvQ0Cg",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-standard",
+  "name": "The Standard",
+  "area": "Northbridge",
+  "lat": -31.949442,
+  "lng": 115.857785,
+  "rating": 4.4,
+  "address": "28 Roe St",
+  "hours": [
+   [],
+   [],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     960,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJlweC4NO6MioRNUd3FfUnH0I",
+  "city": "Perth"
+ },
+ {
+  "id": "per-tiki-as-fk",
+  "name": "Tiki as FK",
+  "area": "Northbridge",
+  "lat": -31.94889,
+  "lng": 115.8582,
+  "rating": 4.5,
+  "address": "91a James St",
+  "hours": [
+   [
+    [
+     1200,
+     1560
+    ]
+   ],
+   [
+    [
+     1200,
+     1560
+    ]
+   ],
+   [
+    [
+     1200,
+     1560
+    ]
+   ],
+   [
+    [
+     1200,
+     1560
+    ]
+   ],
+   [
+    [
+     960,
+     1560
+    ]
+   ],
+   [
+    [
+     960,
+     1560
+    ]
+   ],
+   []
+  ],
+  "pid": "ChIJx22KYdG6MioRbI_xXTDsvjg",
+  "city": "Perth"
+ },
+ {
+  "id": "per-lucky-chans",
+  "name": "Lucky Chan's",
+  "area": "Northbridge",
+  "lat": -31.946536,
+  "lng": 115.860781,
+  "rating": 4,
+  "address": "311 William St",
+  "hours": [
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     720,
+     960
+    ],
+    [
+     1020,
+     1380
+    ]
+   ],
+   [
+    [
+     1020,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJQ0lDsdG6MioR5pM9_8q5l-o",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-beaufort",
+  "name": "The Beaufort",
+  "area": "Highgate",
+  "lat": -31.93793,
+  "lng": 115.86962,
+  "rating": 4.7,
+  "address": "521-525 Beaufort St",
+  "hours": [
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1380
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJnxW_5vG7MioRX91ky-rw3Wk",
+  "city": "Perth"
+ },
+ {
+  "id": "per-national-hotel",
+  "name": "The National Hotel",
+  "area": "Fremantle",
+  "lat": -32.05442,
+  "lng": 115.746309,
+  "rating": 4.3,
+  "address": "98 High St",
+  "hours": [
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1500
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJ5w_brHqhMioRxl0ks9CO-J0",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-arbor",
+  "name": "The Arbor",
+  "area": "Fremantle",
+  "lat": -32.056644,
+  "lng": 115.749906,
+  "rating": 4.1,
+  "address": "Old Synagogue, 92 South Tce",
+  "hours": [
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1440
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ],
+   [
+    [
+     690,
+     1500
+    ]
+   ]
+  ],
+  "pid": "ChIJ96NoM7ahMioRbXDUQ3BshFA",
+  "city": "Perth"
+ },
+ {
+  "id": "per-sweetwater",
+  "name": "Sweetwater Rooftop Bar",
+  "area": "East Fremantle",
+  "lat": -32.041176,
+  "lng": 115.764175,
+  "rating": 4.5,
+  "address": "Level 6, 1 Silas St",
+  "hours": [
+   [],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     1020,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1320
+    ]
+   ],
+   [
+    [
+     720,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJF972592jMioRs-L4IT4CTxI",
+  "city": "Perth"
+ },
+ {
+  "id": "per-storehouse",
+  "name": "Storehouse",
+  "area": "Subiaco",
+  "lat": -31.946121,
+  "lng": 115.82283,
+  "rating": 4.3,
+  "address": "Vibe Hotel, 9 Alvan St",
+  "hours": [
+   [
+    [
+     390,
+     600
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     720,
+     900
+    ],
+    [
+     960,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     720,
+     900
+    ],
+    [
+     960,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     720,
+     900
+    ],
+    [
+     960,
+     1260
+    ]
+   ],
+   [
+    [
+     390,
+     600
+    ],
+    [
+     720,
+     870
+    ],
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     420,
+     630
+    ],
+    [
+     960,
+     1320
+    ]
+   ],
+   [
+    [
+     420,
+     630
+    ]
+   ]
+  ],
+  "pid": "ChIJjzfJYR-lMioRleCYmvhp-tg",
+  "city": "Perth"
+ },
+ {
+  "id": "per-the-claremont",
+  "name": "The Claremont Rooftop",
+  "area": "Claremont",
+  "lat": -31.981319,
+  "lng": 115.781127,
+  "rating": 4.3,
+  "address": "1 Bay View Tce",
+  "hours": [
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ],
+   [
+    [
+     660,
+     1380
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1440
+    ]
+   ],
+   [
+    [
+     660,
+     1320
+    ]
+   ]
+  ],
+  "pid": "ChIJ87HmJ0ikMioR1jGfwNNN6Lo",
+  "city": "Perth"
  }
 ]
