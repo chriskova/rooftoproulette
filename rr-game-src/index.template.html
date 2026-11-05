@@ -2389,8 +2389,9 @@ function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.exclude
   const y=!g.visits.length&&!g.target?(you()||g.startPos):null,slack=y?Math.min(y.acc||0,40):0,here_=y?VENUES.filter(v=>dist(y,v)-slack<=CHECKIN_M).map(v=>v.id):[];
   return (CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),g.newOnly)).filter(v=>!visited(v.id)&&v.id!==g.target&&!skipped.includes(v.id)&&!here_.includes(v.id)&&openOK(v,t))}
 const walkMin=(a,b)=>Math.max(1,Math.round(dist(a,b)*1.3/80));
-// Playing without location: "I'm here" opens up once half the walk could have happened (no tapping straight through a crawl)
-const hereAt=g=>{const v=byId(g.target),f=g.targetFrom||g.startPos||v;return (g.targetAt||0)+Math.round(walkMin(f,v)*60000/2)};
+// Playing without location: "I'm here" opens once they could realistically be there: a third of the walk
+// (an Uber, with the wait, still takes about that), so nobody taps straight through a crawl
+const hereAt=g=>{const v=byId(g.target),f=g.targetFrom||g.startPos||v;return (g.targetAt||0)+Math.round(walkMin(f,v)*60000/3)};
 const hereLbl=g=>{const w=hereAt(g)-now();return w>0?`${I.pin} I'm here <small class="hin">in ${w>=60000?Math.ceil(w/60000)+" min":Math.ceil(w/1000)+"s"}</small>`:`${I.pin} I'm here`};
 // more than a 45-minute walk: show a rough drive time with a car instead
 const travelHTML=(a,b)=>{const w=walkMin(a,b);if(w<=45)return `${I.walk} ${w} min walk`;const d=Math.round(dist(a,b)/1000*1.25/50*60)+4;return `${I.car} ${d<60?d+" min":Math.floor(d/60)+"h"+(d%60?" "+d%60+"m":"")} drive`};
@@ -3532,7 +3533,7 @@ function renderPlay(){
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
-      ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="hereBtn"${now()<hereAt(g)?" disabled":""}>${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
+      ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="hereBtn"${now()<hereAt(g)?" disabled":""}>${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>${now()<hereAt(g)?`<span class="fine" id="hereWhy">With location off, check-in opens once you could realistically be there.</span>`:""}<button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
       ${g.noLoc?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${g.noLoc?"":tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
@@ -4668,7 +4669,7 @@ function loop(){
   const g=G();
   if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
   if(CR(g)&&g.started&&!g.ended&&g.autoAt&&now()>=g.autoAt){g.autoEnded=true;endGame(g.autoAt);return}
-  if(S.route==="play"&&g&&g.noLoc&&g.target){const hb=$("hereBtn");if(hb&&hb.disabled){if(now()>=hereAt(g)){hb.disabled=false;hb.innerHTML=hereLbl(g);buzz(20)}else hb.innerHTML=hereLbl(g)}}
+  if(S.route==="play"&&g&&g.noLoc&&g.target){const hb=$("hereBtn");if(hb&&hb.disabled){if(now()>=hereAt(g)){hb.disabled=false;hb.innerHTML=hereLbl(g);const hw=$("hereWhy");if(hw)hw.remove();buzz(20)}else hb.innerHTML=hereLbl(g)}}
   if(S.route==="play"&&g){
     renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=CR(g)&&now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);
     if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
