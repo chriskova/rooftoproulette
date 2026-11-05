@@ -506,6 +506,9 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .seg button[aria-pressed="true"]{background:var(--s3);color:var(--text)}
 
 /* history */
+.mantag{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;font-size:12.5px;font-weight:700;color:var(--muted)}.mantag svg{width:14px;height:14px;color:var(--amber)}
+.estnote{margin:8px 2px 0;font-size:12.5px;color:var(--muted)}
+
 .plist{display:flex;flex-direction:column;margin:12px 0 4px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .plist div{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-top:1px solid var(--line);font-size:15px}.plist div:first-child{border-top:0}
 .pst{font-size:13px;color:var(--muted);font-weight:600}.pst.ok{color:var(--green)}.pst.no{color:var(--red)}
@@ -2167,15 +2170,16 @@ function renderQuick(){
     listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",()=>{if(wantList().filter(v=>openOK(v,now())).length>=2)q.sel="__want";save();renderQuick()})};
   if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();renderQuick()};
 }
-async function startCruise(){
-  ac();const q=S.quick;
-  let pos;try{pos=await getOnce()}catch(e){S.permNext="cruise";go("perm");return}
+async function startCruise(noLoc){
+  ac();const q=S.quick;noLoc=noLoc===true;
+  if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState())==="denied"){noLocSheet(startCruise);return}
+  let pos;if(noLoc)pos=null;else try{pos=await getOnce()}catch(e){if(e&&e.code===1&&q.from&&q.from.type!=="me"){noLocSheet(startCruise);return}S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"||f.type==="spot"?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
   const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
   S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"?f.lat:null,lng:f.type==="spot"?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
-    center:c,startPos:{lat:pos.lat,lng:pos.lng},areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
+    center:c,startPos:pos?{lat:pos.lat,lng:pos.lng}:{lat:c.lat,lng:c.lng},noLoc:noLoc||undefined,areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
-  S.quick=null;save();startWatch();buzz(30);go("play");
+  S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 function quickSpin(vel){
   const q=S.quick;if(spinning||!q||!q.from)return false;ac();
@@ -2298,18 +2302,25 @@ async function useMe(){
 }
 $("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
-async function tryStart(){
-  ac();
-  if(!S.test){const st=await permState();if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
-  let pos;try{pos=await getOnce()}catch(e){S.permNext="start";go("perm");return}
+async function tryStart(noLoc){
+  ac();noLoc=noLoc===true;
+  if(!S.test&&!noLoc){const st=await permState();if(st==="denied"){noLocSheet(tryStart);return}if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
+  let pos;if(noLoc)pos={lat:S.wiz.start.lat,lng:S.wiz.start.lng};else try{pos=await getOnce()}catch(e){if(e&&e.code===1){noLocSheet(tryStart);return}S.permNext="start";go("perm");return}
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
   S.game={id:"g"+now(),city:S.city,test:!!S.test,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
     startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
-  S.wiz=null;save();startWatch();buzz(30);go("play");
+  if(noLoc)S.game.noLoc=true;
+  S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 
+// Location blocked as a round starts: say what that means, then let them turn it on or play without it.
+function noLocSheet(go_){
+  sheet(`<h3>Location's off</h3><p class="note" style="margin:6px 0 14px">Without it, we can't check you in at each bar. You'll tap <b>I'm here</b> when you arrive and <b>Leaving now</b> when you go, and the times on your crawl card will be estimates.</p>
+    <div class="acts"><button class="btn" type="button" id="nlOn">Turn on location</button><button class="btn line" type="button" id="nlGo">Play without it</button></div>`,()=>{
+    $("nlOn").onclick=()=>{if(window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.NativeSettings)permSheet();else{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")}};
+    $("nlGo").onclick=()=>{closeSheet();go_(true)}})}
 /* ---------- permission primer ---------- */
 function renderPerm(){$("pBack").innerHTML=I.back;$("permArt").innerHTML=I.pin;$("permWarn").hidden=true}
 $("pBack").onclick=()=>go(S.permNext==="cruise"||S.permNext==="rr-me"?"quick":"wiz");
@@ -2324,6 +2335,9 @@ $("permGo").onclick=async()=>{
     const w=$("permWarn");w.hidden=false;
     w.innerHTML=e&&e.code===1?`<b>Location is blocked.</b> In Chrome, tap the icon left of the web address → <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.`
       :`<b>Couldn't find you.</b> Make sure Location is switched on for your phone, then try again.`;
+    if(e&&e.code===1&&(S.permNext==="start"||S.permNext==="cruise")){const fn=S.permNext==="start"?tryStart:startCruise;
+      w.insertAdjacentHTML("beforeend",`<button class="btn line sm" type="button" id="permNo" style="margin-top:10px">Play without location</button>`);
+      $("permNo").onclick=()=>{S.route=fn===tryStart?"wiz":"quick";save();noLocSheet(fn)}}
   }
 };
 
@@ -3429,7 +3443,7 @@ const SKIP_COST=2;
 let lastFix=Date.now();
 function needManual(g){
   if(S.test||g.demo||!g.target)return false;
-  if(locErr!=null)return true;
+  if(g.noLoc||locErr!=null)return true;
   if(!here)return now()-g.targetAt>60000;
   if(here.acc>100)return true;
   if(Date.now()-lastFix>90000)return true;
@@ -3475,6 +3489,7 @@ function renderPlay(){
   renderClock();
   {const cm=$("camMode");if(cm)cm.innerHTML=CR(g)?"R&amp;R":"Rush Hour"}
   {const lv=g.visits.filter(x=>!x.cant&&x.counted!==false).pop(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(lv?byId(lv.id).name:nearestSuburb(you()||g.center))}</i>`}   // the bar you're at (or just left); the suburb before the first one
+  {let mt=$("manTag");if(g.noLoc){if(!mt){mt=document.createElement("div");mt.id="manTag";mt.className="mantag";$("v-play").insertBefore(mt,$("v-play").children[2]||null)}mt.innerHTML=`${I.pin} Manual check-ins`}else if(mt)mt.remove()}
   {let db=$("demoBar");if(g.demo){if(!db){db=document.createElement("div");db.id="demoBar";$("v-play").insertBefore(db,$("v-play").children[2]||null)}db.innerHTML=demoBar(g);bindDemoBar(g)}else if(db)db.remove()}
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
@@ -3512,8 +3527,8 @@ function renderPlay(){
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", NSW")}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       <div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>
       ${man?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
-      ${tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
-      ${man?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;}
+      ${g.noLoc?"":tip("enroute","Your visit is logged in the app when you arrive. Nothing to tap.",false)}
+      ${man?`<p class="note" style="text-align:center;margin:0">${g.noLoc?`Tap "I'm here" when you arrive.`:`Location's struggling. Tap "I'm here" if you've arrived.`}</p>`:""}`;}
     if(animateId===v.id)animateId=null;
   }else{
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
@@ -3548,11 +3563,12 @@ function renderPlay(){
   else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
+    if(g.noLoc){buzz(30);logArrival(true);return}   // playing without location: the tap is the check-in
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
   const gn=$("gpsNote");
-  if(S.test)gn.textContent="";
+  if(S.test||(G()&&G().noLoc))gn.textContent="";
   else if(locErr===1)gn.innerHTML=`<b style="color:var(--red)">Location is off.</b> Turn it back on so visits log automatically.`;
-  else if(!here)gn.textContent="Finding you…";
+  else if(!here&&!(G()&&G().noLoc))gn.textContent="Finding you…";
   else gn.textContent=g.target?"Keep the app open on the way so your visit logs the moment you arrive.":"";
 }
 function confetti(host){
@@ -3749,7 +3765,7 @@ function renderEnd(){
         return `<div class="schead"><div class="sct"><button class="scname${r.title?"":" add"}" type="button" id="scName">${r.title?esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`:"+ Name this crawl"}</button><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
-          const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":hmm(Math.max(0,stay)),cp=cardPhoto(b);
+          const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":(r.noLoc?"~":"")+hmm(Math.max(0,stay)),cp=cardPhoto(b);
             if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
           const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
@@ -3791,6 +3807,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   if($("runBack"))$("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
   $("shareBtn").onclick=()=>shareStory(r);
+  if(r.noLoc&&!box.querySelector(".estnote")){const m=box.querySelector(".scmap");if(m)m.insertAdjacentHTML("afterend",`<p class="estnote">Check-ins were manual, so times are close, not exact.</p>`)}
   if(S.rackEnd===r.id){delete S.rackEnd;save();if(n){const nb=box.querySelector(".tri>div b");if(nb)nb.textContent="0";setTimeout(()=>rackUp(box,n),700)}}
   requestAnimationFrame(async()=>{
     if(eMap){eMap.remove();eMap=null}
