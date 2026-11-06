@@ -1809,7 +1809,11 @@ function getOnce(){
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(S.test&&S.fake?S.fake:here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
   });
 }
-async function permState(){if(S.test)return "granted";try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
+async function permState(ask){if(S.test)return "granted";
+  // In the phone app the web view's permission answer can be stale (still "denied" after you've turned it on in settings,
+  // or "prompt" when it's allowed), so when a game is starting, ask for a fix instead: that's the real answer.
+  if(NATIVE&&ask)return await new Promise(r=>{try{navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};lastFix=Date.now();r("granted")},e=>r(e&&e.code===1?"denied":"granted"),{enableHighAccuracy:false,maximumAge:600000,timeout:8000})}catch(e){r("prompt")}});
+  try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
 
 /* ---------- sound + haptics ---------- */
 let AC=null;
@@ -2184,7 +2188,7 @@ const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="r
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
-const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]");const m_=s_&&s_.closest(".rrmap");return s_&&m_?Math.round(s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top)+6:70};
+const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]");const m_=s_&&s_.closest(".rrmap");return s_&&m_?Math.round(s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top)+6:0};   // no search bar (Your zone): no extra room
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
@@ -2288,7 +2292,7 @@ function renderQuick(){
     cta(`<button class="btn" id="qNext" type="button">${q.sel==="__want"?"Let's go":"Next"}</button>`,()=>$("qNext").onclick=async()=>{
       if(q.sel==="__want"){q.from={type:"list",name:"Hit list"};q.newOnly=false;save();startCruise();return}
       if(away){const a=GAME_AREAS(S.city)[0]||CITIES.find(c=>c.name===S.city);q.from={type:"pick",name:null,lat:a.lat,lng:a.lng};q.z={lat:a.lat,lng:a.lng,r:q.z&&q.z.r||2};q.step=1;save();renderQuick();return}
-      if(!S.test){const st=await permState();if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
+      if(!S.test){const st=await permState(true);if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
       quickNearMe()});
   }else{
     apClear();
@@ -2307,7 +2311,7 @@ function renderQuick(){
 }
 async function startCruise(noLoc){
   ac();const q=S.quick;noLoc=noLoc===true;
-  if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState())==="denied"){noLocSheet(startCruise);return}
+  if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState(true))==="denied"){noLocSheet(startCruise);return}
   let pos;if(noLoc)pos=null;else try{pos=await getOnce()}catch(e){if(e&&e.code===1&&q.from&&q.from.type!=="me"){noLocSheet(startCruise);return}S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"||f.type==="spot"?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
   const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
@@ -2439,7 +2443,7 @@ $("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}e
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
   ac();noLoc=noLoc===true;
-  if(!S.test&&!noLoc){const st=await permState();if(st==="denied"){noLocSheet(tryStart);return}if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
+  if(!S.test&&!noLoc){const st=await permState(true);if(st==="denied"){noLocSheet(tryStart);return}if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
   let pos;if(noLoc)pos={lat:S.wiz.start.lat,lng:S.wiz.start.lng};else try{pos=await getOnce()}catch(e){if(e&&e.code===1){noLocSheet(tryStart);return}S.permNext="start";go("perm");return}
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
