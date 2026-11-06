@@ -1744,7 +1744,7 @@ function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r
   track("demo_start",{});save();buzz(30);go("play")}
 function demoBar(g){const a=atVisit(),t=now();
   if(g.target&&g.started&&(!a||a.id!==g.target))return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
-  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>You're at the bar. It counts after 3 minutes.</span><button class="btn sm" type="button" id="dSkip">Skip 3 min</button></div>`;
+  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>You're at the bar. Have a drink.</span><button class="btn sm" type="button" id="dSkip">Skip ahead</button></div>`;
   if(false)return `<div class="demobar"><span class="dtag">Demo</span><span>No need to walk. Tap when you're "there".</span><button class="btn sm" type="button" id="dHere">I'm here</button></div>`;
   return `<div class="demobar"><span class="dtag">Demo</span><span>Spin to start. Nothing here is saved.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
 function bindDemoBar(g){
@@ -2061,11 +2061,7 @@ function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;go(k==="play"?"home":k)};
 
 /* ---------- shared copy ---------- */
-const RULES=[
- ["Spin","You get a random rooftop in your zone. The clock starts on your first spin."],
- ["Get there","Walk it, run it, train it, Uber it. Your visit is logged in the app when you arrive."],
- ["Stay 3 minutes and it counts","Then spin again. Leave sooner and we'll ask if you had a drink."]
-];
+
 const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}</span><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join("");
 
 /* ---------- intro ---------- */
@@ -2073,7 +2069,7 @@ const LOOP_ART=()=>`<div class="loopc"><svg class="ring" viewBox="0 0 160 160"><
 const SLIDES=[
  {art:tabIcons.play,h:"Spin",p:"Spin and we pick your next rooftop. No debating, no planning."},
  {art:I.go,h:"Go",p:"Walk it, run it, train it, Uber it. Your visit is logged when you arrive."},
- {art:I.glass,h:"Drink",p:"Stay 3 minutes and the bar counts towards your crawl."},
+ {art:I.glass,h:"Drink",p:"Grab a drink and take in the view."},
  {art:LOOP_ART(),h:"Repeat",p:"Race the clock in Rush Hour, or take your time in R&R."}
 ];
 function renderIntro(){
@@ -3677,7 +3673,7 @@ function renderPlay(){
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
+  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You weren't there long. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
@@ -3941,7 +3937,7 @@ function renderEnd(){
     return}
   box.innerHTML=`
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
-    ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You were there under ${DWELL_MIN} minutes. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
+    ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
