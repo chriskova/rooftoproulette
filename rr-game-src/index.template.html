@@ -119,13 +119,13 @@ a.btn{text-decoration:none}
 .intro{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;padding:10px 6px}
 .intro .art{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(245,184,61,.22),transparent 70%);display:grid;place-items:center}
 .intro .art svg{width:120px;height:120px;color:var(--amber)}
-/* intro slide 3: spin → go → drink, and a dotted line back round to the start */
-.loop3{position:relative;display:flex;align-items:center;gap:6px;margin-top:-18px}
-.loop3 i{width:48px;height:48px;border-radius:50%;background:var(--s2);border:1px solid rgba(245,184,61,.35);display:grid;place-items:center;color:var(--amber);position:relative;z-index:1}
-.intro .art .loop3 svg{width:26px;height:26px}
-.loop3 .dl{width:14px;border-top:2px dashed rgba(245,184,61,.55)}
-.loop3 .rep{position:absolute;left:23px;right:23px;top:24px;height:46px;border:2px dashed rgba(245,184,61,.55);border-top:0;border-radius:0 0 30px 30px}
-.loop3 .rep::after{content:"";position:absolute;left:-7px;top:24px;border:6px solid transparent;border-top:0;border-bottom:9px solid rgba(245,184,61,.8)}
+/* intro slide 4: the three steps going round */
+.loopc{position:relative;width:170px;height:170px;transform:scale(1.12)}
+.loopc .ring{position:absolute;inset:5px;width:160px!important;height:160px!important;fill:none;stroke:rgba(245,184,61,.45);stroke-width:2}
+.loopc .ring .ah{stroke:rgba(245,184,61,.8);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.loopc i{position:absolute;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:var(--s2);border:1px solid rgba(245,184,61,.4);display:grid;place-items:center;color:var(--amber)}
+.intro .art .loopc i svg{width:28px;height:28px}
+.loopc .p1{left:85px;top:27px}.loopc .p2{left:135.2px;top:114px}.loopc .p3{left:34.8px;top:114px}
 .intro .art.ok{background:radial-gradient(circle at 50% 40%,rgba(74,222,128,.2),transparent 70%)}.intro .art.ok svg{color:var(--green)}
 .dots{display:flex;gap:7px;justify-content:center}
 .dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
@@ -1366,7 +1366,7 @@ setTimeout(done,1200)})();</script>
   <section class="view" id="v-intro" hidden>
     <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
     <div class="intro" id="introBody"></div>
-    <div class="dots" id="introDots"><i></i><i></i><i></i></div>
+    <div class="dots" id="introDots"><i></i><i></i><i></i><i></i></div>
     <button class="btn" id="introNext" type="button">Next</button>
   </section>
 
@@ -1789,10 +1789,10 @@ function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
   if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
-    BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:true,stale:false,distanceFilter:10},(p,err)=>{
+    Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:true,stale:false,distanceFilter:10},(p,err)=>{
       if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();return}
       if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy};locErr=null;lastFix=Date.now();onLocation()
-    }).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
+    })).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
     return}
   webWatch()}
 function webWatch(){
@@ -1801,6 +1801,7 @@ function webWatch(){
     e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+  if(NATIVE){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}
   const BG=bgGeo();if(BG&&bgWatch!==null){const id=bgWatch;bgWatch=null;if(id!=="pending")BG.removeWatcher({id}).catch(()=>{})}}
 function getOnce(){
   if(S.test&&S.fake){pickCity(S.fake);return Promise.resolve(S.fake)}
@@ -2068,17 +2069,19 @@ const RULES=[
 const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}</span><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join("");
 
 /* ---------- intro ---------- */
+const LOOP_ART=()=>`<div class="loopc"><svg class="ring" viewBox="0 0 160 160"><circle cx="80" cy="80" r="58"/><path class="ah" d="M133.9 45.4L132.7 55.3L123.5 51.4"/><path class="ah" d="M83.0 144.0L75.0 138.0L83.0 132.0"/><path class="ah" d="M23.1 50.6L32.3 46.7L33.5 56.6"/></svg><i class="p1">${tabIcons.play}</i><i class="p2">${I.go}</i><i class="p3">${I.glass}</i></div>`;
 const SLIDES=[
- {art:tabIcons.play,h:"Spin for your next rooftop",p:"Spin and Rooftop Roulette picks the bar for you. No debating, no planning."},
- {art:I.go,h:"Get there however you like",p:"Walk it, run it, train it, Uber it. Your visit is logged in the app the moment you arrive."},
- {art:`<div class="loop3"><i>${tabIcons.play}</i><b class="dl"></b><i>${I.go}</i><b class="dl"></b><i>${I.glass}</i><span class="rep"></span></div>`,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
+ {art:tabIcons.play,h:"Spin",p:"Spin and we pick your next rooftop. No debating, no planning."},
+ {art:I.go,h:"Go",p:"Walk it, run it, train it, Uber it. Your visit is logged when you arrive."},
+ {art:I.glass,h:"Drink",p:"Stay 3 minutes and the bar counts towards your crawl."},
+ {art:LOOP_ART(),h:"Repeat",p:"Race the clock in Rush Hour, or take your time in R&R."}
 ];
 function renderIntro(){
   const i=S.intro||0,s=SLIDES[i];
   $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0">${s.p}</p>`;
   [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
   $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
-  $("introSkip").hidden=i===SLIDES.length-1;
+  $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
 }
 $("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=2;go("home")}};
 // The logo takes you home from game setup and R&R setup (not the first-time city and been-to screens).
