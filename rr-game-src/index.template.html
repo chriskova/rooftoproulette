@@ -128,6 +128,19 @@ a.btn{text-decoration:none}
 .loopc .p1{left:85px;top:27px}.loopc .p2{left:135.2px;top:114px}.loopc .p3{left:34.8px;top:114px}
 .intro .art.ok{background:radial-gradient(circle at 50% 40%,rgba(74,222,128,.2),transparent 70%)}.intro .art.ok svg{color:var(--green)}
 .dots{display:flex;gap:7px;justify-content:center}
+/* intro slides: a track that slides between screens and follows the finger */
+#introBody{flex:1;display:flex;overflow:hidden;margin:0 -18px;touch-action:pan-y}
+.itrack{display:flex;width:100%;transition:transform .45s cubic-bezier(.22,.8,.24,1);will-change:transform}
+.itrack.drag{transition:none}
+.itrack>.intro{flex:0 0 100%;box-sizing:border-box;padding:10px 24px}
+.itrack .art>*{transition:transform .5s cubic-bezier(.3,1.5,.5,1) .08s,opacity .3s ease .08s}
+.itrack .intro:not(.cur) .art>*{transform:scale(.82);opacity:0}
+.itrack .intro h1,.itrack .intro p{transition:opacity .35s ease .05s}
+.itrack .intro:not(.cur) h1,.itrack .intro:not(.cur) p{opacity:.25}
+#introDots i{width:7px;border-radius:50%;transition:background .25s}
+#introDots i.on{width:7px;background:var(--amber);animation:dotpop .38s cubic-bezier(.3,1.6,.5,1)}
+@keyframes dotpop{0%{transform:scale(.6)}55%{transform:scale(1.55)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.itrack,.itrack .art>*{transition:none}#introDots i.on{animation:none}}
 .dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
 .dots i.on{width:22px;background:var(--amber)}
 
@@ -1366,7 +1379,7 @@ setTimeout(done,1200)})();</script>
   <!-- INTRO (first open) -->
   <section class="view" id="v-intro" hidden>
     <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
-    <div class="intro" id="introBody"></div>
+    <div id="introBody"></div>
     <div class="dots" id="introDots"><i></i><i></i><i></i><i></i></div>
     <button class="btn" id="introNext" type="button">Next</button>
   </section>
@@ -2074,9 +2087,15 @@ const SLIDES=[
  {art:I.glass,h:"Or take it easy",p:"Try R&R. Same game, no clock."}
 ];
 function renderIntro(){
-  const i=S.intro||0,s=SLIDES[i];
-  $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0;min-height:2.9em">${s.p}</p>`;
-  [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
+  const i=S.intro||0,b=$("introBody");
+  let t=b.querySelector(".itrack");
+  if(!t){
+    b.innerHTML=`<div class="itrack">${SLIDES.map(s=>`<div class="intro"><div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0;min-height:2.9em">${s.p}</p></div>`).join("")}</div>`;
+    t=b.firstChild;t.classList.add("drag");t.style.transform=`translateX(${-i*100}%)`;t.offsetWidth;t.classList.remove("drag");
+  }
+  t.style.transform=`translateX(${-i*100}%)`;
+  [...t.children].forEach((el,k)=>el.classList.toggle("cur",k===i));
+  [...$("introDots").children].forEach((d,k)=>{const on=k===i;if(on&&!d.classList.contains("on")){d.classList.add("on")}else if(!on)d.classList.remove("on")});
   $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
   $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
 }
@@ -2085,7 +2104,18 @@ $("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0
 const SETUP_ROUTES=["wiz","quick"];
 $("logo").onclick=()=>{if(SETUP_ROUTES.includes(S.route)){closeSheet();go("home")}};
 $("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;go("home")};
-(()=>{let x0=null;$("v-intro").addEventListener("touchstart",e=>x0=e.touches[0].clientX,{passive:true});$("v-intro").addEventListener("touchend",e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const i=S.intro||0;if(dx<0&&i<SLIDES.length-1)S.intro=i+1;else if(dx>0&&i>0)S.intro=i-1;else return;save();renderIntro()})})();
+(()=>{let x0=null,y0=0,dx=0,horiz=null,t0=0;const v=$("v-intro"),tr=()=>$("introBody").querySelector(".itrack");
+  v.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;horiz=null;t0=Date.now()},{passive:true});
+  v.addEventListener("touchmove",e=>{if(x0===null)return;const t=tr();if(!t)return;dx=e.touches[0].clientX-x0;const dy=e.touches[0].clientY-y0;
+    if(horiz===null&&(Math.abs(dx)>8||Math.abs(dy)>8))horiz=Math.abs(dx)>Math.abs(dy);if(!horiz)return;
+    const i=S.intro||0,edge=(i===0&&dx>0)||(i===SLIDES.length-1&&dx<0),off=edge?dx/3:dx;
+    t.classList.add("drag");t.style.transform=`translateX(calc(${-i*100}% + ${off}px))`},{passive:true});
+  v.addEventListener("touchend",()=>{if(x0===null)return;x0=null;const t=tr();if(t)t.classList.remove("drag");if(!horiz){return}
+    const i=S.intro||0,w=$("introBody").clientWidth||360,fast=Math.abs(dx)>30&&Date.now()-t0<250;
+    if((dx<-w*.2||(fast&&dx<0))&&i<SLIDES.length-1)S.intro=i+1;else if((dx>w*.2||(fast&&dx>0))&&i>0)S.intro=i-1;
+    save();renderIntro()});
+  v.addEventListener("touchcancel",()=>{x0=null;const t=tr();if(t)t.classList.remove("drag");renderIntro()});
+})();
 
 /* ---------- first-time setup ---------- */
 function renderOb(){
