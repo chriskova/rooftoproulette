@@ -8,7 +8,7 @@ await p.evaluate(()=>{S.onboarded=true;S.seenHow={rush:1,rr:1};{const d=new Date
  const mk=(id,d,ids)=>({id,city:'Sydney',mode:'rush',len:60,radius:1,startedAt:t0-d*864e5,endsAt:t0-d*864e5+36e5,endedAt:t0-d*864e5+36e5,started:true,ended:true,startPos:st,center:st,areas:['The Rocks'],visits:ids.map((x,i)=>({id:x,arrivedAt:t0-d*864e5+(i+1)*9e5,leftAt:t0-d*864e5+(i+1)*9e5+5e5,counted:true})),trail:[],moves:[],bodDone:true});
  H.length=0;H.push(mk('a',0,['the-glenmore','untied','smoke-bar']),mk('b',3,['the-glenmore','cirq']));saveH();S.lastEnd='a';S.rackEnd=null;save();go('end')});
 await p.waitForTimeout(1500);
-console.log('gear on summary hidden:',await p.evaluate(()=>$('gearBar').hidden));
+console.log('no menu button on summary:',await p.evaluate(()=>!document.querySelector('#v-end [data-gear]')));
 await p.tap('#scMore');await p.waitForTimeout(500);console.log('⋯ opens:',await p.evaluate(()=>$('sheet').open&&document.querySelector('#sheetBody h3').textContent));
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);await p.tap('#scName');await p.waitForTimeout(400);console.log('name opens:',await p.evaluate(()=>!!$('cnIn')));
 await p.evaluate(()=>{closeSheet();go('hist')});await p.waitForTimeout(500);await p.screenshot({path:'out/t1.png'});
