@@ -2127,7 +2127,7 @@ const CHEERS_ART=()=>`<svg class="ia-cheers" viewBox="0 0 48 48" fill="none" str
 const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar around me.<br>No planning, no debating."},
  {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>It only counts once you've had a drink."},
- {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit<br>before the clock runs out."},
+ {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R.<br>Same game, no clock."}
 ];
 function renderIntro(){
@@ -5021,7 +5021,7 @@ render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventList
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 // Phones keep the app open in the background for days. Coming back to it (not mid-crawl), pick up a newer version if there is one.
 {let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
-  if(!hidAt||Date.now()-hidAt<60000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
+  if(!hidAt||Date.now()-hidAt<5000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
   fetch("sw.js",{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/rr-app-(v[\d-]+)/);if(m&&m[1]!==APPV)location.reload()}).catch(()=>{})})}
 </script>
 </body>
