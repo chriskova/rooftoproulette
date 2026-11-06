@@ -1367,7 +1367,7 @@ setTimeout(done,1200)})();</script>
   <section class="view" id="v-intro" hidden>
     <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
     <div class="intro" id="introBody"></div>
-    <div class="dots" id="introDots"><i></i><i></i><i></i></div>
+    <div class="dots" id="introDots"><i></i><i></i><i></i><i></i></div>
     <button class="btn" id="introNext" type="button">Next</button>
   </section>
 
@@ -2068,13 +2068,14 @@ const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}<
 /* ---------- intro ---------- */
 const LOOP_ART=()=>`<div class="loopc"><svg class="ring" viewBox="0 0 160 160"><circle cx="80" cy="80" r="58"/><path class="ah" d="M133.9 45.4L132.7 55.3L123.5 51.4"/><path class="ah" d="M83.0 144.0L75.0 138.0L83.0 132.0"/><path class="ah" d="M23.1 50.6L32.3 46.7L33.5 56.6"/></svg><i class="p1">${tabIcons.play}</i><i class="p2">${I.go}</i><i class="p3">${I.glass}</i></div>`;
 const SLIDES=[
- {art:tabIcons.play,h:"Spin",p:"Spin and we pick your next rooftop. No debating, no planning."},
- {art:I.go,h:"Go",p:"Walk it, run it, train it, Uber it. Your visit is logged when you arrive."},
- {art:LOOP_ART(),h:"Two ways to play",p:"Race the clock in Rush Hour, or take your time in R&R."}
+ {art:tabIcons.play,h:"Spin the wheel",p:"Land a random rooftop bar. No debating, no planning."},
+ {art:I.go,h:"Get to the bar",p:"Walk, run or Uber. It only counts once you've had a drink."},
+ {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before the clock runs out."},
+ {art:I.glass,h:"Or take it easy",p:"Try R&R. Same game, no clock."}
 ];
 function renderIntro(){
   const i=S.intro||0,s=SLIDES[i];
-  $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0">${s.p}</p>`;
+  $("introBody").innerHTML=`<div class="art">${s.art}</div><h1 class="q" style="font-size:32px">${s.h}</h1><p class="sub" style="max-width:300px;margin:0;min-height:2.9em">${s.p}</p>`;
   [...$("introDots").children].forEach((d,k)=>d.classList.toggle("on",k===i));
   $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
   $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
