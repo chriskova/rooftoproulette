@@ -3622,7 +3622,7 @@ const HOW={rush:()=>[
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
   ["Spin","You get a random rooftop near you, or one from your Hit list."],
   ["Not feeling it?","Spin again. Re-spins are always free."],
-  ["Stay as long as you like","No clock, no pressure. You still get a crawl card at the end."],
+  ["Stay as long as you like","No clock, no pressure. You still get a crawl card at the end with all your stats."],
   ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
 // How to play from settings: both modes in one sheet, three-quarters high
 function howToPlay(k){k=k||"rush";
@@ -3917,7 +3917,11 @@ function stats(r){
 
 let eMap=null;
 const NOLOC_AW=["Trust the Wheel","Change of Scenery","Bounced","Top Floor","Ground Floor","Grand Tour","Just the One","Good Night Out","Good Day Out","Quiet One"];
-const awardsFor=(r,st)=>{const L=(r.mode==="cruise"?cruiseAwards:awards)(r,st);if(!r.noLoc)return L;const k=L.filter(a=>NOLOC_AW.includes(a.t));return k.length?k:[{t:st.counted.length?"Top Floor":"Ground Floor",why:`${st.counted.length} bar${st.counted.length===1?"":"s"} in ${hmm(st.dur)}`}]};
+// No award to give (and always for R&R): a plain title from when it started, like "Afternoon crawl". The stats are right below.
+const dayPart=t=>{const h=sydAt(t).min/60;return h<5?"Night":h<11?"Morning":h<14?"Lunch":h<17?"Afternoon":h<21?"Evening":"Night"};
+const plainTitle=r=>({t:`${dayPart(r.startedAt||r.endedAt||Date.now())} crawl`,why:"",plain:true});
+const awardsFor=(r,st)=>{if(r.mode==="cruise")return [r.title?{t:r.title,why:"",plain:true}:plainTitle(r)];
+  const L=awards(r,st);if(!r.noLoc)return L;const k=L.filter(a=>NOLOC_AW.includes(a.t));return k.length?k:[plainTitle(r)]};
 function awards(r,st){
   const L=[],n=st.counted.length,nm=id=>esc(byId(id).name);
   const add=(t,why)=>L.push({t,why});
@@ -3931,7 +3935,7 @@ function awards(r,st){
   const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
   if(r.areas.length>1)add("Change of Scenery",esc(r.areas.filter((a,i)=>a!==r.areas[i-1]).join(" → ")));
   if(!r.skipCost&&!(r.skipped||[]).length&&n>=2)add("Trust the Wheel","Took every spin the wheel gave you");
-  if(!L.length)add(n?"Top Floor":"Ground Floor",n?`${n} bar${n===1?"":"s"}, ${km(st.total)}`:"The wheel will be kinder next time");
+  if(!L.length)L.push(plainTitle(r));
   return L;
 }
 // "Still going?": put an auto-ended R&R night back on, picking up where it left off.
@@ -3942,19 +3946,6 @@ function resumeNight(r){
   delete g.ended;delete g.endedAt;delete g.early;delete g.missed;delete g.newIds;
   g.autoEnded=false;g.endsAt=now()+24*3600000;g.autoAt=now()+RR_AUTO;g.resumed=(g.resumed||0)+1;
   S.game=g;S.lastEnd=null;save();startWatch();buzz(30);go("play");
-}
-function cruiseAwards(r,st){
-  const L=[],n=st.counted.length,nm=id=>esc(byId(id).name),add=(t,why)=>L.push({t,why});
-  const stays=st.arrived.filter(v=>v.leftAt).map(v=>({id:v.id,ms:v.leftAt-v.arrivedAt})).sort((a,b)=>b.ms-a.ms);
-  const startH=sydAt(r.startedAt).min/60;
-  if(n===1)add("Just the One",`${hmm(stays[0]?stays[0].ms:st.dur)} at ${nm(st.arrived[0].id)}. It's never just the one`);
-  if(stays[0]&&stays[0].ms>=60*60000)add("Settled In",`${hmm(stays[0].ms)} at ${nm(stays[0].id)}`);
-  if(startH<15&&st.dur>=2.5*3600000)add("Long Lunch",`Out from ${clock12(Math.round(startH*60))} for ${hmm(st.dur)}`);
-  if(n>=4)add("Grand Tour",`${n} rooftops, ${km(st.total)}`);
-  if(n>=2&&stays.length&&stays.every(s=>s.ms>=30*60000))add("Slow Burn","At least half an hour at every bar");
-  const cant=r.visits.find(v=>v.cant);if(cant)add("Bounced",`Couldn't get into ${nm(cant.id)}`);
-  if(!L.length)add(n?(isEve(r.startedAt)?"Good Night Out":"Good Day Out"):"Quiet One",n?`${n} bar${n===1?"":"s"} over ${hmm(st.dur)}`:"Next time, the wheel");
-  return L;
 }
 // shrink text until it sits on one line (never cut off)
 // the night's route, full screen
@@ -4022,7 +4013,7 @@ function renderEnd(){
         const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
           :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
         const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
-        return `<div class="schead"><div class="sct"><button class="scname${r.title?"":" add"}" type="button" id="scName">${r.title?esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`:"+ Name this crawl"}</button><div class="aw-t">${aw[0].t}</div><div class="aw-w">${aw[0].why}</div><div class="scmeta">${meta}</div></div>
+        return `<div class="schead"><div class="sct"><button class="scname${r.title&&!cr?"":" add"}" type="button" id="scName">${r.title?(cr?`${IC.edit} Rename`:esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`):"+ Name this crawl"}</button><div class="aw-t">${aw[0].plain?esc(aw[0].t):aw[0].t}</div>${aw[0].why?`<div class="aw-w">${aw[0].why}</div>`:""}<div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
