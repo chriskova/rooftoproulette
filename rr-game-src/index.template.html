@@ -640,7 +640,8 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .vrow .n2{flex:none;width:34px;text-align:center;font-family:var(--display);font-weight:800;font-size:26px;color:var(--amber);line-height:1}
 
 .hwant{appearance:none;display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--s2);color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer}
-.hwant svg{width:16px;height:16px;color:var(--amber);flex:none}.hwant span{flex:1}.hwant b{color:var(--amber)}.hwant .chev{font-style:normal;color:var(--muted);font-size:18px;line-height:1}
+.hwant svg{width:16px;height:16px;color:var(--amber);flex:none}.hwant span{flex:1}.hwant b{color:var(--amber)}.hwant.hat{margin:0 0 12px;border-color:rgba(245,184,61,.55)}.hwant.hat .x{appearance:none;border:0;background:none;color:var(--muted);font-size:20px;line-height:1;padding:0 2px 0 8px;cursor:pointer}
+.hwant .chev{font-style:normal;color:var(--muted);font-size:18px;line-height:1}
 
 #demoBar{margin:8px 0 0}
 .demobar{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border:1px dashed rgba(245,184,61,.55);border-radius:14px;background:rgba(245,184,61,.07);font-size:13px;color:var(--text)}
@@ -1437,6 +1438,7 @@ setTimeout(done,1200)})();</script>
       <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div>
       
     </div>
+    <button class="hwant hat" id="homeAt" type="button" hidden></button>
     <div class="card mode">
       <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock.<br>Spin, drink, spin again.</p></div></div>
       <button class="btn" id="newGame" type="button">Play Rush Hour</button>
@@ -2195,8 +2197,29 @@ function renderHome(){
   {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(cityIn(S.city))}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
   $("newGame").textContent="Play Rush Hour";$("quickGo").textContent="Play R&R";
+  homeAt();
   requestAnimationFrame(fitHome);
 }
+// Standing at a rooftop with the app open and no game on: offer to start one from here.
+// Only uses location while the app is open (no extra permission), and only if it's already allowed.
+let atT=0;
+addEventListener("visibilitychange",()=>{if(!document.hidden&&S.route==="home")homeAt()});
+function homeAt(){const b=$("homeAt");if(!b)return;
+  const show=v=>{if(!v||S.game||S.route!=="home"){b.hidden=true;return}
+    b.innerHTML=`${I.pin} <span>At <b>${esc(v.name)}</b>? Start a crawl here.</span><button class="x" type="button" aria-label="Not now">×</button>`;b.hidden=false;
+    b.onclick=e=>{if(e.target.closest(".x")){e.stopPropagation();S.atNo={id:v.id,day:new Date(now()).toDateString()};save();b.hidden=true;requestAnimationFrame(fitHome);return}
+      track("home_at_tap",{bar:v.id});
+      sheet(`<h3>Start at ${esc(v.name)}</h3><p class="note" style="margin:6px 0 14px">Your zone starts here.</p><div class="acts"><button class="btn" type="button" id="atRush">Rush Hour</button><button class="btn line" type="button" id="atRR">R&amp;R</button></div>`,()=>{
+        $("atRush").onclick=()=>{closeSheet();firstRules("rush",howSheet,startWizard)};
+        $("atRR").onclick=()=>{closeSheet();firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})}})};
+    requestAnimationFrame(fitHome)};
+  const pick=p=>{const t=now(),slack=60+Math.min(p.acc||60,60),no=S.atNo&&S.atNo.day===new Date(t).toDateString()?S.atNo.id:null;
+    let best=null,bd=1e9;VENUES.forEach(v=>{const d=dist(p,v);if(d<bd&&v.id!==no&&openState(v,t).open){bd=d;best=v}});return bd<=slack?best:null};
+  if(S.game||S.test||!navigator.geolocation){b.hidden=true;return}
+  if(here)show(pick(here));else b.hidden=true;
+  if(Date.now()-atT<120000)return;atT=Date.now();
+  permState().then(st=>{if(st!=="granted")return;
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="home")show(pick(here))},()=>{},{maximumAge:120000,timeout:10000,enableHighAccuracy:true})})}
 // The mode cards' type grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
 function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
   while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}}
