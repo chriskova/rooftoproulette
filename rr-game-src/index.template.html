@@ -2374,17 +2374,19 @@ function renderQuick(){
     cta(`<button class="btn" id="qNext" type="button">Next</button>`,()=>$("qNext").onclick=async()=>{
       if(q.sel==="__want"){const L=wantList(),near=here&&L.some(v=>dist(here,v)<5000);
         const c=near?here:{lat:L.reduce((a,v)=>a+v.lat,0)/L.length,lng:L.reduce((a,v)=>a+v.lng,0)/L.length};
-        q.from={type:"list",name:"Hit list",lat:c.lat,lng:c.lng};q.newOnly=false;q.z={lat:c.lat,lng:c.lng,r:0};q.step=1;save();renderQuick();return}
+        q.from={type:"list",name:"Hit list",lat:c.lat,lng:c.lng};q.newOnly=false;q.lz={lat:c.lat,lng:c.lng,r:0};q.step=1;save();renderQuick();return}
       if(away){const a=GAME_AREAS(S.city)[0]||CITIES.find(c=>c.name===S.city);q.from={type:"pick",name:null,lat:a.lat,lng:a.lng};q.z={lat:a.lat,lng:a.lng,r:q.z&&q.z.r||2};q.step=1;save();renderQuick();return}
       if(!S.test){const st=await permState(true);if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
       quickNearMe()});
   }else{
     apClear();
     const pick=q.from&&q.from.type==="pick",lst=q.from&&q.from.type==="list",me=q.from&&q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:lst&&here?{lat:here.lat,lng:here.lng}:null;if(!me&&!pick&&!lst){q.step=0;save();renderQuick();return}
+    if(lst&&!q.lz)q.lz={lat:q.from.lat,lng:q.from.lng,r:0};
     if(!q.z)q.z={lat:q.from.lat,lng:q.from.lng,r:2};
+    const zz=lst?q.lz:q.z;
     const listPool=(z,t)=>{const all=wantList().filter(v=>!z.r||dist(z,v)<=z.r*1000);return {all,open:all.filter(v=>openOK(v,t))}};
     b.innerHTML=top+`<div><h1 class="q qmap">${pick?"Where to?":"How far?"}</h1><p class="sub msub" style="margin:6px 0 0">${pick?"Drag the map to where you'll start.":lst?"Spin your whole Hit list, or keep it to one part of town.":"Drag the map to spin somewhere else."}</p></div>${rrZoneHTML()}${lst?"":newTog}`;
-    rrZoneBind(q.z,me,()=>lst?false:q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(lst){q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};q.r=z.r||null;save();startCruise();return}q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}),lst?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);fitMap(b);
+    rrZoneBind(zz,me,()=>lst?false:q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(lst){q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};q.r=z.r||null;save();startCruise();return}q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}),lst?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);fitMap(b);
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
