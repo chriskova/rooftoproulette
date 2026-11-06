@@ -3918,8 +3918,9 @@ function stats(r){
 let eMap=null;
 const NOLOC_AW=["Trust the Wheel","Change of Scenery","Bounced","Top Floor","Ground Floor","Grand Tour","Just the One","Good Night Out","Good Day Out","Quiet One"];
 // No award to give (and always for R&R): a plain title from when it started, like "Afternoon crawl". The stats are right below.
-const dayPart=t=>{const h=sydAt(t).min/60;return h<5?"Night":h<11?"Morning":h<14?"Lunch":h<17?"Afternoon":h<21?"Evening":"Night"};
-const plainTitle=r=>({t:`${dayPart(r.startedAt||r.endedAt||Date.now())} crawl`,why:"",plain:true});
+const DAYN=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const plainTitle=r=>{const a=sydAt(r.startedAt||r.endedAt||Date.now(),TZ[r.city||"Sydney"]),h=a.min/60;
+  return {t:`${DAYN[a.day]} ${h<5?"night":h<11?"morning":h<14?"lunch":h<17?"afternoon":h<21?"evening":"night"} crawl`,why:"",plain:true}};
 const awardsFor=(r,st)=>{if(r.mode==="cruise")return [r.title?{t:r.title,why:"",plain:true}:plainTitle(r)];
   const L=awards(r,st);if(!r.noLoc)return L;const k=L.filter(a=>NOLOC_AW.includes(a.t));return k.length?k:[plainTitle(r)]};
 function awards(r,st){
