@@ -9,7 +9,7 @@ await p.goto('file://'+process.argv[2]);await p.waitForTimeout(400);
 await p.evaluate(()=>{S.onboarded=true;const d=new Date();d.setHours(19,0,0,0);const t=Date.now();const st={lat:-33.8612,lng:151.2110};
  S.game={id:'gbg',city:'Sydney',mode:'rush',len:60,radius:1,started:true,startedAt:t-6e5,endsAt:t+50*6e4,startPos:st,center:st,areas:['The Rocks'],moves:[],visits:[],target:'the-glenmore',targetAt:t-3e5,targetFrom:st,trail:[],zone:{lat:st.lat,lng:st.lng}};save();go('play');startWatch()});
 await p.waitForTimeout(400);console.log('explainer:',await p.evaluate(()=>document.querySelector('#sheetBody h3')&&document.querySelector('#sheetBody h3').textContent),'watchers so far:',await p.evaluate(()=>_bg.adds));
-await p.click('#bgOk');await p.waitForTimeout(300);console.log('watcher started:',await p.evaluate(()=>_bg.adds+' '+_bg.opts.backgroundTitle));
+console.log('watcher started:',await p.evaluate(()=>_bg.adds+' '+_bg.opts.backgroundTitle));
 // phone locked; a fix arrives at the bar
 await p.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});const v=byId('the-glenmore');_bg.cb({latitude:v.lat,longitude:v.lng,accuracy:12})});
 await p.waitForTimeout(300);
