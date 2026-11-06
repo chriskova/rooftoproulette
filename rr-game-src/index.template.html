@@ -122,7 +122,7 @@ a.btn{text-decoration:none}
 /* intro, last screen: spin, go, drink going round */
 .loopc{position:relative;width:170px;height:170px;transform:scale(1.12)}
 .loopc .ring{position:absolute;inset:5px;width:160px!important;height:160px!important;fill:none;stroke:rgba(245,184,61,.45);stroke-width:2}
-.loopc .ring .ah{stroke:rgba(245,184,61,.8);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.loopc .ring .ah{stroke:#F5B83D;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .loopc .ring .dl{stroke:#F5B83D;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:4 7;fill:none}
 .loopc .ring .lm{fill:none;stroke:#fff;stroke-width:10;stroke-dasharray:100;stroke-dashoffset:0}
 .loopc .ring .head{fill:#FFE2A0;stroke:none;opacity:0;offset-path:path("M80 22a58 58 0 1 1 -.01 0");offset-rotate:0deg;filter:drop-shadow(0 0 4px rgba(245,184,61,.9))}
@@ -150,13 +150,13 @@ a.btn{text-decoration:none}
 @keyframes iaHit{0%{transform:translateX(0)}30%{transform:translateX(1.6px) scaleY(1.12)}65%{transform:translateX(-.5px)}100%{transform:none}}
 /* 3: spin, go, drink light up in turn round the loop */
 /* the dotted line draws round from the top, a spark leads it, each icon lights as it passes */
-.cur .loopc .lm{animation:iaDraw 1.5s linear .2s both}
-.cur .loopc .head{animation:iaHead 1.5s linear .2s both}
+.cur .loopc .lm{animation:iaDraw 1s linear .2s both}
+.cur .loopc .head{animation:iaHead 1s linear .2s both}
 .cur .loopc .ah{animation:iaFade .25s ease-out both}
-.cur .loopc .ah:nth-of-type(1){animation-delay:.45s}.cur .loopc .ah:nth-of-type(2){animation-delay:.95s}.cur .loopc .ah:nth-of-type(3){animation-delay:1.45s}
-.cur .loopc .p1{animation:iaStep .5s ease-out .1s both}
-.cur .loopc .p2{animation:iaStep .5s ease-out .6s both}
-.cur .loopc .p3{animation:iaStep .5s ease-out 1.1s both}
+.cur .loopc .ah:nth-of-type(1){animation-delay:.37s}.cur .loopc .ah:nth-of-type(2){animation-delay:.7s}.cur .loopc .ah:nth-of-type(3){animation-delay:1.03s}
+.cur .loopc .p1{animation:iaStep .45s ease-out .1s both}
+.cur .loopc .p2{animation:iaStep .45s ease-out .43s both}
+.cur .loopc .p3{animation:iaStep .45s ease-out .77s both}
 @keyframes iaDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 @keyframes iaHead{0%{offset-distance:0%;opacity:1}92%{opacity:1}100%{offset-distance:100%;opacity:0}}
 @keyframes iaFade{from{opacity:0}to{opacity:1}}
