@@ -2308,8 +2308,8 @@ function renderWiz(){
   if(w.step===0){
     body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">Rush Hour</div>${cityBtn()}</div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
       <div class="opts">
-        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span>${pbHTML(60)}</b><small>Sink and spin. Best for 2–3 people.</small></span></button>
-        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span>${pbHTML(120)}</b><small>Full send. Best for 4+ people.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span></b><small>Sink and spin. Best for 2–3 people, or a quick round.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>Full send. Best for 4+ people, or to rack up bars.</small></span></button>
       </div>`;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;w.radius=null;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
@@ -3601,9 +3601,9 @@ function celebrate(id){
   if(S.route!=="play")go("play");else renderPlay();
   setTimeout(confetti,60);
 }
-// One-time pointer at the camera button (wherever it sits: top right before the first spin, beside Spin after that)
-function camTip(){const cb=$("camBtn");let tip=document.querySelector(".camtip");
-  if(!cb||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
+// One-time pointer at the camera button, from the second spin on (the first one is just about the game)
+function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip");
+  if(!cb||!g_||!g_.visits.length||!S.tips.night||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
   if(!tip){tip=document.createElement("button");tip.type="button";tip.className="camtip";
     tip.innerHTML=`<b>Film the spin</b><span>Tap the camera to spin with it on and record everyone's reaction.</span>`;document.body.appendChild(tip);
     tip.onclick=()=>{S.tips.cam=1;save();tip.remove()}}
