@@ -392,7 +392,11 @@ body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
 .leavebar>span{display:flex;align-items:center;gap:7px;min-width:0}.leavebar>span>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.leavebar svg{width:16px;height:16px;flex:none;color:var(--amber)}
 .leavebar b{color:var(--text);font-weight:700}.leavebar i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--text)}
 .leavebar .btn.sm{width:auto;flex:none;height:36px;padding:0 14px;font-size:14px}
-.spinrow{display:flex;gap:10px;width:100%;align-items:center}.spinrow .btn{flex:1;min-width:0}
+.spinrow{display:flex;gap:10px;width:100%;align-items:center}
+.camtip{appearance:none;position:fixed;z-index:50;width:min(250px,78vw);text-align:left;display:flex;flex-direction:column;gap:3px;padding:11px 13px;border:0;border-radius:14px;background:var(--amber);color:var(--amber-ink);font:600 13px/1.35 var(--ui);box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:6;animation:tipin .25s ease-out}
+.camtip b{font-size:14.5px;font-weight:800}.camtip::after{content:"";position:absolute;right:var(--ax,18px);bottom:-7px;border:8px solid transparent;border-bottom:0;border-top-color:var(--amber)}
+.camtip.below::after{bottom:auto;top:-7px;border-top:0;border-bottom:8px solid var(--amber)}
+@keyframes tipin{from{opacity:0;transform:translateY(6px)}}.spinrow .btn{flex:1;min-width:0}
 .camfab{appearance:none;flex:none;width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--s2);color:var(--text);display:grid;place-items:center;padding:0}.camfab svg{width:22px;height:22px}
 .ready{position:relative}
 .camfab.ontop{position:absolute;right:8px;top:8px;width:40px;height:40px;z-index:5;background:rgba(28,33,44,.85)}.camfab.ontop svg{width:19px;height:19px}
@@ -1991,7 +1995,7 @@ let anLastPage=null;
 function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;const base=location.pathname.replace(/\/(index\.html)?$/,"");
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
-function go(route){if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+function go(route){{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
   if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
@@ -3597,11 +3601,23 @@ function celebrate(id){
   if(S.route!=="play")go("play");else renderPlay();
   setTimeout(confetti,60);
 }
+// One-time pointer at the camera button (wherever it sits: top right before the first spin, beside Spin after that)
+function camTip(){const cb=$("camBtn");let tip=document.querySelector(".camtip");
+  if(!cb||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
+  if(!tip){tip=document.createElement("button");tip.type="button";tip.className="camtip";
+    tip.innerHTML=`<b>Film the spin</b><span>Tap the camera to spin with it on and record everyone's reaction.</span>`;document.body.appendChild(tip);
+    tip.onclick=()=>{S.tips.cam=1;save();tip.remove()}}
+  if(!cb._tip){cb._tip=1;cb.addEventListener("pointerdown",()=>{S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}
+  ["spinBtn","skipBtn","hereBtn"].forEach(id=>{const x=$(id);if(x&&!x._tip){x._tip=1;x.addEventListener("pointerdown",()=>{if(S.tips.cam)return;S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}});
+  requestAnimationFrame(()=>{const r=cb.getBoundingClientRect();if(!r.width){tip.hidden=true;return}tip.hidden=false;const below=r.top<innerHeight/2;
+    tip.style.right=Math.max(8,innerWidth-r.right)+"px";tip.style.top=below?r.bottom+12+"px":"auto";tip.style.bottom=below?"auto":innerHeight-r.top+12+"px";
+    tip.classList.toggle("below",below);tip.style.setProperty("--ax",Math.max(10,(innerWidth-r.right)+r.width/2-Math.max(8,innerWidth-r.right)-8)+"px")})}
 function renderPlay(){
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
   $("pMenu").innerHTML=I.more;
   const counted=countShown(g);
+  if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
@@ -3670,6 +3686,7 @@ function renderPlay(){
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
+  camTip();
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
     CAM.once=true;CAM.onceAt=Date.now();track("camera_open");document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
