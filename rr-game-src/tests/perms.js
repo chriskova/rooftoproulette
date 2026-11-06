@@ -7,7 +7,7 @@ await ctx.route('**/i/v0/e/**',r=>r.fulfill({status:200,body:'{}'}));
 await p.addInitScript(()=>{window._calls=[];window.Capacitor={isNativePlatform:()=>true,getPlatform:()=>'android',Plugins:{},nativePromise:(pl,m,o)=>{_calls.push(pl+'.'+m+' '+JSON.stringify(o));return Promise.resolve({})},nativeCallback:(pl,m,o,cb)=>{_calls.push(pl+'.'+m);window._cb=cb;return 'cb1'}}});
 await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
 await p.evaluate(()=>{S.onboarded=true;save();go('home')});await p.waitForTimeout(300);
-await p.click('#gearHome');await p.waitForTimeout(500);await p.click('#stPerm');await p.waitForTimeout(600);
+await p.evaluate(()=>settingsSheet());await p.waitForTimeout(500);await p.click('#stPerm');await p.waitForTimeout(600);
 console.log('rows:',await p.evaluate(()=>[...document.querySelectorAll('.prow')].map(x=>x.innerText.replace(/\n/g,' ')).join(' | ')));
 await p.screenshot({path:'out/pm.png'});
 await p.click('[data-pm="cam"]');await p.waitForTimeout(500);console.log('tap camera →',await p.evaluate(()=>_calls.join(' ; ')));

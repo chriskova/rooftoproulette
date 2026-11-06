@@ -7,7 +7,7 @@ await ctx.route('**/i/v0/e/**',r=>r.fulfill({status:200,body:'{}'}));
 await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
 await p.evaluate(async()=>{S.onboarded=true;save();go('home');const cv=document.createElement('canvas');cv.width=400;cv.height=400;const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
  await clipPut({id:'c1',game:'a',at:1,type:'video/mp4',blob,gal:true});await clipPut({id:'c2',game:'a',at:2,type:'video/mp4',blob})});
-await p.click('#gearHome');await p.waitForTimeout(700);
+await p.evaluate(()=>settingsSheet());await p.waitForTimeout(700);
 console.log('groups:',await p.evaluate(()=>[...document.querySelectorAll('#setPage .sgh')].map(x=>x.textContent).join(' | ')),'undefined?',await p.evaluate(()=>$('setPage').innerHTML.includes('undefined')));
 console.log('rows:',await p.evaluate(()=>[...document.querySelectorAll('#setPage .strow b')].map(x=>x.textContent).join(' | ')));
 console.log('full screen:',await p.evaluate(()=>{const r=$('setPage').getBoundingClientRect();return r.width+'x'+r.height+' at '+r.x}));
