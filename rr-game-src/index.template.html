@@ -133,14 +133,40 @@ a.btn{text-decoration:none}
 .itrack{display:flex;width:100%;transition:transform .45s cubic-bezier(.22,.8,.24,1);will-change:transform}
 .itrack.drag{transition:none}
 .itrack>.intro{flex:0 0 100%;box-sizing:border-box;padding:10px 24px}
-.itrack .art>*{transition:transform .5s cubic-bezier(.3,1.5,.5,1) .08s,opacity .3s ease .08s}
-.itrack .intro:not(.cur) .art>*{transform:scale(.82);opacity:0}
+.itrack .art>*{transition:opacity .3s ease .08s}
+.itrack .intro:not(.cur) .art>*{opacity:0}
+.itrack svg *{transform-box:view-box}
+/* 1: the arrows spin round the pin like a wheel, fast then slowing */
+.ia-spin .spa{transform-origin:12px 12px}
+.cur .ia-spin .spa{animation:iaSpin 1.3s cubic-bezier(.15,.7,.25,1) .2s both}
+@keyframes iaSpin{from{transform:rotate(-540deg)}to{transform:rotate(0)}}
+/* 2: the arrow shoots in and hits the line */
+.cur .ia-go .gar{animation:iaGo .55s cubic-bezier(.5,0,.75,0) .2s both}
+.cur .ia-go .gbar{transform-origin:20px 12px;animation:iaHit .45s ease-out .75s both}
+@keyframes iaGo{from{transform:translateX(-9px);opacity:0}30%{opacity:1}to{transform:translateX(0)}}
+@keyframes iaHit{0%{transform:translateX(0)}30%{transform:translateX(1.6px) scaleY(1.12)}65%{transform:translateX(-.5px)}100%{transform:none}}
+/* 3: spin, go, drink light up in turn round the loop */
+.cur .loopc .p1{animation:iaStep .5s ease-out .25s both}
+.cur .loopc .p2{animation:iaStep .5s ease-out .6s both}
+.cur .loopc .p3{animation:iaStep .5s ease-out .95s both}
+@keyframes iaStep{0%{transform:scale(1)}45%{transform:scale(1.22);border-color:var(--amber);box-shadow:0 0 18px rgba(245,184,61,.45)}100%{transform:scale(1)}}
+/* 4: two glasses swing in and clink */
+.ia-cheers .wine{fill:currentColor;fill-opacity:.35;stroke:none}
+.ia-cheers .gl-l{transform-origin:12px 38px;transform:rotate(9deg)}
+.ia-cheers .gl-r{transform-origin:36px 38px;transform:rotate(-9deg)}
+.cur .ia-cheers .gl-l{animation:iaClinkL 1s cubic-bezier(.4,0,.3,1) .2s both}
+.cur .ia-cheers .gl-r{animation:iaClinkR 1s cubic-bezier(.4,0,.3,1) .2s both}
+@keyframes iaClinkL{0%{transform:translateX(-4px) rotate(-10deg)}55%{transform:rotate(12deg)}72%{transform:rotate(7deg)}100%{transform:rotate(9deg)}}
+@keyframes iaClinkR{0%{transform:translateX(4px) rotate(10deg)}55%{transform:rotate(-12deg)}72%{transform:rotate(-7deg)}100%{transform:rotate(-9deg)}}
+.ia-cheers .clk{stroke-width:2.2;transform-origin:24px 9px}
+.cur .ia-cheers .clk{animation:iaClk .5s cubic-bezier(.3,1.6,.5,1) .73s both}
+@keyframes iaClk{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
 .itrack .intro h1,.itrack .intro p{transition:opacity .35s ease .05s}
 .itrack .intro:not(.cur) h1,.itrack .intro:not(.cur) p{opacity:.25}
 #introDots i{width:7px;border-radius:50%;transition:background .25s}
 #introDots i.on{width:7px;background:var(--amber);animation:dotpop .38s cubic-bezier(.3,1.6,.5,1)}
 @keyframes dotpop{0%{transform:scale(.6)}55%{transform:scale(1.55)}100%{transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.itrack,.itrack .art>*{transition:none}#introDots i.on{animation:none}}
+@media (prefers-reduced-motion:reduce){.itrack,.itrack .art>*{transition:none}#introDots i.on,.itrack .art *{animation:none!important}}
 .dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
 .dots i.on{width:22px;background:var(--amber)}
 
@@ -2080,11 +2106,18 @@ const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}<
 
 /* ---------- intro ---------- */
 const LOOP_ART=()=>`<div class="loopc"><svg class="ring" viewBox="0 0 160 160"><circle cx="80" cy="80" r="58"/><path class="ah" d="M133.9 45.4L132.7 55.3L123.5 51.4"/><path class="ah" d="M83.0 144.0L75.0 138.0L83.0 132.0"/><path class="ah" d="M23.1 50.6L32.3 46.7L33.5 56.6"/></svg><i class="p1">${tabIcons.play}</i><i class="p2">${I.go}</i><i class="p3">${I.glass}</i></div>`;
+// Each intro icon has its own short move, played once when its screen lands.
+const SPIN_ART=()=>tabIcons.play.replace('</g>','</g><g class="spa">').replace(/<\/svg>$/,'</g></svg>').replace('<svg ','<svg class="ia-spin" ');
+const GO_ART=()=>'<svg class="ia-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="gar" d="M4 12h12M12 6l6 6-6 6"/><path class="gbar" d="M20 5v14"/></svg>';
+const CHEERS_ART=()=>`<svg class="ia-cheers" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+ <g class="gl gl-l"><path class="wine" d="M7.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M6 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M12 22v16M8 38h8"/></g>
+ <g class="gl gl-r"><path class="wine" d="M31.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M30 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M36 22v16M32 38h8"/></g>
+ <g class="clk"><path d="M24 4.5V1.5"/><path d="M20.2 5.6l-2-2.2"/><path d="M27.8 5.6l2-2.2"/></g></svg>`;
 const SLIDES=[
- {art:tabIcons.play,h:"Spin the wheel",p:"Land a random rooftop bar. No debating, no planning."},
- {art:I.go,h:"Get to the bar",p:"Walk, run or Uber. It only counts once you've had a drink."},
+ {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar. No debating, no planning."},
+ {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber. It only counts once you've had a drink."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before the clock runs out."},
- {art:I.glass,h:"Or take it easy",p:"Try R&R. Same game, no clock."}
+ {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R. Same game, no clock."}
 ];
 function renderIntro(){
   const i=S.intro||0,b=$("introBody");
