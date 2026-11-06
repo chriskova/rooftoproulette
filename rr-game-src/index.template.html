@@ -3956,6 +3956,9 @@ function awards(r,st){
   if(st.quick&&st.quick.ms>=60000&&st.quick.ms<=6*60000)add("Pit Stop",`${nm(st.quick.from)} to ${nm(st.quick.to)} in ${hmm(st.quick.ms)}`);
   // a counted bar you were in and out of fast (not one the clock ran out at)
   const inOut=st.counted.filter(v=>v.leftAt&&(!r.endedAt||v.leftAt<r.endedAt-60000)&&v.leftAt-v.arrivedAt<10*60000).sort((a,b)=>(a.leftAt-a.arrivedAt)-(b.leftAt-b.arrivedAt))[0];
+  // every bar quick, across the whole crawl (3+ bars; the one the clock ran out at doesn't count against you)
+  const runV=st.counted.filter(v=>v.leftAt&&(!r.endedAt||v.leftAt<r.endedAt-60000));
+  if(runV.length>=3&&runV.every(v=>v.leftAt-v.arrivedAt<15*60000))add("Clean Run",`${runV.length} bars, every one under 15 minutes`);
   if(inOut)add("In and Out",`${hmm(inOut.leftAt-inOut.arrivedAt)} at ${nm(inOut.id)}`);
   if(st.longest&&st.longest.d>=1500)add("Long Haul",`${km(st.longest.d)} to ${nm(st.longest.to.id)}`);
   const longStay=st.arrived.filter(v=>v.leftAt&&v.leftAt-v.arrivedAt>=30*60000).sort((a,b)=>(b.leftAt-b.arrivedAt)-(a.leftAt-a.arrivedAt))[0];
