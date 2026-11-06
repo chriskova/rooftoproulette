@@ -1,0 +1,68 @@
+# Builds the Play Store version (a signed .aab) when run by hand from the Actions tab ("Run workflow").
+# It puts the file on the "android-store" release, ready to upload in Play Console.
+# Needs two repo secrets: ANDROID_UPLOAD_KEYSTORE (the key file, base64) and ANDROID_UPLOAD_PASSWORD.
+name: Android Play Store build
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version name people see (e.g. 1.0)"
+        default: "1.0"
+permissions:
+  contents: write
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.ANDROID_UPLOAD_KEYSTORE != '' && secrets.ANDROID_UPLOAD_PASSWORD != '' }}
+    steps:
+      - name: Waiting on the upload key
+        if: env.HAS_KEY != 'true'
+        run: echo "Add ANDROID_UPLOAD_KEYSTORE and ANDROID_UPLOAD_PASSWORD in Settings → Secrets and variables → Actions, then run this again." && exit 1
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Copy the web app into the native project
+        working-directory: app
+        # Same as the test app: it opens the live site, so fixes reach everyone without a new Play release.
+        run: |
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://chriskova.github.io/rooftoproulette/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          npm ci && npm run sync -- android
+      - name: Build the signed bundle
+        working-directory: app/android
+        env:
+          RR_UPLOAD_PASSWORD: ${{ secrets.ANDROID_UPLOAD_PASSWORD }}
+          KEY_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE }}
+          RR_VERSION_NAME: ${{ inputs.version }}
+        run: |
+          printf '%s' "$KEY_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export RR_UPLOAD_KEYSTORE="$RUNNER_TEMP/upload.jks"
+          export RR_VERSION_CODE=$((100 + ${{ github.run_number }}))
+          chmod +x gradlew && ./gradlew bundleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/rooftop-roulette-$RR_VERSION_NAME-$RR_VERSION_CODE.aab"
+          echo "AAB=rooftop-roulette-$RR_VERSION_NAME-$RR_VERSION_CODE.aab" >> $GITHUB_ENV
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - name: Publish to the android-store release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTE="Play Store build $AAB · upload this in Play Console → Testing → Closed testing → Create release"
+          if gh release view android-store >/dev/null 2>&1; then
+            gh release upload android-store "$AAB" --clobber
+            gh release edit android-store --notes "$NOTE"
+          else
+            gh release create android-store "$AAB" --prerelease --title "Android Play Store build" --notes "$NOTE"
+          fi

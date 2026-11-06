@@ -7,8 +7,9 @@ android {
         applicationId "com.rooftoproulette.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // store builds set these from CI (each Play upload needs a higher versionCode)
+        versionCode (System.getenv("RR_VERSION_CODE") ?: "1").toInteger()
+        versionName System.getenv("RR_VERSION_NAME") ?: "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -25,12 +26,22 @@ android {
             keyAlias "androiddebugkey"
             keyPassword "android"
         }
+        // Play Store upload key: only on CI, from the repo's secrets (never committed)
+        if (System.getenv("RR_UPLOAD_KEYSTORE")) {
+            release {
+                storeFile file(System.getenv("RR_UPLOAD_KEYSTORE"))
+                storePassword System.getenv("RR_UPLOAD_PASSWORD")
+                keyAlias "upload"
+                keyPassword System.getenv("RR_UPLOAD_PASSWORD")
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
+            if (System.getenv("RR_UPLOAD_KEYSTORE")) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
