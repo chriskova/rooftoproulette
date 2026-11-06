@@ -1958,10 +1958,13 @@ function gload(){
 const LL=p=>({lat:p.lat,lng:p.lng});
 function gWrap(el,o){
   const map=new google.maps.Map(el,{mapId:GMAPID,colorScheme:"DARK",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
-  let ov=[],meM=null,ringC=null;
+  let ov=[],meM=null,ringC=null,tapAt=0;   // a pin tap also reaches the map as a click: don't let that close what the pin opened
   const node=h=>{const d=document.createElement("div");d.style.transform="translateY(50%)";d.style.display="grid";d.style.placeItems="center";d.innerHTML=h;return d};
-  const mk=(pos,h,z,onClick,title)=>{const n=node(h);if(onClick){n.style.padding="10px";n.style.cursor="pointer";n.addEventListener("click",e=>{e.stopPropagation();onClick()})}
-    return new google.maps.marker.AdvancedMarkerElement({map,position:LL(pos),content:n,zIndex:z||0,title:title||""})};
+  const mk=(pos,h,z,onClick,title)=>{const n=node(h);
+    const mm=new google.maps.marker.AdvancedMarkerElement({map,position:LL(pos),content:n,zIndex:z||0,title:title||"",gmpClickable:!!onClick});
+    if(onClick){n.style.padding="10px";n.style.cursor="pointer";let last=0;const go=()=>{const t=Date.now();tapAt=t;if(t-last<400)return;last=t;onClick()};
+      mm.addListener("click",go);n.addEventListener("click",e=>{e.stopPropagation();go()})}   // the marker's own tap (reliable on phones), and the element's as a backup
+    return mm};
   return {
     clear(){ov.forEach(o=>{if(o.setMap)o.setMap(null);else o.map=null});ov=[]},
     circle(c,r){ov.push(new google.maps.Circle({map,center:LL(c),radius:r*1000,strokeColor:"#F5B83D",strokeOpacity:.9,strokeWeight:2,fillColor:"#F5B83D",fillOpacity:.06,clickable:false}))},
@@ -1975,7 +1978,7 @@ function gWrap(el,o){
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
     setView(p,z){map.panTo(LL(p));map.setZoom(z)},
     me(p){if(!p){if(meM){meM.map=null;meM=null}return}if(!meM)meM=mk(p,'<div class="me"></div>',1000);else meM.position=LL(p)},
-    onTap(fn){map.addListener("click",e=>fn(e.latLng.lat(),e.latLng.lng()))},
+    onTap(fn){map.addListener("click",e=>{if(Date.now()-tapAt<500)return;fn(e.latLng.lat(),e.latLng.lng())})},
     center(){const c=map.getCenter();return {lat:c.lat(),lng:c.lng()}},onMove(fn){map.addListener("center_changed",fn)},onIdle(fn){map.addListener("idle",fn)},
     onZoom(fn){map.addListener("zoom_changed",fn)},mpp(){return 156543.03392*Math.cos(map.getCenter().lat()*Math.PI/180)/Math.pow(2,map.getZoom())},
     ring(c,r){if(!c){if(ringC){ringC.setMap(null);ringC=null}return}if(!ringC)ringC=new google.maps.Circle({map,center:LL(c),radius:r*1000,strokeColor:"#F5B83D",strokeOpacity:.9,strokeWeight:2,fillColor:"#F5B83D",fillOpacity:.08,clickable:false});else{ringC.setCenter(LL(c));ringC.setRadius(r*1000)}},
@@ -2289,8 +2292,8 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
   const pinCard=v=>{const o=openState(v,now()),y=me||you();
     card.innerHTML=`<span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${inSheet?"":`<span class="chev">›</span>`}`;
-    card.hidden=false;card.onclick=()=>{if(!inSheet)barSheet(v)}};
-  let lastP=null;
+    card.hidden=false;cardAt=Date.now();card.onclick=()=>{if(!inSheet)barSheet(v)}};
+  let lastP=null,cardAt=0;
   ["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>card.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(card);
   // the bars in the circle, in a panel from the bottom like everything else
   $("rrNB").onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
@@ -2322,7 +2325,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(lock||Date.now()<progT||!z.r||!base)return;
       const r0=base.r*m.mpp()/base.mpp,r=Math.round(Math.max(lo,Math.min(hi,r0))*20)/20;clamped=r0<lo*.97||r0>hi*1.03;if(r===z.r)return;
       z.r=r;$("rrR").value=Z.toX(r);paint(false)});
-    m.onTap(()=>{card.hidden=true});m.onMove(()=>{if(!lock)card.hidden=true})});
+    m.onTap(()=>{if(Date.now()-cardAt>500)card.hidden=true});m.onMove(()=>{if(!lock&&Date.now()-cardAt>700)card.hidden=true})});
   return {paint};
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
