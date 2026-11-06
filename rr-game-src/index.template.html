@@ -1764,7 +1764,7 @@ function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
   if(BG&&S.game&&!S.bgSeen){   // first crawl in the app: say what's about to happen before the phone asks
-    S.bgSeen=1;save();sheet(`<h3>Pocket your phone</h3><p class="note" style="margin:6px 0 14px">During a crawl, Rooftop Roulette keeps checking you in as you reach each bar, even with your phone locked. You'll see an <b>Active crawl</b> notification while it's on. It stops the moment the crawl ends.</p><p class="note">Allow location and notifications when your phone asks.</p><div class="acts"><button class="btn" type="button" id="bgOk">Got it</button></div>`,()=>{$("bgOk").onclick=()=>{closeSheet();startWatch()}});
+    S.bgSeen=1;save();sheet(`<h3>Pocket your phone</h3><p class="note" style="margin:6px 0 14px">During a crawl, Rooftop Roulette keeps checking you in as you reach each bar, even with your phone locked. You'll see your crawl in your notifications while it's on. It goes the moment the crawl ends.</p><p class="note">Allow location and notifications when your phone asks.</p><div class="acts"><button class="btn" type="button" id="bgOk">Got it</button></div>`,()=>{$("bgOk").onclick=()=>{closeSheet();startWatch()}});
     $("sheet").addEventListener("close",()=>{if(bgWatch===null&&S.game)startWatch()},{once:true});return}
   if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
     BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:true,stale:false,distanceFilter:10},(p,err)=>{
@@ -2515,7 +2515,7 @@ function spinPool(){
 }
 function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)/60000>=DWELL_MIN;
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
-function onLocation(){
+function onLocation(){liveNote();alertSync();
   const g=G();[bMap,zMap].forEach(setMe);
   if(!g||g.ended)return;
   const y=you();if(!y)return;
@@ -3557,7 +3557,7 @@ function endGame(at){
   const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
   rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
   if(g.demo){DEMO_REC=rec;track("demo_end",{bars:rec.visits.filter(v=>v.counted===true).length});S.lastEnd=g.id;S.rackEnd=null;S.game=null;save();closeSheet();ding();go("end");confetti();return}
-  rec.test=!!(g.test||S.test);pushH(rec);syncH();
+  rec.test=!!(g.test||S.test);pushH(rec);syncH();afterNote(rec);
   S.lastEnd=g.id;S.rackEnd=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");confetti();
 }
 
@@ -4811,7 +4811,55 @@ $("testFab").onclick=()=>{
 };
 
 /* ---------- loop ---------- */
+
+/* ---------- notifications (phone app only) ----------
+   Live: one silent, ongoing notification while a crawl is on (CrawlNotify, our own small Android plugin).
+     Rush Hour counts down with a bar that shrinks; R&R counts up from when you got to the bar.
+   Alerts (LocalNotifications, set ahead so they arrive with the app closed): 10 minutes left and time's up in Rush Hour,
+     check-in open when you're checking in by hand, and the day after a crawl, a look back at it. */
+const NOTE={live:"",liveAt:0,alerts:"",ready:false};
+const realAt=t=>t-(now()-Date.now());   // game time -> the phone's clock (test mode can run ahead)
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
+  natCall("LocalNotifications","createChannel",{id:"crawl_alerts",name:"Crawl alerts",description:"Time warnings and check-ins during a crawl",importance:4,visibility:1,vibration:true}).catch(()=>{});
+  natCall("LocalNotifications","createChannel",{id:"crawl_after",name:"After a crawl",description:"A look back the day after",importance:3,visibility:1}).catch(()=>{});
+  try{const LN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;
+    if(LN&&LN.addListener)LN.addListener("localNotificationActionPerformed",e=>{const id=e&&e.notification&&e.notification.extra&&e.notification.extra.crawl;
+      if(id&&!S.game&&(H.some(r=>r.id===id)||readH(TKEY).some(r=>r.id===id))){S.lastEnd=id;save();closeSheet();go("end")}})}catch(e){}}
+function liveNote(){
+  if(!NATIVE)return;const g=G();
+  if(!g||g.demo||!g.started||g.ended){if(NOTE.live){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}return}
+  noteSetup();
+  if(!S.notifAsked){S.notifAsked=1;save();natCall("LocalNotifications","requestPermissions").catch(()=>{})}   // the phone's own prompt, first crawl only
+  const cr=CR(g),a=atVisit(),y=you();let text;
+  if(a){text=`At ${byId(a.id).name}`+(cr?"":` · ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`)}
+  else if(g.target){const v=byId(g.target);text=`Heading to ${v.name}`+(y?` · ${kmTxt(dist(y,v)/1000)}`:"")}
+  else text="Spin for the next one";
+  const o={title:`${cr?"R&R":"Rush Hour"} · ${plural(countShown(g),"bar")}`,text};
+  if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
+  else if(a)o.since=Math.round(realAt(a.arrivedAt));
+  const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);
+  if(key===NOTE.live&&Date.now()-NOTE.liveAt<60000)return;   // text changes go straight out; the bar moves once a minute
+  NOTE.live=key;NOTE.liveAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
+function alertSync(){
+  if(!NATIVE)return;const g=G(),on=g&&!g.demo&&g.started&&!g.ended,want=[];
+  if(on&&!CR(g)){const n=countShown(g);
+    if(g.endsAt-now()>10.5*60000)want.push({id:101,title:"10 minutes left",body:`${plural(n,"bar")} so far.`,at:realAt(g.endsAt-600000)});
+    want.push({id:102,title:"Time's up",body:"Tap to see how you went.",at:realAt(g.endsAt)})}
+  if(on&&g.noLoc&&g.target&&!atVisit()){const t=hereAt(g);if(t>now())want.push({id:103,title:"Check-in's open",body:`Tap I'm here once you're at ${byId(g.target).name}.`,at:realAt(t)})}
+  const key=JSON.stringify(want.map(w=>[w.id,w.body,Math.round(w.at/10000)]));if(key===NOTE.alerts)return;NOTE.alerts=key;noteSetup();
+  natCall("LocalNotifications","cancel",{notifications:[{id:101},{id:102},{id:103}]}).catch(()=>{}).then(()=>{
+    const L=want.filter(w=>w.at>Date.now()+5000).map(w=>({id:w.id,title:w.title,body:w.body,channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(w.at),allowWhileIdle:true}}));
+    if(L.length)natCall("LocalNotifications","schedule",{notifications:L}).catch(()=>{})})}
+// The day after: which day, how many, which bars. Reads the same whether or not they've looked at the card since.
+function afterNote(rec){
+  if(!NATIVE||!rec)return;const names=rec.visits.filter(v=>v.counted===true).map(v=>byId(v.id)).filter(Boolean).map(v=>v.name);if(!names.length)return;
+  const st=new Date(realAt(rec.startedAt)),at=new Date(st.getFullYear(),st.getMonth(),st.getDate()+1,10,0,0);if(at.getTime()<Date.now()+30*60000)return;
+  const day=st.toLocaleDateString("en-AU",{weekday:"long"}),u=[...new Set(names)];
+  const list=u.length<=3?(u.length>1?u.slice(0,-1).join(", ")+" and "+u[u.length-1]:u[0]):u.slice(0,3).join(", ")+` and ${u.length-3} more`;
+  noteSetup();natCall("LocalNotifications","schedule",{notifications:[{id:104,title:`${day}'s crawl: ${plural(u.length,"rooftop")}`,body:list+".",channelId:"crawl_after",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",extra:{crawl:rec.id},schedule:{at,allowWhileIdle:true}}]}).catch(()=>{})}
 function loop(){
+  liveNote();alertSync();
   const g=G();
   if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
   if(CR(g)&&g.started&&!g.ended&&g.autoAt&&now()>=g.autoAt){g.autoEnded=true;endGame(g.autoAt);return}

@@ -14,6 +14,10 @@
   "plugins": {
     "SystemBars": {
       "style": "DARK"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_rr",
+      "iconColor": "#F5B83D"
     }
   }
 }
