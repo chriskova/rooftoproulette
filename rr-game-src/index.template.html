@@ -43,6 +43,20 @@ button{cursor:pointer}
 .view>*{flex-shrink:0}
 .view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:6px 18px 24px;display:flex;flex-direction:column;gap:16px}
 .app.has-tabs .view{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 24px)}
+/* the game, minimised: one line above the tabs while you look around the rest of the app */
+.mini{appearance:none;position:absolute;left:10px;right:10px;bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 8px);height:54px;z-index:30;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;border-radius:15px;background:var(--s2);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.45);color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.mini[hidden]{display:none}
+.mini .mt{flex:none;min-width:58px;font:700 22px/1 var(--display);letter-spacing:.02em;color:var(--amber);font-variant-numeric:tabular-nums}
+.mini .mt.sm{font-size:16px;min-width:0}
+.mini .ml{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mini .ml b{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .ml small{font-size:12px;color:var(--muted);font-weight:600}
+.mini .up{flex:none;color:var(--muted);display:grid;place-items:center}.mini .up svg{width:20px;height:20px}
+.mini:active{background:var(--s1)}
+.mini.drop{animation:minidrop .5s cubic-bezier(.2,.85,.25,1)}
+@keyframes minidrop{0%{transform:translateY(-58vh) scale(1.06);opacity:0;border-radius:24px}35%{opacity:1}100%{transform:none;opacity:1}}
+.app.has-mini.has-tabs .view{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 86px)}
+.app.has-mini .mapfab{bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 74px)}
 .app.has-cta .view{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 
 /* bottom tabs */
@@ -105,6 +119,13 @@ a.btn{text-decoration:none}
 .intro{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;padding:10px 6px}
 .intro .art{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 50% 40%,rgba(245,184,61,.22),transparent 70%);display:grid;place-items:center}
 .intro .art svg{width:120px;height:120px;color:var(--amber)}
+/* intro slide 3: spin → go → drink, and a dotted line back round to the start */
+.loop3{position:relative;display:flex;align-items:center;gap:6px;margin-top:-18px}
+.loop3 i{width:48px;height:48px;border-radius:50%;background:var(--s2);border:1px solid rgba(245,184,61,.35);display:grid;place-items:center;color:var(--amber);position:relative;z-index:1}
+.intro .art .loop3 svg{width:26px;height:26px}
+.loop3 .dl{width:14px;border-top:2px dashed rgba(245,184,61,.55)}
+.loop3 .rep{position:absolute;left:23px;right:23px;top:24px;height:46px;border:2px dashed rgba(245,184,61,.55);border-top:0;border-radius:0 0 30px 30px}
+.loop3 .rep::after{content:"";position:absolute;left:-7px;top:24px;border:6px solid transparent;border-top:0;border-bottom:9px solid rgba(245,184,61,.8)}
 .intro .art.ok{background:radial-gradient(circle at 50% 40%,rgba(74,222,128,.2),transparent 70%)}.intro .art.ok svg{color:var(--green)}
 .dots{display:flex;gap:7px;justify-content:center}
 .dots i{width:7px;height:7px;border-radius:99px;background:var(--s3);transition:width .2s}
@@ -1140,6 +1161,7 @@ html.fl .app{visibility:hidden}
 /* ---- gameplay fits on one screen: everything from the clock to "Can't get in?" without scrolling ---- */
 #v-play{gap:10px}
 .app.has-tabs #v-home{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 16px)}
+.app.has-mini.has-tabs #v-home{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 78px)}
 .app.has-tabs #v-play{padding-bottom:calc(var(--tab) + env(safe-area-inset-bottom,0px) + 8px)}
 #v-play .stage{gap:10px;padding:4px 0 0}
 #v-play .bar{padding:15px 16px;gap:8px}
@@ -1432,6 +1454,7 @@ setTimeout(done,1200)})();</script>
   <!-- HISTORY TAB -->
   <section class="view" id="v-hist" hidden></section>
 
+  <button class="mini" type="button" id="mini" hidden aria-label="Back to your game"></button>
   <nav class="tabs" id="tabs" role="tablist">
     <button type="button" role="tab" data-tab="play" id="tPlay"></button>
     <button type="button" role="tab" data-tab="bars" id="tBars"></button>
@@ -1992,7 +2015,8 @@ let anLastPage=null;
 function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;const base=location.pathname.replace(/\/(index\.html)?$/,"");
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
-function go(route){{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+let prevRoute=null;
+function go(route){prevRoute=S.route;{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
   if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
@@ -2013,7 +2037,18 @@ function render(){
   $("testFab").hidden=!S.test;
   ({intro:renderIntro,ob:renderOb,home:renderHome,wiz:renderWiz,perm:renderPerm,quick:renderQuick,play:renderPlay,end:renderEnd,bars:renderBars,hist:renderHist})[r]();
   $("v-"+r).scrollTop=0;
+  renderMini();
 }
+function renderMini(){const g=G(),m=$("mini");if(!m)return;
+  const show=!!g&&!g.demo&&!g.ended&&["home","bars","hist","end"].includes(S.route);
+  if(!show){m.hidden=true;m._on=false;$("app").classList.remove("has-mini");return}
+  const cr=CR(g),a=atVisit(),y=you();let left,sm=false,line;
+  if(!g.started){left="Ready";sm=true}else if(cr){if(a)left=now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);else{left="R&R";sm=true}}else left=mmss(remaining());
+  if(!g.started)line="Spin to start";else if(a)line="At "+byId(a.id).name;else if(g.target){const v=byId(g.target);line="Heading to "+v.name+(y?" · "+kmTxt(dist(y,v)/1000):"")}else line="Spin for the next one";
+  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${cr?(a&&g.started?"R&amp;R · time here":"R&amp;R"):(g.started?"Rush Hour · time left":"Rush Hour")}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
+  if(m._h!==h){m._h=h;m.innerHTML=h}
+  if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(prevRoute==="play"){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}
+  m.onclick=()=>go("play")}
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
 [["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","My Tab"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`;$(id).dataset.tab=k});
 $("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(k==="play")go(S.game?"play":"home");else go(k)};
@@ -2028,9 +2063,9 @@ const stepsHTML=list=>list.map((s,i)=>`<div class="step"><span class="k">${i+1}<
 
 /* ---------- intro ---------- */
 const SLIDES=[
- {art:I.dice2,h:"Spin for your next rooftop",p:"One tap and Rooftop Roulette picks the bar for you. No debating, no planning."},
+ {art:tabIcons.play,h:"Spin for your next rooftop",p:"Spin and Rooftop Roulette picks the bar for you. No debating, no planning."},
  {art:I.go,h:"Get there however you like",p:"Walk it, run it, train it, Uber it. Your visit is logged in the app the moment you arrive."},
- {art:I.clock,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
+ {art:`<div class="loop3"><i>${tabIcons.play}</i><b class="dl"></b><i>${I.go}</i><b class="dl"></b><i>${I.glass}</i><span class="rep"></span></div>`,h:"Spin. Go. Drink. Repeat.",p:"How many rooftops can you fit in before the clock runs out?"}
 ];
 function renderIntro(){
   const i=S.intro||0,s=SLIDES[i];
@@ -2070,7 +2105,7 @@ function colCardHTML(){
 function renderHome(){
   {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(cityIn(S.city))}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
   $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
-  const g=S.game;$("newGame").textContent=g&&!CR(g)?"Back to your game":"Play Rush Hour";$("quickGo").textContent=g&&CR(g)?"Back to your crawl":"Play R&R";
+  $("newGame").textContent="Play Rush Hour";$("quickGo").textContent="Play R&R";
   requestAnimationFrame(fitHome);
 }
 // The mode cards' type grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
@@ -2081,8 +2116,13 @@ addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
 // Away from the cities we cover, starting a game goes to the "not in your city yet" sheet instead.
 const farAway=()=>!S.test&&here&&!nearLive(here);
-$("newGame").onclick=()=>{if(S.game){go("play");return}if(farAway()){farSheet();return}firstRules("rush",howSheet,startWizard)};
-$("quickGo").onclick=()=>{if(S.game){go("play");return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
+// Starting something while a game's on: go back to it, or end it (it's saved) and start the new one
+function playingSheet(next){const g=S.game;
+  sheet(`<h3>You've got a game going</h3><p class="note" style="margin:6px 0 14px">Your ${CR(g)?"R&amp;R crawl":"Rush Hour game"} is still on.</p><div class="acts"><button class="btn" type="button" id="pgBack">Back to it</button><button class="btn line" type="button" id="pgNew">End it and start a new one</button></div>`,()=>{
+    $("pgBack").onclick=()=>{closeSheet();go("play")};
+    $("pgNew").onclick=()=>{closeSheet();if(G().started)endGame(now());else{S.game=null;save();stopWatch()}next()}})}
+$("newGame").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rush",howSheet,startWizard));return}if(farAway()){farSheet();return}firstRules("rush",howSheet,startWizard)};
+$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?I.glass:I.clock);
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
@@ -4856,7 +4896,7 @@ function afterNote(rec){
   const list=u.length<=3?(u.length>1?u.slice(0,-1).join(", ")+" and "+u[u.length-1]:u[0]):u.slice(0,3).join(", ")+` and ${u.length-3} more`;
   noteSetup();natCall("LocalNotifications","schedule",{notifications:[{id:104,title:`${day}'s crawl: ${plural(u.length,"rooftop")}`,body:list+".",channelId:"crawl_after",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",extra:{crawl:rec.id},schedule:{at,allowWhileIdle:true}}]}).catch(()=>{})}
 function loop(){
-  liveNote();alertSync();
+  liveNote();alertSync();if(S.route!=="play")renderMini();
   const g=G();
   if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
   if(CR(g)&&g.started&&!g.ended&&g.autoAt&&now()>=g.autoAt){g.autoEnded=true;endGame(g.autoAt);return}
