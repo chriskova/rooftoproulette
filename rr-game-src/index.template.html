@@ -2454,7 +2454,7 @@ async function tryStart(noLoc){
     startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   if(noLoc)S.game.noLoc=true;
-  S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
+  spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 
 // Location blocked as a round starts: say what that means, then let them turn it on or play without it.
@@ -3590,7 +3590,7 @@ function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sh
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
-  document.querySelectorAll(".jpx").forEach(o=>o.remove());   // a jackpot card still up when the clock runs out (or the crawl's ended from the notification) mustn't sit over the crawl card
+  document.querySelectorAll(".jpx").forEach(o=>o.remove());spinning=false;   // a jackpot card still up when the clock runs out (or the crawl's ended from the notification) mustn't sit over the crawl card
   if(!g.started){S.game=null;save();stopWatch();go("home");return}
   track("crawl_end",{mode:CR(g)?"rr":"rush",bars:g.visits.filter(v=>v.counted===true||(v.leftAt==null&&v.arrivedAt!=null)).length,minutes:Math.round((Math.min(at,g.endsAt)-g.startedAt)/60000),ended_early:at<g.endsAt,city:g.city||null});
   const before=collectedMap();
