@@ -5,7 +5,7 @@ await p.goto('file://'+process.argv[2]);await p.waitForTimeout(300);
 await p.evaluate(()=>{S.onboarded=true;const t0=Date.now()-864e5,st={lat:-33.859,lng:151.207};
  H.length=0;H.push({id:'a',city:'Sydney',mode:'rush',len:60,radius:1,startedAt:t0,endsAt:t0+36e5,endedAt:t0+36e5,started:true,ended:true,startPos:st,center:st,areas:['The Rocks'],visits:[{id:'the-glenmore',arrivedAt:t0+6e5,leftAt:t0+12e5,counted:true},{id:'untied',arrivedAt:t0+20e5,leftAt:t0+27e5,counted:true}],trail:[],moves:[],bodDone:true});saveH();S.lastEnd='a';S.rackEnd=null;save();go('end')});
 await p.waitForTimeout(1500);
-const bx=await p.evaluate(()=>{const r=$('scMore').getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;const top=document.elementFromPoint(x,y);return {x,y,top:top&&(top.outerHTML.slice(0,120)),par:top&&top.parentElement&&top.parentElement.outerHTML.slice(0,80),gear:$('gearBar').getBoundingClientRect().toJSON()}});
+const bx=await p.evaluate(()=>{const r=$('scMore').getBoundingClientRect();const x=r.x+r.width/2,y=r.y+r.height/2;const top=document.elementFromPoint(x,y);return {x,y,top:top&&(top.outerHTML.slice(0,120)),par:top&&top.parentElement&&top.parentElement.outerHTML.slice(0,80)}});
 console.log(bx);
 await p.tap('#scMore').catch(x=>console.log('tap err',x.message.slice(0,200)));await p.waitForTimeout(600);
 console.log('sheet open',await p.evaluate(()=>$('sheet').open),await p.evaluate(()=>document.querySelector('#sheetBody h3')&&document.querySelector('#sheetBody h3').textContent));

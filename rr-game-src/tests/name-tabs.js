@@ -8,5 +8,5 @@ await p.evaluate(()=>{S.onboarded=true;S.sound=false;const t0=Date.now()-864e5,s
 await p.waitForTimeout(1500);await p.screenshot({path:'out/n1.png'});
 await p.click('#scName');await p.waitForTimeout(300);await p.fill('#cnIn','Jess’s birthday');await p.click('#cnSave');await p.waitForTimeout(800);await p.screenshot({path:'out/n2.png'});
 await p.evaluate(()=>go('hist'));await p.waitForTimeout(400);await p.screenshot({path:'out/n3.png'});
-await p.click('[data-ht="bests"]');await p.waitForTimeout(300);await p.screenshot({path:'out/n4.png'});
+await p.evaluate(()=>{const r=document.querySelector('.recs');r&&r.scrollIntoView()});await p.waitForTimeout(300);await p.screenshot({path:'out/n4.png'});
 console.log(e);await b.close()})();
