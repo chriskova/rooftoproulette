@@ -3923,6 +3923,8 @@ const plainTitle=r=>{const a=sydAt(r.startedAt||r.endedAt||Date.now(),TZ[r.city|
   return {t:`${DAYN[a.day]} ${h<5?"night":h<11?"morning":h<14?"lunch":h<17?"afternoon":h<21?"evening":"night"} crawl`,why:"",plain:true}};
 const awardsFor=(r,st)=>{if(r.mode==="cruise")return [r.title?{t:r.title,why:"",plain:true}:plainTitle(r)];
   const L=awards(r,st);if(!r.noLoc)return L;const k=L.filter(a=>NOLOC_AW.includes(a.t));return k.length?k:[plainTitle(r)]};
+// where a crawl was, for the card: a Hit list (or anywhere) crawl just shows the city
+const placeOf=r=>{const a=r.areas[r.areas.length-1]||"";return a==="Hit list"||a==="Anywhere"||!a?(r.city||"Sydney"):a==="you"?"Near you":a};
 function awards(r,st){
   const L=[],n=st.counted.length,nm=id=>esc(byId(id).name);
   const add=(t,why)=>L.push({t,why});
@@ -4013,7 +4015,7 @@ function renderEnd(){
         const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
           :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-        const meta=`${cr?`${I.pin} ${esc(r.areas[r.areas.length-1]||"")}`:`${I.pin} ${esc(r.areas[r.areas.length-1]==="you"?"Near you":r.areas[r.areas.length-1])} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
+        const meta=`${cr?`${I.pin} ${esc(placeOf(r))}`:`${I.pin} ${esc(placeOf(r))} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><button class="scname${r.title&&!cr?"":" add"}" type="button" id="scName">${r.title?(cr?`${IC.edit} Rename`:esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`):"+ Name this crawl"}</button><div class="aw-t">${aw[0].plain?esc(aw[0].t):aw[0].t}</div>${aw[0].why?`<div class="aw-w">${aw[0].why}</div>`:""}<div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
@@ -4151,14 +4153,14 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
     x.fillStyle=full?"rgba(244,241,234,.8)":MUT;x.font=`700 21px ${U}`;sp(l.toUpperCase(),X+36,Y+34,2.5)};
   const foot=big=>{let lf=big===false?80:58;x.font=`800 ${lf}px ${D}`;x.letterSpacing="1px";const rw=W-128-360;while(x.measureText("ROOFTOP ROULETTE").width>rw&&lf>50){lf-=2;x.font=`800 ${lf}px ${D}`}
     x.globalAlpha=.72;x.fillStyle=INK;x.fillText("ROOFTOP",64,1840);const lw2=x.measureText("ROOFTOP ").width;x.fillStyle=AMB;x.fillText("ROULETTE",64+lw2,1840);x.letterSpacing="0px";x.globalAlpha=1;
-    if(WV==="foot"){const ar=r.areas[r.areas.length-1],pl=(ar==="you"?"Near you":ar).toUpperCase();x.font=`700 23px ${U}`;x.letterSpacing="2.4px";const pw=x.measureText(pl).width;x.letterSpacing="0px";
+    if(WV==="foot"){const pl=placeOf(r).toUpperCase();x.font=`700 23px ${U}`;x.letterSpacing="2.4px";const pw=x.measureText(pl).width;x.letterSpacing="0px";
       x.save();x.translate(W-64-pw-34,1786);x.scale(26/24,26/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
       x.fillStyle="rgba(244,241,234,.9)";sp(pl,W-64,1808,2.4,"right");
       x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"),dateTxt(rt(r,r.startedAt))].join(" · "),W-64,1840);x.textAlign="left";return}
     x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1832,3,"right")};
   // where and when, with a pin, sitting just above the title
   const WV=window.WHERE_VAR||"foot";
-  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const ar=r.areas[r.areas.length-1],t=[ar==="you"?"Near you":ar,dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
+  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const t=[placeOf(r),dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
     x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
     x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
