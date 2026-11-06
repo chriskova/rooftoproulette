@@ -488,6 +488,7 @@ body.camon dialog.sheet::backdrop{background:rgba(0,0,0,.25)}
 .camswipe{display:none}
 body.camon #v-play,body.camon .appbar{touch-action:none}
 body.camon #v-play .camswipe{display:flex;flex:1;min-height:120px;align-items:center;justify-content:center;touch-action:none;margin:0 -18px;user-select:none;-webkit-user-select:none}
+.camswipe .recdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#FF4D4D;margin-right:7px;vertical-align:1px;box-shadow:0 0 0 3px rgba(255,77,77,.25)}
 .camswipe span{font-size:13px;font-weight:700;letter-spacing:.04em;color:rgba(255,255,255,.7);background:rgba(11,13,18,.45);border-radius:99px;padding:7px 14px;transition:opacity .2s}
 body.spinning .camswipe span,body.recording .camswipe span{opacity:0}
 .camrec{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);transform:translateX(-130%);z-index:3200;display:flex;align-items:center;gap:7px;background:rgba(11,13,18,.78);border-radius:99px;padding:4px 4px 4px 11px;font:800 12.5px var(--ui);letter-spacing:.06em;color:#fff;transition:transform .22s cubic-bezier(.3,.75,.2,1);pointer-events:none}
@@ -510,7 +511,8 @@ body.recspun .camfab.ontop{visibility:hidden}
 .campop{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:2700;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:translateY(130%);transition:transform .25s cubic-bezier(.3,.75,.2,1);touch-action:pan-y}
 .campop.on{transform:none}
 .campop video{width:40px;height:56px;border-radius:9px;object-fit:cover;background:#000;flex:none}
-.campop b{flex:1;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.campop .cpt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.campop .cpt small{font-size:12.5px;line-height:1.3;color:var(--muted)}
+.campop b{font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .campop button{appearance:none;border:0;border-radius:99px;height:40px;padding:0 16px;font:700 14.5px var(--ui);background:var(--s3);color:var(--text)}
 .campop button.pri{background:var(--amber);color:var(--amber-ink)}
 .camtgt{width:100%;display:flex;gap:12px;align-items:center;background:rgba(11,13,18,.72);border-radius:18px;padding:10px;cursor:pointer}
@@ -3213,7 +3215,7 @@ function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.
 let camPopT=null;
 function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
   p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
-  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><b>${inGal?"Saved to your gallery":"Clip saved"}</b>${inGal?"":`<button type="button" data-a="save">Save</button>`}<button type="button" data-a="share" class="pri">Share</button>`;
+  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><span class="cpt"><b>Clip saved</b><small>On your crawl card${inGal?" and in your gallery":""}</small></span>${inGal?"":`<button type="button" data-a="save">Save</button>`}<button type="button" data-a="share" class="pri">Share</button>`;
   document.body.appendChild(p);requestAnimationFrame(()=>p.classList.add("on"));
   const bye=()=>{clearTimeout(camPopT);p.classList.remove("on");setTimeout(()=>{p.remove();URL.revokeObjectURL(u)},250)};
   if(p.querySelector('[data-a="save"]'))p.querySelector('[data-a="save"]').onclick=()=>{clipSave(blob,type,at);p.querySelector("b").textContent="Saved to your phone";clearTimeout(camPopT);camPopT=setTimeout(bye,2200)};
@@ -3709,7 +3711,7 @@ function celebrate(id){
 function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip");
   if(!cb||!cb.classList.contains("ontop")||!g_||!g_.visits.length||!S.tips.night||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
   if(!tip){tip=document.createElement("button");tip.type="button";tip.className="camtip";
-    tip.innerHTML=`<b>Film the spin</b><span>Tap the camera to spin with it on and record everyone's reaction.</span>`;document.body.appendChild(tip);
+    tip.innerHTML=`<b>Film the spin</b><span>Tap the camera, then spin. It records the spin and everyone's reaction.</span>`;document.body.appendChild(tip);
     tip.onclick=()=>{S.tips.cam=1;save();tip.remove()}}
   if(!cb._tip){cb._tip=1;cb.addEventListener("pointerdown",()=>{S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}
   ["spinBtn","skipBtn","hereBtn"].forEach(id=>{const x=$(id);if(x&&!x._tip){x._tip=1;x.addEventListener("pointerdown",()=>{if(S.tips.cam)return;S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}});
@@ -3775,7 +3777,7 @@ function renderPlay(){
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
-      <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span>Swipe down to spin</span></div>
+      <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}</div>`:""}
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
