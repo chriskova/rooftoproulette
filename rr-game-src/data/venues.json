@@ -1688,6 +1688,61 @@
   "fact": "Tilly Devine's old local."
  },
  {
+  "id": "darlo-bar",
+  "name": "Darlo Bar",
+  "area": "Darlinghurst",
+  "lat": -33.877986,
+  "lng": 151.2206267,
+  "rating": 4.3,
+  "address": "306 Liverpool St",
+  "hours": [
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ],
+   [
+    [
+     720,
+     1440
+    ]
+   ]
+  ],
+  "pid": "ChIJaVxY6hGuEmsRT7xRTYn89I8",
+  "vibe": "Retro corner bar"
+ },
+ {
   "id": "burdekin-rooftop",
   "name": "Burdekin Rooftop",
   "area": "Darlinghurst",
