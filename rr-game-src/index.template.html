@@ -3128,7 +3128,8 @@ document.addEventListener("visibilitychange",()=>camSync());
 setInterval(()=>{
   {const g=G(),spot=!!g&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen));if(CAM.once&&!CAM.rec&&!spinning&&g&&!spot&&!($("sheet")&&$("sheet").open)&&Date.now()-(CAM.onceAt||0)>1500)CAM.once=false}   // backed out (closed the re-spin or drink question): no camera next time
   camSync();
-  if(!CAM.stream)return;const busy=spinning||!!document.querySelector(".jpx");
+  if(!CAM.stream){camRecPill();camLight(false);return}   // camera closed: the recording pill and light go with it
+  const busy=spinning||!!document.querySelector(".jpx");
   if(!CAM.rec&&spinning){camStart();CAM.spun=true}
   else if(!CAM.rec&&CAM.once&&CAM.vid&&CAM.vid.videoWidth&&!document.hidden){camStart();CAM.spun=false}
   else if(CAM.rec){if(spinning)CAM.spun=true;
