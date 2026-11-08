@@ -45,6 +45,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p ~/private_keys && printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > ~/private_keys/AuthKey.p8
+          # pasted without the BEGIN/END lines? wrap it
+          grep -q 'BEGIN PRIVATE KEY' ~/private_keys/AuthKey.p8 || { k=$(tr -d ' \n' < ~/private_keys/AuthKey.p8); printf -- '-----BEGIN PRIVATE KEY-----\n%s\n-----END PRIVATE KEY-----\n' "$(fold -w64 <<<"$k")" > ~/private_keys/AuthKey.p8; }
           if ! openssl pkey -in ~/private_keys/AuthKey.p8 -noout 2>/dev/null; then
             echo "::error::ASC_KEY_P8 isn't a valid key. Paste the whole .p8 file, from -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----."
             echo "Lines: $(wc -l < ~/private_keys/AuthKey.p8). First line starts: $(head -c 11 ~/private_keys/AuthKey.p8)"; exit 1
