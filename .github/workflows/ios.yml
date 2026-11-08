@@ -42,8 +42,13 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        shell: bash
         run: |
-          mkdir -p ~/private_keys && printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey.p8
+          mkdir -p ~/private_keys && printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > ~/private_keys/AuthKey.p8
+          if ! openssl pkey -in ~/private_keys/AuthKey.p8 -noout 2>/dev/null; then
+            echo "::error::ASC_KEY_P8 isn't a valid key. Paste the whole .p8 file, from -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----."
+            echo "Lines: $(wc -l < ~/private_keys/AuthKey.p8). First line starts: $(head -c 11 ~/private_keys/AuthKey.p8)"; exit 1
+          fi
           BUILD=$(( 100 + ${{ github.run_number }} ))
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Release \
