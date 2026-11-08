@@ -1,4 +1,5 @@
 # Builds the iPhone app on GitHub's Macs and uploads it to TestFlight.
+# The archive is built unsigned; the export step signs it for App Store distribution (no registered devices needed).
 # Needs these repository secrets (Settings → Secrets and variables → Actions):
 #   APPLE_TEAM_ID   — 10-character Team ID (developer.apple.com → Account → Membership details)
 #   ASC_KEY_ID      — App Store Connect API key ID
@@ -55,8 +56,8 @@ jobs:
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath $RUNNER_TEMP/App.xcarchive \
-            DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=$BUILD \
-            $AUTH archive | tail -40
+            DEVELOPMENT_TEAM=$TEAM_ID CURRENT_PROJECT_VERSION=$BUILD CODE_SIGNING_ALLOWED=NO \
+            archive | tail -40
           cat > $RUNNER_TEMP/export.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
