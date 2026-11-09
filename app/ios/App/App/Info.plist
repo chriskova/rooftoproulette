@@ -31,7 +31,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>During a crawl, Rooftop Roulette keeps checking you in when you reach each bar, even with your phone in your pocket. It stops when the crawl ends.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Rooftop Roulette uses your location to spin bars near you and to check you in when you arrive.</string>
+	<string>Rooftop Roulette uses your location to spin bars near you and check you in when you arrive, including with your phone in your pocket during a crawl.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record mode captures sound with your spin clips.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

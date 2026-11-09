@@ -1829,11 +1829,37 @@ function nextOpen(list,t){ // earliest opening time later today among closed bar
 function avgHop(list){if(list.length<2)return null;let s=0,n=0;for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){s+=dist(list[i],list[j]);n++}return s/n}
 
 /* ---------- location ---------- */
+// iPhone app: the web view's own location prompt names the web page ("localhost wants your location"), so route
+// navigator.geolocation through the native Geolocation plugin instead. iOS then asks once, as Rooftop Roulette.
+const IOSNAT=(()=>{try{const C=window.Capacitor;return !!(C&&C.isNativePlatform&&C.isNativePlatform()&&C.getPlatform&&C.getPlatform()==="ios")}catch(e){return false}})();
+function natGeo(){const C=window.Capacitor;if(!IOSNAT)return null;
+  if(C.Plugins&&C.Plugins.Geolocation&&C.Plugins.Geolocation.getCurrentPosition)return C.Plugins.Geolocation;
+  if(typeof C.nativeCallback==="function"&&typeof C.nativePromise==="function")return {
+    getCurrentPosition:o=>C.nativePromise("Geolocation","getCurrentPosition",o),
+    watchPosition:(o,cb)=>Promise.resolve(C.nativeCallback("Geolocation","watchPosition",o,(res,err)=>cb(res,err))),
+    clearWatch:o=>C.nativePromise("Geolocation","clearWatch",o),
+    checkPermissions:()=>C.nativePromise("Geolocation","checkPermissions",{})};
+  return null}
+if(IOSNAT){try{
+  const err=e=>{const m=String(e&&(e.message||e)||"");return {code:/denied|permission|not authori[sz]ed|disabled/i.test(m)?1:/time/i.test(m)?3:2,message:m}};
+  const opt=o=>({enableHighAccuracy:!!(o&&o.enableHighAccuracy),timeout:(o&&o.timeout)||15000,maximumAge:(o&&o.maximumAge)||0});
+  const ids={};let n=0;
+  const geo={
+    getCurrentPosition(ok,bad,o){const G=natGeo();if(!G){bad&&bad({code:2,message:"unavailable"});return}
+      G.getCurrentPosition(opt(o)).then(p=>ok&&ok(p),e=>bad&&bad(err(e)))},
+    watchPosition(ok,bad,o){const G=natGeo(),id=++n;if(!G){bad&&bad({code:2,message:"unavailable"});return id}
+      Promise.resolve(G.watchPosition(opt(o),(p,e)=>{if(!(id in ids))return;if(e||!p){bad&&bad(err(e));return}ok&&ok(p)})).then(cid=>{if(id in ids)ids[id]=cid;else if(cid)G.clearWatch({id:cid}).catch(()=>{})});
+      ids[id]=null;return id},
+    clearWatch(id){const G=natGeo(),cid=ids[id];delete ids[id];if(G&&cid)G.clearWatch({id:cid}).catch(()=>{})}};
+  Object.defineProperty(navigator,"geolocation",{value:geo,configurable:true});
+}catch(e){}}
 let here=null,watchId=null,locErr=null;
 const you=()=>DEMO()?S.game.dpos:S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
 // In the phone app, a crawl's location runs in the background too (an "Active crawl" notification on Android,
 // the blue pill on iPhone), so arrivals and departures are logged on time with the phone in a pocket.
 // Only while a game is on: stopWatch() ends it with the crawl.
+// iPhone: "While Using" is enough. A crawl started in the app keeps getting locations in the background (with the blue
+// location pill), so we never ask for "Always" (the plugin would, if left to request permissions itself).
 let bgWatch=null;
 function bgGeo(){const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNativePlatform()))return null;
   if(C.Plugins&&C.Plugins.BackgroundGeolocation&&C.Plugins.BackgroundGeolocation.addWatcher)return C.Plugins.BackgroundGeolocation;
@@ -1846,7 +1872,7 @@ function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
   if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
-    Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:true,stale:false,distanceFilter:10},(p,err)=>{
+    Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:!IOSNAT,stale:false,distanceFilter:10},(p,err)=>{
       if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();return}
       if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy};locErr=null;lastFix=Date.now();onLocation()
     })).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
@@ -1871,6 +1897,7 @@ async function permState(ask){if(S.test)return "granted";
   // In the phone app the web view's permission answer can be stale (still "denied" after you've turned it on in settings,
   // or "prompt" when it's allowed), so when a game is starting, ask for a fix instead: that's the real answer.
   if(NATIVE&&ask)return await new Promise(r=>{try{navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};lastFix=Date.now();r("granted")},e=>r(e&&e.code===1?"denied":"granted"),{enableHighAccuracy:false,maximumAge:600000,timeout:8000})}catch(e){r("prompt")}});
+  if(IOSNAT){try{const r=await natGeo().checkPermissions();const st=r.location||r.coarseLocation;return st==="granted"?"granted":st==="denied"?"denied":"prompt"}catch(e){return "prompt"}}
   try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
 
 /* ---------- sound + haptics ---------- */
@@ -3613,7 +3640,7 @@ function openMove(free,keep){
   });
 }
 /* Practice spin: the real wheel and real rooftops, landing on a card. No game, nothing saved.
-   First time someone taps Play for a mode: rules → Next → practice spin → "Got it, let's play" (or skip).
+   First time someone taps Play for a mode: rules → Next → practice spin → "Let's play" (or skip).
    Any other time it hangs off the rules sheet. Opening either one counts as having seen that mode's intro. */
 const demoBtns=next=>next?`<button class="btn" type="button" id="howX" style="margin-top:16px">Next</button>`
   :`<div class="demoacts"><button class="btn line" type="button" id="demoGo">Practice spin</button><button class="btn dark" type="button" id="howX">Got it</button></div>`;
@@ -3623,19 +3650,20 @@ function demoSheet(back,next){
   sheet(`<h3>Practice spin</h3><p class="note">Just a practice. Real rooftops, no game, nothing saved. Flick it down.</p><div class="demo"><div id="demoBox"></div></div>
     <button class="btn dark" type="button" id="demoBack" style="margin-top:14px">${next?"Skip, let's play":"Back to the rules"}</button>`,
     ()=>{$("demoBack").onclick=next?play:back;
-      bindDemo(next?`<div class="demoacts"><button class="btn line" type="button" id="demoAgain">Spin again</button><button class="btn" type="button" id="demoPlay">Got it, let's play</button></div>`:null,
+      bindDemo(next?`<div class="demoacts"><button class="btn line" type="button" id="demoAgain">Spin again</button><button class="btn" type="button" id="demoPlay">Let's play</button></div>`:null,
         ()=>{if(!next)return;$("demoBack").hidden=true;$("demoPlay").onclick=play})});
 }
 function bindDemo(afterHTML,landed,boxEl){
   const box=boxEl||$("demoBox");if(!box)return;
   box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});   // flicking the wheel shouldn't drag the sheet shut
-  const pool=playable(VENUES,false).filter(v=>!v.tempClosed);
-  const mk=()=>{box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;if($("demoBack"))$("demoBack").hidden=false;
+  // your city's rooftops, open ones only (falls back to all of them if none are open)
+  const city=playable(VENUES,false).filter(v=>!v.tempClosed&&cityOf(v)===S.city),open_=city.filter(v=>openState(v,now()).open),pool=open_.length>=5?open_:city;
+  const mk=()=>{if(box.parentNode&&box.parentNode.classList.contains("demo"))box.parentNode.style.minHeight="";box.innerHTML=`<div id="demoReel" class="demoreel"></div>`;if($("demoBack"))$("demoBack").hidden=false;
     const R=makeReel($("demoReel"),pool.map(v=>v.name),{hint:true,onRelease:vel=>{
       if(R.busy)return false;const v=pool[Math.floor(Math.random()*pool.length)];barPhoto(v,"browse");
       R.spinTo(v.name,vel,info=>{const o=openState(v,now());
         const facts=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>`;
-        box.innerHTML=sheetCard(v,facts)+(afterHTML||`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`);
+        if(box.parentNode&&box.parentNode.classList.contains("demo"))box.parentNode.style.minHeight="0";box.innerHTML=sheetCard(v,facts)+(afterHTML||`<button class="btn sm line" type="button" id="demoAgain">Spin again</button>`);
         reveal(info,box);afterReveal(()=>bindSheetCard(v,facts));$("demoAgain").onclick=mk;if(landed)landed()})}})};   // photo swaps in after the reveal, not mid-flight
   mk();
 }
@@ -4906,7 +4934,7 @@ if(NATIVE)natCall("SystemBars","setStyle",{style:"DARK"}).catch(()=>{});
 // Permissions: apps can only ask; switching one off (or back on after a no) happens in the phone's settings.
 // Each row: not asked yet → tap asks; allowed or off → tap opens this app's page in the phone's settings.
 async function permSheet(){
-  const q=async n=>{try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
+  const q=async n=>{if(IOSNAT&&n==="geolocation")return permState();try{return (await navigator.permissions.query({name:n})).state}catch(e){return "unknown"}};
   // Location: ask for a fix (instant if it's been turned off). Camera and mic: only a clear yes shows.
   const locNow=()=>new Promise(r=>{try{navigator.geolocation.getCurrentPosition(()=>r("granted"),e=>r(e&&e.code===1?"denied":"granted"),{maximumAge:600000,timeout:4000})}catch(e){r("unknown")}});
   let [loc,cam,mic]=await Promise.all([NATIVE?locNow():q("geolocation"),q("camera"),q("microphone")]);
