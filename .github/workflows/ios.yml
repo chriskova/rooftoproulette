@@ -35,7 +35,10 @@ jobs:
       - name: Copy the web app into the iOS project
         if: env.HAS_KEYS == 'true'
         working-directory: app
-        run: npm ci && npm run sync -- ios
+        run: |
+          # same as Android: the app loads the live site, so Google maps/photos (key locked to that address) work and updates ship without a new build
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://chriskova.github.io/rooftoproulette/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          npm ci && npm run sync -- ios
       - name: Archive
         if: env.HAS_KEYS == 'true'
         env:
