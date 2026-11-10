@@ -1189,7 +1189,9 @@ h1.q.modename{font-size:46px}
 #v-home .hero{background:none;border:0;padding:14px 2px 6px;gap:6px;overflow:visible}
 #v-home .hero.ts{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 2px}
 #v-home .hero.ts .brand{font-size:calc(clamp(68px,22vw,96px)*(.62 + .38*var(--hs,1)));line-height:.86;white-space:normal}
-#v-home .hlogo{margin-bottom:16px}#v-home .hlogo img,#v-home .hlogo svg{display:block;height:calc(72px*(.6 + .4*var(--hs,1)));width:auto}
+#v-home .hlogo{margin-bottom:18px}
+#v-home .rrph{display:grid;place-items:center;width:calc(68px*(.6 + .4*var(--hs,1)));aspect-ratio:1;border-radius:22%;background:var(--s1);border:1.5px solid var(--line);font-family:var(--display);font-weight:800;font-size:calc(30px*(.6 + .4*var(--hs,1)));letter-spacing:.04em;line-height:1;color:var(--amber);position:relative;padding-bottom:6%}
+#v-home .rrph::after{content:"";position:absolute;left:32%;right:32%;bottom:20%;height:2px;border-radius:2px;background:var(--amber)}#v-home .hlogo img,#v-home .hlogo svg{display:block;height:calc(72px*(.6 + .4*var(--hs,1)));width:auto}
 #v-home .tsline{margin:18px 0 0;font-size:clamp(18px,5vw,21px);line-height:1.4;color:var(--muted)}
 #v-home .tsbot{display:flex;flex-direction:column;gap:12px}
 #v-home .tsopen{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14.5px;padding:0 2px;min-height:20px}
@@ -1445,9 +1447,9 @@ setTimeout(done,1200)})();</script>
 
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
-    <!-- the logo goes in .hlogo, above the name, when it's ready -->
+    <!-- the logo sits above the name. Placeholder RR (same as the app icon) until the real one's ready: swap .hlogo's contents for an <img> -->
     <div class="hero ts">
-      <div class="hlogo" id="homeLogo" hidden></div>
+      <div class="hlogo" id="homeLogo"><span class="rrph" aria-hidden="true">RR</span></div>
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <p class="tsline">Race the clock.<br>Spin, go, drink, repeat.</p>
     </div>
