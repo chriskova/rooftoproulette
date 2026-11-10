@@ -171,6 +171,7 @@ a.btn{text-decoration:none}
 .cur .ia-cheers .gl-r{animation:iaClinkR 1s cubic-bezier(.4,0,.3,1) .2s both}
 @keyframes iaClinkL{0%{transform:translateX(-4px) rotate(-10deg)}55%{transform:rotate(12deg)}72%{transform:rotate(7deg)}100%{transform:rotate(9deg)}}
 @keyframes iaClinkR{0%{transform:translateX(4px) rotate(10deg)}55%{transform:rotate(-12deg)}72%{transform:rotate(-7deg)}100%{transform:rotate(-9deg)}}
+.mcheers{stroke-width:3}.mcheers .clk{stroke-width:2.6}
 .ia-cheers .clk{stroke-width:2.2;transform-origin:24px 9px}
 .cur .ia-cheers .clk{animation:iaClk .5s cubic-bezier(.3,1.6,.5,1) .73s both}
 @keyframes iaClk{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
@@ -1441,12 +1442,12 @@ setTimeout(done,1200)})();</script>
     </div>
     <button class="hwant hat" id="homeAt" type="button" hidden></button>
     <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock.<br>Spin, drink, spin again.</p></div></div>
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock.<br>Spin, go, drink, repeat.</p></div></div>
       <button class="btn" id="newGame" type="button">Play Rush Hour</button>
       <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
     </div>
     <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest &amp; roulette.<br>No clock. All the stats.</p></div></div>
+      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest &amp; Roulette.<br>Same game, no clock.</p></div></div>
       <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
       <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
       <button class="hwant" id="homeWant" type="button" hidden></button>
@@ -2264,7 +2265,7 @@ function playingSheet(next){const g=S.game;
 $("newGame").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rush",howSheet,startWizard));return}if(farAway()){farSheet();return}firstRules("rush",howSheet,startWizard)};
 $("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
-document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?I.glass:I.clock);
+document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"'):I.clock);
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 
