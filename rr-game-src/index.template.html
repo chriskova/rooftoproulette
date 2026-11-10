@@ -1184,22 +1184,26 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .mode h2.q{font-size:36px;margin:0 0 6px}
 h1.q.modename{font-size:46px}
 .mode .howlink{color:var(--muted);margin-top:-2px}
-/* home: the logo sits on the page with a warm glow at the top; the two modes share the rest of the screen */
+/* home: a title screen. The name up top with a warm glow; Play and R&R sit at the bottom, under your thumb */
 #v-home{gap:16px;min-height:100%;display:flex;flex-direction:column;background:radial-gradient(90% 38% at 85% 0%,rgba(245,184,61,.22),transparent 70%),radial-gradient(70% 30% at 0% 0%,rgba(245,184,61,.08),transparent 70%)}
 #v-home .hero{background:none;border:0;padding:14px 2px 6px;gap:6px;overflow:visible}
-#v-home .hero .brand{font-size:clamp(36px,10.6vw,46px);white-space:nowrap}
-#v-home .hero .sub{font-size:16px;opacity:.85}
-#v-home .hero .slogan{font-family:Caveat,var(--ui);font-weight:600;font-size:26px;line-height:1.1;color:var(--text);opacity:1;transform:rotate(-1.2deg);transform-origin:left;margin-top:2px}   /* same hand as the fun facts */
-#v-home .card.mode{flex:1 0 auto;justify-content:flex-start;padding:20px 18px 8px;gap:14px}
-#v-home .mode .btn{margin-top:auto}
-/* the type grows with the screen's height so tall phones don't leave a gap in each card */
-#v-home .mode .mtop{gap:clamp(16px,calc(16px + (100dvh - 720px)*var(--hs,1)*.03),22px)}
-#v-home .mode h2.q{font-size:clamp(36px,calc(36px + (100dvh - 720px)*var(--hs,1)*.24),58px);margin:2px 0 clamp(8px,calc(8px + (100dvh - 720px)*var(--hs,1)*.03),14px)}
-#v-home .mode .modeline{font-size:clamp(15px,calc(15px + (100dvh - 720px)*var(--hs,1)*.05),20px);line-height:1.45;text-wrap:pretty}
-#v-home .mode .mic{width:clamp(46px,calc(46px + (100dvh - 720px)*var(--hs,1)*.12),60px);height:clamp(46px,calc(46px + (100dvh - 720px)*var(--hs,1)*.12),60px);border-radius:clamp(14px,1.8dvh,18px)}
-#v-home .mode .mic svg{width:clamp(24px,calc(24px + (100dvh - 720px)*var(--hs,1)*.06),30px);height:clamp(24px,calc(24px + (100dvh - 720px)*var(--hs,1)*.06),30px)}
-#v-home .mode .btn{height:clamp(52px,calc(52px + (100dvh - 720px)*var(--hs,1)*.04),60px);font-size:clamp(16px,calc(16px + (100dvh - 720px)*var(--hs,1)*.015),18px)}
-#v-home .mode .howlink{padding:6px 0 8px;margin-top:-6px;font-size:14px}
+#v-home .hero.ts{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 2px}
+#v-home .hero.ts .brand{font-size:calc(clamp(68px,22vw,96px)*(.62 + .38*var(--hs,1)));line-height:.86;white-space:normal}
+#v-home .hlogo{margin-bottom:16px}#v-home .hlogo img,#v-home .hlogo svg{display:block;height:calc(72px*(.6 + .4*var(--hs,1)));width:auto}
+#v-home .tsline{margin:18px 0 0;font-size:clamp(18px,5vw,21px);line-height:1.4;color:var(--muted)}
+#v-home .tsbot{display:flex;flex-direction:column;gap:12px}
+#v-home .tsopen{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14.5px;padding:0 2px;min-height:20px}
+#v-home .tsopen svg{width:16px;height:16px;color:var(--amber);flex:none}#v-home .tsopen b{color:var(--text);font-weight:700}
+#v-home .tsplay{height:60px;font-size:19px}
+#v-home .tsbot .howlink{margin:-4px 0 2px;font-size:14px;color:var(--muted)}
+#v-home .tsrr{appearance:none;display:flex;align-items:center;gap:14px;width:100%;text-align:left;font:inherit;background:var(--s1);border:1.5px solid var(--line);border-radius:20px;padding:12px 14px;color:var(--text);cursor:pointer}
+#v-home .tsrr .mic{width:46px;height:46px;border-radius:14px;background:var(--s2);color:var(--amber);display:grid;place-items:center;flex:none}
+#v-home .tsrr .mic svg{width:26px;height:26px}
+#v-home .tsrr .rrt{flex:1;display:flex;flex-direction:column;gap:2px}
+#v-home .tsrr b{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:26px;line-height:1;letter-spacing:.02em}#v-home .tsrr b i{font-style:normal;color:var(--amber)}
+#v-home .tsrr small{color:var(--muted);font-size:14.5px;line-height:1.35}
+#v-home .tsrr .chev{width:20px;height:20px;color:var(--muted);flex:none}
+#v-home .tsbot .hwant{margin-top:0}
 .mbtns{display:flex;gap:10px;align-items:center}
 .mbtns .btn{flex:1}
 .mhow{appearance:none;flex:none;height:52px;padding:0 16px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--text);font-size:14.5px;font-weight:650;white-space:nowrap}
@@ -1441,20 +1445,18 @@ setTimeout(done,1200)})();</script>
 
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
-    <div class="hero">
-      <div class="brand" id="heroBrand">Rooftop <span>Roulette</span></div>
-      
+    <!-- the logo goes in .hlogo, above the name, when it's ready -->
+    <div class="hero ts">
+      <div class="hlogo" id="homeLogo" hidden></div>
+      <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
+      <p class="tsline">Race the clock.<br>Spin, go, drink, repeat.</p>
     </div>
     <button class="hwant hat" id="homeAt" type="button" hidden></button>
-    <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">Rush <i>Hour</i></h2><p class="modeline">Race the clock.<br>Spin, go, drink, repeat.</p></div></div>
-      <button class="btn" id="newGame" type="button">Play Rush Hour</button>
-      <button class="txtbtn howlink" id="homeHow" type="button">How Rush Hour works</button>
-    </div>
-    <div class="card mode">
-      <div class="mtop"><span class="mic"></span><div><h2 class="q">R<i>&amp;</i>R</h2><p class="modeline">Rest &amp; Roulette.<br>Just the spin. Stay as long as you like.</p></div></div>
-      <button class="btn" id="quickGo" type="button">Play R&amp;R</button>
-      <button class="txtbtn howlink" id="homeHowRR" type="button">How R&amp;R works</button>
+    <div class="tsbot">
+      <div class="tsopen" id="homeOpen"></div>
+      <button class="btn tsplay" id="newGame" type="button">Play</button>
+      <button class="txtbtn howlink" id="homeHow" type="button">How it works</button>
+      <button class="tsrr" id="quickGo" type="button"><span class="mic" id="rrIcon"></span><span class="rrt"><b>R<i>&amp;</i>R</b><small>Rest &amp; Roulette. Just the spin.<br>Stay as long as you like.</small></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
       <button class="hwant" id="homeWant" type="button" hidden></button>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b>, <b>Melbourne</b>, <b>Brisbane</b>, <b>Perth</b> and the <b>Gold Coast</b>, for now.</span></div>
@@ -1799,7 +1801,7 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
   sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
-// The demo: a 1-hour Rush Hour from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
+// The demo: a 1-hour timed game from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
   S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
@@ -1827,8 +1829,8 @@ const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
 /* bars that can come up in a spin: not hidden, optionally only new */
 // rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
 const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
-// Rush Hour: "skip" only leaves out bars you've been to in a past game (your own Been list doesn't count here).
-function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!FAR.has(v.id)&&(!newOnly||!c[v.id]))}   // Rush Hour: Pass doesn't apply, you get 3 vetoes instead
+// Timed game: "skip" only leaves out bars you've been to in a past game (your own Been list doesn't count here).
+function playable(list,newOnly){const c=collectedMap();return list.filter(v=>!FAR.has(v.id)&&(!newOnly||!c[v.id]))}   // Timed game: Pass doesn't apply, you get 3 vetoes instead
 const inCircle=(c,r)=>VENUES.filter(v=>dist(c,v)<=r*1000);
 const openIn=(c,r,t,newOnly)=>playable(inCircle(c,r),newOnly).filter(v=>openOK(v,t||now()));
 function nextOpen(list,t){ // earliest opening time later today among closed bars
@@ -2148,7 +2150,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   const cr=CR(g),a=atVisit(),y=you();let left,sm=false,line;
   if(!g.started){left="Ready";sm=true}else if(cr){if(a)left=now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);else{left="R&R";sm=true}}else left=mmss(remaining());
   if(!g.started)line="Spin to start";else if(a)line="At "+byId(a.id).name;else if(g.target){const v=byId(g.target);line="Heading to "+v.name+(y?" · "+kmTxt(dist(y,v)/1000):"")}else line="Spin for the next one";
-  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${cr?"R&amp;R":"Rush Hour"}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
+  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${cr?"R&amp;R":LEN(g.len)}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
   if(m._h!==h){m._h=h;m.innerHTML=h}
   if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(prevRoute==="play"){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
@@ -2234,8 +2236,8 @@ function colCardHTML(){
 }
 function renderHome(){
   {const L=wantList(),hw=$("homeWant");if(hw){hw.hidden=!L.length||!!S.game;hw.innerHTML=`${HEART} <span><b>${L.length}</b> on your Hit list in ${esc(cityIn(S.city))}</span><i class="chev">›</i>`;hw.onclick=()=>listSheet("want")}}
-  $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
-  $("newGame").textContent="Play Rush Hour";$("quickGo").textContent="Play R&R";
+  $("homeHow").onclick=howSheet;
+  homeOpen();
   homeAt();
   requestAnimationFrame(fitHome);
 }
@@ -2248,7 +2250,7 @@ function homeAt(){const b=$("homeAt");if(!b)return;
     b.innerHTML=`${I.pin} <span>At <b>${esc(v.name)}</b>? Start a crawl here.</span><button class="x" type="button" aria-label="Not now">×</button>`;b.hidden=false;
     b.onclick=e=>{if(e.target.closest(".x")){e.stopPropagation();S.atNo={id:v.id,day:new Date(now()).toDateString()};save();b.hidden=true;requestAnimationFrame(fitHome);return}
       track("home_at_tap",{bar:v.id});
-      sheet(`<h3>Start at ${esc(v.name)}</h3><p class="note" style="margin:6px 0 14px">Your zone starts here.</p><div class="acts"><button class="btn" type="button" id="atRush">Rush Hour</button><button class="btn line" type="button" id="atRR">R&amp;R</button></div>`,()=>{
+      sheet(`<h3>Start at ${esc(v.name)}</h3><p class="note" style="margin:6px 0 14px">Your zone starts here.</p><div class="acts"><button class="btn" type="button" id="atRush">Play</button><button class="btn line" type="button" id="atRR">Play R&amp;R</button></div>`,()=>{
         $("atRush").onclick=()=>{closeSheet();firstRules("rush",howSheet,startWizard)};
         $("atRR").onclick=()=>{closeSheet();firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})}})};
     requestAnimationFrame(fitHome)};
@@ -2259,7 +2261,11 @@ function homeAt(){const b=$("homeAt");if(!b)return;
   if(Date.now()-atT<120000)return;atT=Date.now();
   permState().then(st=>{if(st!=="granted")return;
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="home")show(pick(here))},()=>{},{maximumAge:120000,timeout:10000,enableHighAccuracy:true})})}
-// The mode cards' type grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
+// How many rooftops are open in your city right now, above Play. None open: when the first one opens.
+function homeOpen(){const el=$("homeOpen");if(!el)return;const t=now(),L=VENUES.filter(inCityNow),n=L.filter(v=>openOK(v,t)).length,where=esc(cityIn(S.city));
+  const op=n?null:nextOpen(L,t);
+  el.innerHTML=I.pin+`<span>${n?`<b>${plural(n,"rooftop")}</b> open in ${where} right now`:op?`Rooftops in ${where} open from <b>${op}</b>`:`Nothing's open in ${where} right now`}</span>`}
+// The name grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
 function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
   while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}}
 addEventListener("resize",()=>{if(S.route==="home")fitHome()});
@@ -2269,13 +2275,13 @@ function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(sta
 const farAway=()=>!S.test&&here&&!nearLive(here);
 // Starting something while a game's on: go back to it, or end it (it's saved) and start the new one
 function playingSheet(next){const g=S.game;
-  sheet(`<h3>You've got a game going</h3><p class="note" style="margin:6px 0 14px">Your ${CR(g)?"R&amp;R crawl":"Rush Hour game"} is still on.</p><div class="acts"><button class="btn" type="button" id="pgBack">Back to it</button><button class="btn line" type="button" id="pgNew">End it and start a new one</button></div>`,()=>{
+  sheet(`<h3>You've got a game going</h3><p class="note" style="margin:6px 0 14px">Your ${CR(g)?"R&amp;R crawl":"game"} is still on.</p><div class="acts"><button class="btn" type="button" id="pgBack">Back to it</button><button class="btn line" type="button" id="pgNew">End it and start a new one</button></div>`,()=>{
     $("pgBack").onclick=()=>{closeSheet();go("play")};
     $("pgNew").onclick=()=>{closeSheet();if(G().started)endGame(now());else{S.game=null;save();stopWatch()}next()}})}
 $("newGame").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rush",howSheet,startWizard));return}if(farAway()){farSheet();return}firstRules("rush",howSheet,startWizard)};
 $("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
-document.querySelectorAll(".mic").forEach((m,i)=>m.innerHTML=i?CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"'):I.clock);
+$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 
@@ -2511,7 +2517,7 @@ function renderWiz(){
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
-    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">Rush Hour</div>${cityBtn()}</div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
+    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">New game</div>${cityBtn()}</div><h1 class="q">How long have you got?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span></b><small>In, out, spin again.<br>Best for 2–3 people.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>Another round, or onto the next.<br>Best for 4+ people.</small></span></button>
@@ -2941,7 +2947,7 @@ function doSpin(force,vel){
   }
   reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation();dealWild(900)});
 }
-/* ---------- the Jackpot: once a Rush Hour game, a longer gold spin that pays out one of five rewards ---------- */
+/* ---------- the Jackpot: once a timed game, a longer gold spin that pays out one of five rewards ---------- */
 const JACKPOTS=[
   {k:"call",t:"Your call",d:"Pick your next bar from three. You've got 20 seconds, and the trip there's on the house (up to 15 minutes).",go:"Show me"},
   {k:"freeze",t:"Time freeze",d:"The clock's frozen for 10 minutes. Stay for another, or go somewhere further.",go:"Spin for your bar"},
@@ -3692,11 +3698,11 @@ const HOW={rush:()=>[
   ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
 // How to play from settings: both modes in one sheet, three-quarters high
 function howToPlay(k){k=k||"rush";
-  sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Rush Hour</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>`,()=>{
+  sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Timed</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>`,()=>{
     $("sheet").classList.add("tq");$("sheetBody").querySelectorAll("[data-hw]").forEach(b=>b.onclick=()=>howToPlay(b.dataset.hw))})}
 const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
 function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
-  sheet(`<h3>How Rush Hour works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rush())}</div>
+  sheet(`<h3>How it works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rush())}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>howSheet(next),next));
 }
 function openMenu(){
@@ -3809,7 +3815,7 @@ function renderPlay(){
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
   renderClock();
-  {const cm=$("camMode");if(cm)cm.innerHTML=CR(g)?"R&amp;R":"Rush Hour"}
+  {const cm=$("camMode");if(cm)cm.innerHTML=CR(g)?"R&amp;R":LEN(g.len)}
   {const lv=g.visits.filter(x=>!x.cant&&x.counted!==false).pop(),cl=$("camLoc");if(cl)cl.innerHTML=`${I.pin}<i>${esc(lv?byId(lv.id).name:nearestSuburb(you()||g.center))}</i>`}   // the bar you're at (or just left); the suburb before the first one
   {let mt=$("manTag");if(g.noLoc){if(!mt){mt=document.createElement("div");mt.id="manTag";mt.className="mantag";$("v-play").insertBefore(mt,$("v-play").children[2]||null)}mt.innerHTML=`${I.pin} Manual check-ins`}else if(mt)mt.remove()}
   {let db=$("demoBar");if(g.demo){if(!db){db=document.createElement("div");db.id="demoBar";$("v-play").insertBefore(db,$("v-play").children[2]||null)}db.innerHTML=demoBar(g);bindDemoBar(g)}else if(db)db.remove()}
@@ -4063,7 +4069,7 @@ addEventListener("resize",()=>{if(S.route==="end")fitEnd()});
 function renderEnd(){
   const r=(DEMO_REC&&DEMO_REC.id===S.lastEnd)?DEMO_REC:(SHARED&&SHARED.id===S.lastEnd&&!H.some(x=>x.id===SHARED.id))?SHARED:H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){SHARED=null;go("home");return}
   const isShared=r===SHARED;
-  const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"Rush Hour · 1 hour":"Rush Hour · 2 hours",aw=awardsFor(r,st);
+  const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"1 hour":"2 hours",aw=awardsFor(r,st);
   const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
   const still=cr&&r.autoEnded&&!r.stillAsked&&!S.game&&now()-r.endedAt<12*3600000;
@@ -4082,7 +4088,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
+      <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -4228,8 +4234,8 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
     if(WV==="foot"){const pl=placeOf(r).toUpperCase();x.font=`700 23px ${U}`;x.letterSpacing="2.4px";const pw=x.measureText(pl).width;x.letterSpacing="0px";
       x.save();x.translate(W-64-pw-34,1786);x.scale(26/24,26/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
       x.fillStyle="rgba(244,241,234,.9)";sp(pl,W-64,1808,2.4,"right");
-      x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr"),dateTxt(rt(r,r.startedAt))].join(" · "),W-64,1840);x.textAlign="left";return}
-    x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr").toUpperCase(),W-64,1832,3,"right")};
+      x.font=`600 19px ${U}`;x.fillStyle="rgba(244,241,234,.6)";x.textAlign="right";x.fillText([(cr?"R&R":LEN(r.len)),dateTxt(rt(r,r.startedAt))].join(" · "),W-64,1840);x.textAlign="left";return}
+    x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":LEN(r.len)).toUpperCase(),W-64,1832,3,"right")};
   // where and when, with a pin, sitting just above the title
   const WV=window.WHERE_VAR||"foot";
   const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const t=[placeOf(r),dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
@@ -4630,7 +4636,7 @@ $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
 function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:rt(r,x.arrivedAt),d:Math.max(0,(x.leftAt||r.endedAt||now())-x.arrivedAt)})};
   H.forEach(add);if(S.game&&!S.game.ended)add(S.game);return out.sort((a,b)=>b.t-a.t)}
 const stayTxt=ms=>{const m=Math.max(1,Math.round(ms/60000));if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" hr"+(r?" "+r:"")};
-const gameLbl=x=>(x.r.mode==="cruise"?"R&amp;R":"Rush Hour")+" · "+stayTxt(x.d);
+const gameLbl=x=>(x.r.mode==="cruise"?"R&amp;R":LEN(x.r.len))+" · "+stayTxt(x.d);
 function visitsHTML(v){const vs=visitsOf(v.id);if(!vs.length)return "";
   if(vs.length===1)return `<p class="note" style="margin-top:6px"><span class="stamp col">Visited</span> ${dateTxt(vs[0].t)} · ${gameLbl(vs[0])}</p>`;
   const tot=vs.reduce((s,x)=>s+x.d,0);
@@ -4739,7 +4745,7 @@ function listSheet(k,msg,after){
 // every counted bar visit across finished crawls, newest first
 function allVisits(){const out=[];H.forEach(r=>{const st=stats(r);st.counted.forEach((v,i)=>{const b=byId(v.id);if(!b)return;
   out.push({r,v,b,n:st.arrived.indexOf(v)+1,t:rt(r,v.arrivedAt),ms:Math.max(0,(v.leftAt||r.endedAt||r.endsAt)-v.arrivedAt)})})});return out.sort((a,b)=>b.t-a.t)}
-const modeTxt=r=>r.mode==="cruise"?"R&amp;R":r.len===60?"Rush Hour · 1 hr":"Rush Hour · 2 hr";
+const modeTxt=r=>r.mode==="cruise"?"R&amp;R":LEN(r.len);
 const monthTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{month:"long",year:"numeric",timeZone:"Australia/Sydney"});
 // a small square: the bar's photo if we already have it (no new photo loads), otherwise its initial
 const vthumb=(b,txt)=>{const ph=phMem[b.id];return `<span class="vth${ph?" ph":""}"${ph?` style="background-image:url('${ph.url}')"`:""}>${ph?"":esc(txt!=null?String(txt):b.name.replace(/^the\s+/i,"")[0]||"·")}</span>`};
@@ -4747,7 +4753,7 @@ const vthumb=(b,txt)=>{const ph=phMem[b.id];return `<span class="vth${ph?" ph":"
 function records(){
   const R=[],best=(lbl,ic,list,val,fmt,sub,lowest)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id})};
   const nights=H.map(r=>({r,st:stats(r)})),tn=nights.filter(x=>!x.r.noLoc);
-  [[60,"Most bars · Rush Hour 1 hr"],[120,"Most bars · Rush Hour 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
+  [[60,"Most bars · 1 hr"],[120,"Most bars · 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
   best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)));
   best("Most bar time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
   best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
@@ -4820,7 +4826,7 @@ function deleteCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
 function visitsSheet(){
   const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0),yr=String(new Date(now()).getFullYear());let m=null;
   const list=vs.map(x=>{const mm=monthTxt(x.t),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
-    return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":"Rush Hour"}</small></span><span class="chev vch">›</span></button>`}).join("");
+    return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":LEN(x.r.len)}</small></span><span class="chev vch">›</span></button>`}).join("");
   sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"}</p><div class="vlist2">${list}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bar visits"})});
@@ -5000,11 +5006,12 @@ $("testFab").onclick=()=>{
 
 /* ---------- notifications (phone app only) ----------
    Live: one silent, ongoing notification while a crawl is on (CrawlNotify, our own small Android plugin).
-     Rush Hour counts down with a bar that shrinks; R&R counts up from when you got to the bar.
-   Alerts (LocalNotifications, set ahead so they arrive with the app closed): 10 minutes left and time's up in Rush Hour,
+     The timed game counts down with a bar that shrinks; R&R counts up from when you got to the bar.
+   Alerts (LocalNotifications, set ahead so they arrive with the app closed): 10 minutes left and time's up in the timed game,
      check-in open when you're checking in by hand, and the day after a crawl, a look back at it. */
 const NOTE={live:"",liveAt:0,alerts:"",ready:false};
 const realAt=t=>t-(now()-Date.now());   // game time -> the phone's clock (test mode can run ahead)
+const LEN=m=>m%60===0?`${m/60} hr`:`${m} min`;   // the timed game goes by its length: "1 hr", "2 hr"
 const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
 function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
   natCall("LocalNotifications","createChannel",{id:"crawl_alerts",name:"Crawl alerts",description:"Time warnings and check-ins during a crawl",importance:4,visibility:1,vibration:true}).catch(()=>{});
@@ -5021,7 +5028,7 @@ function liveNote(){
   if(!g||g.demo||!g.started||g.ended){if(NOTE.live){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}return}
   noteSetup();
   if(!S.notifAsked){S.notifAsked=1;save();natCall("LocalNotifications","requestPermissions").catch(()=>{})}   // the phone's own prompt, first crawl only
-  const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":"Rush Hour";let title,text;
+  const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" game";let title,text;
   if(a){title=`At ${byId(a.id).name}`;text=cr?mode:`${mode} · here ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`}
   else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode+(y?` · ${kmTxt(dist(y,v)/1000)} away`:"")}
   else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"bar")}`}
