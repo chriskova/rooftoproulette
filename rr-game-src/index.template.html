@@ -948,6 +948,10 @@ body:not(.camon) #appbar .logo{display:none}
 .toggle .t{flex:1}
 .toggle .t b{display:block;font-size:15.5px}
 .toggle .t small{color:var(--muted);font-size:13px}
+.beenbox{display:flex;flex-direction:column}
+.beenx{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:10px 2px 0;color:var(--muted);font-size:14px;font-weight:600}.beenx svg{width:15px;height:15px}
+.beenpanel{margin-top:10px;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);padding:12px 14px 4px}
+.beenpanel .bpitems{max-height:260px;overflow-y:auto;margin-top:4px}.beenpanel .lsrow:last-child{border-bottom:0}
 .sw{width:50px;height:30px;border-radius:99px;background:var(--s3);position:relative;flex:none;transition:background .15s}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
 .toggle[aria-checked="true"] .sw{background:var(--amber)}
@@ -2018,7 +2022,8 @@ function gWrap(el,o){
     route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
       ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:.18,strokeWeight:8,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:3,clickable:false}))},
     line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#0B0D12",strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
-    fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.08}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);f();google.maps.event.addListenerOnce(map,"idle",f);setTimeout(f,400)},
+    fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.08}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
+      if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
     setView(p,z){map.panTo(LL(p));map.setZoom(z)},
     me(p){if(!p){if(meM){meM.map=null;meM=null}return}if(!meM)meM=mk(p,'<div class="me"></div>',1000);else meM.position=LL(p)},
@@ -2127,7 +2132,7 @@ function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;c
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
 let prevRoute=null;
-function go(route){prevRoute=S.route;{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+function go(route){prevRoute=S.route;if(route!=="home")backArm();{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
   if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
@@ -2304,7 +2309,7 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
-const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>${L.length?`Only spin the ${esc(S.city)} bars on your shortlist`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>Pick from my Hit list</b><small>${L.length?`Only the ${esc(S.city)} bars on your shortlist. Keep it to one area if you like`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -2356,12 +2361,17 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
     lastP=P;onPaint(P,z,moved());
     if(!rrMap)return;
-    if(full){rrMap.clear();const ids=new Set(P.open.map(v=>v.id));(o&&o.pinSet?o.pinSet():VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000))).forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>pinCard(v)))}
+    if(full){const ids=new Set(P.open.map(v=>v.id)),set=o&&o.pinSet?o.pinSet():VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)),key=set.map(v=>v.id+(ids.has(v.id)?"+":"")).join();
+      if(key!==pinKey){pinKey=key;rrMap.clear();set.forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>pinCard(v)))}}
     rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
-  let base=null,progT=0,clamped=false;const lo=Z.toR(0),hi=Z.all?Z.toR(RRALL-1):Z.toR(RRMAX);
+  // Pinch or scroll to zoom and the distance changes with it: the circle keeps its size on screen (same as the slider).
+  // Past the smallest or biggest distance, the map settles back on the whole circle when you let go.
+  // base: the map's scale when the circle last filled the view. prog: a fit we started ourselves, until its map stops moving.
+  let base=null,prog=0,clamped=false,pinKey="";const lo=Z.toR(0),hi=Z.all?Z.toR(RRALL-1):Z.toR(RRMAX);
+  const ours=()=>prog&&Date.now()<prog;
   const setBase=()=>{if(rrMap&&rrMap.mpp)base={r:z.r,mpp:rrMap.mpp()}};
-  const fit=()=>{if(!rrMap)return;progT=Date.now()+900;base=null;setTimeout(()=>{if(Date.now()>=progT-20)setBase()},920);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD());else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-  $("rrR").oninput=()=>{z.r=Z.toR(+$("rrR").value);base=null;paint(false)};
+  const fit=()=>{if(!rrMap)return;const p0=prog=Date.now()+800;clamped=false;setTimeout(()=>{if(prog===p0){prog=0;setBase()}},820);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD());else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
+  $("rrR").oninput=()=>{z.r=Z.toR(+$("rrR").value);paint(false)};
   $("rrR").onchange=()=>{save();paint(true);fit()};
   // tap a pin: a little card on the map; tap the card for the full bar page (not from inside a panel)
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
@@ -2392,15 +2402,20 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   $("rrHome").onclick=()=>{if(!me){if(o&&o.locate)o.locate();return}z.lat=me.lat;z.lng=me.lng;save();paint(true);fit()};
   paint(true);
   requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
-    const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;fit();paint(true);
-    let lock=true;setTimeout(()=>lock=false,900); // ignore the moves from fitting the map
-    m.onMove(()=>{if(lock||!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
-    m.onIdle(()=>{if(clamped&&Date.now()>=progT){clamped=false;fit();return}if(Date.now()>=progT)setBase();if(lock||!z.r)return;followCity(z);save();paint(true)});
-    // pinch or scroll to zoom: the circle keeps its size on screen and the distance changes with it, same as the slider
-    if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(lock||Date.now()<progT||!z.r||!base)return;
+    const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;pinKey="";
+    m.onMove(()=>{if(ours())return;if(Date.now()-cardAt>700)card.hidden=true;if(!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
+    m.onIdle(()=>{
+      if(prog){const mine=Date.now()<prog;prog=0;if(mine){setBase();return}}   // our own fit has landed: that's the new scale
+      if(clamped){clamped=false;fit();return}
+      setBase();if(!z.r)return;followCity(z);save();paint(true)});
+    if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(ours()||!z.r)return;if(!base){setBase();return}
       const r0=base.r*m.mpp()/base.mpp,r=Math.round(Math.max(lo,Math.min(hi,r0))*20)/20;clamped=r0<lo*.97||r0>hi*1.03;if(r===z.r)return;
       z.r=r;$("rrR").value=Z.toX(r);paint(false)});
-    m.onTap(()=>{if(Date.now()-cardAt>500)card.hidden=true});m.onMove(()=>{if(!lock&&Date.now()-cardAt>700)card.hidden=true})});
+    m.onTap(()=>{if(Date.now()-cardAt>500)card.hidden=true});
+    // the map's box changes size (keyboard, a toggle opening below): put the whole circle back in view
+    fit();paint(true);   // after the listeners, so the first fit's scale is caught (otherwise your first pinch did nothing)
+    if(window.ResizeObserver){let h0=el.offsetHeight,rt=0;const ro=new ResizeObserver(()=>{if(!document.contains(el)){ro.disconnect();return}const h=el.offsetHeight;if(Math.abs(h-h0)<4)return;h0=h;clearTimeout(rt);rt=setTimeout(()=>{if(rrMap===m){m.resize();fit()}},120)});ro.observe(el)}
+  });
   return {paint};
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
@@ -2410,7 +2425,7 @@ function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="q
   const nowTxt=cz.type==="list"?"your Hit list":zoneTxt(g);
   const apply=(nc,label)=>{g.cz=nc;if(nc.r)g.radius=nc.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay()};
   sheet(`<div class="rzsheet rz-${m}"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Spin zone</h3><p class="note" style="margin:2px 0 10px">Now spinning: <b style="color:var(--text)">${nowTxt}</b></p>
-    <div class="seg"><button type="button" data-m="map" aria-pressed="${m==="map"}">Near me${cur==="map"?' <i class="segdot"></i>':""}</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list${cur==="list"?' <i class="segdot"></i>':""}</button></div>
+    <div class="seg"><button type="button" data-m="map" aria-pressed="${m==="map"}">Area${cur==="map"?' <i class="segdot"></i>':""}</button><button type="button" data-m="list" aria-pressed="${m==="list"}">Hit list${cur==="list"?' <i class="segdot"></i>':""}</button></div>
     ${m==="list"?`<p class="note" id="rzCount" style="margin:10px 0 8px"></p><div class="lsearch">${I.search}<div id="lsQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search rooftops"></div><button class="lsclr" type="button" id="lsClr" hidden aria-label="Clear">${I.x}</button></div>`:""}</div>
     ${m==="map"?`<div style="margin-top:12px">${rrZoneHTML()}</div>`:`<div class="lsitems" id="lsItems"></div>`}
     <div class="lsfoot"><button class="btn" type="button" id="rzOk">Done</button></div></div>`,()=>{
@@ -2444,7 +2459,9 @@ function renderQuick(){
   if(rrMap&&step!==1){rrMap.remove();rrMap=null}
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${step===0?50:100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   const beenN=VENUES.filter(v=>inCityNow(v)&&!isNew(v.id)).length;
-  const newTog=beenN?`<button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small>${beenN} on your Been list. Change it in Rooftops.</small></span><span class="sw"></span></button>`:"";
+  const newTog=`<div class="beenbox"><button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small id="qBeenN">${beenTxt(beenN)}</small></span><span class="sw"></span></button>
+    <button class="txtbtn beenx" type="button" id="qBeenX" aria-expanded="${!!q.beenOpen}">${q.beenOpen?"Hide":"Edit"} your Been list <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${q.beenOpen?"M6 15l6-6 6 6":"M6 9l6 6 6-6"}"/></svg></button>
+    <div class="beenpanel" id="qBeenP" ${q.beenOpen?"":"hidden"}></div></div>`;
   // Looking at another city? "Near me" would mean nowhere near it, so offer a spot in that city instead.
   const hp=S.test&&S.fake?S.fake:here,away=!!hp&&nearLive(hp)!==S.city;
   // No fix yet this session: get one quietly (without switching the city) so "Near me" isn't offered for the wrong state
@@ -2452,7 +2469,7 @@ function renderQuick(){
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
     b.innerHTML=top+`<div><div class="cityrow"><h1 class="q modename">R<i>&amp;</i>R</h1>${cityBtn()}</div><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are we spinning?</p></div>
-      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>Pick a spot in ${esc(cityIn(S.city))}</b><small>You're not in ${esc(cityIn(S.city))} right now, so choose where you'll start</small>`:`<b>Near me</b><small>Pick how far next, or drag the map somewhere else</small>`}</span></button>
+      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>Pick a spot in ${esc(cityIn(S.city))}</b><small>You're not in ${esc(cityIn(S.city))} right now, so choose where you'll start</small>`:`<b>Pick an area</b><small>Starts where you are. Move it anywhere and set how far next</small>`}</span></button>
       ${apWrap("__want",listOpt(t,q.sel==="__want"))}</div>
       ${q.sel==="__me"?newTog:""}
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
@@ -2471,8 +2488,8 @@ function renderQuick(){
     if(!q.z)q.z={lat:q.from.lat,lng:q.from.lng,r:2};
     const zz=lst?q.lz:q.z;
     const listPool=(z,t)=>{const all=wantList().filter(v=>!z.r||dist(z,v)<=z.r*1000);return {all,open:all.filter(v=>openOK(v,t))}};
-    b.innerHTML=top+`<div><h1 class="q qmap">${pick?"Where to?":"How far?"}</h1><p class="sub msub" style="margin:6px 0 0">${pick?"Drag the map to where you'll start.":lst?"Spin your whole Hit list, or keep it to one part of town.":"Drag the map to spin somewhere else."}</p></div>${rrZoneHTML()}${lst?"":newTog}`;
-    rrZoneBind(zz,me,()=>lst?false:q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(lst){q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};q.r=z.r||null;save();startCruise();return}q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}),lst?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);fitMap(b);
+    b.innerHTML=top+`<div><h1 class="q qmap">${pick?"Where to?":lst?"Your Hit list":"Set your area"}</h1><p class="sub msub" style="margin:6px 0 0">${pick?"Drag the map to where you'll start.":lst?"Spin all of it, or slide to keep it to one area.":"Drag the map to move it. Pinch or slide to change how far."}</p></div>${rrZoneHTML()}${lst?"":newTog}`;
+    qZB=rrZoneBind(zz,me,()=>lst?false:q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(lst){q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};q.r=z.r||null;save();startCruise();return}q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}),lst?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);fitMap(b);
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
   $("qClose").onclick=()=>{S.quick=null;go("home")};
@@ -2480,8 +2497,31 @@ function renderQuick(){
   if($("qList"))$("qList").onclick=()=>{const o=wantList().filter(v=>openOK(v,now())).length;
     if(o>=2){q.sel="__want";q.note=null;save();renderQuick();return}
     listSheet("want",wantList().length?`Only ${o} of these ${o===1?"is":"are"} open right now. Add a couple more and you're good to go.`:"Add at least 2 and the wheel only spins these.",()=>{if(wantList().filter(v=>openOK(v,now())).length>=2)q.sel="__want";save();renderQuick()})};
-  if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();renderQuick()};
+  // Skip bars I've been to: on step 2 the map stays put and just recounts
+  const beenChanged=()=>{const n=VENUES.filter(v=>inCityNow(v)&&!isNew(v.id)).length;if($("qBeenN"))$("qBeenN").textContent=beenTxt(n);if(step===1&&qZB)qZB.paint(true)};
+  if($("qNew"))$("qNew").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(step===1&&qZB){$("qNew").setAttribute("aria-checked",String(q.newOnly));qZB.paint(true)}else renderQuick()};
+  if($("qBeenX"))$("qBeenX").onclick=()=>{q.beenOpen=!q.beenOpen;save();const P=$("qBeenP"),x=$("qBeenX");P.hidden=!q.beenOpen;x.setAttribute("aria-expanded",String(q.beenOpen));
+    x.innerHTML=`${q.beenOpen?"Hide":"Edit"} your Been list <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${q.beenOpen?"M6 15l6-6 6 6":"M6 9l6 6 6-6"}"/></svg>`;
+    if(q.beenOpen){beenInline(P,beenChanged);setTimeout(()=>x.scrollIntoView({block:"start",behavior:"smooth"}),60)}else if(step===1)fitMap(b)};
+  if(q.beenOpen&&$("qBeenP"))beenInline($("qBeenP"),beenChanged);
 }
+let qZB=null;
+const beenTxt=n=>n?`${plural(n,"bar")} on your Been list`:"Your Been list is empty";
+// The Been list, right where you set up: yours ticked, tap to take one off, search to add more.
+// Bars from past games stay on (they're your history), like on the Rooftops tab.
+function beenInline(box,onChange){
+  const c=collectedMap(),has=id=>!!(S.been[id]||c[id]);
+  box.innerHTML=`<div class="lsearch">${I.search}<div id="bpQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="Search to add a bar"></div><button class="lsclr" type="button" id="bpClr" hidden aria-label="Clear">${I.x}</button></div><div class="bpitems" id="bpItems"></div>`;
+  const q=sfield($("bpQ"));
+  const paint=()=>{const s_=fold(q.value.trim());
+    const L=VENUES.filter(v=>inCityNow(v)&&(s_?fold(v.name).includes(s_)||fold(v.area).startsWith(s_):has(v.id))).sort((a,b)=>(has(a.id)?0:1)-(has(b.id)?0:1)||a.name.localeCompare(b.name)).slice(0,s_?8:999);
+    $("bpClr").hidden=!q.value;
+    $("bpItems").innerHTML=L.length?L.map(v=>{const on=has(v.id),fixed=!!c[v.id]&&!S.been[v.id];
+      return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}${fixed?" · Visited in a game":""}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
+      :`<div class="lsempty">${s_?`No rooftops match "${esc(q.value.trim())}".`:"Nothing here yet. Search to add bars you've been to."}</div>`;
+    $("bpItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};
+      b.onclick=()=>{const id=b.dataset.t;if(S.been[id])delete S.been[id];else{S.been[id]=1;buzz(10)}save();paint();onChange()}})};
+  q.oninput=paint;$("bpClr").onclick=()=>{q.value="";paint();q.blur()};paint()}
 async function startCruise(noLoc){
   ac();const q=S.quick;noLoc=noLoc===true;
   if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState(true))==="denied"){noLocSheet(startCruise);return}
@@ -3600,7 +3640,7 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){backArm();$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
@@ -3633,7 +3673,7 @@ async function apToggle(ap,k,getList,getGeo,force){
   if(apOpen!==k)return;
   const t=now(),L=L0.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||a.name.localeCompare(b.name)),id="apm"+(++apN);
   const st=v=>{const o=openState(v,t);return o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")};
-  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap My Hit list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
+  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap Pick from my Hit list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
     <div class="aplist" hidden>${L.map(v=>`<button class="aprow2${openOK(v,t)?"":" off"}" type="button" data-v="${v.id}"><span class="dot${openOK(v,t)?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${st(v)}</small></span><span class="chev">›</span></button>`).join("")}</div>`;
   body.hidden=false;
   const lb=body.querySelector(".apl"),ll=body.querySelector(".aplist");
@@ -4705,7 +4745,7 @@ function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
-  const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. In R&amp;R, pick <b>My Hit list</b> and the wheel only spins these."},
+  const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
     been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
     nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
     fav:{t:"Favourites",d:"Bars you love. Tap the heart on any bar to add it here."}}[k];
@@ -4936,7 +4976,27 @@ function docPage(file,title){if($("docPage"))return;const pg=document.createElem
   $("dpBack").onclick=()=>{try{if(history.state&&history.state.docPage)history.back();else closeDoc()}catch(e){closeDoc()}}}
 function closeDoc(){const pg=$("docPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
 function closeSettings(now_){const pg=$("setPage");if(!pg)return;pg.classList.remove("on");setTimeout(()=>pg.remove(),now_?0:260)}
-addEventListener("popstate",()=>{if($("docPage"))closeDoc();else if($("setPage"))closeSettings()});
+/* Back: the phone's back gesture or button (and the browser's back) steps back one screen instead of closing the app.
+   Order: a page over the app, then a panel, then the screen's own back button, then home. At home it leaves. */
+function appBack(){
+  if($("docPage")){closeDoc();return true}
+  if($("setPage")){closeSettings();return true}
+  if(document.querySelector(".jpx")||spinning)return true;   // a spin or the jackpot plays out
+  const d=$("sheet");if(d&&d.open){closeSheet();return true}
+  if(document.body.classList.contains("camon")&&CAM.once&&!CAM.rec){CAM.once=false;camSync();renderPlay();return true}
+  if(S.route==="bars"&&bSearching){setSearching(false);return true}
+  if(S.route==="intro"&&(S.intro||0)>0){S.intro--;save();renderIntro();return true}
+  const v=$("v-"+S.route),bk=v&&[...v.querySelectorAll('[aria-label="Back"]')].find(x=>x.offsetParent!==null);
+  if(bk){bk.click();return true}
+  if(!["home","intro","ob"].includes(S.route)){go("home");return true}
+  return false}
+// In a browser there's nothing to catch the back gesture with, so the app keeps one spare history entry while you're away from home
+function backArm(){const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())return;try{if(!(history.state&&history.state.rrBack))history.pushState({rrBack:1},"")}catch(e){}}
+function backNeeded(){return S.route!=="home"||!!($("sheet")&&$("sheet").open)}
+addEventListener("popstate",()=>{if($("docPage")){closeDoc();return}if($("setPage")){closeSettings();return}
+  if(NATIVE)return;if(appBack()&&backNeeded())backArm()});
+if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.addListener)
+  CAPX.Plugins.App.addListener("backButton",()=>{if(!appBack())CAPX.Plugins.App.minimizeApp()});
 // Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
 function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
   sheet(`<h3>Clips on this phone</h3><p class="note">${L.length} clip${L.length===1?"":"s"} · ${sz(L)}. Clearing them here doesn't touch copies in your photos.</p>

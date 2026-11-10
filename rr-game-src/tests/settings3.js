@@ -4,7 +4,7 @@ const {chromium,devices}=require('playwright');const fs=require('fs');
 (async()=>{fs.mkdirSync('out',{recursive:true});const b=await chromium.launch();
 const ctx=await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:860},acceptDownloads:true});const p=await ctx.newPage();const e=[];p.on('pageerror',x=>e.push(x.message));
 await p.goto('file://'+process.argv[2]);await p.evaluate(()=>{S.onboarded=true;S.sound=false;save();go('home')});await p.waitForTimeout(500);
-console.log('gaps',await p.evaluate(()=>{const c=[...document.querySelectorAll('#v-home .card.mode')].map(e=>e.getBoundingClientRect());return [Math.round(c[1].top-c[0].bottom),Math.round(document.querySelector('.tabs').getBoundingClientRect().top-c[1].bottom)]}));
+console.log('gaps',await p.evaluate(()=>{const a=$('newGame').getBoundingClientRect(),c=document.querySelector('#v-home .rrcard').getBoundingClientRect();return [Math.round(c.top-a.bottom),Math.round(document.querySelector('.tabs').getBoundingClientRect().top-c.bottom)]}));   // Play to the R&R card, R&R card to the tabs
 await p.screenshot({path:'out/s3-home.png'});
 // seed a tab
 await p.evaluate(()=>{const M=60000,day=86400000,t0=Date.now()-2*day,st={lat:-33.859,lng:151.207};

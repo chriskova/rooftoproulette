@@ -24,7 +24,7 @@ await p.click('#hDist');await p.waitForTimeout(400);console.log('distance tile:'
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 // Hit list line + R&R default
 await p.evaluate(()=>{S.want={'the-glenmore':1,'untied':1,'smoke-bar':1};S.histTab='crawls';save();go('home')});await p.waitForTimeout(400);
-console.log('home line:',await p.evaluate(()=>!$('homeWant').hidden&&$('homeWant').textContent.trim()));await p.screenshot({path:'out/t2.png'});
+console.log('home line:',await p.evaluate(()=>$('homeOpen').textContent.trim()));   // the Hit list row left home; the open count is there nowawait p.screenshot({path:'out/t2.png'});
 await p.evaluate(()=>{const d=new Date();d.setHours(19,0,0,0);S.test=true;S.ff=d.getTime()-Date.now();S.quick={step:0,from:null};save();go('quick')});await p.waitForTimeout(400);
 console.log('R&R starts on:',await p.evaluate(()=>S.quick&&S.quick.sel));
 console.log(e);await b.close()})();
