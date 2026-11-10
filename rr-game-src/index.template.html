@@ -362,6 +362,15 @@ body.mapq .view{padding-bottom:12px!important}
 .rrme{position:absolute;top:10px;right:10px;z-index:600;width:42px;height:42px;border-radius:50%;background:var(--s1);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer}.rrme svg{width:20px;height:20px}.rrme.on{color:var(--amber)}
 .rrpin{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--amber);border:3px solid #0B0D12;box-shadow:0 0 0 2px var(--amber);z-index:500;pointer-events:none}
 .rzsheet #rrMap{height:max(200px,calc(92dvh - 380px))}.rzsheet .seg button[aria-pressed="true"]{background:var(--amber);color:var(--amber-ink)}
+dialog.sheet.full:has(.move-zone){display:flex;flex-direction:column}
+dialog.sheet:not([open]):has(.move-zone){display:none}
+.sheet:has(.move-zone)>.grab{flex:none}
+.sheet:has(.move-zone)>#sheetBody,.move-zone,.move-map-controls{display:flex;flex-direction:column;flex:1;min-height:0}
+.move-map-controls>.rrmap{flex:1;min-height:0}
+.move-zone #rrMap{position:absolute;inset:0;height:100%}
+.move-zone #mvNote{min-height:3em}
+.move-zone .lsfoot{position:static;flex:none;padding:4px 0 max(8px,env(safe-area-inset-bottom))}
+@media(max-height:650px){.move-zone .lsfoot{display:flex;gap:8px}.move-zone .lsfoot .btn{flex:1;margin:0!important}.move-zone .lshead p{margin-bottom:2px!important}}
 .segdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;vertical-align:middle;margin-left:4px;opacity:.8}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
@@ -2408,12 +2417,18 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   paint(true);
   requestAnimationFrame(async()=>{if(rrMap){rrMap.remove();rrMap=null}const el=$("rrMap");if(!el)return;
     const m=await makeMap("rrMap",{greedy:true});if(!m||!document.contains(el))return;rrMap=m;pinKey="";
-    m.onMove(()=>{if(ours())return;if(Date.now()-cardAt>700)card.hidden=true;if(!z.r)return;const c=m.center();z.lat=c.lat;z.lng=c.lng;rrMap.ring(z,z.r)});
+    const active=()=>rrMap===m&&el.isConnected;
+    const syncCenter=()=>{const c=m.center();z.lat=c.lat;z.lng=c.lng;m.ring(z,z.r)};
+    const interruptFit=()=>{if(active()&&ours()){prog=0;clamped=false;setBase()}};
+    for(const event of ["pointerdown","touchstart","wheel"])el.addEventListener(event,interruptFit,{capture:true,passive:true});
+    m.onMove(()=>{if(!active())return;if(Date.now()-cardAt>700)card.hidden=true;if(z.r&&!ours())syncCenter()});
     m.onIdle(()=>{
-      if(prog){const mine=Date.now()<prog;prog=0;if(mine){setBase();return}}   // our own fit has landed: that's the new scale
+      if(!active())return;
+      if(z.r)syncCenter();
+      if(prog){const mine=ours();prog=0;if(mine){setBase();paint(true);return}}
       if(clamped){clamped=false;fit();return}
       setBase();if(!z.r)return;followCity(z);save();paint(true)});
-    if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(ours()||!z.r)return;if(!base){setBase();return}
+    if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(!active()||ours()||!z.r)return;if(!base){setBase();return}
       const r0=base.r*m.mpp()/base.mpp,r=Math.round(Math.max(lo,Math.min(hi,r0))*20)/20;clamped=r0<lo*.97||r0>hi*1.03;if(r===z.r)return;
       z.r=r;$("rrR").value=Z.toX(r);paint(false)});
     m.onTap(()=>{if(Date.now()-cardAt>500)card.hidden=true});
@@ -3698,9 +3713,9 @@ function openMove(free,keep){
   clearInactiveZoneSetup();
   const g=G(),me=you()||fromPoint(),z=keep||{lat:g.center.lat,lng:g.center.lng,r:g.radius};
   const range=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
-  sheet(`<div class="rzsheet"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
+  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
     <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a game. Drag to move. Pinch or slide to change the radius."}</p></div>
-    <div style="margin-top:4px">${rrZoneHTML(range)}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
+    <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
     <div class="lsfoot"><button class="btn" type="button" id="mvGo">Move here</button><button class="btn dark" type="button" id="mvX" style="margin-top:10px">${free?"Close":"Stay here"}</button></div></div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
