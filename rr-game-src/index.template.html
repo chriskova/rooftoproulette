@@ -174,6 +174,11 @@ a.btn{text-decoration:none}
 .mcheers{stroke-width:3}.mcheers .clk{stroke-width:2.6}
 .ia-cheers .clk{stroke-width:2.2;transform-origin:24px 9px}
 .cur .ia-cheers .clk{animation:iaClk .5s cubic-bezier(.3,1.6,.5,1) .73s both}
+/* 4: a wildcard flips in over a plain card */
+.ia-wild .bk{opacity:.4}
+.ia-wild .fr{transform-box:fill-box;transform-origin:center}
+.cur .ia-wild .fr{animation:iaFlip .7s cubic-bezier(.3,1.3,.5,1) .2s both}
+@keyframes iaFlip{0%{transform:translate(-10px,-6px) rotate(-14deg) scaleX(0)}60%{transform:rotate(4deg) scaleX(1)}100%{transform:none}}
 @keyframes iaClk{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
 .itrack .intro h1,.itrack .intro p{transition:opacity .35s ease .05s}
 .itrack .intro:not(.cur) h1,.itrack .intro:not(.cur) p{opacity:.25}
@@ -1424,7 +1429,7 @@ setTimeout(done,1200)})();</script>
   <section class="view" id="v-intro" hidden>
     <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
     <div id="introBody"></div>
-    <div class="dots" id="introDots"><i></i><i></i><i></i><i></i></div>
+    <div class="dots" id="introDots"></div>
     <button class="btn" id="introNext" type="button">Next</button>
   </section>
 
@@ -2164,11 +2169,15 @@ const CHEERS_ART=()=>`<svg class="ia-cheers" viewBox="0 0 48 48" fill="none" str
  <g class="gl gl-l"><path class="wine" d="M7.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M6 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M12 22v16M8 38h8"/></g>
  <g class="gl gl-r"><path class="wine" d="M31.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M30 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M36 22v16M32 38h8"/></g>
  <g class="clk"><path d="M24 4.5V1.5"/><path d="M20.2 5.6l-2-2.2"/><path d="M27.8 5.6l2-2.2"/></g></svg>`;
+const WILD_ART=()=>`<svg class="ia-wild" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+ <rect class="bk" x="9" y="9" width="20" height="28" rx="3.5" transform="rotate(-14 19 23)"/>
+ <g class="fr"><rect x="19" y="10" width="20" height="28" rx="3.5" stroke-dasharray="3.2 3.2"/><path d="M29 17.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z" fill="currentColor" fill-opacity=".35"/></g></svg>`;
 const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar in your zone.<br>No planning, no debating."},
  {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>It only counts once you've had a drink."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
- {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R.<br>Same game, no clock."}
+ {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some bars come with a wildcard.<br>One spin a game hits the jackpot."},
+ {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R.<br>Just the spin, no clock."}
 ];
 function renderIntro(){
   const i=S.intro||0,b=$("introBody");
@@ -2179,6 +2188,7 @@ function renderIntro(){
   }
   t.style.transform=`translateX(${-i*100}%)`;
   [...t.children].forEach((el,k)=>el.classList.toggle("cur",k===i));
+  if($("introDots").children.length!==SLIDES.length)$("introDots").innerHTML="<i></i>".repeat(SLIDES.length);   // one dot per slide
   [...$("introDots").children].forEach((d,k)=>{const on=k===i;if(on&&!d.classList.contains("on")){d.classList.add("on")}else if(!on)d.classList.remove("on")});
   $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
   $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
@@ -3678,7 +3688,7 @@ const HOW={rush:()=>[
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
   ["Spin","You get a random rooftop near you, or one from your Hit list."],
   ["Not feeling it?","Spin again. Re-spins are always free."],
-  ["Stay as long as you like","No clock, no pressure. You still get a crawl card at the end with all your stats."],
+  ["Just the spin","No clock, no wildcards, no jackpot. Stay as long as you like at each bar. You still get a crawl card at the end with all your stats."],
   ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
 // How to play from settings: both modes in one sheet, three-quarters high
 function howToPlay(k){k=k||"rush";
