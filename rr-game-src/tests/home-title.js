@@ -7,10 +7,11 @@ for(const [w,h,tag,extra] of [[412,860,'tall',0],[375,667,'short',0],[375,667,'s
  await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(300);
  await p.evaluate(x=>{S.onboarded=true;S.sound=false;S.test=false;S.city='Sydney';if(x){S.want={};VENUES.filter(inCityNow).slice(0,3).forEach(v=>S.want[v.id]=1)}save();go('home')},extra);await p.waitForTimeout(700);
  await p.screenshot({path:'out/home-'+tag+'.png'});
- console.log(tag,await p.evaluate(()=>{const v=$("v-home");return {fits:v.scrollHeight<=v.clientHeight+1,hs:v.style.getPropertyValue('--hs'),open:$("homeOpen").textContent,play:$("newGame").textContent,want:!$("homeWant").hidden}}));
+ console.log(tag,await p.evaluate(()=>{const v=$("v-home");return {fits:v.scrollHeight<=v.clientHeight+1,hs:v.style.getPropertyValue('--hs'),open:$("homeOpen").textContent,play:$("newGame").textContent}}));
  if(tag==='tall'){
   await p.click('#homeHow');await p.waitForTimeout(400);console.log(' how sheet:',await p.$eval('#sheetBody h3',x=>x.textContent));await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
   await p.evaluate(()=>{S.seenHow={rush:1,rr:1};save()});
+  await p.click('#homeHowRR');await p.waitForTimeout(400);console.log(' ? opens:',await p.$eval('#sheetBody h3',x=>x.textContent));await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
   await p.click('#quickGo');await p.waitForTimeout(500);console.log(' R&R goes to:',await p.evaluate(()=>S.route));
   await p.evaluate(()=>go('home'));await p.waitForTimeout(300);
   await p.click('#newGame');await p.waitForTimeout(500);console.log(' Play goes to:',await p.evaluate(()=>S.route),await p.$eval('#v-wiz .eyebrow',x=>x.textContent).catch(()=>'-'));
