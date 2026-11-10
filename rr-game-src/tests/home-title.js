@@ -11,6 +11,7 @@ for(const [w,h,tag,extra] of [[412,860,'tall',0],[375,667,'short',0],[375,667,'s
  if(tag==='tall'){
   await p.click('#homeHow');await p.waitForTimeout(400);console.log(' how sheet:',await p.$eval('#sheetBody h3',x=>x.textContent));await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
   await p.evaluate(()=>{S.seenHow={rush:1,rr:1};save()});
+  await p.click('#homeHowRR');await p.waitForTimeout(400);console.log(' ? opens:',await p.$eval('#sheetBody h3',x=>x.textContent));await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
   await p.click('#quickGo');await p.waitForTimeout(500);console.log(' R&R goes to:',await p.evaluate(()=>S.route));
   await p.evaluate(()=>go('home'));await p.waitForTimeout(300);
   await p.click('#newGame');await p.waitForTimeout(500);console.log(' Play goes to:',await p.evaluate(()=>S.route),await p.$eval('#v-wiz .eyebrow',x=>x.textContent).catch(()=>'-'));
