@@ -1134,6 +1134,7 @@ h1.q i,h2.q i{font-style:normal;color:var(--amber)}
 .sheetbar:not(.photo) .gmgo{background:rgba(36,24,3,.12);color:var(--amber-ink)}
 .sheetbar .gmgo svg{width:15px;height:15px}
 #v-quick .opts{display:flex;flex-direction:column;gap:10px}
+#barsSeg .cn{margin-left:6px;font-weight:600;opacity:.55;font-variant-numeric:tabular-nums}
 .grouphd{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);padding:16px 0 4px}
 .grouphd:first-child{padding-top:10px}
 .rgchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
@@ -4546,8 +4547,8 @@ function renderBars(){
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
   $("barsSeg").hidden=false;
   $("barsSeg").innerHTML=(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
-    +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(cityIn(S.city))}</button>`
-    +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}</button>`).join("");
+    +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(cityIn(S.city))}<span class="cn">${VENUES.filter(inCityNow).length}</span></button>`
+    +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}<span class="cn">${VENUES.filter(v=>inCityNow(v)&&areaOf(v).reg===r.name).length}</span></button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
   const os=v=>openState(v,t);
   let intro="",rows=[],pins=[],extra="",fitTo=null;
