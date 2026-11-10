@@ -225,7 +225,7 @@ a.btn{text-decoration:none}
 .clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
-@media (max-height:680px){.rrnote{display:none}}
+.rrnote{display:none}
 .msub{display:none}
 
 .view h1.q.qmap{font-size:26px}
@@ -977,6 +977,9 @@ body:not(.camon) #appbar .logo{display:none}
 .qfrom .chip svg{width:15px;height:15px}
 .qfrom .chip[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:var(--amber-ink)}
 #v-quick{display:flex;flex-direction:column;gap:16px}
+#v-quick:has(.rrmap),#wBody:has(.rrmap){gap:12px!important}
+#v-quick:has(.rrmap) .toggle,#wBody:has(.rrmap) .toggle{padding:11px 14px}
+#v-quick:has(.rrmap) .beenx{margin-top:6px}
 #v-quick[hidden]{display:none}
 .qgame{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .qgame .btn{width:auto;padding:0 16px;margin-top:6px}
@@ -1984,7 +1987,7 @@ const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></d
 const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num sm${x?" x":""}">${n}</div>`,iconSize:[16,16]});
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
-function fitZone(m,c,r,extra,pad){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.12);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
+function fitZone(m,c,r,extra,pad){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.04);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
 
 /* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
 const GKEY="AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",GMAPID="114ffde49621751bad7df10a";
@@ -2005,7 +2008,7 @@ function gload(){
 }
 const LL=p=>({lat:p.lat,lng:p.lng});
 function gWrap(el,o){
-  const map=new google.maps.Map(el,{mapId:GMAPID,colorScheme:"DARK",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
+  const map=new google.maps.Map(el,{mapId:GMAPID,isFractionalZoomEnabled:true,colorScheme:"DARK",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
   let ov=[],meM=null,ringC=null,tapAt=0;   // a pin tap also reaches the map as a click: don't let that close what the pin opened
   const node=h=>{const d=document.createElement("div");d.style.transform="translateY(50%)";d.style.display="grid";d.style.placeItems="center";d.innerHTML=h;return d};
   const mk=(pos,h,z,onClick,title)=>{const n=node(h);
@@ -2022,7 +2025,7 @@ function gWrap(el,o){
     route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
       ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:.18,strokeWeight:8,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:3,clickable:false}))},
     line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#0B0D12",strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
-    fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.08}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
+    fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.03}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
       if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
     setView(p,z){map.panTo(LL(p));map.setZoom(z)},
@@ -2132,7 +2135,9 @@ function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;c
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
 let prevRoute=null;
-function go(route){prevRoute=S.route;if(route!=="home")backArm();{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
+function go(route){prevRoute=S.route;if(route!=="home")backArm();
+  // leaving a setup screen: clear it, so its map can't be mistaken for the next one's (both use the same names)
+  if(route!==S.route){if(S.route==="wiz"&&$("wBody")){$("wBody").innerHTML="";if(rrMap){rrMap.remove();rrMap=null}}if(S.route==="quick"&&$("v-quick")){$("v-quick").innerHTML="";if(rrMap){rrMap.remove();rrMap=null}}}{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
   syncH();
   if(typeof pageView==="function")setTimeout(()=>pageView(S.route),0);
@@ -2324,7 +2329,7 @@ const RRMAX=1000,RRALL=970,rrToR=x=>x>=RRALL?0:Math.round(0.5*Math.pow(30,x/RRAL
 const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0$/,""):Math.round(r))+" km";
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
-let rrMap=null;
+var rrMap=null;   // var: go() can reach it during startup
 function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;el.style.height="200px";
   const vv=window.visualViewport,vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0;
   let limit=vr.top+v.clientHeight-pb;if(vv&&document.body.classList.contains("mapq"))limit=Math.min(limit,vv.offsetTop+vv.height-12);
@@ -2419,7 +2424,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   return {paint};
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
-function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";
+function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";if(S.route!=="wiz"&&$("wBody"))$("wBody").innerHTML="";
   const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode==="map"||mode==="list"?mode:cur;
   const z=keep||(cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2});
   const nowTxt=cz.type==="list"?"your Hit list":zoneTxt(g);
