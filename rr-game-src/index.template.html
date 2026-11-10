@@ -2424,7 +2424,11 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   return {paint};
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
-function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;if(S.route!=="quick")$("v-quick").innerHTML="";if(S.route!=="wiz"&&$("wBody"))$("wBody").innerHTML="";
+function clearInactiveZoneSetup(){
+  if(S.route!=="quick")$("v-quick").innerHTML="";
+  if(S.route!=="wiz"&&$("wBody"))$("wBody").innerHTML="";
+}
+function rrZoneSheet(mode,keep){const g=G();if(!g||!CR(g))return;clearInactiveZoneSetup();
   const me=you()||fromPoint(),cz=g.cz,cur=cz.type==="list"?"list":"map",m=mode==="map"||mode==="list"?mode:cur;
   const z=keep||(cz.type==="spot"?{lat:cz.lat,lng:cz.lng,r:cz.r||2}:cz.type==="all"?{lat:me.lat,lng:me.lng,r:0}:{lat:me.lat,lng:me.lng,r:cz.r||2});
   const nowTxt=cz.type==="list"?"your Hit list":zoneTxt(g);
@@ -3691,19 +3695,21 @@ async function apToggle(ap,k,getList,getGeo,force){
 }
 let mvMaps=[];
 function openMove(free,keep){
+  clearInactiveZoneSetup();
   const g=G(),me=you()||fromPoint(),z=keep||{lat:g.center.lat,lng:g.center.lng,r:g.radius};
+  const range=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
   sheet(`<div class="rzsheet"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
-    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a game. Drag the circle somewhere new. Same size."}</p></div>
-    <div style="margin-top:4px">${rrZoneHTML({fixed:true,lo:g.radius,hi:g.radius,ticks:[]})}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
+    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a game. Drag to move. Pinch or slide to change the radius."}</p></div>
+    <div style="margin-top:4px">${rrZoneHTML(range)}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
     <div class="lsfoot"><button class="btn" type="button" id="mvGo">Move here</button><button class="btn dark" type="button" id="mvX" style="margin-top:10px">${free?"Close":"Stay here"}</button></div></div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    const pool=(zz,t)=>{const all=playable(inCircle(zz,g.radius),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
-    rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{const m=me?dist(me,zz):0,far=m>1500,same=dist(zz,g.center)<300;
-      $("mvNote").textContent=same?"That's where you are now. Drag the map to move.":far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
+    const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
+    rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{const m=me?dist(me,zz):0,far=m>1500,same=dist(zz,g.center)<300&&Math.abs(zz.r-g.radius)<.025;
+      $("mvNote").textContent=same?"That's where you are now. Drag the map or change the radius.":far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
       const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Move here";
-      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
+      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
         if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
-        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{fixed:true,lo:g.radius,hi:g.radius+0.0001,ticks:[],pool,reopen:k=>openMove(free,k)});
+        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{...range,pool,reopen:k=>openMove(free,k)});
     $("mvX").onclick=closeSheet;
   });
 }
