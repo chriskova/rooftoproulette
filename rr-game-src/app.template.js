@@ -653,7 +653,7 @@ const WILD_ART=()=>`<svg class="ia-wild" viewBox="0 0 48 48" fill="none" stroke=
  <g class="fr"><rect x="19" y="10" width="20" height="28" rx="3.5" stroke-dasharray="3.2 3.2"/><path d="M29 17.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z" fill="currentColor" fill-opacity=".35"/></g></svg>`;
 const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar in your zone.<br>No planning, no debating."},
- {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>It only counts once you've had a drink."},
+ {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>One drink at each bar."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some bars come with a wildcard.<br>One spin a game hits the jackpot."},
  {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R.<br>Just the spin, no clock."}
@@ -1475,7 +1475,7 @@ function reelNote(){return "Flick it down. Harder flick, longer spin."}
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
 function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Wrap it up, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the crawl</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
 function askDrink(a0,then){const v=byId(a0.id);
-  sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><p class="note">It only counts if you had one.</p><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
+  sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
     $("dS").onclick=closeSheet;
     $("dY").onclick=()=>{closeSheet();a0._ans=true;save();then()};
     $("dN").onclick=()=>{closeSheet();a0._ans=false;save();then()};
@@ -2253,7 +2253,7 @@ function bindDemo(afterHTML,landed,boxEl){
 }
 const HOW={rush:()=>[
     ["Spin","You get a random rooftop in your zone. The clock starts on your first spin."],
-    ["Get to the bar","Walk, run or Uber. It only counts once you've had a drink."],
+    ["Get to the bar","Walk, run or Uber. One drink at each bar."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Stuck somewhere quiet?","Move your zone once a game. If it's far, the clock waits."],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, you'll hit the jackpot."],
@@ -2363,8 +2363,9 @@ function celebrate(id){
 function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip");
   if(!cb||!cb.classList.contains("ontop")||!g_||!g_.visits.length||!S.tips.night||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
   if(!tip){tip=document.createElement("button");tip.type="button";tip.className="camtip";
-    tip.innerHTML=`<b>Film the spin</b><span>Tap the camera, then spin. It records the spin and everyone's reaction.</span>`;document.body.appendChild(tip);
-    tip.onclick=()=>{S.tips.cam=1;save();tip.remove()}}
+    tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Film the spin</b><span>Tap the camera, then spin. It records the spin and everyone's reaction.</span>`;tip.setAttribute("aria-label","Film the spin. Close tip");document.body.appendChild(tip);
+    const off=()=>{S.tips.cam=1;save();tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target))off()};
+    tip.onclick=off;document.addEventListener("pointerdown",away,true)}   // gone on the X, the tip itself, or any tap elsewhere (spinning the reel included)
   if(!cb._tip){cb._tip=1;cb.addEventListener("pointerdown",()=>{S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}
   ["spinBtn","skipBtn","hereBtn"].forEach(id=>{const x=$(id);if(x&&!x._tip){x._tip=1;x.addEventListener("pointerdown",()=>{if(S.tips.cam)return;S.tips.cam=1;save();const t=document.querySelector(".camtip");if(t)t.remove()})}});
   requestAnimationFrame(()=>{const r=cb.getBoundingClientRect();if(!r.width){tip.hidden=true;return}tip.hidden=false;const below=r.top<innerHeight/2;
@@ -2388,7 +2389,7 @@ function renderPlay(){
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You weren't there long. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
+  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You weren't there long. Did you have a drink?</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
@@ -2668,7 +2669,7 @@ function renderEnd(){
     return}
   box.innerHTML=`
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
-    ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Count it if you had a drink.</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
+    ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Did you have a drink?</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
