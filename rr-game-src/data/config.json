@@ -1,5 +1,6 @@
 {
-  "_note": "Public analytics settings baked into the app at build time. The PostHog project API key is meant to be public (it can only send events, not read them). Leave it empty to turn analytics off.",
+  "_note": "Public browser settings written to browser-config.js at build time. The Maps key is a browser key restricted to the site's address and APIs in Google Cloud; the PostHog project key can only send events. Leave posthogKey empty to turn analytics off.",
   "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
-  "posthogHost": "https://eu.i.posthog.com"
+  "posthogHost": "https://eu.i.posthog.com",
+  "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU"
 }

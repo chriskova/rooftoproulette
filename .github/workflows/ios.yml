@@ -10,7 +10,7 @@ name: iOS TestFlight build
 on:
   push:
     branches: [main]
-    paths: ["index.html", "app/**", ".github/workflows/ios.yml"]
+    paths: ["index.html", "rooftop-app.js", "browser-config.js", "app/**", ".github/workflows/ios.yml"]
   workflow_dispatch:
 concurrency:
   group: ios-testflight
