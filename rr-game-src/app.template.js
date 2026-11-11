@@ -1026,13 +1026,13 @@ function quickSpin(vel){
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
 // your record for a game length, once you've played it
 const pbHTML=len=>{const b=H.filter(r=>r.mode!=="cruise"&&r.len===len).reduce((m,r)=>Math.max(m,new Set((r.visits||[]).filter(v=>v.counted===true).map(v=>v.id)).size),-1);return b<0?"":`<span class="pbtag">PB: ${b}</span>`};
-function startWizard(){S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
+function startWizard(){const at=S.test&&S.fake?S.fake:here;if(at&&cityAt(at))zoneCity(at);S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
 const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
-  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}{const o_=$("wBg");if(o_)o_.remove()}
   $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
@@ -1041,7 +1041,7 @@ function renderWiz(){
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
-    body.innerHTML=`<div><div class="cityrow" style="margin-bottom:6px"><div class="eyebrow">New game</div>${cityBtn()}</div><h1 class="q">How long's the crawl?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
+    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New game</div><h1 class="q">How long's the crawl?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span></b><small>In, out, spin again.<br>Best for 2–3 people.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>Another round, or onto the next.<br>Best for 4+ people.</small></span></button>
@@ -1055,7 +1055,7 @@ function renderWiz(){
     R1.row=true;R1.searchHint="Search where you’re going";
     const me=w.me||null;
     if(!me&&!w._loc){w._loc=1;permState().then(st=>{if(st==="granted"&&S.route==="wiz"&&S.wiz===w&&w.step===1)useMe()})}
-    if(!w.z){const c0=me&&GAME_AREAS().some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
+    if(!w.z){const c0=me&&GAME_AREAS(cityAt(me)||S.city).some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
     w.z.r=Math.round(w.z.r*10)/10;
     const excl=w.excl||(w.excl=[]),hasHistory=Object.keys(collectedMap()).length;
@@ -1092,21 +1092,20 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===2){
-    // Ready to spin: what you picked, big, so the moment before the clock starts feels like one. Tap a stat to change it.
+    // Ready to spin: the picks listed down the middle over a faded, black-and-white aerial photo of where you're starting. Tap a line to change it.
     const first=!(S.seenHow||{}).rush,excl=w.excl||(w.excl=[]),area=w.start.type==="me"?nearestSuburb(w.z):w.start.name;
     const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now())).length;
-    const stat=(k,ic,val,lbl)=>`<button class="rstat" type="button" data-s="${k}"><span class="ric">${ic}</span><span class="t"><b>${val}</b><small>${lbl}</small></span></button>`;
-    body.innerHTML=`<div class="rstats">
-        ${stat(0,I.clock,w.len===60?"1 hr":"2 hrs","On the clock")}
-        ${stat(1,I.target,kmTxt(w.radius),"Spin radius")}
-        ${stat(1,I.pin,esc(area),w.start.type==="me"?"Starting near you":"Starting area")}
-        <button class="rstat" type="button" id="wSee"><span class="ric">${I.dice}</span><span class="t"><b id="wInPlay"></b><small id="wInPlayS"></small></span></button>
-      </div>
-      <div class="rgo"><h1 class="q">Ready to spin?</h1>${first?`<p class="note zrule">Spin, head there, and your next spin unlocks once you've arrived.</p>`:""}
+    const line=(k,ic,val)=>`<button class="rline" type="button" ${k==null?'id="wSee"':`data-s="${k}"`}><span class="ric">${ic}</span><span class="t"><b ${k==null?'id="wInPlay"':""}>${val}</b>${k==null?'<small id="wInPlayS"></small>':""}</span></button>`;
+    body.innerHTML=`<h1 class="q">Ready to spin?</h1>
+      <div class="rlist">${line(0,I.clock,w.len===60?"1 hour":"2 hours")}${line(1,I.target,"Within "+kmTxt(w.radius))}${line(1,I.pin,esc(area))}${line(null,I.dice,"")}</div>
+      <div class="rgo">${first?`<p class="note zrule">Spin, head there, and your next spin unlocks once you've arrived.</p>`:""}
       <div class="zlinks">${first?`<button class="txtbtn" type="button" id="wPractice">Practice spin</button>`:""}<button class="txtbtn" type="button" id="wHow">How it works</button></div></div>`;
-    const count=()=>{if(!$("wInPlay"))return;$("wInPlay").textContent=`${inPlay()} rooftops`;$("wInPlayS").textContent=excl.length?`In play · ${excl.length} vetoed · Tap for spoilers`:w.newOnly?"In play, all new to you · Tap for spoilers":"In play · Tap for spoilers"};
+    const bg=document.createElement("div");bg.className="rbg";bg.id="wBg";const im=new Image();im.alt="";im.onerror=()=>bg.remove();im.onload=()=>bg.classList.add("on");
+    im.src=`https://maps.googleapis.com/maps/api/staticmap?center=${w.z.lat},${w.z.lng}&zoom=${w.radius<=.6?16:w.radius<=1.2?15:14}&size=400x640&scale=2&maptype=satellite&key=${GKEY}`;
+    bg.appendChild(im);$("v-wiz").prepend(bg);
+    const count=()=>{if(!$("wInPlay"))return;$("wInPlay").textContent=`${inPlay()} rooftops in play`;$("wInPlayS").textContent=excl.length?`${excl.length} vetoed · Tap for spoilers`:"Tap for spoilers"};
     count();wizRepaint=count;
-    body.querySelectorAll(".rstat[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
+    body.querySelectorAll(".rline[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     $("wSee").onclick=wizSpoiler;
     $("wHow").onclick=()=>howToPlay("rush");
     if(first)$("wPractice").onclick=()=>demoSheet(closeSheet,null,"Done");
@@ -1146,7 +1145,7 @@ async function useMe(){
   const w=S.wiz;
   try{
     const p=await getOnce();const n=openIn(p,1.5).length,tot=playable(inCircle(p,1.5),false).length;
-    w.me={lat:p.lat,lng:p.lng};if(tot>=3)w.z={lat:p.lat,lng:p.lng,r:w.z?w.z.r:null};w.meNote=null;
+    w.me={lat:p.lat,lng:p.lng};if(tot>=3){const r_=w.z?w.z.r:null;zoneCity(p);w.z={lat:p.lat,lng:p.lng,r:r_}}w.meNote=null;
   }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }

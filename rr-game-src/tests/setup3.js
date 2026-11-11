@@ -8,7 +8,7 @@ const at=h=>p.evaluate(h=>{const s=sydAt(now());let d=h*60-s.min;if(d<0)d+=1440;
 await at(19);
 await p.evaluate(()=>{S.onboarded=true;S.seenHow={};save();go('home')});await p.waitForTimeout(300);
 await p.click('#newGame');await p.waitForTimeout(500);await p.screenshot({path:'out/s1.png'});
-console.log('s1 heading:',await p.textContent('#wBody h1'));
+console.log('s1 heading:',await p.textContent('#wBody h1'),'| city button:',!!(await p.$('#wBody [data-city]')));
 await p.click('#wNext');await p.waitForTimeout(2500);await p.screenshot({path:'out/s2.png'});
 console.log('s2:',await p.textContent('#rrLbl'),'|',await p.textContent('#rrN'),'|',await p.textContent('#rrNs'),'| demo link shown:',!(await p.$eval('#zoneDemo',x=>x.hidden)));
 const r=[];for(const v of [0,1,2,3,4,5]){await p.$eval('#rrR',(el,v)=>{el.value=v;el.dispatchEvent(new Event('input'))},v);r.push(await p.textContent('#rrLbl'))}
@@ -20,7 +20,7 @@ console.log('s2 fits:',JSON.stringify(await fits()));
 await p.evaluate(()=>{const l=playable(inCircle(S.wiz.z,S.wiz.z.r),false).slice(0,2);H.push({id:'h1',mode:'rush',len:60,startedAt:now()-864e5,visits:l.map(v=>({id:v.id,counted:true,arrivedAt:now()-864e5}))});saveH&&saveH();renderWiz()});await p.waitForTimeout(2500);
 console.log('toggle:',await p.textContent('#newTogS'),'| fits',JSON.stringify(await fits()));await p.screenshot({path:'out/s2b.png'});
 await p.click('#wNext');await p.waitForTimeout(1500);await p.screenshot({path:'out/s3.png'});
-console.log('s3:',await p.textContent('#wBody h1'),'|',await p.$$eval('.rstat',x=>x.map(y=>y.innerText.replace(/\n/g,' ')).join(' | ')),'| rule:',!!(await p.$('.zrule')),'| practice:',!!(await p.$('#wPractice')),'| cta',await p.textContent('#cta'));
+console.log('s3:',await p.textContent('#wBody h1'),'|',await p.$$eval('.rline',x=>x.map(y=>y.innerText.replace(/\n/g,' ')).join(' | ')),'| rule:',!!(await p.$('.zrule')),'| practice:',!!(await p.$('#wPractice')),'| cta',await p.textContent('#cta'));
 console.log('s3 scroll:',await p.evaluate(()=>{const v=$('v-wiz');return v.scrollHeight>v.clientHeight+2}));
 await p.click('#wPractice');await p.waitForTimeout(800);console.log('practice sheet:',await p.textContent('#sheetBody h3'),'|',await p.textContent('#demoBack'));await p.click('#demoBack');await p.waitForTimeout(500);
 // returning player: no rules
@@ -29,7 +29,7 @@ console.log('s3 returning rule:',!!(await p.$('.zrule')),'| practice:',!!(await 
 await p.click('#wSee');await p.waitForTimeout(600);console.log('spoiler:',await p.textContent('#sheetBody h3'));await p.screenshot({path:'out/s3d.png'});await p.click('#spShow');await p.waitForTimeout(600);await p.click('#zList [data-x]');await p.waitForTimeout(300);await p.screenshot({path:'out/s3c.png'});await p.click('#zDone');await p.waitForTimeout(400);
 console.log('after veto:',await p.textContent('#wSee'));
 // back to the map, morning: nothing open, demo is the main button
-await p.click('.rstat[data-s="1"]');await at(9);await p.evaluate(()=>renderWiz());await p.waitForTimeout(2500);await p.screenshot({path:'out/s2c.png'});
+await p.click('.rline[data-s="1"]');await at(9);await p.evaluate(()=>renderWiz());await p.waitForTimeout(2500);await p.screenshot({path:'out/s2c.png'});
 console.log('closed row:',await p.textContent('#rrN'),'/',await p.textContent('#rrNs'),'| toggle hidden',await p.$eval('#newTog',x=>x.hidden),'| fits',JSON.stringify(await fits()));
 console.log('closed:',await p.textContent('#zWarnT'),'|',await p.textContent('#zWarnS'),'| cta',await p.textContent('#cta'),'| suggest hidden',await p.$eval('#zoneSuggest',x=>x.hidden));
 await p.click('.wtop #wBack');await p.waitForTimeout(400);await p.click('[data-l="120"]');await p.click('#wNext');await p.waitForTimeout(1500);
