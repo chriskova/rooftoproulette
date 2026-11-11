@@ -1461,7 +1461,7 @@ function doSpin(force,vel){
   if(!g.started){track("crawl_start",{demo:!!g.demo,mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
-  if(!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
+  if(!g.demo&&!CR(g)&&!g.jp){if(g.jpLeg==null)g.jpLeg=1+Math.floor(Math.random()*(g.len===60?2:4));
     if(g.visits.length>=g.jpLeg&&spinPool().pool.length){jackpotSpin(vel);return}}
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();if(CR(g))noneLeft();else openMove(true);return false}
@@ -2365,7 +2365,9 @@ function renderPlay(){
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
-  const wild=(id)=>g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
+  const wild=(id)=>g.wild&&g.wild.id===id&&g.wild.locked?
+    '<div class="wild"><span aria-hidden="true">🔒</span><span><b>Locked wildcard</b>Play a real crawl to discover this one.</span></div>':
+    g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
   if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
     const cp=cardPhoto(v);
@@ -2484,6 +2486,7 @@ const WILDS=[
 // Wildcards: a set number per game (1 hour: 2, 2 hours: 3 or 4), on random bars, never the first and never two in a row.
 // Cards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
 function planWilds(g){
+  if(g.demo)return [1,3];
   const n=g.len===60?2:(Math.random()<.5?3:4),max=g.len===60?4:8;
   for(let tries=0;tries<200;tries++){const legs=shuffle([...Array(max)].map((_,i)=>i+1)).slice(0,n).sort((a,b)=>a-b);
     if(legs.every((x,i)=>!i||x-legs[i-1]>1))return legs}
@@ -2491,7 +2494,7 @@ function planWilds(g){
 }
 function rollWild(g,id){
   const leg=g.visits.length;   // how many bars you've been to before this one
-  if(g.dealt&&g.dealt.leg===leg){g.wild=g.dealt.text?{id,text:g.dealt.text,leg}:null;if(g.wild)g.lastWild=g.wild.text;return}   // Dealer's choice
+  if(!g.demo&&g.dealt&&g.dealt.leg===leg){g.wild=g.dealt.text?{id,text:g.dealt.text,leg}:null;if(g.wild)g.lastWild=g.wild.text;return}   // Dealer's choice
   if(!g.wplan)g.wplan=planWilds(g);
   // past the planned stretch (a big night), wildcards keep coming: never two in a row, and the longer it's been, the likelier
   const max=g.len===60?4:8;g.wlate=g.wlate||{};
@@ -2499,9 +2502,14 @@ function rollWild(g,id){
     g.wlate[leg]=dry>1&&Math.random()<Math.min(1,.3+.3*(dry-2));if(g.wlate[leg])g.wplan.push(leg)}
   if(!g.wplan.includes(leg)){g.wild=null;return}
   if(g.wild&&g.wild.leg===leg){g.wild.id=id;return}   // re-spun: the same wildcard moves to the new bar
+  if(g.demo){
+    if(g.demoWildLeg==null)g.demoWildLeg=g.lastWild?-1:leg;
+    if(leg!==g.demoWildLeg){g.wild={id,leg,locked:true,shown:true};return}
+    if(g.lastWild){g.wild={id,leg,text:g.lastWild};return}
+  }
   if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(WILDS.map((_,i)=>i));g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
   const i=g.wdeck.shift(),w=WILDS[i];
-  S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
+  if(!g.demo)S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
   g.wild={id,text:w,leg};g.lastWild=w;if(w===PICK3)g.pick3=true;
 }
 function renderClock(){
