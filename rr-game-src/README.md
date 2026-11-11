@@ -4,7 +4,7 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 
 ## Files
 
-- `index.template.html` is the whole app: markup, CSS and JS. The venue list is injected at `__VENUES__`.
+- `index.template.html` contains the page markup and CSS. Edit `app.template.js` for app behaviour. The build injects venues and version information into `rooftop-app.js`.
 - `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane, Perth and the Gold Coast).
 - `data/manifest.webmanifest` is the PWA manifest.
 - `build.py` writes `../index.html`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts so the page works as a single file.
@@ -22,9 +22,11 @@ Sharing a card or clip also sends a line and a link. The whole crawl (bars, time
 
 The app sends anonymous usage events and crash reports to PostHog: a random install ID, the app version and platform, and what happened (`app_open`, `crawl_start`, `spin`-level events like `jackpot` and `arrive`, `crawl_end` with bar count and minutes, `share_open`/`share_sent`, `camera_open`, `clip_recorded`, `report_change`, `backup`, and `$exception` for errors). It never sends names, coordinates, photos or clips, and sends nothing in test mode. It's off until a project API key is set in `data/config.json` (`posthogKey`, plus `posthogHost`: `https://us.i.posthog.com` or `https://eu.i.posthog.com`). Set up: EU Cloud, project 331226.
 
+The app reads its browser configuration from `browser-config.js`, loaded before `rooftop-app.js`. See `browser-config.example.js` for its shape. The web build leaves this file untouched. The native sync step requires it.
+
 ## Build and release
 
-1. Edit `index.template.html` (or `data/venues.json`).
+1. Edit `app.template.js`, `index.template.html` (or `data/venues.json`).
 2. Bump the cache version in `build.py` (`const CACHE="rr-app-vNN-N"`) so phones pick up the new version.
 3. Run `python3 rr-game-src/build.py` from the repo root.
 4. Commit and push to `main`. GitHub Pages deploys in about a minute.

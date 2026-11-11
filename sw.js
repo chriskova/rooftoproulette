@@ -1,5 +1,5 @@
-const CACHE="rr-app-v70-4";
-const ASSETS=["./","index.html","manifest.webmanifest",
+const CACHE="rr-app-v70-7";
+const ASSETS=["./","index.html","browser-config.js","rooftop-app.js","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
 "fonts/plus-jakarta-sans-latin-800-normal.woff2","fonts/plus-jakarta-sans-latin-700-normal.woff2","fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2","fonts/caveat-latin-600-normal.woff2"];

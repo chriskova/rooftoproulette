@@ -4,7 +4,7 @@ name: Android test build
 on:
   push:
     branches: [main]
-    paths: ["index.html", "app/**", ".github/workflows/android.yml"]
+    paths: ["index.html", "rooftop-app.js", "browser-config.js", "app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 permissions:
   contents: write
