@@ -2127,22 +2127,14 @@ html.fl .app{visibility:hidden}
 .zbars .see{display:inline-flex;align-items:center;gap:6px;color:var(--amber);font-weight:700;font-size:14.5px;white-space:nowrap}
 .zrule{margin:0}
 .zlinks{display:flex;justify-content:center;gap:18px}
-/* Ready to spin: picks down the middle over a faded black-and-white aerial photo */
-#v-wiz{position:relative}
-#v-wiz>.wtop,#wBody{position:relative;z-index:1}
-.rbg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .6s}
-.rbg.on{opacity:1}
-.rbg img{width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.1);opacity:.2}
-.rbg::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,var(--bg) 0%,transparent 22%,transparent 70%,var(--bg) 100%)}
-#wBody:has(.rlist){flex:1;min-height:0}
-.rlist{flex:1;display:flex;flex-direction:column;justify-content:center;align-self:center;gap:4px;max-width:100%}
-.rline{appearance:none;display:flex;align-items:center;justify-content:flex-start;gap:14px;background:none;border:0;padding:12px 4px;color:var(--text);font:inherit;cursor:pointer}
-.rline .ric{color:var(--amber);display:grid;place-items:center;width:30px;flex:none}
-.rline .ric svg{width:26px;height:26px}
-.rline .t{text-align:left;min-width:0}
-.rline .t b{display:block;font-family:var(--head);font-weight:800;font-size:clamp(24px,7.4vw,30px);line-height:1.1;letter-spacing:-.02em}
-.rline .t small{display:block;color:var(--amber);font-size:13.5px;font-weight:600;margin-top:2px}
-.rgo{display:flex;flex-direction:column;gap:6px;text-align:center}
+/* Ready to spin: your zone fills the screen, with unnamed pins for the rooftops in play */
+#wBody:has(.rmap){flex:1;min-height:0}
+.rmap{flex:1;min-height:180px;position:relative}
+.rmap #wMap{position:absolute;inset:0}
+.mpin{width:22px;height:22px;border-radius:50%;background:var(--amber);color:#1a1206;font:800 13px/22px var(--head);text-align:center;box-shadow:0 0 0 3px rgba(11,13,18,.7)}
+.rchips{display:flex;flex-wrap:wrap;gap:8px}
+.rchips .chip{display:inline-flex;align-items:center;gap:6px;color:var(--text);font-size:14.5px;cursor:pointer}
+.rchips .chip svg{width:16px;height:16px;color:var(--amber)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};

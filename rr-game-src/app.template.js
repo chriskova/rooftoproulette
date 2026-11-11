@@ -1032,7 +1032,7 @@ const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
-  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}{const o_=$("wBg");if(o_)o_.remove()}
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
   $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
@@ -1043,8 +1043,8 @@ function renderWiz(){
   if(w.step===0){
     body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New game</div><h1 class="q">How long's the crawl?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
       <div class="opts">
-        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span></b><small>In, out, spin again.<br>Best for 2–3 people.</small></span></button>
-        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>Another round, or onto the next.<br>Best for 4+ people.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="rtag">up to 1 km</span></b><small>A few bars, quick drinks.<br>Best for 2–3 people.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>More bars or longer stays.<br>Best for 4+ people.</small></span></button>
       </div>`;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;w.radius=null;save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
@@ -1071,8 +1071,8 @@ function renderWiz(){
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
       $("rrN").textContent=P.open.length?`${P.open.length} open now`:P.all.length?plural(P.all.length,"rooftop")+" here":"No rooftops in the circle";
-      $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?"Tap for spoilers":"Drag the map or widen the circle.";
-      $("rrNB").hidden=!P.all.length;if($("newTog"))$("newTog").hidden=!ok;
+      $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?"":"Drag the map or widen the circle.";
+      $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":P.all.length?"Nothing open here right now":"No rooftops here";
         $("zWarnS").textContent="Move the circle, or try a demo crawl.";
@@ -1092,30 +1092,28 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===2){
-    // Ready to spin: the picks listed down the middle over a faded, black-and-white aerial photo of where you're starting. Tap a line to change it.
+    // Ready to spin: your zone as the hero, the rooftops in play as unnamed pins, your picks as chips you can tap to change
     const first=!(S.seenHow||{}).rush,excl=w.excl||(w.excl=[]),area=w.start.type==="me"?nearestSuburb(w.z):w.start.name;
-    const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now())).length;
-    const line=(k,ic,val)=>`<button class="rline" type="button" ${k==null?'id="wSee"':`data-s="${k}"`}><span class="ric">${ic}</span><span class="t"><b ${k==null?'id="wInPlay"':""}>${val}</b>${k==null?'<small id="wInPlayS"></small>':""}</span></button>`;
-    body.innerHTML=`<h1 class="q">Ready to spin?</h1>
-      <div class="rlist">${line(0,I.clock,w.len===60?"1 hour":"2 hours")}${line(1,I.target,"Within "+kmTxt(w.radius))}${line(1,I.pin,esc(area))}${line(null,I.dice,"")}</div>
-      <div class="rgo">${first?`<p class="note zrule">Spin, head there, and your next spin unlocks once you've arrived.</p>`:""}
-      <div class="zlinks">${first?`<button class="txtbtn" type="button" id="wPractice">Practice spin</button>`:""}<button class="txtbtn" type="button" id="wHow">How it works</button></div></div>`;
-    const bg=document.createElement("div");bg.className="rbg";bg.id="wBg";const im=new Image();im.alt="";im.onerror=()=>bg.remove();im.onload=()=>bg.classList.add("on");
-    im.src=`https://maps.googleapis.com/maps/api/staticmap?center=${w.z.lat},${w.z.lng}&zoom=${w.radius<=.6?16:w.radius<=1.2?15:14}&size=400x640&scale=2&maptype=satellite&key=${GKEY}`;
-    bg.appendChild(im);$("v-wiz").prepend(bg);
-    const count=()=>{if(!$("wInPlay"))return;$("wInPlay").textContent=`${inPlay()} rooftops in play`;$("wInPlayS").textContent=excl.length?`${excl.length} vetoed · Tap for spoilers`:"Tap for spoilers"};
-    count();wizRepaint=count;
-    body.querySelectorAll(".rline[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
+    const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now()));
+    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${first?`<p class="sub" style="margin:6px 0 0">Spin, head there, and your next spin unlocks once you've arrived.</p>`:""}</div>
+      <div class="map rmap"><div id="wMap"></div></div>
+      <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
+      <button class="zbars" type="button" id="wSee"><span class="t"><b id="wInPlay"></b><small id="wInPlayS" hidden></small></span><span class="chev">›</span></button>`;
+    let m=null,lay=null;
+    const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${plural(L_.length,"rooftop")} in play`;$("wInPlayS").hidden=!excl.length;$("wInPlayS").textContent=`${excl.length} vetoed`;
+      if(!m)return;if(lay)lay.remove();lay=L.layerGroup().addTo(m);zoneCircle(w.z,w.radius).addTo(lay);L_.forEach(v=>L.marker([v.lat,v.lng],{icon:L.divIcon({className:"",html:'<div class="mpin">?</div>',iconSize:[22,22]}),interactive:false}).addTo(lay))};
+    requestAnimationFrame(()=>{const el=$("wMap");if(!el)return;wMapRef=m=mkMap(el,{dragging:false,touchZoom:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false});
+      m.fitBounds(L.latLng(w.z.lat,w.z.lng).toBounds(w.radius*2000*1.15),{animate:false});draw()});
+    draw();wizRepaint=draw;
+    body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     $("wSee").onclick=wizSpoiler;
-    $("wHow").onclick=()=>howToPlay("rush");
-    if(first)$("wPractice").onclick=()=>demoSheet(closeSheet,null,"Done");
     cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>$("wStart").onclick=()=>{sawHow("rush");tryStart()});
   }
 }
-let wizRepaint=null;
+let wizRepaint=null,wMapRef=null;
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
 // The bars are a surprise by default: a spoiler warning first, then the list (with vetoes) for anyone who wants it.
-function wizSpoiler(){sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
+function wizSpoiler(){const w=S.wiz;if(w&&w.spoiled){wizBars();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
     <div class="acts"><button class="btn" type="button" id="spKeep">Keep it a surprise</button><button class="btn line" type="button" id="spShow">Show me anyway</button></div>`,()=>{
     $("spKeep").onclick=closeSheet;$("spShow").onclick=wizBars})}
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
@@ -2465,7 +2463,10 @@ function renderPlay(){
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay();requestAnimationFrame(()=>{if(!spinning)fitPlay()});setTimeout(()=>{if(!spinning)fitPlay()},400)}
   if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{const id=g.target;(g.skipped=g.skipped||[]).push(id);g.target=null;save();renderPlay();skipToast(id)};
-  else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
+  else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}
+    if(g.demo&&!g.dNudged&&g.target){g.dNudged=1;save();const v=byId(g.target);sheet(`<h3>No need to walk</h3><p class="note">It's a demo, so tap I'm here to arrive at ${esc(v.name)} and unlock your next spin. Or re-spin to see how that works.</p><div class="acts"><button class="btn" type="button" id="dnHere">I'm here</button><button class="btn line" type="button" id="dnSpin">Re-spin anyway</button></div>`,()=>{
+      $("dnHere").onclick=()=>{closeSheet();g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};$("dnSpin").onclick=()=>{closeSheet();setTimeout(()=>sk.onclick(),250)}});return}
+    const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
     if(g.noLoc){if(now()<hereAt(g)){toast("Check-in opens once estimated arrival time elapses.",2600);return}buzz(30);logArrival(true);return}   // playing without location: the tap is the check-in
