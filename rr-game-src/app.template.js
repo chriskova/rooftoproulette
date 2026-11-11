@@ -622,12 +622,12 @@ function render(){
   renderMini();
 }
 function renderMini(){const g=G(),m=$("mini");if(!m)return;
-  const show=!!g&&!g.demo&&!g.ended&&["home","bars","hist","end"].includes(S.route);
+  const show=!!g&&!g.ended&&["home","bars","hist","end"].includes(S.route);
   if(!show){m.hidden=true;m._on=false;$("app").classList.remove("has-mini");return}
   const cr=CR(g),a=atVisit(),y=you();let left,sm=false,line;
   if(!g.started){left="Ready";sm=true}else if(cr){if(a)left=now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);else{left="R&R";sm=true}}else left=mmss(remaining());
   if(!g.started)line="Spin to start";else if(a)line="At "+byId(a.id).name;else if(g.target){const v=byId(g.target);line="Heading to "+v.name+(y?" · "+kmTxt(dist(y,v)/1000):"")}else line="Spin for the next one";
-  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${cr?"R&amp;R":LEN(g.len)}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
+  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${g.demo?"Demo · "+LEN(g.len):cr?"R&amp;R":LEN(g.len)}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
   if(m._h!==h){m._h=h;m.innerHTML=h}
   if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(prevRoute==="play"){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
@@ -811,8 +811,10 @@ const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"
     return {toR,toX,ticks:o.ticks,all:false,max:n,snap:r=>Math.round(Math.round((r-o.lo)/o.step)*o.step*10+o.lo*10)/10}}
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
   return {toR,toX,ticks:o.ticks,all:false,max:RRMAX,snap:r=>Math.round(r*20)/20}};
-const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button>
-      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="${o&&o.searchHint||"Search a suburb"}"></div></div><div class="mres" id="rrRes" hidden></div><button class="mcard" type="button" id="rrCard" hidden></button></div>
+const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button>
+      <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="${o&&o.searchHint||"Search a suburb"}"></div></div><div class="mres" id="rrRes" hidden></div>`;
+  return (o&&o.row?`<div class="rrmap stack">${sr}<div class="map rrcanvas"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="mcard" type="button" id="rrCard" hidden></button></div></div>`
+    :`<div class="map rrmap"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i>${sr}<button class="mcard" type="button" id="rrCard" hidden></button></div>`)+`
       <div class="rrsum"><b id="rrLbl"></b>${o&&o.row?"":`<button class="rrnb" type="button" id="rrNB"><span id="rrN"></span> <span class="chev">›</span></button>`}</div>
       <div class="rrslide"${o&&o.fixed?" hidden":""}><input class="rrrange" type="range" id="rrR" min="0" max="${Z.max}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/Z.max*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
@@ -820,7 +822,7 @@ const rrZoneHTML=o=>{const Z=zRange(o);return `<div class="map rrmap"><div id="r
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
-const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]");const m_=s_&&s_.closest(".rrmap");return s_&&m_?Math.round(s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top)+6:0};   // no search bar (Your zone): no extra room
+const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
@@ -881,7 +883,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
       if(!active())return;
       if(z.r)syncCenter();
       if(prog){const mine=ours();prog=0;if(mine){setBase();paint(true);return}}
-      if(clamped){clamped=false;fit();return}
+      if(clamped){clamped=false;if(!(o&&o.row)){fit();return}}
       setBase();if(!z.r)return;followCity(z);save();paint(true)});
     if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(!active()||ours()||!z.r)return;if(!base){setBase();return}
       const r0=base.r*m.mpp()/base.mpp,r=Z.snap(Math.max(lo,Math.min(hi,r0)));clamped=r0<lo*.97||r0>hi*1.03;if(r===z.r)return;
@@ -1109,9 +1111,9 @@ let wizRepaint=null;
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
   const all=playable(inCircle(w.z,w.z.r),false).sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open;return ox!==oy?(ox?-1:1):x.name.localeCompare(y.name)});
   const rows=()=>all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
-    const status=out?"Vetoed":skip?"Skipped, you've been":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+    const status=out?"Vetoed":skip?"Skipped":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
     const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
-    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}${been&&!skip?" · Been":""}</small></button>${tick}</div>`}).join("");
+    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">${TICK}Been</span>`:""}${tick}</div>`}).join("");
   sheet(`<div class="zhead"><h3>Rooftops in your zone</h3><span class="small" id="zOut"></span></div>
     <p class="note" style="margin:2px 0 10px">Everything ticked is in. You get ${MAXOUT} vetoes: untick a bar to sit it out this crawl.</p>
     <div class="card zlist" id="zList"></div><button class="btn dark" type="button" id="zDone" style="margin-top:14px">Done</button>`,()=>{
