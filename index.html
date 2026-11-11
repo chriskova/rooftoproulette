@@ -2127,6 +2127,21 @@ html.fl .app{visibility:hidden}
 .zbars .see{display:inline-flex;align-items:center;gap:6px;color:var(--amber);font-weight:700;font-size:14.5px;white-space:nowrap}
 .zrule{margin:0}
 .zlinks{display:flex;justify-content:center;gap:18px}
+/* Ready to spin: big stat tiles that fill the screen, the question sits just above Start */
+#wBody:has(.rstats){flex:1;min-height:0}
+.rstats{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;align-content:stretch;grid-auto-rows:1fr}
+.rstat{appearance:none;display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:92px;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.rstat:nth-child(n+3){grid-column:1/-1;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
+.rstat .ric{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;background:rgba(245,184,61,.14);color:var(--amber)}
+.rstat .ric svg{width:21px;height:21px}
+.rstat .t{min-width:0}
+.rstat .t b{display:block;font-family:var(--head);font-weight:800;font-size:clamp(26px,8vw,34px);line-height:1.05;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rstat:nth-child(n+3) .t b{font-size:clamp(21px,6.2vw,26px)}
+.rstat .t small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+#wSee{border-style:dashed}
+.rgo{display:flex;flex-direction:column;gap:8px;text-align:center}
+.rgo .q{margin:4px 0 0}
+.rgo .zlinks{margin-top:-2px}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
