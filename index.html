@@ -2099,6 +2099,23 @@ html.fl .app{visibility:hidden}
 .codo>span{display:block;transition:transform .32s cubic-bezier(.3,1.5,.5,1)}
 .codo.go>span{transform:translateY(-100%)}
 #pCount.opening{visibility:hidden}
+/* setup: one tappable row for the bars in the circle, the not-enough-open warning, the Ready summary */
+.zbars,.zready{appearance:none;display:flex;align-items:center;gap:12px;width:100%;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);padding:11px 14px;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.zbars .t,.zready .t{flex:1;min-width:0}
+.zbars .t b,.zready .t b{display:block;font-size:15.5px}
+.zbars .t small,.zready .t small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zready .t small{white-space:normal}
+.zbars .chev,.zready .chev{color:var(--amber);font-size:22px;font-weight:700}
+.zbars{margin-top:10px}
+.zwarn{display:flex;flex-direction:column;gap:4px;border:1.5px solid var(--amber);border-radius:var(--r);padding:12px 14px}
+.zwarn[hidden],.zbars[hidden],.toggle[hidden]{display:none}
+.zwarn b{color:var(--amber);font-size:15.5px}
+.zwarn small{color:var(--muted);font-size:13px}
+.zwarn .btn{margin-top:8px}
+.zdemo{align-self:center;padding:2px 4px}
+.zdemo .amber{color:var(--amber);margin-left:4px}
+.zrules{margin-top:4px}
+.zdemobox{margin-top:0;min-height:0}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
