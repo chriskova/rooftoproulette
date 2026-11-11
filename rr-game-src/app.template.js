@@ -1031,12 +1031,12 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;
+  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}
   $("wProg").style.width=((w.step+1)/3*100)+"%";
   const body=$("wBody"),t=now();
-  // no pick chips: the map gets the room, Back changes the length, and the last screen has the summary
-  const picks=[];
+  // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
+  const picks=w.step===2&&w.start?[[0,I.clock,w.len===60?"1 hour":"2 hours"],[1,I.pin,kmTxt(w.radius)+" · "+esc(w.start.type==="me"?"Near you":w.start.name)]].concat(w.newOnly?[[1,I.sparkle||"",`New bars only`]]:[]):[];
   $("wSum").innerHTML=picks.map(([k,ic,txt])=>`<button class="chip" type="button" data-s="${k}">${ic} ${txt}</button>`).join("");
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
@@ -1071,7 +1071,7 @@ function renderWiz(){
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
       $("rrN").textContent=P.open.length?`${P.open.length} open now`:P.all.length?plural(P.all.length,"rooftop")+" here":"No rooftops in the circle";
-      if(settled||!$("rrNs").textContent)$("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?options.slice(0,2).map(v=>v.name).join(", ")+(options.length>2?` + ${options.length-2} more`:""):"Drag the map or widen the circle.";
+      $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?"Hidden until you spin":"Drag the map or widen the circle.";
       $("rrNB").hidden=!P.all.length;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":P.all.length?"Nothing open here right now":"No rooftops here";
@@ -1092,15 +1092,16 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===2){
-    // Ready to spin: what you picked, and the rules the first time you play
-    const first=!(S.seenHow||{}).rush,n=w.zN||{open:0,all:0},c=collectedMap(),skipped=w.newOnly?playable(inCircle(w.z,w.radius),false).filter(v=>c[v.id]).length:0;
-    const where=w.start.type==="me"?"you":w.start.name;
+    // Ready to spin: the bars stay a surprise unless you want to see them (and veto). The rules come once, on your first game.
+    const first=!(S.seenHow||{}).rush,excl=w.excl||(w.excl=[]);
+    const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now())).length;
     body.innerHTML=`<h1 class="q">Ready to spin?</h1>
-      <button class="zready" type="button" id="wEdit"><span class="t"><b>${w.len===60?"1 hour":"2 hours"} · Within ${kmTxt(w.radius)} of ${esc(where)}</b><small>${plural(n.open,"rooftop")} open${skipped?` · Skipping ${skipped} you've been to`:""}${(w.excl||[]).length?` · ${w.excl.length} ${w.excl.length===1?"veto":"vetoes"} used`:""}</small></span><span class="chev">›</span></button>
-      ${first?`<div class="steps zrules">${stepsHTML([["Spin","You get a random rooftop in your circle."],["Head there","Walk, run or Uber."],["Spin again","Your next spin unlocks once you've arrived."]])}</div>
-      <button class="btn line" type="button" id="wPractice">Practice spin</button>`:""}
-      <button class="txtbtn" type="button" id="wHow">How it works</button>`;
-    $("wEdit").onclick=()=>{w.step=1;save();renderWiz()};
+      <button class="zbars" type="button" id="wSee"><span class="t"><b id="wInPlay"></b><small id="wInPlayS"></small></span><span class="see">See them <span class="chev">›</span></span></button>
+      ${first?`<p class="note zrule">Spin, head there, and your next spin unlocks once you've arrived.</p>`:""}
+      <div class="zlinks">${first?`<button class="txtbtn" type="button" id="wPractice">Practice spin</button>`:""}<button class="txtbtn" type="button" id="wHow">How it works</button></div>`;
+    const count=()=>{if(!$("wInPlay"))return;$("wInPlay").textContent=`${plural(inPlay(),"rooftop")} in play`;$("wInPlayS").textContent="Hidden until you spin"+(excl.length?` · ${excl.length} vetoed`:"")};
+    count();wizRepaint=count;
+    $("wSee").onclick=()=>wizBars();
     $("wHow").onclick=()=>howToPlay("rush");
     if(first)$("wPractice").onclick=()=>demoSheet(closeSheet,null,"Done");
     cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>$("wStart").onclick=()=>{sawHow("rush");tryStart()});

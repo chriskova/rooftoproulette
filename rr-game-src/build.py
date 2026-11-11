@@ -17,7 +17,7 @@ open(os.path.join(OUT,'rooftop-app.js'),'w').write(app.replace('__VENUES_V__',st
 m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v71-1";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v71-2";
 const ASSETS=["./","index.html","browser-config.js","rooftop-app.js","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
