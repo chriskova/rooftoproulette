@@ -5,9 +5,10 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 ## Files
 
 - `index.template.html` contains the page markup and CSS. Edit `app.template.js` for app behaviour. The build injects venues and version information into `rooftop-app.js`.
+- `data/config.json` holds the public browser settings (Google Maps browser key, PostHog key). The build writes them to `../browser-config.js`, which loads before `rooftop-app.js`. The Maps key is restricted to the site's address and APIs in Google Cloud, so it's fine for it to be public.
 - `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane, Perth and the Gold Coast).
 - `data/manifest.webmanifest` is the PWA manifest.
-- `build.py` writes `../index.html`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts so the page works as a single file.
+- `build.py` writes `../index.html`, `../rooftop-app.js`, `../browser-config.js`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts.
 - `tests/` holds Playwright checks (see below).
 
 ## Updating bars without an app release
@@ -22,7 +23,7 @@ Sharing a card or clip also sends a line and a link. The whole crawl (bars, time
 
 The app sends anonymous usage events and crash reports to PostHog: a random install ID, the app version and platform, and what happened (`app_open`, `crawl_start`, `spin`-level events like `jackpot` and `arrive`, `crawl_end` with bar count and minutes, `share_open`/`share_sent`, `camera_open`, `clip_recorded`, `report_change`, `backup`, and `$exception` for errors). It never sends names, coordinates, photos or clips, and sends nothing in test mode. It's off until a project API key is set in `data/config.json` (`posthogKey`, plus `posthogHost`: `https://us.i.posthog.com` or `https://eu.i.posthog.com`). Set up: EU Cloud, project 331226.
 
-The app reads its browser configuration from `browser-config.js`, loaded before `rooftop-app.js`. See `browser-config.example.js` for its shape. The web build leaves this file untouched. The native sync step requires it.
+The app reads its browser configuration from `browser-config.js`, which the build generates from `data/config.json`.
 
 ## Build and release
 
