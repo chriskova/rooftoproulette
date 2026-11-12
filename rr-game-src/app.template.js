@@ -2509,7 +2509,8 @@ function renderPlay(){
   if(S.test||(G()&&G().noLoc))gn.textContent="";
   else if(locErr===1)gn.innerHTML=`<b style="color:var(--red)">Location is off.</b> Turn it back on so visits log automatically.`;
   else if(!here&&!(G()&&G().noLoc))gn.textContent="Finding you…";
-  else gn.textContent=g.target?"Keep the app open on the way so your visit logs the moment you arrive.":"";
+  // The phone app tracks with the screen locked. Only a browser (or the app if background tracking failed to start) needs the app left open.
+  else gn.textContent=g.target&&!(NATIVE&&bgWatch!==null)?"Keep the app open on the way so your visit logs the moment you arrive.":"";
 }
 function confetti(host){
   const app=host||$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
