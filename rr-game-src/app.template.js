@@ -2389,7 +2389,7 @@ function renderPlay(){
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No, don't count it</button></div></div>`:"";
+  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No, don't count it</button></div><button class="txtbtn acant" type="button" id="aC">Couldn't get in?</button></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
@@ -2408,7 +2408,7 @@ function renderPlay(){
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <div class="spinrow"><button class="btn" type="button" id="spinBtn">Spin for the next one</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>
-      ${t-(a.loggedAt||a.arrivedAt)<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
+      <div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
@@ -2462,7 +2462,8 @@ function renderPlay(){
   if($("snapIn")){$("snapIn").onclick=()=>pickPhoto(snapGot,true);$("snapGal").onclick=()=>pickPhoto(snapGot,false)}
   if($("reelBack"))$("reelBack").onclick=()=>{if(a)delete a._ans;g.reelOpen=false;save();renderPlay()};
   if($("reelBox")){reel=makeReel($("reelBox"),gameReelNames(),{hint:true,onRelease:v=>doSpin(false,v)});fitPlay();requestAnimationFrame(()=>{if(!spinning)fitPlay()});setTimeout(()=>{if(!spinning)fitPlay()},400)}
-  if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false)}
+  if(qi>=0){$("aY").onclick=()=>answer(qi,true);$("aN").onclick=()=>answer(qi,false);
+    $("aC").onclick=()=>{const v=g.visits[qi];v.counted=false;v.cant=true;S.reports.push({id:v.id,at:now()});(g.skipped=g.skipped||[]).push(v.id);save();renderPlay();toast("Noted. Spin for another one.",2500)}}
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{const id=g.target;(g.skipped=g.skipped||[]).push(id);g.target=null;save();renderPlay();skipToast(id)};
   else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}
     if(g.demo&&!g.dNudged&&g.target){g.dNudged=1;save();const v=byId(g.target);sheet(`<h3>No need to walk</h3><p class="note">Tap I'm here to arrive at ${esc(v.name)} and unlock your next spin.</p><div class="acts"><button class="btn" type="button" id="dnHere">I'm here</button><button class="btn line" type="button" id="dnSpin">Re-spin anyway</button></div>`,()=>{

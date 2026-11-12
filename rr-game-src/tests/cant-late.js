@@ -11,4 +11,9 @@ console.log('demo: cant shown',!!(await p.$('#cantBtn')),'| time here',await p.t
 // real-game style backdated arrival still shows Can't get in
 await p.evaluate(()=>{const g=G(),a=atVisit();a.arrivedAt=now()-5*60000;a.loggedAt=now();save();renderPlay()});await p.waitForTimeout(300);
 console.log('backdated: cant shown',!!(await p.$('#cantBtn')));
+await p.evaluate(()=>{const a=atVisit();a.arrivedAt=now()-6*60000;a.loggedAt=now()-6*60000;save();renderPlay()});await p.waitForTimeout(300);
+console.log('6 min in line: cant shown',!!(await p.$('#cantBtn')));
+await p.evaluate(()=>{const g=G(),a=atVisit();a.arrivedAt=now()-60000;a.loggedAt=a.arrivedAt;a.leftAt=now();a.counted=null;save();renderPlay()});await p.waitForTimeout(400);
+console.log('quick exit box:',await p.textContent('.ask'));await p.screenshot({path:'out/ask.png'});
+await p.click('#aC');await p.waitForTimeout(400);console.log('after couldnt get in:',await p.evaluate(()=>{const v=G().visits[0];return JSON.stringify({counted:v.counted,cant:v.cant,box:!!document.querySelector('.ask')})}));
 console.log('ERRORS',e);await b.close()})();
