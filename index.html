@@ -2138,8 +2138,13 @@ html.fl .app{visibility:hidden}
 .camtipx{position:absolute;top:8px;right:8px;width:20px;height:20px;display:grid;place-items:center;opacity:.7}
 .camtipx svg{width:14px;height:14px}
 .acant{display:block;margin:8px auto 0;font-size:14px}
-.dspin{display:block;margin:10px auto 0;font-size:14.5px}
-.dspin span{color:var(--muted);font-weight:500}
+.cantrow{display:flex;padding-right:62px;margin-top:6px}
+.cantrow .txtbtn{margin:0 auto;font-size:14.5px}
+.zbars .zic{color:var(--amber);display:grid;place-items:center;flex:none}
+.zbars .zic svg{width:22px;height:22px}
+#sheet.fresh #sheetBody{pointer-events:none}
+.zchip svg{width:15px;height:15px;vertical-align:-2px;color:var(--amber)}
+.zchip[aria-pressed="true"] svg{color:currentColor}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};

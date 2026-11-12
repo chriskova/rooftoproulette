@@ -271,8 +271,8 @@ function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r
     zone:{lat:st.lat,lng:st.lng,name:nearestArea(st)},visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false,dpos:{lat:st.lat,lng:st.lng,acc:5},dff:0};
   track("demo_start",{});save();buzz(30);go("play")}
 function demoBar(g){const a=atVisit(),t=now();
-  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>You’re at the bar. Skip ahead when you’re ready.</span><button class="btn sm" type="button" id="dSkip">Skip ahead</button></div>`;
-  return `<div class="demobar"><span class="dtag">Demo</span><span>${g.started?"Nothing here is saved.":"Spin to start. Nothing here is saved."}</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
+  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>No need to wait.</span><button class="btn sm" type="button" id="dSkip">Skip ahead</button></div>`;
+  return `<div class="demobar"><span class="dtag">Demo</span><span>Nothing counts.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
 function bindDemoBar(g){
   if($("dWalk"))$("dWalk").onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};
   if($("dSkip"))$("dSkip").onclick=()=>{const a=atVisit();if(!a)return;g.dff=(g.dff||0)+Math.max(0,DWELL_MIN*60000+2000-(now()-a.arrivedAt));save();loop();renderPlay()};
@@ -816,7 +816,7 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
       <div class="rrsum"><b id="rrLbl"></b>${o&&o.row?"":`<button class="rrnb" type="button" id="rrNB"><span id="rrN"></span> <span class="chev">›</span></button>`}</div>
       <div class="rrslide"${o&&o.fixed?" hidden":""}><input class="rrrange" type="range" id="rrR" min="0" max="${Z.max}" step="1" aria-label="How far">
       <div class="rrticks">${Z.ticks.map(([r,l],i)=>`<span style="left:${Z.toX(r)/Z.max*100}%${!Z.all&&i===0?";transform:none":""}${!Z.all&&i===Z.ticks.length-1?";transform:translateX(-100%)":""}">${l}</span>`).join("")}${Z.all?`<span style="left:100%;transform:translateX(-100%)">All</span>`:""}</div></div>
-      ${o&&o.row?`<button class="zbars" type="button" id="rrNB"><span class="t"><b id="rrN"></b><small id="rrNs"></small></span><span class="chev">›</span></button>`:""}
+      ${o&&o.row?`<button class="zbars" type="button" id="rrNB"><span class="zic">${I.glass||""}</span><span class="t"><b id="rrN"></b><small id="rrNs"></small></span><span class="chev">›</span></button>`:""}
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
@@ -844,9 +844,10 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   $("rrR").onchange=()=>{save();paint(true);fit()};
   // tap a pin: a little card on the map; tap the card for the full bar page (not from inside a panel)
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
-  const pinCard=v=>{const o=openState(v,now()),y=me||you();
+  const pinCard0=v=>{const o=openState(v,now()),y=me||you();
     card.innerHTML=`<span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}${y?" · "+mOrKm(dist(y,v)):""}</small></span>${inSheet?"":`<span class="chev">›</span>`}`;
     card.hidden=false;cardAt=Date.now();card.onclick=()=>{if(!inSheet)barSheet(v)}};
+  const pinCard=v=>{if(S.route==="wiz"&&S.wiz&&!S.wiz.spoiled)wizSpoiler(()=>pinCard0(v));else pinCard0(v)};   // setup: names are a surprise until you say otherwise
   let lastP=null,cardAt=0;
   ["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>card.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(card);
   // the bars in the circle, in a panel from the bottom like everything else
@@ -1068,7 +1069,7 @@ function renderWiz(){
       const ok=P.open.length>=2,options=P.open.length?P.open:P.all;
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
-      $("rrN").textContent=P.open.length?`${P.open.length} open now`:P.all.length?plural(P.all.length,"rooftop")+" here":"No rooftops in the circle";
+      $("rrN").textContent=P.open.length?`${plural(P.open.length,"rooftop")} open in your zone`:P.all.length?`${plural(P.all.length,"rooftop")} in your zone`:"No rooftops in your zone";
       $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?"":"Drag the map or widen the circle.";
       $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
@@ -1097,11 +1098,10 @@ function renderWiz(){
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
       <button class="zbars" type="button" id="wSee"><span class="t"><b id="wInPlay"></b><small id="wInPlayS" hidden></small></span><span class="chev">›</span></button>`;
-    let m=null,lay=null;
+    let m=null;
     const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${plural(L_.length,"rooftop")} in play`;$("wInPlayS").hidden=!excl.length;$("wInPlayS").textContent=`${excl.length} vetoed`;
-      if(!m)return;if(lay)lay.remove();lay=L.layerGroup().addTo(m);zoneCircle(w.z,w.radius).addTo(lay);L_.forEach(v=>L.marker([v.lat,v.lng],{icon:L.divIcon({className:"",html:'<div class="mpin"></div>',iconSize:[14,14]}),interactive:false}).addTo(lay))};
-    requestAnimationFrame(()=>{const el=$("wMap");if(!el)return;wMapRef=m=mkMap(el,{dragging:false,touchZoom:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false});
-      m.fitBounds(L.latLng(w.z.lat,w.z.lng).toBounds(w.radius*2000*1.15),{animate:false});draw()});
+      if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
+    makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
     draw();wizRepaint=draw;
     body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     $("wSee").onclick=wizSpoiler;
@@ -1111,9 +1111,9 @@ function renderWiz(){
 let wizRepaint=null,wMapRef=null;
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
 // The bars are a surprise by default: a spoiler warning first, then the list (with vetoes) for anyone who wants it.
-function wizSpoiler(){const w=S.wiz;if(w&&w.spoiled){wizBars();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
+function wizSpoiler(then){then=typeof then==="function"?then:wizBars;const w=S.wiz;if(w&&w.spoiled){then();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
     <div class="acts"><button class="btn" type="button" id="spKeep">Keep it a surprise</button><button class="btn line" type="button" id="spShow">Show me anyway</button></div>`,()=>{
-    $("spKeep").onclick=closeSheet;$("spShow").onclick=wizBars})}
+    $("spKeep").onclick=closeSheet;$("spShow").onclick=()=>{closeSheet();setTimeout(then,200)}})}
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
   const all=playable(inCircle(w.z,w.z.r),false).sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open,bx=!isNew(x.id,col),by=!isNew(y.id,col);return ox!==oy?(ox?-1:1):bx!==by?(bx?1:-1):x.name.localeCompare(y.name)});
   const rows=()=>all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
@@ -2157,7 +2157,7 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){backArm();$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){backArm();{const d_=$("sheet");if(!d_.open){d_.classList.add("fresh");clearTimeout(d_._fr);d_._fr=setTimeout(()=>d_.classList.remove("fresh"),380)}}$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
@@ -2406,7 +2406,7 @@ function renderPlay(){
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <div class="spinrow"><button class="btn" type="button" id="spinBtn">Spin for the next one</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>
-      <div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`;
+      <div class="cantrow"><button class="txtbtn" type="button" id="cantBtn">Can't get in?</button></div>`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
@@ -2421,7 +2421,7 @@ function renderPlay(){
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn${now()<hereAt(g)?" locked":""}" type="button" id="hereBtn" aria-disabled="${now()<hereAt(g)}">${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
-      ${g.demo?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="dWalk">Skip the walk</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn dspin" type="button" id="skipBtn">Spin again <span>· free in the demo</span></button></div>`:""}
+      ${g.demo?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="dWalk">Skip the walk</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div></div>`:""}
       ${g.noLoc||g.demo?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
       ${!g.demo&&!CR(g)?`<p class="note">Next spin unlocks after your visit. ${g.noLoc?"Location is off. Tap “I’m here” when you arrive.":man?"Tap “I’m here” when you arrive.":"Head to "+esc(v.name)+" for automatic check-in."}</p>`:""}
@@ -3131,7 +3131,8 @@ function renderBars(){
   if(bSearching){paintSearch();return}
   const mapV=S.barsView==="map";
   $("barsMapWrap").hidden=!mapV;$("barsList").hidden=mapV;
-  $("barsMap").style.height=mapV?"calc(100dvh - 330px)":"";$("barsMap").style.minHeight=mapV?"300px":"";
+  $("barsMap").style.height="";$("barsMap").style.minHeight="";
+  if(mapV)requestAnimationFrame(()=>{const el=$("barsMap"),tb=$("tabs");if(!el||!el.offsetParent)return;const top=el.getBoundingClientRect().top,mi=$("mini"),bot=Math.min(tb&&tb.offsetParent?tb.getBoundingClientRect().top:innerHeight,mi&&!mi.hidden&&mi.offsetParent?mi.getBoundingClientRect().top:innerHeight);el.style.height=Math.max(260,Math.round(bot-top-12))+"px";if(bMap)bMap.resize()});
   $("bView").innerHTML=mapV?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> List`:`${I.pin} Map`;
   const t=now(),y=you(),c=collectedMap(),g=G();
   // one list, filtered: everything, the ones you've been to, the ones you've hidden (and your zone, mid-game)
@@ -3146,7 +3147,7 @@ function renderBars(){
   const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
   $("barsSeg").hidden=false;
-  $("barsSeg").innerHTML=(g?`<button class="chip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${tabs[0][1]}</button>`:"")
+  $("barsSeg").innerHTML=(g?`<button class="chip zchip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${I.target} ${tabs[0][1]}</button>`:"")
     +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(cityIn(S.city))}<span class="cn">${VENUES.filter(inCityNow).length}</span></button>`
     +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}<span class="cn">${VENUES.filter(v=>inCityNow(v)&&areaOf(v).reg===r.name).length}</span></button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
@@ -3205,9 +3206,9 @@ function renderBars(){
   if($("bMove"))$("bMove").onclick=()=>openMove(g.started&&basePool().length<2);
   if(!mapV)return;
   requestAnimationFrame(async()=>{
-    if(!bMapP)bMapP=makeMap("barsMap").then(m=>{m.setView(cityC(),13);m.onTap((lat,lng)=>{if(S.test){S.fake={lat,lng};save();onLocation();renderBars()}});return m});
+    if(!bMapP)bMapP=makeMap("barsMap",{greedy:true}).then(m=>{m.setView(cityC(),13);m.onTap((lat,lng)=>{if(S.test){S.fake={lat,lng};save();onLocation();renderBars()}});return m});
     const m=bMap=await bMapP;if(!m)return;m.resize();m.clear();
-    if(g&&!CR(g)){m.circle(g.center,g.radius);if(m._zoneFor!==g.id+g.center.lat){m._zoneFor=g.id+g.center.lat;m.fitZone(g.center,g.radius)}}
+    if(g&&!CR(g)&&f==="zone"){m.circle(g.center,g.radius);if(bMapFit||m._zoneFor!==g.id+g.center.lat){m._zoneFor=g.id+g.center.lat;bMapFit=false;m.fitZone(g.center,g.radius)}}
     pins.forEach(({v,cls})=>m.pin(v,cls,()=>barSheet(v)));
     if(fitTo&&fitTo.length&&(bMapFit||m._fitRg!==(S.barsRegion||"all"))){m._fitRg=S.barsRegion||"all";bMapFit=false;m.fitPts(fitTo,15)}
     setMe(m);
@@ -3215,7 +3216,7 @@ function renderBars(){
 }
 $("barsSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;
   if(b.hasAttribute("data-open")){S.barsOpen=b.getAttribute("aria-pressed")!=="true";S.barsOpenDay=new Date().toDateString();save();renderBars();return}
-  const w=b.dataset.w;if(w==="zone")S.barsFilter="zone";else{S.barsFilter="all";S.barsRegion=w;bMapFit=true}save();renderBars()};
+  const w=b.dataset.w;if(w==="zone")S.barsFilter="zone";else{S.barsFilter="all";S.barsRegion=w}bMapFit=true;save();renderBars()};
 function visitsOf(id){const out=[];const add=r=>{const x=r.visits.find(w=>w.id===id&&w.counted===true);if(x)out.push({r,t:rt(r,x.arrivedAt),d:Math.max(0,(x.leftAt||r.endedAt||now())-x.arrivedAt)})};
   H.forEach(add);if(S.game&&!S.game.ended)add(S.game);return out.sort((a,b)=>b.t-a.t)}
 const stayTxt=ms=>{const m=Math.max(1,Math.round(ms/60000));if(m<60)return m+" min";const h=Math.floor(m/60),r=m%60;return h+" hr"+(r?" "+r:"")};

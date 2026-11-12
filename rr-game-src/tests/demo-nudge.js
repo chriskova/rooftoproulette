@@ -10,8 +10,6 @@ const sheetOpen=async()=>p.evaluate(()=>{const s=$('sheet');return !!(s&&s.open)
 if(await sheetOpen()){await p.evaluate(()=>closeSheet());await p.waitForTimeout(400)}
 console.log('state:',await p.evaluate(()=>{const g=G();return JSON.stringify({demo:g.demo,target:g.target,started:!!g.started,at:!!atVisit(),pool:basePool().length,skips:document.querySelectorAll('#skipBtn').length})}));await p.screenshot({path:'out/dn.png'});
 console.log('buttons:',await p.evaluate(()=>[...document.querySelectorAll('#stage button')].filter(x=>x.offsetParent).map(x=>x.id+':'+x.innerText.replace(/\n/g,' ')).join(' | ')),'| banner:',await p.textContent('#demoBar'));
-const t0=await p.evaluate(()=>G().target);await p.evaluate(()=>$('skipBtn').click());await p.waitForTimeout(600);
-console.log('respin free:',await p.evaluate(t0=>JSON.stringify({sheet:$('sheet').open,target:G().target,skipCost:G().skipCost||0,ends:Math.round((G().endsAt-now())/60000)}),t0));
 await p.evaluate(()=>{const g=G(),P=basePool().filter(v=>openOK(v,now())&&!(g.skipped||[]).includes(v.id)),v=P[0];setTarget(v,{lat:v.lat+.01,lng:v.lng});save();renderPlay()});await p.waitForTimeout(500);
 await p.click('#dWalk');await p.waitForTimeout(2500);console.log('skip the walk arrived:',await p.evaluate(()=>!!atVisit()),'| cant shown',!!(await p.$('#cantBtn')));
 console.log('ERRORS',e);await b.close()})();
