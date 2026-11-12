@@ -266,7 +266,7 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour timed game from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
-function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">A full crawl from the couch. It won't show up in My Tab.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
+function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">A practice run from the couch.<br>It won't show up in My Tab.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
   $("dmNo").onclick=closeSheet;$("dmGo").onclick=()=>{closeSheet();if(before)before();startDemo()}})}
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
   S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,

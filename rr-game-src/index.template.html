@@ -1488,6 +1488,8 @@ html.fl .app{visibility:hidden}
 .mf-move{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 22px);z-index:1001;width:auto;padding:0 18px;background:var(--bg);box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .pin.tick{background:#8A90A0;border-color:#0B0D12;box-shadow:none;position:relative}
 .pin.tick::after{content:"";position:absolute;left:50%;top:45%;width:6px;height:3px;border:solid #0B0D12;border-width:0 0 2px 2px;transform:translate(-50%,-50%) rotate(-45deg)}
+/* no single word left on its own last line */
+p,.note,.sub,small,h1,h2,h3{text-wrap:pretty}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
