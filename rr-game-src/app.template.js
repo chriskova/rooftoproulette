@@ -431,7 +431,7 @@ function mkMap(el,opts){
   L.tileLayer(ESRI_LBL,{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
   return m;
 }
-const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="off"?[13,13]:[20,20]});
+const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="seen"?[24,24]:cls==="off"?[13,13]:[20,20]});
 const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num sm${x?" x":""}">${n}</div>`,iconSize:[16,16]});
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
@@ -467,7 +467,7 @@ function gWrap(el,o){
   return {
     clear(){ov.forEach(o=>{if(o.setMap)o.setMap(null);else o.map=null});ov=[]},
     circle(c,r){ov.push(new google.maps.Circle({map,center:LL(c),radius:r*1000,strokeColor:"#F5B83D",strokeOpacity:.9,strokeWeight:2,fillColor:"#F5B83D",fillOpacity:.06,clickable:false}))},
-    pin(v,cls,onClick){ov.push(mk(v,`<div class="pin ${cls||""}"></div>`,cls==="big"?500:0,onClick,v.name))},
+    pin(v,cls,onClick){ov.push(mk(v,`<div class="pin ${cls||""}"></div>`,cls==="big"?500:cls==="seen"?1100:0,onClick,v.name))},   // ticked bars sit above your dot
     num(p,n,x,title,onClick){ov.push(mk(p,`<div class="num sm${x?" x":""}">${n}</div>`,300,onClick||null,title))},
     dot(p){ov.push(mk(p,'<div class="me"></div>',1000))},
     route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
@@ -490,7 +490,7 @@ function lWrap(el){
   return {
     clear(){ov.clearLayers()},
     circle(c,r){zoneCircle(c,r).addTo(ov)},
-    pin(v,cls,onClick){const mm=L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:0}).addTo(ov);if(onClick)mm.on("click",onClick);mm.bindTooltip(v.name,{direction:"top",offset:[0,-10]})},
+    pin(v,cls,onClick){const mm=L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:cls==="seen"?1100:0}).addTo(ov);if(onClick)mm.on("click",onClick);mm.bindTooltip(v.name,{direction:"top",offset:[0,-10]})},
     num(p,n,x,title,onClick){const mm=L.marker([p.lat,p.lng],{icon:numIcon(n,x)}).addTo(ov);if(title&&!onClick)mm.bindTooltip(title);if(onClick)mm.on("click",onClick)},
     dot(p){L.marker([p.lat,p.lng],{icon:meIcon}).addTo(ov)},
     route(pts,dashed){const ll=pts.map(p=>[p.lat,p.lng]);if(dashed){L.polyline(ll,{color:"#F5B83D",weight:2,opacity:.35,dashArray:"2 7",lineCap:"round"}).addTo(ov);return}
@@ -632,7 +632,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
 [["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","My Tab"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`;$(id).dataset.tab=k});
-$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;go(k==="play"?"home":k)};
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(k==="bars"&&S.route!=="bars"&&S.barsView==="map"){S.barsView="list";save()}go(k==="play"?"home":k)};   // Rooftops always opens on the list
 
 /* ---------- shared copy ---------- */
 
@@ -2625,7 +2625,7 @@ async function crawlMap(){const g=G();if(!g)return;
   const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
   if(!CR(g))m.circle(g.center,g.radius);
   inZ.filter(v=>!been.includes(v.id)&&v.id!==g.target).forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
-  been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"tick",()=>barSheet(v)));
+  been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"seen",()=>barSheet(v)));
   if(g.target){const v=byId(g.target);if(v)m.pin(v,"big",()=>barSheet(v))}
   setMe(m);
   if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}

@@ -17,7 +17,7 @@ await p.click('#spinBtn');await p.waitForTimeout(800);console.log('drink questio
 await p.waitForTimeout(6000);await p.evaluate(()=>{if($('sheet').open)closeSheet()});
 console.log('target after spin:',await p.evaluate(()=>G().target));
 await p.evaluate(()=>{const g=G(),v=basePool().find(v=>openOK(v,now())&&!g.visits.some(x=>x.id===v.id));setTarget(v,{lat:v.lat+.01,lng:v.lng});save();renderPlay()});await p.click('#pMap');await p.waitForTimeout(1500);
-console.log('crawl map:',await p.evaluate(()=>JSON.stringify({ticks:document.querySelectorAll('#crawlMap .pin.tick').length,big:document.querySelectorAll('#crawlMap .pin.big').length,circle:document.querySelectorAll('#crawlMap .leaflet-overlay-pane path').length,move:!!$('cmMove')})));await p.screenshot({path:'out/c4.png'});
+console.log('crawl map:',await p.evaluate(()=>JSON.stringify({ticks:document.querySelectorAll('#crawlMap .pin.seen').length,big:document.querySelectorAll('#crawlMap .pin.big').length,circle:document.querySelectorAll('#crawlMap .leaflet-overlay-pane path').length,move:!!$('cmMove')})));await p.screenshot({path:'out/c4.png'});
 await p.click('.mf-x');await p.waitForTimeout(400);
 await p.evaluate(()=>{S.barsView='map';save();go('bars')});await p.waitForTimeout(1500);
 console.log('rooftops:',await p.evaluate(()=>{const m=$('barsMap').getBoundingClientRect(),mi=$('mini').getBoundingClientRect();return JSON.stringify({zoneChip:!!document.querySelector('[data-w="zone"]'),tiles:!$('barsLists').hidden,mapBottom:Math.round(m.bottom),miniTop:Math.round(mi.top),scroll:$('v-bars').scrollHeight>$('v-bars').clientHeight+2})}));await p.screenshot({path:'out/c5.png'});
