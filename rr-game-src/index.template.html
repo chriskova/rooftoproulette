@@ -269,7 +269,7 @@ body.mapq .view{padding-bottom:12px!important}
 #v-end .scmap.wide .scov{padding:56px 14px 12px;background:linear-gradient(rgba(11,13,18,0),rgba(11,13,18,.7) 38%,rgba(11,13,18,.88))}
 
 .scexp{position:absolute;top:10px;right:12px;z-index:901;width:34px;height:34px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--text);display:grid;place-items:center;pointer-events:none}.scexp svg{width:16px;height:16px}
-.mapfull{position:fixed;inset:0;z-index:2600;background:var(--bg);opacity:0;transition:opacity .2s}.mapfull.on{opacity:1}#bigMap{position:absolute;inset:0}.mf-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.mapfull{position:fixed;inset:0;z-index:2600;background:var(--bg);opacity:0;transition:opacity .2s}.mapfull.on{opacity:1}#bigMap,#crawlMap{position:absolute;inset:0}.mf-x{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:14px;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .tri.s6c{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;padding:4px 2px 0}#v-end.tight .sc-bars{row-gap:9px;padding-top:10px}#v-end.tight .sc{gap:9px}
 .tri.s6c div{background:none;padding:0;text-align:left}#v-end .scov{display:block;padding:22px 12px 9px}#v-end .scov .tri.s6c b{font-size:18.5px}#v-end .scov .tri.s6c{gap:7px 8px}#v-end .scov .tri.s6c small{font-size:9.5px;margin-top:2px}.scov .tri.s6c small{color:var(--text);opacity:.8}.scov .tri.s6c b,.tri.s6c b{color:var(--text)}.tri.s6c b i{font-style:normal;font-size:.8em;margin-left:1px}
 .tri.s6c small,.scov .tri.s6c small{color:rgba(245,184,61,.72)!important;opacity:1!important}
@@ -1477,13 +1477,17 @@ html.fl .app{visibility:hidden}
 .camtipx{position:absolute;top:8px;right:8px;width:20px;height:20px;display:grid;place-items:center;opacity:.7}
 .camtipx svg{width:14px;height:14px}
 .acant{display:block;margin:8px auto 0;font-size:14px}
-.cantrow{display:flex;padding-right:62px;margin-top:6px}
+.cantrow{display:flex;margin-top:6px}
 .cantrow .txtbtn{margin:0 auto;font-size:14.5px}
 .zbars .zic{color:var(--amber);display:grid;place-items:center;flex:none}
 .zbars .zic svg{width:22px;height:22px}
 #sheet.fresh #sheetBody{pointer-events:none}
 .zchip svg{width:15px;height:15px;vertical-align:-2px;color:var(--amber)}
 .zchip[aria-pressed="true"] svg{color:currentColor}
+.ptop .pbtns{justify-self:end;display:flex;gap:8px}
+.mf-move{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 22px);z-index:1001;width:auto;padding:0 18px;background:var(--bg);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.pin.tick{background:#8A90A0;border-color:#0B0D12;box-shadow:none;position:relative}
+.pin.tick::after{content:"";position:absolute;left:50%;top:45%;width:6px;height:3px;border:solid #0B0D12;border-width:0 0 2px 2px;transform:translate(-50%,-50%) rotate(-45deg)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
@@ -1558,7 +1562,7 @@ setTimeout(done,1200)})();</script>
     <div class="ptop">
       <div class="count" id="pCount"></div>
       <div class="clock" id="clock"><b id="clockT">60:00</b><small id="clockL">Left</small></div>
-      <button class="iconbtn" id="pMenu" type="button" aria-label="Game menu"></button>
+      <div class="pbtns"><button class="iconbtn" id="pMap" type="button" aria-label="Crawl map"></button><button class="iconbtn" id="pMenu" type="button" aria-label="Game menu"></button></div>
     </div>
     <div class="tbar" id="tbar"><i id="tbarI"></i></div>
     <div class="strip" id="strip"></div>

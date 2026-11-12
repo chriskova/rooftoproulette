@@ -90,6 +90,7 @@ const areaCity=a=>a.city||"Sydney",REG=()=>REGIONS.filter(r=>(r.city||"Sydney")=
 const areaOf=v=>{const c=v.city||"Sydney",L=AREAS.filter(a=>areaCity(a)===c);return L.find(a=>a.src.includes(v.area))||L.slice().sort((a,b)=>dist(v,a)-dist(v,b))[0]};
 const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
 const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
+const DWELL=()=>{const g_=S.game;return g_&&g_.demo?0:DWELL_MIN*60000};   // the demo counts a bar the moment you arrive
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const AN=window.RR_CONFIG,APPV="__VERSION__";
 const SITE="https://chriskova.github.io/rooftoproulette/",SUPPORT="hello@rooftoproulette.com",IG="https://www.instagram.com/rooftoproulette/",TT="https://www.tiktok.com/@rooftoproulette",PLAY="https://play.google.com/store/apps/details?id=com.rooftoproulette.app";
@@ -132,7 +133,7 @@ const byId=id=>VENUES.find(v=>v.id===id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ---------- icons ---------- */
-const I={
+const I={map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
  dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>',
  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
@@ -256,7 +257,7 @@ function farSheet(){track("far_from_city",{});
   sheet(`<h3>Try a Sydney crawl from anywhere</h3><p class="note" style="margin:4px 0 14px">We don’t cover your area yet. Spin for real rooftops around Circular Quay and tap “I’m here” to play from home.</p>
     <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Start demo crawl</button>
     <button class="btn line" type="button" id="fsTrip">${I.pin} Browse cities</button></div>`,()=>{
-    $("fsDemo").onclick=()=>{closeSheet();startDemo()};
+    $("fsDemo").onclick=()=>askDemo();
     $("fsTrip").onclick=tripSheet})}
 // Explore another city: pick one, then its rooftops open on the Rooftops tab.
 function tripSheet(){const live=CITIES.filter(x=>x.live);
@@ -265,14 +266,14 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour timed game from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
+function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">A full crawl from the couch. It won't show up in My Tab.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
+  $("dmNo").onclick=closeSheet;$("dmGo").onclick=()=>{closeSheet();if(before)before();startDemo()}})}
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
   S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
     zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:["The Rocks"],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
     zone:{lat:st.lat,lng:st.lng,name:nearestArea(st)},visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false,dpos:{lat:st.lat,lng:st.lng,acc:5},dff:0};
   track("demo_start",{});save();buzz(30);go("play")}
-function demoBar(g){const a=atVisit(),t=now();
-  if(a&&t-a.arrivedAt<DWELL_MIN*60000)return `<div class="demobar"><span class="dtag">Demo</span><span>No need to wait.</span><button class="btn sm" type="button" id="dSkip">Skip ahead</button></div>`;
-  return `<div class="demobar"><span class="dtag">Demo</span><span>Nothing counts.</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
+function demoBar(g){return `<div class="demobar"><span class="dtag">Demo</span><span>Practice run</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
 function bindDemoBar(g){
   if($("dWalk"))$("dWalk").onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};
   if($("dSkip"))$("dSkip").onclick=()=>{const a=atVisit();if(!a)return;g.dff=(g.dff||0)+Math.max(0,DWELL_MIN*60000+2000-(now()-a.arrivedAt));save();loop();renderPlay()};
@@ -1063,14 +1064,14 @@ function renderWiz(){
       ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars from past games</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
       <button class="txtbtn zdemo" type="button" id="zoneDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),!!w.newOnly).filter(v=>!excl.includes(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
-    $("zoneDemo").onclick=()=>{S.wiz=null;startDemo()};
+    $("zoneDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     const zb=rrZoneBind(w.z,me,()=>!!w.newOnly,(P,z,moved,settled)=>{
       const t=now(),location=me||you(),far=!location||dist(location,z)>Math.max(2000,z.r*1000+1000);
       const ok=P.open.length>=2,options=P.open.length?P.open:P.all;
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
-      $("rrN").textContent=P.open.length?`${plural(P.open.length,"rooftop")} open in your zone`:P.all.length?`${plural(P.all.length,"rooftop")} in your zone`:"No rooftops in your zone";
-      $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):options.length?"":"Drag the map or widen the circle.";
+      $("rrN").textContent=P.all.length?"Rooftops in your zone":"No rooftops in your zone";
+      $("rrNs").textContent=!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):P.open.length?`${P.open.length} open now`:"Drag the map or widen the circle.";
       $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":P.all.length?"Nothing open here right now":"No rooftops here";
@@ -1084,7 +1085,7 @@ function renderWiz(){
       {
         cta(ok?`<button class="btn" id="wNext" type="button">Next</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
           if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});w.step=2;save();renderWiz()};
-          if($("wDemo"))$("wDemo").onclick=()=>{S.wiz=null;startDemo()}})}},
+          if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));wizRepaint()};
@@ -1097,9 +1098,9 @@ function renderWiz(){
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
-      <button class="zbars" type="button" id="wSee"><span class="t"><b id="wInPlay"></b><small id="wInPlayS" hidden></small></span><span class="chev">›</span></button>`;
+      <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>`;
     let m=null;
-    const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${plural(L_.length,"rooftop")} in play`;$("wInPlayS").hidden=!excl.length;$("wInPlayS").textContent=`${excl.length} vetoed`;
+    const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${L_.length} in play`+(excl.length?` · ${excl.length} vetoed`:"");
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
     makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
     draw();wizRepaint=draw;
@@ -1262,7 +1263,7 @@ function spinPool(){
   }
   return {pool:P,final:false};
 }
-function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)/60000>=DWELL_MIN;
+function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)>=DWELL();
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
 function onLocation(){liveNote();alertSync();
   const g=G();[bMap,zMap].forEach(setMe);
@@ -1482,7 +1483,7 @@ function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.lengt
 function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
-  if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL_MIN*60000){askDrink(a0,()=>doSpin(true,vel));return false}
+  if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL()){askDrink(a0,()=>doSpin(true,vel));return false}
   if(!g.started){track("crawl_start",{demo:!!g.demo,mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
@@ -2292,7 +2293,7 @@ function openMenu(){
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">${cr?"End the crawl":"End game"}</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
-$("pMenu").onclick=openMenu;
+$("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>
@@ -2372,7 +2373,7 @@ function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".c
 function renderPlay(){
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
-  $("pMenu").innerHTML=I.more;
+  $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;
   const counted=countShown(g);
   if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
@@ -2395,7 +2396,7 @@ function renderPlay(){
     '<div class="wild"><span aria-hidden="true">🔒</span><span><b>Locked wildcard</b>Play a real crawl to discover this one.</span></div>':
     g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
   if(a&&!g.reelOpen){
-    const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL_MIN*60000,nw=isNew(v.id);
+    const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL(),nw=isNew(v.id);
     const cp=cardPhoto(v);
     st.innerHTML=ask+`<div class="bar at${cp.cls||" photo blank"}${animateId===("at:"+a.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">${CR(g)?"You're here":"Visit logged"}${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>${v.fact?`<div class="wi">${esc(v.fact)}</div>`:""}
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
@@ -2406,7 +2407,7 @@ function renderPlay(){
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <div class="spinrow"><button class="btn" type="button" id="spinBtn">Spin for the next one</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>
-      <div class="cantrow"><button class="txtbtn" type="button" id="cantBtn">Can't get in?</button></div>`;
+      ${g.demo?"":`<div class="cantrow"><button class="txtbtn" type="button" id="cantBtn">Can't get in?</button></div>`}`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
@@ -2449,7 +2450,7 @@ function renderPlay(){
     sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
-    if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL_MIN*60000)askDrink(a,open_);else open_()};
+    if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
   camTip();
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
@@ -2612,6 +2613,23 @@ function resumeNight(r){
   S.game=g;S.lastEnd=null;save();startWatch();buzz(30);go("play");
 }
 // shrink text until it sits on one line (never cut off)
+// The live crawl map, full screen from Play. No route line: the path is the reveal on the scorecard.
+async function crawlMap(){const g=G();if(!g)return;
+  const ov=document.createElement("div");ov.className="mapfull";
+  const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&!g.demo&&(free||!g.voluntaryUsed);
+  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${canMove?`<button class="btn sm line mf-move" type="button" id="cmMove">${I.move} Move my zone</button>`:""}`;
+  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
+  const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
+  if($("cmMove"))$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
+  m=await makeMap("crawlMap",{greedy:true});if(!m)return;
+  const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
+  if(!CR(g))m.circle(g.center,g.radius);
+  inZ.filter(v=>!been.includes(v.id)&&v.id!==g.target).forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
+  been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"tick",()=>barSheet(v)));
+  if(g.target){const v=byId(g.target);if(v)m.pin(v,"big",()=>barSheet(v))}
+  setMe(m);
+  if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}
+}
 // the night's route, full screen
 async function bigMap(r,st){
   const ov=document.createElement("div");ov.className="mapfull";ov.innerHTML=`<div id="bigMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>`;
@@ -3130,14 +3148,14 @@ function renderBars(){
   if(!$("barsLists"))return;
   if(bSearching){paintSearch();return}
   const mapV=S.barsView==="map";
-  $("barsMapWrap").hidden=!mapV;$("barsList").hidden=mapV;
+  $("barsMapWrap").hidden=!mapV;$("barsList").hidden=mapV;$("barsLists").hidden=mapV;
   $("barsMap").style.height="";$("barsMap").style.minHeight="";
-  if(mapV)requestAnimationFrame(()=>{const el=$("barsMap"),tb=$("tabs");if(!el||!el.offsetParent)return;const top=el.getBoundingClientRect().top,mi=$("mini"),bot=Math.min(tb&&tb.offsetParent?tb.getBoundingClientRect().top:innerHeight,mi&&!mi.hidden&&mi.offsetParent?mi.getBoundingClientRect().top:innerHeight);el.style.height=Math.max(260,Math.round(bot-top-12))+"px";if(bMap)bMap.resize()});
+  const fitB=()=>{const el=$("barsMap"),tb=$("tabs");if(!el||!el.offsetParent||S.barsView!=="map")return;const top=el.getBoundingClientRect().top,mi=$("mini"),bot=Math.min(tb&&tb.offsetParent?tb.getBoundingClientRect().top:innerHeight,mi&&!mi.hidden&&mi.offsetParent?mi.getBoundingClientRect().top:innerHeight);el.style.height=Math.max(260,Math.round(bot-top-12))+"px";if(bMap)bMap.resize()};
+  if(mapV){requestAnimationFrame(fitB);setTimeout(fitB,350)}
   $("bView").innerHTML=mapV?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> List`:`${I.pin} Map`;
   const t=now(),y=you(),c=collectedMap(),g=G();
   // one list, filtered: everything, the ones you've been to, the ones you've hidden (and your zone, mid-game)
-  const tabs=g?[["zone",CR(g)?(g.cz.type==="list"?"Your list":"Nearby"):"My zone"],["all","All"]]:[["all","All"]];
-  if(g&&S.barsFilterGame!==g.id){S.barsFilter="zone";S.barsFilterGame=g.id;save()}   // a new game opens on your zone
+  const tabs=[["all","All"]];   // your crawl's map lives on Play now
   let f=S.barsFilter;if(!tabs.some(x=>x[0]===f))f=tabs[0][0];
   $("barsCity").innerHTML=cityBtn();
   const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
@@ -3147,7 +3165,7 @@ function renderBars(){
   const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
   $("barsSeg").hidden=false;
-  $("barsSeg").innerHTML=(g?`<button class="chip zchip" type="button" data-w="zone" aria-pressed="${f==="zone"}">${I.target} ${tabs[0][1]}</button>`:"")
+  $("barsSeg").innerHTML=""
     +`<button class="chip" type="button" data-w="all" aria-pressed="${rgSel==="all"}">All of ${esc(cityIn(S.city))}<span class="cn">${VENUES.filter(inCityNow).length}</span></button>`
     +REG().map(r=>`<button class="chip" type="button" data-w="${esc(r.name)}" aria-pressed="${rgSel===r.name}">${esc(r.name)}<span class="cn">${VENUES.filter(v=>inCityNow(v)&&areaOf(v).reg===r.name).length}</span></button>`).join("");
   const sortD=(a,b)=>y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name);
@@ -3667,8 +3685,8 @@ function loop(){
   if(S.route==="play"&&g&&g.noLoc&&g.target){const hb=$("hereBtn");if(hb&&hb.classList.contains("locked")){if(now()>=hereAt(g)){hb.classList.remove("locked");hb.setAttribute("aria-disabled","false");hb.innerHTML=hereLbl(g);buzz(20)}else hb.innerHTML=hereLbl(g)}}
   if(S.route==="play"&&g){
     renderClock();const a=atVisit(),d=$("dwell");if(a&&d)d.textContent=CR(g)&&now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);
-    if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!a._shown){a._shown=1;renderPlay()}
-    if(a&&!spinning&&!a._flew&&(now()-a.arrivedAt)>=DWELL_MIN*60000&&!$("sheet").open&&!g.reelOpen)flyToCounter();
+    if(a&&!spinning&&(now()-a.arrivedAt)>=DWELL()&&!a._shown){a._shown=1;renderPlay()}
+    if(a&&!spinning&&!a._flew&&(now()-a.arrivedAt)>=DWELL()&&!$("sheet").open&&!g.reelOpen)flyToCounter();
     if(CR(g)&&g.nudge&&a&&!a._nudged&&!document.hidden&&now()-a.arrivedAt>=g.nudge*60000){a._nudged=1;save();ding();buzz([80,60,80]);if(!spinning)renderPlay()}
     if(a&&!spinning&&(now()-a.arrivedAt)<DWELL_MIN*60000&&$("cantBtn")===null&&false)renderPlay();
     if(!spinning&&g.started&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
@@ -3686,7 +3704,7 @@ document.addEventListener("visibilitychange",()=>{
   const g=G();
   if(g&&g.celebrate){const a=g.visits.find(v=>v.leftAt==null);
     // arrived while the phone was away: if it already counts, one quick beat; otherwise the usual arrival
-    if(a&&a.id===g.celebrate&&now()-a.arrivedAt>=DWELL_MIN*60000)setTimeout(()=>catchUp(g.celebrate),200);else setTimeout(()=>celebrate(g.celebrate),350)}
+    if(a&&a.id===g.celebrate&&now()-a.arrivedAt>=DWELL())setTimeout(()=>catchUp(g.celebrate),200);else setTimeout(()=>celebrate(g.celebrate),350)}
   else if(S.route==="play")renderPlay();
   loop();
 });
