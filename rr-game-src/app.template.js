@@ -2335,11 +2335,11 @@ function needManual(g){
 function logArrival(manual){
   const g=G();if(!g||!g.target)return;track("arrive",{manual:!!manual,leg:g.visits.length+1});const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
   // the phone was away for a while and we only just found out they're here: assume they've done their 3 minutes
-  const late=!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;
+  const late=!g.demo&&!manual&&!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=DWELL_MIN*60000;   // not in a demo or a tapped check-in: they're telling us they're here now
   let at=now();const d=leaving();
   if(d){const W=walkMin(byId(d.id),v)*60000;let L=late?leftGuess(d):Math.max(d.dep,now()-W);if(late)at=Math.min(now()-DWELL_MIN*60000,Math.max(L+W,d.dep));L=Math.min(L,at);closeVisit(d,L,"walk")}
   else if(late){const est=(g.targetAt||at)+walkMin(g.targetFrom||v,v)*60000;at=Math.min(now()-DWELL_MIN*60000,Math.max(now()-awayGap,est))}
-  g.visits.push({id:v.id,arrivedAt:at,leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
+  g.visits.push({id:v.id,arrivedAt:at,loggedAt:now(),leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
   if((S.test||g.demo)&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
   if(document.hidden){g.celebrate=v.id;save();return}
@@ -2389,7 +2389,7 @@ function renderPlay(){
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=qi>=0?`<div class="ask"><b>Should ${esc(byId(g.visits[qi].id).name)} count?</b><span class="small">You weren't there long. Did you have a drink?</span><div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count</button></div></div>`:"";
+  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No, don't count it</button></div></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
@@ -2408,7 +2408,7 @@ function renderPlay(){
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
       <div class="spinrow"><button class="btn" type="button" id="spinBtn">Spin for the next one</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div>
-      ${d<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
+      ${t-(a.loggedAt||a.arrivedAt)<DWELL_MIN*60000?`<div class="links"><button class="btn sm line" type="button" id="cantBtn" style="width:auto;padding:0 16px">Can't get in?</button></div>`:""}`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
     const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
