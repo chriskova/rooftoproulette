@@ -1107,7 +1107,8 @@ function renderWiz(){
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
-      <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>`;
+      <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
+      <button class="toggle" type="button" id="filmTog" role="switch" aria-checked="${!!S.film}"><span class="t"><b>Film spins</b><small>Records each spin and everyone's reaction</small></span><span class="sw"></span></button>`;
     let m=null;
     const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${L_.length} in play`+(excl.length?` · ${excl.length} vetoed`:"");
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
@@ -1115,6 +1116,7 @@ function renderWiz(){
     draw();wizRepaint=draw;
     body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     $("wSee").onclick=wizSpoiler;
+    $("filmTog").onclick=()=>{S.film=!S.film;save();$("filmTog").setAttribute("aria-checked",String(!!S.film));buzz(10);track("film_toggle",{on:!!S.film,where:"setup"})};
     cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>$("wStart").onclick=()=>{sawHow("rush");tryStart()});
   }
 }
@@ -2300,7 +2302,7 @@ function openMenu(){
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
-    <button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>
+    ${S.film?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>`:""}
     ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>End crawl<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
@@ -2308,7 +2310,7 @@ function openMenu(){
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
-    $("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
+    if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);
     $("mEnd").onclick=()=>sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your crawl card is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
@@ -2471,6 +2473,7 @@ function renderPlay(){
   if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000);
     if(far){g.farAsked=1;save();const tg=g.target;
       afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
+  st.querySelectorAll("#camBtn").forEach(b=>{if(!S.film||!b.classList.contains("ontop"))b.remove()});
   if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
   });
@@ -2749,7 +2752,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>`
-      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
+      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share card</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -3503,7 +3506,7 @@ function crawlStatSheet(kind,id){
 
 /* ---------- back up / restore: crawls, stats and lists as one file ---------- */
 function backupTab(){track("backup");
-  const keep=["been","nfu","want","fav","names","clipAuto","camLight","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
+  const keep=["been","nfu","want","fav","names","clipAuto","camLight","film","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
   const data={app:"rooftop-roulette",kind:"tab-backup",v:1,at:Date.now(),history:readH(HKEY),settings:st},d=new Date(),name=`rooftop-roulette-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
   const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
   // in the app: the phone's share sheet (save to Files or Drive, send it anywhere). On the web: a download (phones won't share .json files)
@@ -3537,7 +3540,7 @@ function settingsSheet(){
   const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat(),top=pg.querySelector(".spbody")?pg.querySelector(".spbody").scrollTop:0;
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="spBack" aria-label="Back">${I.back}</button><b>Settings</b></div><div class="spbody">
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
-    ${grp("Photos and clips",[NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
+    ${grp("Photos and clips",[tg("stFilm",S.film,"Film spins","Records each spin and everyone's reaction"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
     ${grp("Your tab",[lk("stBk","Back up My Tab"),lk("stRs","Restore My Tab")])}
     ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous. Never names, locations, photos or clips"),lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
@@ -3552,6 +3555,7 @@ function settingsSheet(){
   $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
   if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
   $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
+  $("stFilm").onclick=()=>{S.film=!S.film;save();track("film_toggle",{on:!!S.film,where:"settings"});settingsSheet();if(S.route==="play")renderPlay()};
   $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
     el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
