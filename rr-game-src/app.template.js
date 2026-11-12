@@ -2360,10 +2360,10 @@ function celebrate(id){
 }
 // One-time pointer at the camera button, from the second spin on (the first one is just about the game)
 const mapHintDue=g=>{S.tips=S.tips||{};if(!g||S.tips.mapOpened)return false;const n=g.visits.filter(v=>v.arrivedAt!=null).length;return n>=2||(n>=1&&!!S.tips.night)};
-function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map||!mapHintDue(g)||$("sheet").open||document.querySelector(".camtip,.cnudge"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
+function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map2||!mapHintDue(g)||$("sheet").open||document.querySelector(".camtip,.cnudge"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
   const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip below";tip.style.top=Math.round(Math.max(r.bottom,r.top+btn.offsetHeight,(btn.closest(".ptop")||btn).getBoundingClientRect().bottom)+8)+"px";tip.style.setProperty("--ax",Math.max(10,Math.round(innerWidth-12-(r.left+r.width/2)-8))+"px");
-  tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);
-  const off=()=>{S.tips.map=1;save();tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target))off()};
+  tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);S.tips.map2=1;save();
+  const t0=Date.now(),off=()=>{tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target)&&Date.now()-t0>1500)off()};   // a tap already on its way doesn't close it before it's read
   tip.onclick=off;document.addEventListener("pointerdown",away,true)}
 function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip:not(.maptip)");
   if(!cb||!cb.classList.contains("ontop")||!g_||!g_.visits.length||!S.tips.night||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
@@ -2620,7 +2620,7 @@ function resumeNight(r){
 }
 // shrink text until it sits on one line (never cut off)
 // The live crawl map, full screen from Play. No route line: the path is the reveal on the scorecard.
-async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
+async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map2=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
   const ov=document.createElement("div");ov.className="mapfull";
   const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
   ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`<button class="btn sm line mf-move" type="button" id="cmMove" ${canMove?"":"disabled"}>${I.move} ${canMove?"Move my zone":"Zone move used"}</button>`}`;
