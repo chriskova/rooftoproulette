@@ -2086,6 +2086,7 @@ html.fl .app{visibility:hidden}
 .nightzone svg{width:14px;height:14px;color:var(--amber)}
 .list .li .ok{color:var(--green)}
 .poolnum.low{color:var(--amber)}
+.introacts{display:flex;gap:10px}.introacts .btn{flex:1}.introacts #introDemo[hidden]{display:none}
 .poolmove{display:inline;padding:0 0 0 6px;font-size:14px;font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px;min-height:0}
 .rrline{display:flex;align-items:center;gap:10px;width:100%;padding:12px 4px 14px;margin-bottom:8px;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .rrline b{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.02em}.rrline b i{font-style:normal;color:var(--amber)}
@@ -2193,7 +2194,7 @@ setTimeout(done,1200)})();</script>
     <div style="display:flex;justify-content:flex-end"><button class="txtbtn" id="introSkip" type="button">Skip</button></div>
     <div id="introBody"></div>
     <div class="dots" id="introDots"></div>
-    <button class="btn" id="introNext" type="button">Next</button>
+    <div class="introacts"><button class="btn" id="introDemo" type="button" hidden>Try a demo</button><button class="btn" id="introNext" type="button">Next</button></div>
   </section>
 
   <!-- FIRST-TIME SETUP -->

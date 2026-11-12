@@ -673,12 +673,15 @@ function renderIntro(){
   if($("introDots").children.length!==SLIDES.length)$("introDots").innerHTML="<i></i>".repeat(SLIDES.length);   // one dot per slide
   [...$("introDots").children].forEach((d,k)=>{const on=k===i;if(on&&!d.classList.contains("on")){d.classList.add("on")}else if(!on)d.classList.remove("on")});
   $("introNext").textContent=i<SLIDES.length-1?"Next":S.introReplay?"Got it":"Get started";
+  // Replayed from home: the last card offers the demo alongside Got it
+  const lastReplay=S.introReplay&&i===SLIDES.length-1;$("introDemo").hidden=!lastReplay;$("introNext").classList.toggle("dark",lastReplay);
   $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
 }
 $("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=2;S.introReplay=false;go("home")}};
 // The logo takes you home from game setup and R&R setup (not the first-time city and been-to screens).
 const SETUP_ROUTES=["wiz","quick"];
 $("logo").onclick=()=>{if(SETUP_ROUTES.includes(S.route)){closeSheet();go("home")}};
+$("introDemo").onclick=()=>{S.introReplay=false;S.onboarded=true;S.ob=2;save();track("intro_demo",{});if(S.game){go("home");playingSheet(startDemo);return}startDemo()};
 $("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;S.introReplay=false;go("home")};
 (()=>{let x0=null,y0=0,dx=0,horiz=null,t0=0;const v=$("v-intro"),tr=()=>$("introBody").querySelector(".itrack");
   v.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;horiz=null;t0=Date.now()},{passive:true});

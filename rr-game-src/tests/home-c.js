@@ -9,8 +9,13 @@ await p.evaluate(()=>{S.onboarded=true;S.ob=2;S.firstPlay=1;S.seenHow={rush:1,rr
 await p.screenshot({path:'out/hc-home.png'});
 await p.click('#homeHow');await p.waitForTimeout(500);console.log('replay route:',await p.evaluate(()=>S.route));
 for(let i=0;i<4;i++){await p.click('#introNext');await p.waitForTimeout(350)}
-console.log('last button:',await p.evaluate(()=>$('introNext').textContent));await p.screenshot({path:'out/hc-intro5.png'});
+console.log('last button:',await p.evaluate(()=>$('introNext').textContent),'demo shown:',await p.evaluate(()=>!$('introDemo').hidden));await p.screenshot({path:'out/hc-intro5.png'});
+await p.click('#introDemo');await p.waitForTimeout(1200);console.log('demo started:',await p.evaluate(()=>S.route+' '+!!(S.game&&S.game.demo)));
+await p.evaluate(()=>{S.game=null;save();go('home')});await p.waitForTimeout(300);
+await p.click('#homeHow');await p.waitForTimeout(300);for(let i=0;i<4;i++){await p.click('#introNext');await p.waitForTimeout(300)}
 await p.click('#introNext');await p.waitForTimeout(500);console.log('back home:',await p.evaluate(()=>S.route+' '+S.onboarded));
+await p.evaluate(()=>{S.onboarded=false;S.intro=4;save();go('intro')});await p.waitForTimeout(400);console.log('first-run demo hidden:',await p.evaluate(()=>$('introDemo').hidden),await p.evaluate(()=>$('introNext').textContent));
+await p.evaluate(()=>{S.onboarded=true;save();go('home')});await p.waitForTimeout(300);
 await p.click('#newGame');await p.waitForTimeout(800);await p.screenshot({path:'out/hc-len.png'});
 await p.click('#wNext');await p.waitForTimeout(1500);await p.screenshot({path:'out/hc-zone.png'});
 await p.evaluate(()=>{S.wiz.step=0;save();renderWiz()});await p.waitForTimeout(400);
