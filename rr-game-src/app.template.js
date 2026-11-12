@@ -2624,7 +2624,9 @@ function resumeNight(r){
 async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map2=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
   const ov=document.createElement("div");ov.className="mapfull";
   const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
-  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`<button class="btn sm line mf-move" type="button" id="cmMove" ${canMove?"":"disabled"}>${I.move} ${canMove?"Move my zone":"Zone move used"}</button>`}`;
+  const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
+  // like Uber or Google Maps: only round icon buttons float on the map; the words live in a card at the bottom
+  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`<div class="mf-card"><div class="t"><b>Your zone</b><small>Within ${kmTxt(g.radius)} of ${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))}</small><small>${plural(left,"rooftop")} left${canMove?"":" · Move used"}</small></div>${canMove?`<button class="txtbtn mf-mv" type="button" id="cmMove">Move</button>`:""}</div>`}`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
   if($("cmMove")&&canMove)$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
