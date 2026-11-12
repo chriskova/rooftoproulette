@@ -2468,11 +2468,9 @@ function renderPlay(){
   }
   {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
   // First bar of a real timed crawl and you're nowhere near it: most likely trying it from home. Ask once.
-  // Or re-spinning through bars without going anywhere: 2 re-spins within a minute of the first spin.
-  if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!S.test&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000),rs=g.respins||[];
-    const rushing=rs.length>=2&&rs[1]-g.startedAt<=60000;
-    if(far||rushing){g.farAsked=1;save();const tg=g.target;
-      afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g,!far)},700))}}
+  if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000);
+    if(far){g.farAsked=1;save();const tg=g.target;
+      afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
   if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
   });
@@ -2501,7 +2499,11 @@ function renderPlay(){
   const sk=$("skipBtn");if(sk&&CR(g))sk.onclick=()=>{const id=g.target;(g.skipped=g.skipped||[]).push(id);g.target=null;save();renderPlay();skipToast(id)};
   else if(sk)sk.onclick=()=>{if(!basePool().length){openMove(true);return}
     if(g.demo){(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();renderPlay();return}   // free in the demo
-    const free=(g.freeSkips||0)>0;sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button></div>`,()=>{$("sN").onclick=closeSheet;$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.respins=g.respins||[]).push(now());(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
+    const free=(g.freeSkips||0)>0;
+    // Second re-spin within a minute of the first spin, before reaching any bar: probably trying it from home.
+    const home=!g.noLoc&&!g.visits.length&&!g.farAsked&&(g.respins||[]).length>=1&&now()-g.startedAt<=60000;if(home){g.farAsked=1;save()}
+    sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? The demo plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to demo</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
+      if($("sD"))$("sD").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("respin_demo",{});stopWatch();S.game=null;save();startDemo()};$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.respins=g.respins||[]).push(now());(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   {const dw=$("dWalk");if(dw)dw.onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()}}   // demo: arrive without walking
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
