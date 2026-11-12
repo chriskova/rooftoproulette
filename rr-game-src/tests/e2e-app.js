@@ -15,7 +15,7 @@ await p.clock.install({time:new Date('2026-11-07T15:00:00+11:00')});
 const log=(...a)=>console.log(...a);const st=()=>p.evaluate(()=>S.route+(S.game?` game(${S.game.mode||'rush'} started=${S.game.started} target=${S.game.target} visits=${S.game.visits.length})`:' no game'));
 const moveTo=async(lat,lng)=>p.evaluate(([la,ln])=>window.__bgcb&&window.__bgcb({latitude:la,longitude:ln,accuracy:8},null),[lat,lng]);
 const notes=()=>p.evaluate(()=>{const n=__n.splice(0);return n.map(x=>x[0]+'.'+x[1]).join(' ')});
-await p.goto('file://'+process.argv[2]);await p.evaluate(()=>{S.onboarded=true;S.city='Sydney';S.seenHow={rush:1,rr:1};S.tips={night:1,cam:1};save();go('home')});await p.waitForTimeout(800);await notes();
+await p.goto('file://'+process.argv[2]);await p.evaluate(()=>{S.onboarded=true;S.firstPlay=1;S.city='Sydney';S.seenHow={rush:1,rr:1};S.tips={night:1,cam:1};save();go('home')});await p.waitForTimeout(800);await notes();
 
 /* --- Rush Hour, start to finish --- */
 await p.click('#newGame');await p.waitForTimeout(600);
@@ -47,7 +47,7 @@ log('ended:',await st(),'| calls:',await notes());await p.screenshot({path:'out/
 log('notification cleared + watcher removed:',await p.evaluate(()=>bgWatch===null));
 
 /* --- R&R --- */
-await p.evaluate(()=>{closeSheet();go('home')});await p.waitForTimeout(400);await p.click('#quickGo');await p.waitForTimeout(600);
+await p.evaluate(()=>{closeSheet();go('home')});await p.waitForTimeout(400);await p.evaluate(()=>{S.wiz=null;S.quick={step:0,from:null};save();go('quick')});await p.waitForTimeout(600);
 if(await p.evaluate(()=>$("sheet").open))await p.evaluate(()=>{const b=[...document.querySelectorAll('#sheetBody button')].find(b=>/play|skip|let/i.test(b.textContent));b&&b.click()});await p.waitForTimeout(600);
 for(let i=0;i<4&&await p.evaluate(()=>S.route)==='quick';i++){const id=await p.evaluate(()=>{const b=document.querySelector('#cta button:not([disabled])');return b&&b.id});if(!id)break;await p.click('#'+id);await p.waitForTimeout(1600)}
 log('R&R started:',await st());

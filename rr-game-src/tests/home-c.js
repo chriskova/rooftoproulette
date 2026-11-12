@@ -19,7 +19,7 @@ await p.evaluate(()=>{S.onboarded=true;save();go('home')});await p.waitForTimeou
 await p.click('#newGame');await p.waitForTimeout(800);await p.screenshot({path:'out/hc-len.png'});
 await p.click('#wNext');await p.waitForTimeout(1500);await p.screenshot({path:'out/hc-zone.png'});
 await p.evaluate(()=>{S.wiz.step=0;save();renderWiz()});await p.waitForTimeout(400);
-await p.click('#wRR');await p.waitForTimeout(800);console.log('rr route:',await p.evaluate(()=>S.route+' wiz:'+!!S.wiz));
+await p.click('[data-l="rr"]');await p.waitForTimeout(200);await p.click('#wNext');await p.waitForTimeout(800);console.log('rr route:',await p.evaluate(()=>S.route+' wiz:'+!!S.wiz));
 // low pool on the wheel
 await p.evaluate(()=>{const c={lat:-33.8688,lng:151.2093};S.quick=null;S.game={id:"g1",mode:"rush",city:"Sydney",len:60,radius:.3,newOnly:false,center:c,startPos:c,areas:["CBD"],moves:[],voluntaryUsed:false,freeSkips:0,excluded:[],zone:{lat:c.lat,lng:c.lng,name:"CBD"},cz:{type:"me",r:.3},visits:[{id:"the-glenmore",arrivedAt:now()-600000,leftAt:now()-300000,counted:true}],target:null,started:true,startedAt:now()-900000,endsAt:now()+2700000,test:true};save();go('play')});
 await p.waitForTimeout(600);await p.evaluate(()=>{const ids=basePool().map(v=>v.id);S.game.excluded=ids.slice(2);save();renderPlay()});await p.waitForTimeout(500);console.log('pool:',await p.evaluate(()=>{const x=document.querySelector('.poolnum');return x?x.textContent:'none'}),'move link:',await p.evaluate(()=>!!$('poolMove')));

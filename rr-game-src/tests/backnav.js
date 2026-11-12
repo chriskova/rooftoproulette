@@ -12,7 +12,7 @@ await p.evaluate(()=>go('bars'));await p.waitForTimeout(300);await p.evaluate(()
 await p.goBack();await p.waitForTimeout(400);console.log('back ->',await where());
 await p.goBack();await p.waitForTimeout(400);console.log('back ->',await where());
 // the same steps through the Android path
-await p.click('#quickGo');await p.waitForTimeout(400);console.log('R&R setup:',await where());
+await p.evaluate(()=>{S.wiz=null;S.quick={step:0,from:null};save();go('quick')});await p.waitForTimeout(400);console.log('R&R setup:',await where());
 console.log('android back:',await p.evaluate(()=>appBack()),await where());
 console.log('android back at home leaves the app:',await p.evaluate(()=>appBack()===false));
 console.log(e);await b.close()})();
