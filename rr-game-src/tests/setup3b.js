@@ -14,7 +14,7 @@ console.log('fit:',JSON.stringify(await ring()));
 const box=await p.$eval('#rrMap',x=>{const r=x.getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2]});
 await p.mouse.move(box[0],box[1]);for(let i=0;i<6;i++){await p.mouse.wheel(0,250);await p.waitForTimeout(250)}await p.waitForTimeout(1500);
 console.log('zoomed out past the biggest circle:',JSON.stringify(await ring()));await p.screenshot({path:'out/b2.png'});
-await p.click('#rrNB');await p.waitForTimeout(600);await p.screenshot({path:'out/b3.png'});
+await p.click('#rrNB');await p.waitForTimeout(600);if(await p.$('#spShow')){await p.click('#spShow');await p.waitForTimeout(600)}await p.screenshot({path:'out/b3.png'});
 console.log('been tags:',await p.$$eval('.beentag',x=>x.length));
 await p.evaluate(()=>{closeSheet();S.wiz=null;startDemo()});await p.waitForTimeout(800);await p.evaluate(()=>go('home'));await p.waitForTimeout(800);
 console.log('mini shown on home in demo:',await p.evaluate(()=>!$('mini').hidden),await p.textContent('#mini'));await p.screenshot({path:'out/b4.png'});

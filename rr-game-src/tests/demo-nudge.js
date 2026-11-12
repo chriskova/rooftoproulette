@@ -8,7 +8,10 @@ await p.evaluate(()=>{const s=sydAt(now());let d=19*60-s.min;if(d<0)d+=1440;S.ff
 await p.evaluate(()=>{const g=G(),P=basePool(),v=P.find(v=>openOK(v,now()))||P[0];g.started=true;g.startedAt=now();g.endsAt=now()+3600000;setTarget(v,{lat:v.lat+.01,lng:v.lng});save();renderPlay()});await p.waitForTimeout(1200);
 const sheetOpen=async()=>p.evaluate(()=>{const s=$('sheet');return !!(s&&s.open)});
 if(await sheetOpen()){await p.evaluate(()=>closeSheet());await p.waitForTimeout(400)}
-console.log('state:',await p.evaluate(()=>{const g=G();return JSON.stringify({demo:g.demo,target:g.target,started:!!g.started,at:!!atVisit(),pool:basePool().length,skips:document.querySelectorAll('#skipBtn').length})}));await p.evaluate(()=>$('skipBtn').click());await p.waitForTimeout(600);console.log('open:',await p.evaluate(()=>$('sheet').open+' '+$('sheetBody').innerText.slice(0,80)));console.log('nudge:',await p.textContent('#sheetBody h3'));await p.screenshot({path:'out/dn.png'});
-await p.click('#dnHere');await p.waitForTimeout(2500);console.log('arrived:',await p.evaluate(()=>!!atVisit()));
-await p.evaluate(()=>{const g=G(),P=basePool().filter(v=>!(g.visits||[]).some(x=>x.id===v.id)),v=P[0];setTarget(v,{lat:v.lat+.01,lng:v.lng});g.dpos=null;save();renderPlay()});await p.waitForTimeout(800);
-if(await p.$('#skipBtn')){await p.evaluate(()=>$('skipBtn').click());await p.waitForTimeout(600);console.log('second time:',await p.textContent('#sheetBody h3'))}else console.log('second time: no Spin again button',await p.evaluate(()=>[...document.querySelectorAll('#v-play button')].filter(x=>x.offsetParent).map(x=>x.id).join(',')));console.log('ERRORS',e);await b.close()})();
+console.log('state:',await p.evaluate(()=>{const g=G();return JSON.stringify({demo:g.demo,target:g.target,started:!!g.started,at:!!atVisit(),pool:basePool().length,skips:document.querySelectorAll('#skipBtn').length})}));await p.screenshot({path:'out/dn.png'});
+console.log('buttons:',await p.evaluate(()=>[...document.querySelectorAll('#stage button')].filter(x=>x.offsetParent).map(x=>x.id+':'+x.innerText.replace(/\n/g,' ')).join(' | ')),'| banner:',await p.textContent('#demoBar'));
+const t0=await p.evaluate(()=>G().target);await p.evaluate(()=>$('skipBtn').click());await p.waitForTimeout(600);
+console.log('respin free:',await p.evaluate(t0=>JSON.stringify({sheet:$('sheet').open,target:G().target,skipCost:G().skipCost||0,ends:Math.round((G().endsAt-now())/60000)}),t0));
+await p.evaluate(()=>{const g=G(),P=basePool().filter(v=>openOK(v,now())&&!(g.skipped||[]).includes(v.id)),v=P[0];setTarget(v,{lat:v.lat+.01,lng:v.lng});save();renderPlay()});await p.waitForTimeout(500);
+await p.click('#dWalk');await p.waitForTimeout(2500);console.log('skip the walk arrived:',await p.evaluate(()=>!!atVisit()),'| cant shown',!!(await p.$('#cantBtn')));
+console.log('ERRORS',e);await b.close()})();
