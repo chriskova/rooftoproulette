@@ -266,7 +266,7 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour timed game from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
-function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">A practice run from the couch.<br>It won't show up in My Tab.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
+function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">For a practice run from home.<br>This won't appear in “My Tab” as a completed crawl.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
   $("dmNo").onclick=closeSheet;$("dmGo").onclick=()=>{closeSheet();if(before)before();startDemo()}})}
 function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
   S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
@@ -2359,7 +2359,12 @@ function celebrate(id){
   setTimeout(confetti,60);
 }
 // One-time pointer at the camera button, from the second spin on (the first one is just about the game)
-function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip");
+function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map||!g||!g.visits.some(v=>v.arrivedAt!=null)||$("sheet").open||document.querySelector(".camtip"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
+  const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip";tip.style.top=Math.round(r.bottom+10)+"px";
+  tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);
+  const off=()=>{S.tips.map=1;save();tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target))off()};
+  tip.onclick=off;document.addEventListener("pointerdown",away,true)}
+function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip:not(.maptip)");
   if(!cb||!cb.classList.contains("ontop")||!g_||!g_.visits.length||!S.tips.night||S.tips.cam||CAM.once||document.body.classList.contains("camon")||S.route!=="play"||$("sheet").open){if(tip)tip.remove();return}
   if(!tip){tip=document.createElement("button");tip.type="button";tip.className="camtip";
     tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Film the spin</b><span>Tap the camera, then spin. It records the spin and everyone's reaction.</span>`;tip.setAttribute("aria-label","Film the spin. Close tip");document.body.appendChild(tip);
@@ -2417,7 +2422,7 @@ function renderPlay(){
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
       <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
-    else{st.innerHTML=banner+ask+`<div class="bar tgt tapmaps${cp.cls}${animateId===v.id?" anim":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<button class="mappill" type="button" id="cardMap">${I.map}Map</button><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -2448,11 +2453,12 @@ function renderPlay(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.querySelector("span").lastChild.textContent;
     sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
+  if($("cardMap"))$("cardMap").onclick=e=>{e.stopPropagation();crawlMap()};
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
-  camTip();
+  camTip();setTimeout(mapTip,900);
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
     CAM.once=true;CAM.onceAt=Date.now();track("camera_open");document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
@@ -2616,11 +2622,11 @@ function resumeNight(r){
 // The live crawl map, full screen from Play. No route line: the path is the reveal on the scorecard.
 async function crawlMap(){const g=G();if(!g)return;
   const ov=document.createElement("div");ov.className="mapfull";
-  const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&!g.demo&&(free||!g.voluntaryUsed);
-  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${canMove?`<button class="btn sm line mf-move" type="button" id="cmMove">${I.move} Move my zone</button>`:""}`;
+  const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
+  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`<button class="btn sm line mf-move" type="button" id="cmMove" ${canMove?"":"disabled"}>${I.move} ${canMove?"Move my zone":"Zone move used"}</button>`}`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
-  if($("cmMove"))$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
+  if($("cmMove")&&canMove)$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
   m=await makeMap("crawlMap",{greedy:true});if(!m)return;
   const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
   if(!CR(g))m.circle(g.center,g.radius);
