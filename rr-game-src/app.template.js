@@ -757,7 +757,12 @@ function playingSheet(next){const g=S.game;
   sheet(`<h3>You've got a crawl going</h3><p class="note" style="margin:6px 0 14px">Your ${CR(g)?"R&amp;R crawl":"crawl"} is still on.</p><div class="acts"><button class="btn" type="button" id="pgBack">Back to it</button><button class="btn line" type="button" id="pgNew">End it and start a new one</button></div>`,()=>{
     $("pgBack").onclick=()=>{closeSheet();go("play")};
     $("pgNew").onclick=()=>{closeSheet();if(G().started)endGame(now());else{S.game=null;save();stopWatch()}next()}})}
-$("newGame").onclick=()=>{if(S.game){playingSheet(startWizard);return}if(farAway()){farSheet();return}startWizard()};
+$("newGame").onclick=()=>{if(S.game){playingSheet(startWizard);return}if(farAway()){farSheet();return}if(firstPlayDue()){firstPlaySheet();return}startWizard()};
+// Before anyone's played anything: ask straight up whether they're heading out or trying it first.
+function firstPlayDue(){return !S.firstPlay&&!S.test&&!readH(HKEY).length}
+function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying it from home first? The demo plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fpOut">Heading out now</button><button class="btn line" type="button" id="fpDemo">Try a demo crawl</button></div>`,()=>{
+  $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
+  $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
 $("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 $("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
@@ -1391,11 +1396,12 @@ function makeReel(el,names,o){
   if(o.onRelease){
     let y0=0,pS=0,pts=[],down=false;
     el.addEventListener("pointerdown",e=>{if(R.busy||spinning)return;cancelAnimationFrame(R.raf);down=true;R.down=true;el.setPointerCapture(e.pointerId);y0=e.clientY;pS=R.p;pts=[[performance.now(),R.p]];ac();const h=el.querySelector(".hint");if(h)h.classList.add("off")});
-    el.addEventListener("pointermove",e=>{if(!down)return;const dy=e.clientY-y0;R.p=pS-(dy>0?dy:dy*.35)/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[1][0]>80)pts.shift();draw()});
+    el.addEventListener("pointermove",e=>{if(!down)return;const dy=e.clientY-y0;R.p=pS-dy/ROW;const t=performance.now();pts.push([t,R.p]);while(pts.length>2&&t-pts[1][0]>80)pts.shift();draw()});
     const up=()=>{if(!down)return;down=false;R.down=false;draw();const t=performance.now(),a=pts[0],travel=R.p-pS;
       let v=(t-a[0])>8&&(t-pts[pts.length-1][0])<150?(R.p-a[1])/((t-a[0])/1000):0;
       if(Math.abs(travel)<.2&&Math.abs(v)<2){if(o.onRelease(-16)===false)R.bounce();return}  // a tap gives a gentle spin
-      if(v>-3.5){if(travel<-1.5)v=-14;else{R.bounce();return}}                                // too gentle, or the wrong way (a long, slow pull down still counts)
+      if(v>0||travel>0){v=-v;}                                                                // flicked up: spin it all the same
+      if(v>-3.5){if(Math.abs(travel)>1.5)v=-14;else{R.bounce();return}}                     // too gentle (a long, slow pull either way still counts)
       if(o.onRelease(v)===false)R.bounce()};
     el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
   }
@@ -1473,10 +1479,14 @@ function reveal(info,scope){
   },D);
 }
 setTimeout(()=>{gload().catch(()=>{})},1200);
-function reelNote(){return "Flick it down. Harder flick, longer spin."}
+function reelNote(){return "Flick to spin. Harder flick, longer spin."}
 
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
 function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Wrap it up, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the crawl</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
+function farBarSheet(g){const v=byId(g.target),y=you();
+  sheet(`<h3>You're not near this bar</h3><p class="note">${esc(v.name)} is ${mOrKm(dist(y,v))} away. Playing from home? The demo plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fbDemo">Switch to demo</button><button class="btn dark" type="button" id="fbKeep">Keep going</button></div>`,()=>{
+    $("fbKeep").onclick=closeSheet;
+    $("fbDemo").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("far_bar_demo",{});stopWatch();S.game=null;save();startDemo()}})}
 function askDrink(a0,then){const v=byId(a0.id);
   sheet(`<h3>Did you have a drink at ${esc(v.name)}?</h3><div class="acts"><button class="btn" type="button" id="dY">Yes, count it</button><button class="btn dark" type="button" id="dN">No, don't count it</button><button class="btn line" type="button" id="dS">Stay a bit longer</button></div>`,()=>{
     $("dS").onclick=closeSheet;
@@ -2440,10 +2450,10 @@ function renderPlay(){
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn${now()<hereAt(g)?" locked":""}" type="button" id="hereBtn" aria-disabled="${now()<hereAt(g)}">${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
       ${g.demo?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="dWalk">Skip the walk</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div></div>`:""}
-      ${g.noLoc||g.demo?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
+      ${g.noLoc||g.demo?"":CR(g)?`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">Not feeling it? Spin again, as often as you like</span></div>`
+        :`<div class="again"><div class="spinrow"><button class="btn again-btn locked" type="button" id="lockBtn" aria-disabled="true">${I.clock} Next spin unlocks on arrival</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">${fs?`Re-spin (free, ${fs} left)`:`Re-spin (−${SKIP_COST} min)`}</button></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
-      ${!g.demo&&!CR(g)?(g.noLoc||man?tip("enroute-man","Location's off. Tap “I’m here” when you arrive.",false):tip("enroute","Your next spin unlocks when you arrive. Nothing to tap.",false)):""}
-      ${!g.demo&&!CR(g)&&!g.visits.length&&(!you()||dist(you(),v)>2000)?'<button type="button" class="txtbtn" id="homeDemo">Playing from home? Try the demo</button>':""}
+      ${!g.demo&&!CR(g)&&(g.noLoc||man)?tip("enroute-man","Location's off. Tap “I’m here” when you arrive.",false):""}
       ${CR(g)&&!g.noLoc?tip("enroute","You're checked in when you arrive. Nothing to tap.",false):""}
       ${man&&!g.noLoc?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;}
     if(animateId===v.id)animateId=null;
@@ -2456,6 +2466,11 @@ function renderPlay(){
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
+  {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
+  // First bar of a real timed crawl and you're nowhere near it: most likely trying it from home. Ask once.
+  if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!S.test&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target);
+    if(y&&v&&dist(y,v)>2000){g.farAsked=1;save();const tg=g.target;
+      afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
   if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
   });
