@@ -4,7 +4,7 @@
 // node jackpot-timing.js $(realpath ../../index.html)
 const {chromium,devices}=require('playwright');
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:860},geolocation:{latitude:-33.8688,longitude:151.2093,accuracy:20},permissions:['geolocation']});
-const p=await ctx.newPage();const e=[];p.on('pageerror',x=>e.push(x.message));
+const p=await ctx.newPage();const e=[];p.on('pageerror',x=>e.push(x.stack.split('\n').slice(0,3).join(' | ')));
 await ctx.route('**/i/v0/e/**',r=>r.fulfill({status:200,body:'{}'}));
 await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(600);await p.evaluate(()=>{S.onboarded=true;S.ob=2;S.seenHow={rush:1,rr:1};save();go('home')});
 const r=await p.evaluate(()=>{const out={};const plan=(len,owed)=>{H.length=0;if(!owed)H.push({mode:"rush",startedAt:1,jp:{k:"spins"},visits:[]});const s=new Set();for(let i=0;i<400;i++)s.add(jpPlan({len}));return [...s].sort().join(",")};

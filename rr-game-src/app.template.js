@@ -659,7 +659,7 @@ const SLIDES=[
  {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>One drink at each bar."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some bars come with a wildcard.<br>One spin a crawl hits the jackpot."},
- {art:CHEERS_ART(),h:"Or take it easy",p:"Try R&R.<br>Just the spin, no clock."}
+ {art:CHEERS_ART(),h:"Or take it easy",p:"R&amp;R: Rest &amp; Roulette.<br>No clock, no wildcards."}
 ];
 function renderIntro(){
   const i=S.intro||0,b=$("introBody");
@@ -672,14 +672,14 @@ function renderIntro(){
   [...t.children].forEach((el,k)=>el.classList.toggle("cur",k===i));
   if($("introDots").children.length!==SLIDES.length)$("introDots").innerHTML="<i></i>".repeat(SLIDES.length);   // one dot per slide
   [...$("introDots").children].forEach((d,k)=>{const on=k===i;if(on&&!d.classList.contains("on")){d.classList.add("on")}else if(!on)d.classList.remove("on")});
-  $("introNext").textContent=i<SLIDES.length-1?"Next":"Get started";
+  $("introNext").textContent=i<SLIDES.length-1?"Next":S.introReplay?"Got it":"Get started";
   $("introSkip").style.visibility=i===SLIDES.length-1?"hidden":"";   // keeps its space, so the last screen doesn't jump
 }
-$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=2;go("home")}};
+$("introNext").onclick=()=>{if((S.intro||0)<SLIDES.length-1){S.intro=(S.intro||0)+1;save();renderIntro()}else{S.onboarded=true;S.ob=2;S.introReplay=false;go("home")}};
 // The logo takes you home from game setup and R&R setup (not the first-time city and been-to screens).
 const SETUP_ROUTES=["wiz","quick"];
 $("logo").onclick=()=>{if(SETUP_ROUTES.includes(S.route)){closeSheet();go("home")}};
-$("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;go("home")};
+$("introSkip").onclick=()=>{S.onboarded=true;S.ob=2;S.introReplay=false;go("home")};
 (()=>{let x0=null,y0=0,dx=0,horiz=null,t0=0;const v=$("v-intro"),tr=()=>$("introBody").querySelector(".itrack");
   v.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;horiz=null;t0=Date.now()},{passive:true});
   v.addEventListener("touchmove",e=>{if(x0===null)return;const t=tr();if(!t)return;dx=e.touches[0].clientX-x0;const dy=e.touches[0].clientY-y0;
@@ -715,7 +715,7 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 function renderHome(){
-  $("homeHow").onclick=howSheet;$("homeHowRR").onclick=cruiseHow;
+  $("homeHow").onclick=()=>{S.intro=0;S.introReplay=true;save();go("intro")};
   homeOpen();
   homeAt();
   requestAnimationFrame(fitHome);
@@ -763,9 +763,9 @@ function firstPlayDue(){return !S.firstPlay&&!S.test&&!readH(HKEY).length}
 function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying it from home first? The demo plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fpOut">Heading out now</button><button class="btn line" type="button" id="fpDemo">Try a demo crawl</button></div>`,()=>{
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
-$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
+if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
-$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
+if($("rrIcon"))$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
 
@@ -1056,7 +1056,8 @@ function renderWiz(){
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="rtag">up to 2 km</span></b><small>More bars or longer stays.<br>Best for 4+ people.</small></span></button>
       </div>`;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{w.len=+b.dataset.l;w.radius=null;save();renderWiz()});
-    cta(`<button class="btn" id="wNext" type="button" ${w.len?"":"disabled"}>Next</button>`,()=>$("wNext").onclick=()=>{w.step=1;save();renderWiz()});
+    cta(`<button class="rrline" id="wRR" type="button"><b>R<i>&amp;</i>R</b><span>No clock, no wildcards, no jackpot</span><em aria-hidden="true">›</em></button><button class="btn" id="wNext" type="button" ${w.len?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{w.step=1;save();renderWiz()};
+      $("wRR").onclick=()=>{S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})}});
   }
   if(w.step===1){
     // drag the circle where you're starting; the size moves in 100 m steps within what this game length allows
@@ -1068,7 +1069,7 @@ function renderWiz(){
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
     w.z.r=Math.round(w.z.r*10)/10;
     const excl=w.excl||(w.excl=[]),hasHistory=Object.keys(collectedMap()).length;
-    body.innerHTML=`<h1 class="q qmap">Where are you playing?</h1>${rrZoneHTML(R1)}
+    body.innerHTML=`<h1 class="q qmap">Where are you playing?</h1><p class="sub zmove">You can move it once mid-crawl.</p>${rrZoneHTML(R1)}
       <div class="zwarn" id="zWarn" hidden><b id="zWarnT"></b><small id="zWarnS"></small><button class="btn line sm" type="button" id="zoneSuggest" hidden></button></div>
       ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars from past games</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
       <button class="txtbtn zdemo" type="button" id="zoneDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
@@ -1219,7 +1220,7 @@ const leaving=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null&&v.dep)
 // when you left, if we didn't see it happen: the last time the phone went in your pocket after the spin
 const awayNow=()=>!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=60000;
 const leftGuess=d=>Math.max(d.dep,d.hid&&d.hid>=d.dep?d.hid:d.dep);
-const visited=id=>G().visits.some(v=>v.id===id);
+const visited=id=>{const g=G();return !!g&&g.visits.some(v=>v.id===id)};   // safe if the crawl ended while a sheet was still open
 // A freeze pushes the end back and holds the clock still until it runs out. A free trip (Your call) ends early
 // when you arrive or spin again, and hands back whatever it didn't use.
 const frozen=g=>!!(g&&g.frz&&now()<g.frz.until);
@@ -2462,7 +2463,7 @@ function renderPlay(){
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
-      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}</div>`:""}
+      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
@@ -2471,6 +2472,7 @@ function renderPlay(){
   if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000);
     if(far){g.farAsked=1;save();const tg=g.target;
       afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
+  if($("poolMove"))$("poolMove").onclick=()=>openMove(basePool().length<2);
   st.querySelectorAll("#camBtn").forEach(b=>{if(S.film===false||!b.classList.contains("ontop"))b.remove()});
   if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
@@ -2657,7 +2659,7 @@ async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.
   const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
   const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
   // like Uber or Google Maps: only round icon buttons float on the map; the words live in a card at the bottom
-  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move my zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
+  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
   if($("cmMove")&&canMove)$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
@@ -3223,13 +3225,13 @@ function renderBars(){
       ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
     pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
     if(!CR(g)){const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`}
+      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`}
   }else if(f==="other"){
     const zIds=new Set((CR(g)?cruiseSet(g):inCircle(g.center,g.radius)).map(v=>v.id));
     const others=VENUES.filter(v=>!zIds.has(v.id)&&!S.nfu[v.id]).sort(sortD);
     const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
     if(CR(g)){intro=`Every other rooftop in ${S.city}. ${tapHint}`}else intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
-    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move my zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`;
+    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`;
     rows=groupedRows(others,v=>rowHTML(v,os(v),barStatus(v,c),y));
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
@@ -3585,6 +3587,7 @@ function appBack(){
   if(document.body.classList.contains("camon")&&CAM.once&&!CAM.rec){CAM.once=false;camSync();renderPlay();return true}
   if(S.route==="bars"&&bSearching){setSearching(false);return true}
   if(S.route==="intro"&&(S.intro||0)>0){S.intro--;save();renderIntro();return true}
+  if(S.route==="intro"&&S.introReplay){S.introReplay=false;go("home");return true}
   const v=$("v-"+S.route),bk=v&&[...v.querySelectorAll('[aria-label="Back"]')].find(x=>x.offsetParent!==null);
   if(bk){bk.click();return true}
   if(!["home","intro","ob"].includes(S.route)){go("home");return true}
@@ -3755,7 +3758,7 @@ document.addEventListener("visibilitychange",()=>{
 if(S.game&&!S.test&&!S.game.demo)startWatch();
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
-if(S.onboarded&&S.route!=="intro"){S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
+if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
 render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 // Phones keep the app open in the background for days. Coming back to it (not mid-crawl), pick up a newer version if there is one.

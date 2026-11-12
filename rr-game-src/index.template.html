@@ -1425,6 +1425,11 @@ html.fl .app{visibility:hidden}
 .nightzone svg{width:14px;height:14px;color:var(--amber)}
 .list .li .ok{color:var(--green)}
 .poolnum.low{color:var(--amber)}
+.poolmove{display:inline;padding:0 0 0 6px;font-size:14px;font-weight:700;color:var(--text);text-decoration:underline;text-underline-offset:3px;min-height:0}
+.rrline{display:flex;align-items:center;gap:10px;width:100%;padding:12px 4px 14px;margin-bottom:8px;border:0;border-top:1px solid var(--line);background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.rrline b{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.02em}.rrline b i{font-style:normal;color:var(--amber)}
+.rrline span{flex:1;font-size:14px;color:var(--muted)}.rrline em{font-style:normal;font-size:22px;line-height:1;color:var(--muted)}
+.zmove{margin:4px 0 10px!important;font-size:14px}
 #v-play:has(#stage .ready) #strip{display:none}   /* the wheel screen: tonight's bars live behind the counter */
 #reelBack{width:100%;height:48px}
 
@@ -1549,11 +1554,6 @@ setTimeout(done,1200)})();</script>
       <div class="tsopen" id="homeOpen"></div>
       <button class="btn tsplay" id="newGame" type="button">Play</button>
       <button class="txtbtn howlink" id="homeHow" type="button">How it works</button>
-      <div class="rrcard">
-        <div class="rrhead"><span class="mic" id="rrIcon"></span><div><b>R<i>&amp;</i>R</b><small>Rest &amp; Roulette</small></div><button class="rrq" id="homeHowRR" type="button" aria-label="How R&amp;R works">?</button></div>
-        <p class="rrdesc">No clock, no wildcards.<br>Stay at each bar as long as you like.</p>
-        <button class="btn line" id="quickGo" type="button">Play R&amp;R</button>
-      </div>
     </div>
     <div class="city">${PIN} <span><b>Sydney</b>, <b>Melbourne</b>, <b>Brisbane</b>, <b>Perth</b> and the <b>Gold Coast</b>, for now.</span></div>
   </section>
