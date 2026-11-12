@@ -2432,7 +2432,7 @@ function renderPlay(){
       ${g.demo?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="dWalk">Skip the walk</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div></div>`:""}
       ${g.noLoc||g.demo?"":`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">${CR(g)?"Not feeling it? Spin again, as often as you like":fs?`${fs} free re-spin${fs>1?"s":""} left`:`Costs ${SKIP_COST} minutes${g.skipCost?` · ${g.skipCost} min used so far`:""}`}</span></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
-      ${!g.demo&&!CR(g)?`<p class="note">Next spin unlocks after your visit. ${g.noLoc?"Location is off. Tap “I’m here” when you arrive.":man?"Tap “I’m here” when you arrive.":"Head to "+esc(v.name)+" for automatic check-in."}</p>`:""}
+      ${!g.demo&&!CR(g)?(g.noLoc||man?tip("enroute-man","Location's off. Tap “I’m here” when you arrive.",false):tip("enroute","Your next spin unlocks when you arrive. Nothing to tap.",false)):""}
       ${!g.demo&&!CR(g)&&!g.visits.length&&(!you()||dist(you(),v)>2000)?'<button type="button" class="txtbtn" id="homeDemo">Playing from home? Try the demo</button>':""}
       ${CR(g)&&!g.noLoc?tip("enroute","You're checked in when you arrive. Nothing to tap.",false):""}
       ${man&&!g.noLoc?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;}
