@@ -9,7 +9,7 @@ await p.evaluate(M=>{const g=G();g.started=true;g.startedAt=now();g.endsAt=now()
   if(M==='wild')g.dealt={leg:0,text:'Order the drink with the strangest name on the menu.'};
   if(M==='pick3')g.pick3=true;
   if(M.startsWith('jp-')){g.jpAt=0;S.forceJP=M.slice(3)}else g.jp={k:'spins',claimed:true,leg:9};
-  S.film=true;CAM.once=true;renderPlay()},MODE);
+  CAM.once=true;renderPlay()},MODE);
 await p.waitForFunction(()=>document.body.classList.contains('camon'),null,{timeout:8000});await p.waitForTimeout(800);
 let n=0;const grab=async(tag)=>{const d=await p.evaluate(()=>CAM.cv&&CAM.rec?CAM.cv.toDataURL('image/jpeg',.6):null);if(d)fs.writeFileSync(`${D}/${MODE}-${String(n++).padStart(2,'0')}${tag?'-'+tag:''}.jpg`,Buffer.from(d.split(',')[1],'base64'))};
 const shot=async t=>p.screenshot({path:`${D}/${MODE}-screen-${t}.png`});
