@@ -2359,8 +2359,9 @@ function celebrate(id){
   setTimeout(confetti,60);
 }
 // One-time pointer at the camera button, from the second spin on (the first one is just about the game)
-function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map||!g||!g.visits.some(v=>v.arrivedAt!=null)||$("sheet").open||document.querySelector(".camtip"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
-  const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip";tip.style.top=Math.round(r.bottom+10)+"px";
+const mapHintDue=g=>{S.tips=S.tips||{};if(!g||S.tips.mapOpened)return false;const n=g.visits.filter(v=>v.arrivedAt!=null).length;return n>=2||(n>=1&&!!S.tips.night)};
+function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map||!mapHintDue(g)||$("sheet").open||document.querySelector(".camtip,.cnudge"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
+  const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip below";tip.style.top=Math.round(Math.max(r.bottom,r.top+btn.offsetHeight,(btn.closest(".ptop")||btn).getBoundingClientRect().bottom)+8)+"px";tip.style.setProperty("--ax",Math.max(10,Math.round(innerWidth-12-(r.left+r.width/2)-8))+"px");
   tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);
   const off=()=>{S.tips.map=1;save();tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target))off()};
   tip.onclick=off;document.addEventListener("pointerdown",away,true)}
@@ -2378,7 +2379,7 @@ function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".c
 function renderPlay(){
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
-  $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;
+  $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;$("pMap").classList.toggle("hasdot",mapHintDue(g));
   const counted=countShown(g);
   if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
@@ -2422,7 +2423,7 @@ function renderPlay(){
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
       <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
-    else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<button class="mappill" type="button" id="cardMap">${I.map}Map</button><span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -2453,7 +2454,6 @@ function renderPlay(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.querySelector("span").lastChild.textContent;
     sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
-  if($("cardMap"))$("cardMap").onclick=e=>{e.stopPropagation();crawlMap()};
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
@@ -2620,7 +2620,7 @@ function resumeNight(r){
 }
 // shrink text until it sits on one line (never cut off)
 // The live crawl map, full screen from Play. No route line: the path is the reveal on the scorecard.
-async function crawlMap(){const g=G();if(!g)return;
+async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
   const ov=document.createElement("div");ov.className="mapfull";
   const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
   ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`<button class="btn sm line mf-move" type="button" id="cmMove" ${canMove?"":"disabled"}>${I.move} ${canMove?"Move my zone":"Zone move used"}</button>`}`;
