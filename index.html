@@ -2158,10 +2158,8 @@ p,.note,.sub,small,h1,h2,h3{text-wrap:pretty}
 .mf-card .t{flex:1;min-width:0}
 .mf-card .t b{display:block;font-size:15.5px}
 .mf-card .t small{display:block;color:var(--muted);font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mf-ring{flex:none;width:52px;height:52px;border-radius:14px;background:rgba(245,184,61,.1);display:grid;place-items:center}
-.mf-ring::before{content:"";width:28px;height:28px;border-radius:50%;border:2.5px solid var(--amber);background:rgba(245,184,61,.14);box-shadow:inset 0 0 0 7px transparent}
-.mf-ring::after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:var(--amber)}
-.mf-ring{position:relative}
+/* just the ring, like the zone circle on the map */
+.mf-ring{flex:none;width:30px;height:30px;border-radius:50%;border:2.5px solid var(--amber);background:rgba(245,184,61,.12)}
 .mf-pill{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 112px);z-index:1001;display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px 0 14px;border:0;border-radius:999px;background:var(--s1);color:var(--text);font:700 15px/1 var(--ui);box-shadow:0 6px 18px rgba(0,0,0,.5);cursor:pointer}
 .mf-pill svg{width:18px;height:18px;color:var(--amber)}
 </style>
