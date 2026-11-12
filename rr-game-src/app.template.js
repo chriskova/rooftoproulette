@@ -2033,7 +2033,8 @@ function flyToCounter(force,lead){
   const at=(ms,f)=>tm.push(setTimeout(()=>{if(!over)f()},ms));
   const finish=()=>{if(over)return;over=true;tm.forEach(clearTimeout);fx.forEach(e=>e.remove());pc.classList.remove("opening");
     if(h)h.style.visibility="";document.removeEventListener("pointerdown",finish,true);
-    a._inCount=true;save();const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g)};
+    a._inCount=true;save();const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g);
+    S.tips=S.tips||{};if(!S.tips.night&&!pc.querySelector(".cnudge"))pc.insertAdjacentHTML("beforeend",`<span class="cnudge">Your crawl</span>`)};   // the nudge lands right after the first bar counts
   document.addEventListener("pointerdown",finish,true);
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){finish();return}
   at(lead==null?350:lead,()=>{
@@ -2359,7 +2360,7 @@ function celebrate(id){
   setTimeout(confetti,60);
 }
 // One-time pointer at the camera button, from the second spin on (the first one is just about the game)
-const mapHintDue=g=>{S.tips=S.tips||{};if(!g||S.tips.mapOpened)return false;const n=g.visits.filter(v=>v.arrivedAt!=null).length;return n>=2||(n>=1&&!!S.tips.night)};
+const mapHintDue=g=>{S.tips=S.tips||{};if(!g||S.tips.mapOpened)return false;const n=g.visits.filter(v=>v._inCount||v.counted===true).length;return n>=2||(n>=1&&!!S.tips.night)};
 function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map2||!mapHintDue(g)||$("sheet").open||document.querySelector(".camtip,.cnudge"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
   const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip below";tip.style.top=Math.round(Math.max(r.bottom,r.top+btn.offsetHeight,(btn.closest(".ptop")||btn).getBoundingClientRect().bottom)+8)+"px";tip.style.setProperty("--ax",Math.max(10,Math.round(innerWidth-12-(r.left+r.width/2)-8))+"px");
   tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);S.tips.map2=1;save();
@@ -2382,7 +2383,7 @@ function renderPlay(){
   $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;$("pMap").classList.toggle("hasdot",mapHintDue(g));
   const counted=countShown(g);
   if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
-  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.length&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.some(v=>v._inCount||v.counted===true)&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
