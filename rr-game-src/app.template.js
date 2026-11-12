@@ -217,6 +217,10 @@ function sydAt(ts,tz){
 }
 function openState(v,ts){
   if(v.tempClosed)return {open:false,opens:null,temp:true};
+  // the demo is practice from home at any hour: every bar's open while you're playing it (browsing Rooftops still shows real hours)
+  if(S.game&&S.game.demo&&S.route==="play"){const r=openState0(v,ts);if(r.open&&r.until>SOON)return r;const {day}=sydAt(ts,TZ[v.city||"Sydney"]),cs=(v.hours[day]||[]).map(h=>h[1]);return {open:true,until:600,closeAt:(cs.length?Math.max(...cs):1440)%1440}}
+  return openState0(v,ts)}
+function openState0(v,ts){
   const {day,min}=sydAt(ts,TZ[v.city||"Sydney"]),prev=(day+6)%7;
   for(const [o,c] of v.hours[prev]) if(c>1440&&min<c-1440) return {open:true,until:c-1440-min,closeAt:c-1440};
   let opens=null;
