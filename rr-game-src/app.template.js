@@ -3508,7 +3508,7 @@ function settingsSheet(){
     ${grp("Your tab",[lk("stBk","Back up My Tab"),lk("stRs","Restore My Tab")])}
     ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous. Never names, locations, photos or clips"),lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
-    ${grp("Testing",[tg("stTest",S.test,"Test mode","Tap the map to move. Test crawls stay off your tab"),nT?lk("stClr","Clear test crawls",String(nT),"danger"):""])}
+    ${grp("Testing",[tg("stTest",S.test,"Test mode","Tap the map to move. Test crawls stay off your tab"),S.test?lk("stTips","Reset tips"):"",nT?lk("stClr","Clear test crawls",String(nT),"danger"):""])}
     <div class="spfoot"><div class="spsoc"><button type="button" id="stIG" aria-label="Instagram">${IGI}</button><button type="button" id="stTT" aria-label="TikTok">${TTI}</button></div>
       ${plat==="android"?`<button class="txtbtn sprate" type="button" id="stRate">Rate Rooftop Roulette</button>`:""}
       <p class="setv">Rooftop Roulette · __VERSION__</p></div></div>`;
@@ -3529,6 +3529,7 @@ function settingsSheet(){
     location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
   $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
   $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(history.state,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
+  if($("stTips"))$("stTips").onclick=()=>{S.tips={};S.seenHow={};save();document.querySelectorAll(".camtip").forEach(t=>t.remove());toast("Tips reset. They'll show again as you play.",2600)};   // test mode: see every first-time hint again
   if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
     $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render();settingsSheet()};$("stClrN").onclick=closeSheet});
 }
