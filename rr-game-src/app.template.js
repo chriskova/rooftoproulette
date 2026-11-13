@@ -2005,11 +2005,13 @@ function camDraw(){
   x.restore();
 }
 /* clips: kept on the phone (IndexedDB), grouped by night */
-const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",1);q.onupgradeneeded=()=>q.result.createObjectStore("clips",{keyPath:"id"});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const clipDB=()=>new Promise((res,rej)=>{const q=indexedDB.open("rr-clips",2);
+  q.onupgradeneeded=()=>{const db=q.result,st=db.objectStoreNames.contains("clips")?q.transaction.objectStore("clips"):db.createObjectStore("clips",{keyPath:"id"});if(!st.indexNames.contains("game"))st.createIndex("game","game")};
+  q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
 const clipPut=o=>clipDB().then(db=>new Promise((res,rej)=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").put(o);t.oncomplete=res;t.onerror=()=>rej(t.error)}));
 const clipAll=()=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([])})).catch(()=>[]);
 const mbTxt=b=>b<1e6?Math.max(1,Math.round(b/1e3))+" KB":b<1e9?(b/1e6).toFixed(b<1e7?1:0)+" MB":(b/1e9).toFixed(1)+" GB";
-const clipList=gid=>clipDB().then(db=>new Promise(res=>{const q=db.transaction("clips").objectStore("clips").getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
+const clipList=gid=>clipDB().then(db=>new Promise(res=>{const st=db.transaction("clips").objectStore("clips");const q=st.indexNames.contains("game")?st.index("game").getAll(gid):st.getAll();q.onsuccess=()=>res(q.result.filter(c=>c.game===gid).sort((a,b)=>a.at-b.at));q.onerror=()=>res([])})).catch(()=>[]);
 const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
 /* in the native app the browser's share and download don't exist: use the phone's own share sheet and gallery */
 const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform());
@@ -3048,8 +3050,10 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
   async function cards(start){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
     looks=r.photo?["full","map","rund"]:["map","rund"];
-    window._mapErrs=[];try{blobs=await Promise.all(looks.map(l=>storyCard(r,l)))}catch(e){console.warn(e);blobs=[]}
-    const clips=await clipList(r.id);clips.forEach(c=>{looks.push("clip");blobs.push(c.blob)});
+    const inTime=(p,ms,fb)=>Promise.race([Promise.resolve(p).catch(e=>{console.warn(e);return fb}),new Promise(z=>setTimeout(()=>z(fb),ms))]);
+    window._mapErrs=[];blobs=await Promise.all(looks.map(l=>inTime(storyCard(r,l),20000,null)));
+    {const keep=blobs.map((b,i)=>b?i:-1).filter(i=>i>=0);looks=keep.map(i=>looks[i]);blobs=keep.map(i=>blobs[i])}
+    const clips=await inTime(clipList(r.id),8000,[]);clips.forEach(c=>{looks.push("clip");blobs.push(c.blob)});
     const mapDiag=S.test&&window._mapErrs.length?`<div class="shv-diag">Map didn't load: ${esc([...new Set(window._mapErrs)].slice(0,4).join(" · "))}</div>`:"";
     if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
@@ -3080,7 +3084,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
   if(r.photo)cards(0);else ask();
 }
 function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
-const loadImg=src=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src});
+const loadImg=src=>new Promise((res,rej)=>{const i=new Image();const t=setTimeout(()=>rej("timeout"),12000);i.onload=()=>{clearTimeout(t);res(i)};i.onerror=e=>{clearTimeout(t);rej(e)};i.src=src});
 function drawRoute(x,r,st,bx,by,bw,bh){
   const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))];
   // faint zone circle + all bars around for texture
