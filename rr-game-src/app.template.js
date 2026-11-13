@@ -1228,7 +1228,7 @@ const leaving=()=>{const g=G();return g&&g.visits.find(v=>v.leftAt==null&&v.dep)
 const awayNow=()=>!document.hidden&&Date.now()-resumedAt<45000&&awayGap>=60000;
 const leftGuess=d=>Math.max(d.dep,d.hid&&d.hid>=d.dep?d.hid:d.dep);
 const visited=id=>{const g=G();return !!g&&g.visits.some(v=>v.id===id)};   // safe if the crawl ended while a sheet was still open
-// A freeze pushes the end back and holds the clock still until it runs out. A free trip (Your call) ends early
+// A freeze pushes the end back and holds the clock still until it runs out. A free trip (moving zone, starting away) ends early
 // when you arrive or spin again, and hands back whatever it didn't use.
 const frozen=g=>!!(g&&g.frz&&now()<g.frz.until);
 const remaining=()=>{const g=G();return g.started?(frozen(g)?g.endsAt-g.frz.until:g.endsAt-now()):g.len*60000};
@@ -1545,7 +1545,7 @@ function doSpin(force,vel){
 }
 /* ---------- the Jackpot: once a timed game, a longer gold spin that pays out one of five rewards ---------- */
 const JACKPOTS=[
-  {k:"call",t:"Your call",d:"Pick your next bar from three. You've got 20 seconds, and the trip there's on the house (up to 15 minutes).",go:"Show me"},
+  {k:"call",t:"Your call",d:"Pick your next bar from three. You've got 20 seconds.",go:"Show me"},
   {k:"freeze",t:"Time freeze",d:"The clock's frozen for 10 minutes. Stay for another, or go somewhere further.",go:"Spin for your bar"},
   {k:"spins",t:"Free spins",d:"Your next 3 re-spins don't cost a thing.",go:"Spin for your bar"},
   {k:"short",t:"Shortcut",d:"Your next bar is the closest one that's open.",go:"Show me"},
@@ -1561,7 +1561,7 @@ function jackpotSpin(vel){
   const ctx=jackpotCtx();
   ctx.onLand=()=>{if(j.k==="freeze"){applyJackpot(g,j);save();renderClock()}};   // the real clock freezes the moment it lands
   jackpotRun($("reelBox"),reel,vel,j,res=>{spinning=false;applyJackpot(g,j);g.jp.claimed=true;save();
-    if(j.k==="call"&&res.bar){setTarget(res.bar,ctx.from);startFreeze(g,15*60000,true);animateId=res.bar.id;save();renderPlay();onLocation();dealWild(700);return}
+    if(j.k==="call"&&res.bar){setTarget(res.bar,ctx.from);animateId=res.bar.id;save();renderPlay();onLocation();dealWild(700);return}
     if(j.k==="short"&&ctx.nearest){setTarget(ctx.nearest,ctx.from);animateId=ctx.nearest.id;save();renderPlay();onLocation();dealWild(700);return}
     if(j.k==="dealer"){g.dealt={leg:g.visits.length,text:res.wild||null,shown:true};save();renderPlay();doSpin(true);return}
     renderPlay();doSpin(true)},ctx);
@@ -1648,7 +1648,7 @@ function jvRun(j,card,ctx,choose){
     if(go){go.hidden=true;go.onclick=()=>{if(pickI>=0)choose({wild:ctx.wilds[pickI]})}}}
 }
 // what the card says under the graphic, and its button
-const jvText=j=>j.k==="call"?"Pick one before the bar runs out. The trip there's on the house.":j.k==="dealer"?"Tap a card to see what you're in for.":j.d;
+const jvText=j=>j.k==="call"?"Pick one before the bar runs out.":j.k==="dealer"?"Tap a card to see what you're in for.":j.d;
 const jvActs=j=>j.k==="call"?"":j.k==="dealer"?`<button class="btn dark" type="button" id="jvGo" hidden>Lock it in</button>`:`<button class="btn dark" type="button" id="jvGo">${j.go}</button>`;
 function jackpotCtx(){   // the real numbers, for a game in progress
   const g=G(),from=fromPoint(),P=spinPool().pool.slice(),near=P.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];
@@ -1701,8 +1701,8 @@ function setTarget(v,from){const g=G();g.target=v.id;g.targetAt=now();g.targetFr
 function yourCall(){
   const g=G(),from=fromPoint(),P=shuffle(spinPool().pool.slice()).slice(0,3);if(!P.length){renderPlay();return}
   let timer=0;const SEC=20;
-  const choose=v=>{clearInterval(timer);if(g.target)return;setTarget(v,from);startFreeze(g,15*60000,true);animateId=v.id;save();closeSheet();renderPlay();onLocation()};
-  sheet(`<h3>Your call</h3><p class="note">Pick one. The trip there's on the house.</p><div class="jptimer"><i id="jpT"></i><b id="jpS">${SEC}</b></div>
+  const choose=v=>{clearInterval(timer);if(g.target)return;setTarget(v,from);animateId=v.id;save();closeSheet();renderPlay();onLocation()};
+  sheet(`<h3>Your call</h3><p class="note">Pick one.</p><div class="jptimer"><i id="jpT"></i><b id="jpS">${SEC}</b></div>
     <div class="acts">${P.map(v=>{const o=openState(v,now());return `<button class="opt" type="button" data-yc="${v.id}"><span class="ic">${I.pin}</span><span class="t"><b>${esc(v.name)}</b><small>${walkMin(from,v)} min walk · ${mOrKm(dist(from,v))}${o.open?" · til "+clock12(o.closeAt):""}</small></span></button>`}).join("")}</div>`,()=>{
     document.querySelectorAll("[data-yc]").forEach(b=>b.onclick=()=>choose(byId(b.dataset.yc)));
     const t0=Date.now();timer=setInterval(()=>{const r=SEC-(Date.now()-t0)/1000;if($("jpT"))$("jpT").style.width=Math.max(0,r/SEC*100)+"%";if($("jpS"))$("jpS").textContent=Math.max(0,Math.ceil(r));if(r<=0)choose(P[0])},200);
