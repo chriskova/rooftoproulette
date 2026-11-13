@@ -17,7 +17,7 @@ open(os.path.join(OUT,'rooftop-app.js'),'w').write(app.replace('__VENUES_V__',st
 m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v79-5";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v79-6";
 const ASSETS=["./","index.html","browser-config.js","rooftop-app.js","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
@@ -27,7 +27,7 @@ self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 self.addEventListener("fetch",e=>{
   const r=e.request;if(r.method!=="GET"||new URL(r.url).origin!==location.origin)return;
   if(r.mode==="navigate"){e.respondWith(fetch(r.url,{cache:"no-store"}).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put("index.html",c));return res}).catch(()=>caches.match("index.html")));return}
-  e.respondWith(fetch(r).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c));return res}).catch(()=>caches.match(r)));
+  e.respondWith(fetch(r,{cache:"no-cache"}).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c));return res}).catch(()=>caches.match(r)));
 });
 ''')
 open(os.path.join(OUT,'.nojekyll'),'w').write('')
