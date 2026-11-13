@@ -2897,7 +2897,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   const WV=window.WHERE_VAR||"foot";
   // the crawl's own name, if they gave it one: small amber caps, a little clear of the headline (R&R already uses it as the headline)
   const where=Y=>{if(r.title&&!cr){x.save();x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=10;let fz=32;x.font=`800 ${fz}px ${U}`;x.letterSpacing="2.4px";const t=r.title.toUpperCase();while(x.measureText(t).width>W-128&&fz>22){fz-=2;x.font=`800 ${fz}px ${U}`}
-      x.fillStyle=AMB;x.fillText(t,64,Y-16);x.letterSpacing="0px";x.restore();return}
+      x.fillStyle=AMB;x.fillText(t,64,Y-40);x.letterSpacing="0px";x.restore();return}
     if(WV!=="top")return;x.save();x.shadowColor="transparent";const t=[placeOf(r),dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
     x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
     x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
@@ -3779,7 +3779,9 @@ if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
 render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
-if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register("sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
+  // a new version took over: reload once so it's used straight away, unless a crawl screen is open (then it's used next launch)
+  let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadSW||reloaded||S.route==="play"||spinning)return;reloaded=true;location.reload()})}
 // Phones keep the app open in the background for days. Coming back to it (not mid-crawl), pick up a newer version if there is one.
 {let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
   if(!hidAt||Date.now()-hidAt<5000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
