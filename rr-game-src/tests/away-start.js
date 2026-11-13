@@ -1,0 +1,20 @@
+// Starting outside the zone: Ready says the clock starts at the first bar; first spin holds the clock; arriving starts the full hour.
+const {chromium,devices}=require('playwright');
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:860},geolocation:{latitude:-33.8861,longitude:151.2111,accuracy:20},permissions:['geolocation']});
+const p=await ctx.newPage();const e=[];p.on('pageerror',x=>e.push(x.message));
+await p.clock.install({time:new Date('2026-11-13T03:00:00Z')});
+await ctx.route('**/i/v0/e/**',r=>r.fulfill({status:200,body:'{}'}));
+await p.goto('file://'+process.argv[2]);await p.waitForTimeout(800);
+await p.evaluate(async()=>{S.onboarded=true;S.ob=2;S.firstPlay=1;S.seenHow={rush:1,rr:1};S.rules={rush:1,rr:1};save();await getOnce().catch(()=>{});
+  S.wiz={step:2,len:60,radius:.5,start:{type:"area",name:"Sydney CBD",lat:-33.8688,lng:151.2093}};save();go('wiz')});
+await p.waitForTimeout(1500);console.log('ready line:',await p.evaluate(()=>{const x=document.querySelector('#v-wiz .sub');return x?x.innerText.replace(/\n/g,' / '):'none'}));
+await p.screenshot({path:'out/away-ready.png'});
+await p.click('#wStart');await p.waitForTimeout(1500);console.log('route:',await p.evaluate(()=>S.route),'zoneMoved:',await p.evaluate(()=>S.game&&S.game.zoneMoved));
+await p.evaluate(()=>doSpin(true,-14));await p.waitForFunction(()=>!spinning&&S.game.target,null,{timeout:30000});await p.waitForTimeout(4000);
+const st=await p.evaluate(()=>({held:!!(S.game.frz&&S.game.frz.start),label:$('clockL').textContent,rem:Math.round(remaining()/60000),sheet:$('sheet').open}));console.log('after spin:',JSON.stringify(st));
+await p.screenshot({path:'out/away-held.png'});
+await p.clock.runFor(25*60000);await p.waitForTimeout(500);console.log('25 min later, remaining:',await p.evaluate(()=>Math.round(remaining()/60000)));
+const v=await p.evaluate(()=>{const v=byId(S.game.target);return {lat:v.lat,lng:v.lng}});await ctx.setGeolocation({latitude:v.lat,longitude:v.lng,accuracy:10});
+await p.evaluate(()=>logArrival(true));await p.waitForTimeout(800);
+console.log('after arrival:',JSON.stringify(await p.evaluate(()=>({held:!!(S.game.frz&&S.game.frz.start&&now()<S.game.frz.until),rem:Math.round(remaining()/60000),label:$('clockL').textContent}))));
+console.log(e);await b.close()})();

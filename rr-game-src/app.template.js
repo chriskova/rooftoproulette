@@ -1109,7 +1109,8 @@ function renderWiz(){
     const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now()));
     // been to some of these before? offer to skip them here, with the count, rather than on the map screen
     const cm=collectedMap(),zoneAll=playable(inCircle(w.z,w.radius),false),allHere=zoneAll.length,beenHere=zoneAll.filter(v=>cm[v.id]).length;if(!beenHere)w.newOnly=false;
-    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
+    const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
+    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub" style="margin:6px 0 0">You're outside your zone.<br>The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
       <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
@@ -1171,7 +1172,7 @@ async function tryStart(noLoc){
   const w=S.wiz;
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
   zoneCity(w.start);S.game={id:"g"+now(),city:S.city,test:!!S.test,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
-    startPos:{lat:pos.lat,lng:pos.lng},areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
+    startPos:{lat:pos.lat,lng:pos.lng},zoneMoved:w.start.type!=="me"||undefined,areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   if(noLoc)S.game.noLoc=true;
   spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
@@ -1511,9 +1512,12 @@ function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
   if(a0&&force!==true&&a0._ans===undefined&&now()-a0.arrivedAt<DWELL()){askDrink(a0,()=>doSpin(true,vel));return false}
+  const firstSpin=!g.started;
   if(!g.started){track("crawl_start",{demo:!!g.demo,mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
+  // Starting outside your zone (spin over lunch in Surry Hills, crawl the city): the clock waits till your first bar. Capped at 45 min.
+  if(firstSpin&&!g.demo&&!CR(g)&&!g.noLoc&&!g.frz){const y=you();if(y&&g.center&&dist(y,g.center)>g.radius*1000+150){startFreeze(g,45*60000,true);g.frz.zone=true;g.frz.start=true}}
   if(!g.demo&&!CR(g)&&!g.jp){if(g.jpAt==null)g.jpAt=jpPlan(g);
     const n=g.visits.length+1;   // the spin for bar n
     const late=g.len!==60&&n>=4&&remaining()<45*60000;   // 2 hours: bar 4 with under 45 minutes left gets it, so it isn't missed
@@ -2477,7 +2481,7 @@ function renderPlay(){
   }
   {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
   // First bar of a real timed crawl and you're nowhere near it: most likely trying it from home. Ask once.
-  if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000);
+  if(g.target&&!g.demo&&!CR(g)&&!g.noLoc&&!g.zoneMoved&&!g.visits.length&&!g.farAsked){const y=you(),v=byId(g.target),far=!!(y&&v&&dist(y,v)>2000);
     if(far){g.farAsked=1;save();const tg=g.target;
       afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
   if($("poolMove"))$("poolMove").onclick=()=>openMove(basePool().length<2);
@@ -2605,7 +2609,7 @@ function renderClock(){
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL")._h=null;$("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
-  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
+  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=g.frz.start?"Starts at your first bar":(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
 }
 
 /* ---------- stats + scorecard ---------- */
