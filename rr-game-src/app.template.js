@@ -1505,9 +1505,7 @@ function gameReelNames(){const g=G(),P=spinPool().pool.map(v=>v.name);if(P.lengt
 // Which bar's spin is the jackpot. Never bar 1. 1 hour: bar 3 or 4. 2 hours: bar 3, 4 or 5.
 // Owed one (first real crawl, or the last timed crawl ended without a jackpot): bar 2 is possible too.
 function jpOwed(){const L=H.filter(r=>r.mode!=="cruise"&&!r.shared&&!r.demo).sort((a,b)=>(b.startedAt||0)-(a.startedAt||0));return !L.length||!L[0].jp}
-// TEMPORARY (content shoot, Nov 2026): jackpot on bar 2 or 3. Remove JP_SHOOT to go back to the normal plan.
-const JP_SHOOT=true;
-function jpPlan(g){if(JP_SHOOT)return 2+Math.floor(Math.random()*2);const lo=jpOwed()?2:3,hi=g.len===60?4:5;return lo+Math.floor(Math.random()*(hi-lo+1))}
+function jpPlan(g){const lo=jpOwed()?2:3,hi=g.len===60?4:5;return lo+Math.floor(Math.random()*(hi-lo+1))}
 function doSpin(force,vel){
   const g=G();if(spinning||!g||g.ended)return;ac();
   const a0=atVisit();
