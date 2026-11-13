@@ -659,7 +659,7 @@ const SLIDES=[
  {art:GO_ART(),h:"Get to the bar",p:"Walk, run or Uber.<br>One drink at each bar."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some bars come with a wildcard.<br>One spin a crawl hits the jackpot."},
- {art:CHEERS_ART(),h:"Or take it easy",p:"R&amp;R: Rest &amp; Roulette.<br>No clock, no wildcards."}
+ {art:CHEERS_ART(),h:"Or take it easy",p:"R&amp;R: Rest &amp; Roulette.<br>No timer, no wildcards."}
 ];
 function renderIntro(){
   const i=S.intro||0,b=$("introBody");
@@ -786,7 +786,7 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
-const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>Pick from my Hit list</b><small>${L.length?`Only the ${esc(S.city)} bars on your shortlist. Keep it to one area if you like`:"Pick a few you've been meaning to try. The wheel decides"}</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Bars you've saved</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -806,7 +806,7 @@ function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))ret
   const vv=window.visualViewport,vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0;
   let limit=vr.top+v.clientHeight-pb;if(vv&&document.body.classList.contains("mapq"))limit=Math.min(limit,vv.offsetTop+vv.height-12);
   const last=Math.max(...[...v.children].filter(x=>x.offsetParent!==null).map(x=>x.getBoundingClientRect().bottom));
-  el.style.height=Math.round(Math.max(Math.max(260,Math.round(innerHeight*.4)),Math.min(document.body.classList.contains("mapq")?900:620,200+(limit-last)-6)))+"px";if(rrMap)rrMap.resize();
+  el.style.height=Math.round(Math.max(200,Math.min(document.body.classList.contains("mapq")?900:620,200+(limit-last)-6)))+"px";if(rrMap)rrMap.resize();
   if(!again){requestAnimationFrame(()=>fitMap(v,1));setTimeout(()=>fitMap(v,1),350)}}
 if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route),1)});
 window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route))});
@@ -952,7 +952,7 @@ function renderQuick(){
   if(rrMap&&step!==1){rrMap.remove();rrMap=null}
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:${step===0?50:100}%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
   const beenN=VENUES.filter(v=>inCityNow(v)&&!isNew(v.id)).length;
-  const newTog=`<div class="beenbox"><button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars I've been to</b><small id="qBeenN">${beenTxt(beenN)}</small></span><span class="sw"></span></button>
+  const newTog=`<div class="beenbox"><button class="toggle" type="button" id="qNew" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars you've been to</b><small id="qBeenN">${beenTxt(beenN)}</small></span><span class="sw"></span></button>
     <button class="txtbtn beenx" type="button" id="qBeenX" aria-expanded="${!!q.beenOpen}">${q.beenOpen?"Hide":"Edit"} your Been list <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${q.beenOpen?"M6 15l6-6 6 6":"M6 9l6 6 6-6"}"/></svg></button>
     <div class="beenpanel" id="qBeenP" ${q.beenOpen?"":"hidden"}></div></div>`;
   // Looking at another city? "Near me" would mean nowhere near it, so offer a spot in that city instead.
@@ -961,10 +961,9 @@ function renderQuick(){
   if(!here&&!S.test&&!renderQuick.asked&&navigator.geolocation){renderQuick.asked=1;permState().then(st=>{if(st!=="granted")return;
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
-    b.innerHTML=top+`<div><div class="cityrow"><h1 class="q modename">R<i>&amp;</i>R</h1>${cityBtn()}</div><p class="sub" style="margin:6px 0 0">Spin for a bar, stay as long as you like, spin again when you're ready. Where are we spinning?</p></div>
-      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>Pick a spot in ${esc(cityIn(S.city))}</b><small>You're not in ${esc(cityIn(S.city))} right now, so choose where you'll start</small>`:`<b>Pick an area</b><small>Starts where you are. Move it anywhere and set how far next</small>`}</span></button>
+    b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Rest &amp; Roulette.<br>Where are we spinning?</p></div>
+      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>A spot in ${esc(cityIn(S.city))}</b><small>Choose where you'll start</small>`:`<b>An area</b><small>Starts where you are</small>`}</span></button>
       ${apWrap("__want",listOpt(t,q.sel==="__want"))}</div>
-      ${q.sel==="__me"?newTog:""}
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
     apBind(b,async k=>wantList(),()=>null);
     cta(`<button class="btn" id="qNext" type="button">Next</button>`,()=>$("qNext").onclick=async()=>{
@@ -1057,8 +1056,10 @@ function renderWiz(){
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few bars, quick drinks.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
-        <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><b class="rrwm">R<i>&amp;</i>R</b><small>No clock, no wildcards, no jackpot</small></button>
-      </div>`;
+        <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><b class="rrwm">R<i>&amp;</i>R</b><small>No timer, no wildcards, no jackpot</small></button>
+      </div>
+      <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
+    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
@@ -1076,10 +1077,8 @@ function renderWiz(){
     const excl=w.excl||(w.excl=[]),hasHistory=Object.keys(collectedMap()).length;
     body.innerHTML=`<h1 class="q qmap">Where are you playing?</h1>${rrZoneHTML(R1)}
       <div class="zwarn" id="zWarn" hidden><b id="zWarnT"></b><small id="zWarnS"></small><button class="btn line sm" type="button" id="zoneSuggest" hidden></button></div>
-      ${hasHistory?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars from past games</b><small id="newTogS"></small></span><span class="sw"></span></button>`:""}
-      <button class="txtbtn zdemo" type="button" id="zoneDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
+`;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),!!w.newOnly).filter(v=>!excl.includes(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
-    $("zoneDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     const zb=rrZoneBind(w.z,me,()=>!!w.newOnly,(P,z,moved,settled)=>{
       const t=now(),location=me||you(),far=!location||dist(location,z)>Math.max(2000,z.r*1000+1000);
       const ok=P.open.length>=2,options=P.open.length?P.open:P.all;
@@ -1093,7 +1092,6 @@ function renderWiz(){
         $("zWarnS").textContent="Move the circle, or try a demo crawl.";
         const c_=GAME_AREAS().map(area=>({area,open:pool({...area,r:z.r},t).open.length})).filter(x=>x.open>=2).sort((a,b)=>dist(z,a.area)-dist(z,b.area));
         if(c_.length){const {area,open}=c_[0];sug.hidden=false;sug.textContent=`Move to ${area.name} · ${open} open`;sug.onclick=()=>{w.z={lat:area.lat,lng:area.lng,r:z.r};save();renderWiz()}}}
-      $("zoneDemo").hidden=!ok;
       if($("newTogS")){const all=playable(inCircle(z,z.r),false),c=collectedMap(),n=all.filter(v=>c[v.id]).length;$("newTogS").textContent=n?`You've been to ${n} of ${all.length} here`:`You haven't been to any here yet`}
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
@@ -1103,17 +1101,20 @@ function renderWiz(){
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
-    if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));wizRepaint()};
     fitMap($("v-wiz"));
   }
   if(w.step===2){
     // Ready to spin: your zone as the hero, the rooftops in play as unnamed pins, your picks as chips you can tap to change
     const first=!(S.seenHow||{}).rush,excl=w.excl||(w.excl=[]),area=w.start.type==="me"?nearestSuburb(w.z):w.start.name;
     const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now()));
+    // been to some of these before? offer to skip them here, with the count, rather than on the map screen
+    const cm=collectedMap(),zoneAll=playable(inCircle(w.z,w.radius),false),allHere=zoneAll.length,beenHere=zoneAll.filter(v=>cm[v.id]).length;if(!beenHere)w.newOnly=false;
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
-      <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>`;
+      <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
+      ${beenHere?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars you've been to</b><small>You've been to ${beenHere} of ${allHere} in your zone</small></span><span class="sw"></span></button>`:""}`;
+    if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
     let m=null;
     const draw=()=>{if(!$("wInPlay"))return;const L_=inPlay();$("wInPlay").textContent=`${L_.length} in play`+(excl.length?` · ${excl.length} vetoed`:"");
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
@@ -3350,7 +3351,7 @@ const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
   const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
-    been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars I've been to</b> when you set up and they won't come up."},
+    been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars you've been to</b> when you set up and they won't come up."},
     nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
     fav:{t:"Favourites",d:"Bars you love. Tap the heart on any bar to add it here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
