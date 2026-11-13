@@ -13,25 +13,25 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
-        <!-- always the app's black behind the web view, never the system's white -->
-        <item name="android:windowBackground">@color/ic_launcher_background</item>
-        <item name="android:statusBarColor">@color/ic_launcher_background</item>
-        <item name="android:navigationBarColor">@color/ic_launcher_background</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <!-- always the app's own background behind the web view (cream, or black in dark mode) -->
+        <item name="android:windowBackground">@color/app_bg</item>
+        <item name="android:statusBarColor">@color/app_bg</item>
+        <item name="android:navigationBarColor">@color/app_bg</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
     </style>
 
 
     <!-- Launch screen. Android 12+ draws its own splash (the icon on a background colour). Left unset that
-         background is white in light mode, so the icon sat on white on cold starts. Pin it to the app's black. -->
+         background is the system's. Pin it to the app's own background (cream, or black in dark mode). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenBackground">@color/app_bg</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-        <item name="android:windowBackground">@color/ic_launcher_background</item>
-        <item name="android:statusBarColor">@color/ic_launcher_background</item>
-        <item name="android:navigationBarColor">@color/ic_launcher_background</item>
-        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/app_bg</item>
+        <item name="android:statusBarColor">@color/app_bg</item>
+        <item name="android:navigationBarColor">@color/app_bg</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
     </style>
 </resources>

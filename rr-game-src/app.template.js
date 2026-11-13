@@ -420,8 +420,12 @@ function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTi
 const buzz=ms=>{if(S.vib===false)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
 /* ---------- maps ---------- */
-const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+const isDark=()=>matchMedia("(prefers-color-scheme: dark)").matches;   // follows the phone's light or dark mode
+const themeBg=()=>getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#FBF7F0";
+const themeAmberText=el=>getComputedStyle(el||document.documentElement).getPropertyValue("--amber-text").trim()||"#F5B83D";
+const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";   // share cards stay dark
 const ESRI_LBL="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
+const ESRI_T=k=>`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${isDark()?"Dark":"Light"}_Gray_${k}/MapServer/tile/{z}/{y}/{x}`;
 const OSM="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 let tilesFallback=false;
 function mkMap(el,opts){
@@ -429,10 +433,10 @@ function mkMap(el,opts){
   const useOSM=()=>{m.eachLayer(l=>{if(l instanceof L.TileLayer)m.removeLayer(l)});m.getContainer().classList.add("osm");L.tileLayer(OSM,{attribution:'&copy; OpenStreetMap',maxZoom:19}).addTo(m)};
   if(tilesFallback){useOSM();return m}
   let errs=0;
-  const base=L.tileLayer(ESRI,{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxNativeZoom:16,maxZoom:19});
+  const base=L.tileLayer(ESRI_T("Base"),{attribution:'Esri, HERE, Garmin, &copy; OpenStreetMap',maxNativeZoom:16,maxZoom:19});
   base.on("tileerror",()=>{if(++errs===3){tilesFallback=true;useOSM()}});
   base.addTo(m);
-  L.tileLayer(ESRI_LBL,{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
+  L.tileLayer(ESRI_T("Reference"),{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
   return m;
 }
 const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="seen"?[24,24]:cls==="off"?[13,13]:[20,20]});
@@ -460,7 +464,7 @@ function gload(){
 }
 const LL=p=>({lat:p.lat,lng:p.lng});
 function gWrap(el,o){
-  const map=new google.maps.Map(el,{mapId:GMAPID,isFractionalZoomEnabled:true,colorScheme:"DARK",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
+  const map=new google.maps.Map(el,{mapId:GMAPID,isFractionalZoomEnabled:true,colorScheme:isDark()?"DARK":"LIGHT",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
   let ov=[],meM=null,ringC=null,tapAt=0;   // a pin tap also reaches the map as a click: don't let that close what the pin opened
   const node=h=>{const d=document.createElement("div");d.style.transform="translateY(50%)";d.style.display="grid";d.style.placeItems="center";d.innerHTML=h;return d};
   const mk=(pos,h,z,onClick,title)=>{const n=node(h);
@@ -476,7 +480,7 @@ function gWrap(el,o){
     dot(p){ov.push(mk(p,'<div class="me"></div>',1000))},
     route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
       ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:.18,strokeWeight:8,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:3,clickable:false}))},
-    line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#0B0D12",strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
+    line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:themeBg(),strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
     fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.03}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
       if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
@@ -499,7 +503,7 @@ function lWrap(el){
     dot(p){L.marker([p.lat,p.lng],{icon:meIcon}).addTo(ov)},
     route(pts,dashed){const ll=pts.map(p=>[p.lat,p.lng]);if(dashed){L.polyline(ll,{color:"#F5B83D",weight:2,opacity:.35,dashArray:"2 7",lineCap:"round"}).addTo(ov);return}
       L.polyline(ll,{color:"#F5B83D",weight:8,opacity:.18,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:3,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
-    line(pts){const ll=pts.map(p=>[p.lat,p.lng]);L.polyline(ll,{color:"#0B0D12",weight:9,opacity:.85,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:5,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
+    line(pts){const ll=pts.map(p=>[p.lat,p.lng]);L.polyline(ll,{color:themeBg(),weight:9,opacity:.85,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:5,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
     fitZone(c,r,extra,pad){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad)},
     fitPts(pts,maxZoom,pad){const bb=L.latLngBounds(pts.map(p=>[p.lat,p.lng]));pad?m.fitBounds(bb,{animate:false,maxZoom:maxZoom||16,paddingTopLeft:[pad.left,pad.top],paddingBottomRight:[pad.right,pad.bottom]}):m.fitBounds(bb.pad(.3),{animate:false,maxZoom:maxZoom||16})},
     setView(p,z){m.setView([p.lat,p.lng],z,{animate:true})},
@@ -1421,7 +1425,7 @@ function makeReel(el,names,o){
 function punchLand(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
   const host=el.closest("dialog")||el.closest(".jpx,.jpdemo")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK="#F5B83D";   // centred on the slot (very long names overflow the wheel lopsided)
+  const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK=themeAmberText(c);   // centred on the slot (very long names overflow the wheel lopsided)
   const P=document.createElement("div");P.className="punch";P.textContent=name;
   Object.assign(P.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
   host.appendChild(P);row.style.visibility="hidden";
@@ -2076,7 +2080,7 @@ function flyToCounter(force,lead){
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){finish();return}
   at(lead==null?350:lead,()=>{
     h=$("stage")&&$("stage").querySelector(".bar.at h2");if(!h||!h.isConnected){finish();return}
-    const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h),INK="#F5B83D";
+    const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h),INK=themeAmberText(h);
     const old=+(pc.querySelector("b")||{}).textContent||0,nw=a._inCount?old:old+1;
     const cx=hr.left+hr.width/2,cy=hr.top+hr.height/2;
     // 1. pop off the card (same punch as the wheel landing, quicker)
@@ -2132,7 +2136,7 @@ function rackUp(box,n){
   const small=cell.querySelector("small");
   const dbox=document.createElement("div");dbox.className="cbox";
   Object.assign(dbox.style,{left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",perspective:Math.round(cr.width*2.6)+"px",borderRadius:"14px",transformOrigin:"50% 50%"});
-  dbox.innerHTML=`<div class="chole" style="border-radius:14px"></div><div class="cleaf" style="border-radius:14px;flex-direction:column;gap:2px;background:var(--s2)"><b style="display:block;font-family:var(--display);font-weight:800;font-size:${getComputedStyle(num).fontSize};line-height:1;color:var(--amber)">0</b><small style="font-size:${small?getComputedStyle(small).fontSize:"12px"};color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${small?small.textContent:""}</small></div>`;
+  dbox.innerHTML=`<div class="chole" style="border-radius:14px"></div><div class="cleaf" style="border-radius:14px;flex-direction:column;gap:2px;background:var(--s2)"><b style="display:block;font-family:var(--display);font-weight:800;font-size:${getComputedStyle(num).fontSize};line-height:1;color:var(--amber-text)">0</b><small style="font-size:${small?getComputedStyle(small).fontSize:"12px"};color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${small?small.textContent:""}</small></div>`;
   document.body.appendChild(dbox);fx.push(dbox);cell.style.visibility="hidden";
   const leaf=dbox.querySelector(".cleaf"),hole=dbox.querySelector(".chole"),lb=leaf.querySelector("b");
   at(0,()=>{sfx("flip");
@@ -2143,7 +2147,7 @@ function rackUp(box,n){
     let r=c.getBoundingClientRect();const cs=getComputedStyle(c);if(r.right<0||r.left>vw){const mp=box.querySelector(".scmap").getBoundingClientRect();r={left:mp.left+mp.width*(.25+((i*37)%50)/100),width:0,top:mp.top+mp.height*.55,height:0}}
     const x0=r.left+r.width/2,y0=r.top+r.height/2,dx=tx-x0,dy=ty-y0;
     const f=document.createElement("div");f.className="cpop";f.textContent=c.textContent;
-    Object.assign(f.style,{left:x0+"px",top:y0+"px",fontFamily:cs.fontFamily,fontWeight:700,fontSize:cs.fontSize,color:"#F5B83D",textShadow:"0 0 14px rgba(245,184,61,.8)"});
+    Object.assign(f.style,{left:x0+"px",top:y0+"px",fontFamily:cs.fontFamily,fontWeight:700,fontSize:cs.fontSize,color:themeAmberText(c),textShadow:"0 0 14px rgba(245,184,61,.8)"});
     document.body.appendChild(f);fx.push(f);c.style.opacity=".3";
     const T=(x,y,sx,sy=sx,rt=0)=>`translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${rt}deg) scale(${sx},${sy})`;
     f.animate([{transform:T(0,0,1)},{transform:T(0,-10,1.35),offset:.25},{transform:T(dx*.5,dy*.5-10,.8,.6,-6),offset:.65},{transform:T(dx,dy,.05,.08,-12),opacity:.2}],{duration:460,easing:"cubic-bezier(.55,0,.85,.4)",fill:"forwards"}).onfinish=()=>{
@@ -2168,7 +2172,7 @@ function nightSheet(){
     return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</small></span><span class="d">${v.arrivedAt!=null?hmm(ms):""}</span></button>`}).join("");
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">Your crawl</h3>
     <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
-    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
+    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
     ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
     ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
@@ -2420,7 +2424,7 @@ function renderPlay(){
   $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;$("pMap").classList.toggle("hasdot",mapHintDue(g));
   const counted=countShown(g);
   if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
-  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.some(v=>v._inCount||v.counted===true)&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
+  $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.some(v=>v._inCount||v.counted===true)&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
   $("strip").innerHTML=g.visits.map((v,i)=>{const b=byId(v.id),c=v.leftAt==null?"here":v.counted===true?"yes":v.counted===false?"no":"q";return `<span class="pip ${c}">${i+1}. ${esc(b.name)}${c==="yes"?" ✓":""}</span>`}).join("");
   $("strip").hidden=true;   // tonight's bars live behind the counter (Your night)
   $("pCount").classList.toggle("nudge",!!g.visits.length&&!S.tips.night);
@@ -2521,7 +2525,7 @@ function renderPlay(){
     const free=(g.freeSkips||0)>0;
     // Second re-spin within a minute of the first spin, before reaching any bar: probably trying it from home.
     const home=!g.noLoc&&!g.visits.length&&!g.farAsked&&(g.respins||[]).length>=1&&now()-g.startedAt<=60000;if(home){g.farAsked=1;save()}
-    sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? The demo plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to demo</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
+    sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber-text)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? The demo plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to demo</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
       if($("sD"))$("sD").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("respin_demo",{});stopWatch();S.game=null;save();startDemo()};$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.respins=g.respins||[]).push(now());(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   {const dw=$("dWalk");if(dw)dw.onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()}}   // demo: arrive without walking
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
@@ -3635,8 +3639,10 @@ function natCall(plugin,method,opts){const C=window.Capacitor;if(!C||!C.isNative
   const P=C.Plugins&&C.Plugins[plugin];if(P&&typeof P[method]==="function")return P[method](opts||{});
   if(typeof C.nativePromise==="function")return C.nativePromise(plugin,method,opts||{});return Promise.reject(new Error("no bridge"))}
 const openAppSettings=()=>natCall("NativeSettings","open",{optionAndroid:"application_details",optionIOS:"app"});
-// light status bar icons on our dark screens (the phone's default follows its own light/dark mode)
-if(NATIVE)natCall("SystemBars","setStyle",{style:"DARK"}).catch(()=>{});
+// status bar icons that suit the screen: dark on the cream theme, light in dark mode and over the camera
+if(NATIVE){const setBars=()=>natCall("SystemBars","setStyle",{style:isDark()||document.body.classList.contains("camon")?"DARK":"LIGHT"}).catch(()=>{});
+  setBars();try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",setBars)}catch(e){}
+  let camWas=false;new MutationObserver(()=>{const c=document.body.classList.contains("camon");if(c!==camWas){camWas=c;setBars()}}).observe(document.body,{attributes:true,attributeFilter:["class"]})}
 // Permissions: apps can only ask; switching one off (or back on after a no) happens in the phone's settings.
 // Each row: not asked yet → tap asks; allowed or off → tap opens this app's page in the phone's settings.
 async function permSheet(){

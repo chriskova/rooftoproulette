@@ -2,18 +2,18 @@
   "appId": "com.rooftoproulette.app",
   "appName": "Rooftop Roulette",
   "webDir": "www",
-  "backgroundColor": "#0B0D12",
+  "backgroundColor": "#FBF7F0",
   "android": {
-    "backgroundColor": "#0B0D12",
+    "backgroundColor": "#FBF7F0",
     "useLegacyBridge": true
   },
   "ios": {
-    "backgroundColor": "#0B0D12",
+    "backgroundColor": "#FBF7F0",
     "contentInset": "never"
   },
   "plugins": {
     "SystemBars": {
-      "style": "DARK"
+      "style": "DEFAULT"
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_rr",

@@ -1,5 +1,6 @@
 package com.rooftoproulette.app;
 
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -10,7 +11,8 @@ import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
-    static final int BG = Color.parseColor("#0B0D12");   // the app's black
+    static final int BG_DARK = Color.parseColor("#0B0D12");    // the app's black (phone in dark mode)
+    static final int BG_LIGHT = Color.parseColor("#FBF7F0");   // the app's cream (the default)
     private volatile long readyAt = 0;                    // when the page finished loading
 
     @Override
@@ -28,17 +30,12 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CrawlNotifyPlugin.class);   // our own: the live crawl notification
         super.onCreate(savedInstanceState);
 
-        // Black behind everything from the first frame: window, status bar, navigation bar and the web view itself
-        getWindow().getDecorView().setBackgroundColor(BG);
-        getWindow().setStatusBarColor(BG);
-        getWindow().setNavigationBarColor(BG);
-        WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
-        bars.setAppearanceLightStatusBars(false);
-        bars.setAppearanceLightNavigationBars(false);
+        // The app's own background behind everything from the first frame: window, status bar, navigation bar
+        // and the web view itself. Cream with dark icons by default, black with light icons in dark mode.
+        applyBars(getResources().getConfiguration());
 
         try {
             WebView wv = getBridge().getWebView();
-            wv.setBackgroundColor(BG);
             // Big system text: follow it, but cap it at 130% so the layout and main buttons still fit (what Uber and most apps do)
             android.webkit.WebSettings ws = wv.getSettings();
             if (ws.getTextZoom() > 130) ws.setTextZoom(130);
@@ -51,5 +48,28 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception ignored) {
             readyAt = SystemClock.uptimeMillis();
         }
+    }
+
+    static boolean isNight(Configuration c) {
+        return (c.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    }
+
+    void applyBars(Configuration c) {
+        boolean night = isNight(c);
+        int bg = night ? BG_DARK : BG_LIGHT;
+        getWindow().getDecorView().setBackgroundColor(bg);
+        getWindow().setStatusBarColor(bg);
+        getWindow().setNavigationBarColor(bg);
+        WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        bars.setAppearanceLightStatusBars(!night);
+        bars.setAppearanceLightNavigationBars(!night);
+        try { getBridge().getWebView().setBackgroundColor(bg); } catch (Exception ignored) {}
+    }
+
+    // The phone switched between light and dark while the app was open (the page follows it on its own)
+    @Override
+    public void onConfigurationChanged(Configuration c) {
+        super.onConfigurationChanged(c);
+        applyBars(c);
     }
 }

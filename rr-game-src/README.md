@@ -43,6 +43,12 @@ They need Node with `playwright` and Chromium. Run them from `rr-game-src/tests/
 
 Add `?test` to the URL for test mode: no real GPS, tap the map to fake your location, and nothing is saved to History. Tests set the clock to 7pm so bars are open.
 
+## Light and dark
+
+The app is light (warm cream) by default and switches to the dark look when the phone is in dark mode. The colours are CSS variables at the top of `index.template.html`: `:root` holds the light set, the `prefers-color-scheme:dark` block holds the dark one. Things that always sit on a photo, the camera, the jackpot card or the share view use the dark set whatever the phone does (the selector list just after). Use `--amber-text` for small amber text and `--amber-display` for big display text, so it stays readable on cream; `--amber` is for fills. Share cards are always dark. On Android, `res/values/theme_colors.xml` and `res/values-night/` set the launch screen and bar colours, and `MainActivity` updates the bars if the phone switches while the app is open.
+
+`node theme-tour.js $(realpath ../../index.html) light` (or `dark`) and `theme-tour2.js` screenshot the main screens into `out/` for checking both looks.
+
 ## Native app (app/)
 
 `app/` wraps the built web app in Capacitor (app ID `com.rooftoproulette.app`) for Android and iOS.

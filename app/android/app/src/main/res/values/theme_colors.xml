@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- the app's background behind the web view, bars and launch screen. Light (cream) by default; values-night has the dark one -->
+    <color name="app_bg">#FBF7F0</color>
+    <bool name="light_bars">true</bool>
+</resources>
