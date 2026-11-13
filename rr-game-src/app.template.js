@@ -2893,7 +2893,10 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
     x.font=`700 21px ${U}`;x.fillStyle="rgba(244,241,234,.8)";sp((cr?"R&R":LEN(r.len)).toUpperCase(),W-64,1832,3,"right")};
   // where and when, with a pin, sitting just above the title
   const WV=window.WHERE_VAR||"foot";
-  const where=Y=>{if(WV!=="top")return;x.save();x.shadowColor="transparent";const t=[placeOf(r),dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
+  // the crawl's own name, if they gave it one, sits just above the headline (R&R already uses it as the headline)
+  const where=Y=>{if(r.title&&!cr){x.save();x.shadowColor="rgba(0,0,0,.5)";x.shadowBlur=10;let fz=34;x.font=`800 ${fz}px ${U}`;x.letterSpacing="2.4px";const t=r.title.toUpperCase();while(x.measureText(t).width>W-128&&fz>22){fz-=2;x.font=`800 ${fz}px ${U}`}
+      x.fillStyle=AMB;x.fillText(t,64,Y);x.letterSpacing="0px";x.restore();return}
+    if(WV!=="top")return;x.save();x.shadowColor="transparent";const t=[placeOf(r),dateTxt(rt(r,r.startedAt))].filter(Boolean).join(" · ").toUpperCase();
     x.save();x.translate(64,Y-25);x.scale(28/24,28/24);x.fillStyle=AMB;x.fill(new Path2D("M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"));x.fillStyle="rgba(11,13,18,.9)";x.beginPath();x.arc(12,10,2.6,0,7);x.fill();x.restore();
     x.font=`700 24px ${U}`;x.fillStyle="rgba(244,241,234,.88)";sp(t,104,Y,2.6);x.restore()};
   const tagAt=(X,Y,rot)=>{x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(X,Y);x.rotate((rot||5)*Math.PI/180);
