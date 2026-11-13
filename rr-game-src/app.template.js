@@ -1758,12 +1758,16 @@ function camSync(asked){
       CAM.busy=false;if(!(CAM.once&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
       CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
       v.classList.remove("on");v.onplaying=()=>v.classList.add("on");v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
+      // Android's web view sometimes hands over a stuck picture the first time (often right after the permission prompt).
+      // If the picture hasn't started moving in 2.5 s, drop it and open the camera again, once, the same as closing and reopening it.
+      const t0=v.currentTime;setTimeout(()=>{if(CAM.stream!==st||CAM.retried)return;if(v.videoWidth&&v.currentTime>t0+.2&&!v.paused)return;
+        CAM.retried=true;if(CAM.rec)camStop(true);st.getTracks().forEach(t=>t.stop());CAM.stream=null;v.srcObject=null;v.classList.remove("on");camSync()},2500);
     }).catch(e=>{CAM.busy=false;CAM.once=false;if(S.route==="play"&&!spinning)renderPlay();toast(e&&e.name==="NotAllowedError"?(NATIVE?"Camera's off for Rooftop Roulette. Allow it in your phone's settings.":"Camera blocked. Allow it in Chrome's site settings."):"Couldn't start the camera.",4000)});
   }
   // the camera layout goes up the moment it's asked for, before the picture arrives, so the plain wheel never flashes up
   if(CAM.once&&spot&&S.route==="play"&&!document.body.classList.contains("camon")){document.body.classList.add("camon");if(!spinning)fitPlay()}
   if(!CAM.once&&!CAM.rec&&!CAM.stream&&!CAM.busy&&document.body.classList.contains("camon")){document.body.classList.remove("camon");if(S.route==="play"&&!spinning){renderPlay();fitPlay()}}
-  if(!want&&CAM.stream&&(!CAM.once||document.hidden||S.route!=="play")){if(CAM.rec)camStop(CAM.spun===false);CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
+  if(!want&&CAM.stream&&(!CAM.once||document.hidden||S.route!=="play")){if(CAM.rec)camStop(CAM.spun===false);CAM.stream.getTracks().forEach(t=>t.stop());CAM.stream=null;CAM.retried=false;const v=$("camVid");if(v){v.srcObject=null;v.remove()}document.body.classList.remove("camon");if(S.route==="play"){if(!spinning)renderPlay();fitPlay()}}
 }
 document.addEventListener("visibilitychange",()=>camSync());
 setInterval(()=>{
@@ -1772,7 +1776,7 @@ setInterval(()=>{
   if(!CAM.stream){camRecPill();camLight(false);return}   // camera closed: the recording pill and light go with it
   const busy=spinning||!!document.querySelector(".jpx");
   if(!CAM.rec&&spinning){camStart();CAM.spun=true}
-  else if(!CAM.rec&&CAM.once&&CAM.vid&&CAM.vid.videoWidth&&!document.hidden){camStart();CAM.spun=false}
+  else if(!CAM.rec&&CAM.once&&CAM.vid&&CAM.vid.videoWidth&&CAM.vid.currentTime>0&&!CAM.vid.paused&&!document.hidden){camStart();CAM.spun=false}
   else if(CAM.rec){if(spinning)CAM.spun=true;
     if(!CAM.spun){if(Date.now()-CAM.t0>8000&&!document.querySelector("#v-play .reel .row")?.closest(".reel")?.matches(":active"))camStop(true)}   // touched the reel but never spun: no clip
     else{if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
