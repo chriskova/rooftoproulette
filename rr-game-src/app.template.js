@@ -1885,7 +1885,7 @@ const b64u=bytes=>{let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return b
 const unb64u=str=>{const s=atob(str.replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))};
 async function packCrawl(r){const t0=r.startedAt,sec=t=>t==null?-1:Math.round((t-t0)/1000);
   const o={i:r.id,m:r.mode==="cruise"?"c":"r",l:r.len,ra:r.radius,c:r.city,a:r.areas,s:Math.round(t0/1000),e:sec(r.endedAt),d:sec(r.endsAt),
-    p:r.startPos?[+r.startPos.lat.toFixed(5),+r.startPos.lng.toFixed(5)]:null,ce:r.center?[+r.center.lat.toFixed(4),+r.center.lng.toFixed(4)]:null,
+    p:null,ce:r.center?[+r.center.lat.toFixed(4),+r.center.lng.toFixed(4)]:null,
     v:r.visits.filter(v=>v.arrivedAt!=null).map(v=>[v.id,sec(v.arrivedAt),sec(v.leftAt),v.counted===true?1:v.counted===false?0:-1,v.cant?1:0]),
     b:r.barOfDay||null,j:r.jp&&r.jp.k||null,n:r.title||null,cz:r.cz||null,ae:r.autoEnded?1:0};
   const raw=new TextEncoder().encode(JSON.stringify(o));
@@ -2632,13 +2632,19 @@ function renderClock(){
 }
 
 /* ---------- stats + scorecard ---------- */
+// The bars in order, and the GPS trail from the first bar on (the walk in to the first bar isn't part of the crawl,
+// and it often starts at home, so it's never drawn or shared).
+function crawlPath(r,st){const stops=(st||stats(r)).arrived.map(v=>byId(v.id)).filter(Boolean);let tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]}));
+  if(stops.length&&tr.length){let bi=-1,bd=1e9;tr.forEach((p,i)=>{const d=dist(p,stops[0]);if(d<bd-1){bd=d;bi=i}});tr=bd<=250?tr.slice(bi):[]}
+  return {stops,trail:tr}}
 function stats(r){
   const arrived=r.visits.filter(v=>v.arrivedAt!=null),counted=arrived.filter(v=>v.counted===true);
-  const pts=[r.startPos,...arrived.map(v=>byId(v.id))];let total=0,legs=[];
-  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i-1],d})}
+  // the crawl runs from the first bar (that's when the clock starts): the walk in isn't counted or drawn
+  const pts=arrived.map(v=>byId(v.id));let total=0,legs=[];
+  for(let i=1;i<pts.length;i++){const d=dist(pts[i-1],pts[i])*1.3;total+=d;legs.push({to:arrived[i],d})}
   const longest=legs.slice().sort((a,b)=>b.d-a.d)[0];let quick=null;
   for(let i=1;i<arrived.length;i++){const p=arrived[i-1];if(p.leftAt!=null){const dt=arrived[i].arrivedAt-p.leftAt;if(dt>=0&&(!quick||dt<quick.ms))quick={ms:dt,from:p.id,to:arrived[i].id}}}
-  return {arrived,counted,total,longest,quick,dur:(r.endedAt||r.endsAt)-r.startedAt,last:arrived[arrived.length-1]};
+  return {arrived,counted,total,longest,quick,dur:(r.endedAt||r.endsAt)-(arrived.length?arrived[0].arrivedAt:r.startedAt),last:arrived[arrived.length-1]};
 }
 
 
@@ -2709,10 +2715,10 @@ async function bigMap(r,st){
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
   m=await makeMap("bigMap",{greedy:true});if(!m)return;
-  const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]}));
-  if(!r.noLoc){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts);m.dot(r.startPos)}
+  const {stops:pts,trail:tr}=crawlPath(r,st);
+  if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
   st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
-  const all=pts.concat(tr);setTimeout(()=>m.fitPts(all,17,{top:80,left:30,right:30,bottom:40}),80);
+  const all=pts.concat(tr);if(!all.length&&r.center)all.push(r.center);setTimeout(()=>m.fitPts(all,17,{top:80,left:30,right:30,bottom:40}),80);
 }
 // Test mode: no GPS trail from a real walk, so draw one. A real walking route from Google when it's available,
 // otherwise a street-like zigzag between the bars.
@@ -2818,11 +2824,11 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   requestAnimationFrame(async()=>{
     if(eMap){eMap.remove();eMap=null}
     const el=$("endMap"),m=await makeMap("endMap");if(!m||!document.contains(el))return;eMap=m;
-    const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))],tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]}));
-    if(!r.noLoc){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts);m.dot(r.startPos)}
+    const {stops:pts,trail:tr}=crawlPath(r,st);
+    if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
-    const all=pts.concat(tr).filter(Boolean);
+    const all=pts.concat(tr).filter(Boolean);if(!all.length&&r.center)all.push(r.center);
     m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov&&getComputedStyle(ov).position==="absolute"?Math.round(ov.offsetHeight*.55):24,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
   });
   fitEnd();
@@ -2860,7 +2866,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
     else{gr.addColorStop(q(1230),"rgba(11,13,18,0)");gr.addColorStop(q(1380),"rgba(11,13,18,.35)");gr.addColorStop(q(1520),"rgba(11,13,18,.74)");gr.addColorStop(q(1660),"rgba(11,13,18,.9)")}gr.addColorStop(1,BG)}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
-  const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
+  const {stops,trail:tr}=crawlPath(r,st),line=tr.length>1?tr:stops;
   const FV=full?(window.FULL_VAR||"e"):"";
   if(stops.length>1&&!FV&&(!rund||RV==="map")){
     const B=rund?{x:110,y:300,w:860,h:Math.max(300,T4-150-300-60)}:full?{x:200,y:400,w:680,h:620}:photo?{x:650,y:400,w:360,h:560}:mapc?{x:110,y:330,w:860,h:900}:{x:110,y:400,w:860,h:540},all=stops.concat(tr),k=Math.cos(all[0].lat*Math.PI/180);
@@ -3029,7 +3035,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
 function dayCrawl(r){const t=rt(r,r.startedAt),d=new Date(t+((r.endedAt||r.endsAt||t)-t)/2),m=d.getMonth(),c=Math.cos((m-11.5)/12*2*Math.PI);   // 1 in late Dec, -1 in late Jun
   const h=d.getHours()+d.getMinutes()/60,rise=6.4-0.6*c,set=18.6+1.4*c;return h>=rise&&h<set}
 async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
-  const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
+  const cp=crawlPath(r,st),stops=cp.stops.length?cp.stops:[r.startPos].filter(Boolean),all=stops.concat(cp.trail);if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
   let SC=2;const BW=AR.bw,BH=AR.bh,cy0=AR.cy,cxp=AR.cx;let z=17;
   for(;z>3;z--){const a=all.map(p=>wp(p,z)),xs=a.map(q=>q[0]),ys=a.map(q=>q[1]);if((Math.max(...xs)-Math.min(...xs))*SC<=BW&&(Math.max(...ys)-Math.min(...ys))*SC<=BH)break}
@@ -3110,7 +3116,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
 function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
 const loadImg=src=>new Promise((res,rej)=>{const i=new Image();const t=setTimeout(()=>rej("timeout"),12000);i.onload=()=>{clearTimeout(t);res(i)};i.onerror=e=>{clearTimeout(t);rej(e)};i.src=src});
 function drawRoute(x,r,st,bx,by,bw,bh){
-  const pts=[r.startPos,...st.arrived.map(v=>byId(v.id))];
+  const pts=crawlPath(r,st).stops;if(!pts.length&&r.startPos)pts.push(r.startPos);if(!pts.length)return;
   // faint zone circle + all bars around for texture
   const lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length,cos=Math.cos(lat0*Math.PI/180);
   const xs=pts.map(p=>p.lng*cos),ys=pts.map(p=>-p.lat);
@@ -3120,8 +3126,7 @@ function drawRoute(x,r,st,bx,by,bw,bh){
   x.fillStyle="#2A303D";VENUES.forEach(v=>{const [X,Y]=P(v);if(X>bx&&X<bx+bw&&Y>by&&Y<by+bh){x.beginPath();x.arc(X,Y,7,0,7);x.fill()}});
   const path=()=>{x.beginPath();pts.forEach((p,i)=>{const [X,Y]=P(p);i?x.lineTo(X,Y):x.moveTo(X,Y)})};
   x.lineCap="round";x.lineJoin="round";x.strokeStyle="#0B0D12";x.lineWidth=22;path();x.stroke();x.strokeStyle="#F5B83D";x.lineWidth=12;path();x.stroke();
-  const [sx,sy]=P(pts[0]);x.fillStyle="#5AA9FF";x.beginPath();x.arc(sx,sy,16,0,7);x.fill();x.strokeStyle="#fff";x.lineWidth=5;x.stroke();
-  st.arrived.forEach((v,i)=>{const [X,Y]=P(byId(v.id));x.fillStyle=v.counted===true?"#F5B83D":"#6B7280";x.beginPath();x.arc(X,Y,20,0,7);x.fill();x.strokeStyle="#0B0D12";x.lineWidth=5;x.stroke();x.fillStyle="#241803";x.font='800 22px system-ui,Arial';x.textAlign="center";x.fillText(String(i+1),X,Y+8);x.textAlign="left"});
+    st.arrived.forEach((v,i)=>{const [X,Y]=P(byId(v.id));x.fillStyle=v.counted===true?"#F5B83D":"#6B7280";x.beginPath();x.arc(X,Y,20,0,7);x.fill();x.strokeStyle="#0B0D12";x.lineWidth=5;x.stroke();x.fillStyle="#241803";x.font='800 22px system-ui,Arial';x.textAlign="center";x.fillText(String(i+1),X,Y+8);x.textAlign="left"});
 }
 const GAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/></svg>';
 // Full-size photos and clips from one crawl, swipe between them.
@@ -3531,9 +3536,8 @@ function crawlStatSheet(kind,id){
   const name=r=>r.title?esc(r.title):dateTxt(rt(r,r.startedAt));
   if(id){const x=N.find(o=>o.r.id===id);if(!x){crawlStatSheet(kind);return}const r=x.r,st=x.st;
     let rows;
-    if(isD){const pts=[{name:"Start"}].concat(st.arrived.map(v=>byId(v.id)));
-      rows=st.arrived.map((v,i)=>{const leg=st.legs?st.legs[i]:null,d=leg?leg.d:dist(i?byId(st.arrived[i-1].id):r.startPos,byId(v.id))*1.3;
-        return `<div class="srow"><span class="t"><small>${i?esc(pts[i].name):"Start"} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")}
+    if(isD){rows=st.arrived.slice(1).map((v,i)=>{const a=byId(st.arrived[i].id),d=dist(a,byId(v.id))*1.3;
+        return `<div class="srow"><span class="t"><small>${esc(a.name)} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")||`<div class="srow"><span class="t"><b>Just the one bar, no walking yet</b></span></div>`}
     else rows=st.arrived.map((v,i)=>{const ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt),b_=byId(v.id);
         return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${hmm(ms)}</span></div>`}).join("");
     sheet(`<button class="txtbtn bsback" type="button" id="csBack">‹ ${lbl}</button><h3>${name(r)}</h3><p class="note vsum">${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" bar"+(st.counted.length===1?"":"s")}</p>
