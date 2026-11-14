@@ -1561,6 +1561,12 @@ html,body{overflow-x:hidden;max-width:100%}
 .zwarn .btn span{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .zwarn .btn small{flex:none;font-size:13px;font-weight:600;opacity:.75}
 
+/* home: the pin as a large faded watermark behind the name, which sits a little lower than the top */
+#v-home .hero.ts{position:relative;padding-top:calc(2px + 18px*var(--hs,1) + 5vh)}
+#v-home .hero.ts .hlogo{position:absolute;right:-70px;top:calc(150px + 30px*var(--hs,1));margin:0;z-index:0;pointer-events:none}
+#v-home .hero.ts .hlogo img{display:block;height:calc(340px*(.75 + .25*var(--hs,1)));width:auto;opacity:.22}
+#v-home .hero.ts .brand,#v-home .hero.ts .tsline{position:relative;z-index:1}
+
 /* short phones (iPhone SE size): tighten spacing so setup and the summary fit without scrolling. The setup map keeps its size. */
 @media (max-height:690px){
   #v-wiz{gap:10px}
@@ -1677,9 +1683,9 @@ setTimeout(done,1200)})();</script>
 
   <!-- HOME -->
   <section class="view" id="v-home" hidden>
-    <!-- the logo sits above the name. Placeholder RR (same as the app icon) until the real one's ready: swap .hlogo's contents for an <img> -->
+    <!-- the logo: a big, faded pin behind the name (icons/logo-pin.png; swap for the designer's final file) -->
     <div class="hero ts">
-      <div class="hlogo" id="homeLogo"><span class="rrph" aria-hidden="true">RR</span></div>
+      <div class="hlogo" id="homeLogo" aria-hidden="true"><img src="icons/logo-pin.png" alt=""></div>
       <div class="brand" id="heroBrand">Rooftop<br><span>Roulette</span></div>
       <p class="tsline">Race the clock.<br>How many rooftops can you hit?</p>
     </div>

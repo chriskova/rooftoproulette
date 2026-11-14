@@ -17,9 +17,9 @@ open(os.path.join(OUT,'rooftop-app.js'),'w').write(app.replace('__VENUES_V__',st
 m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v81-0";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v82-0";
 const ASSETS=["./","index.html","browser-config.js","rooftop-app.js","manifest.webmanifest",
-"icons/icon-192.png","icons/apple-touch-icon.png",
+"icons/icon-192.png","icons/apple-touch-icon.png","icons/logo-pin.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
 "fonts/plus-jakarta-sans-latin-800-normal.woff2","fonts/plus-jakarta-sans-latin-700-normal.woff2","fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2","fonts/caveat-latin-600-normal.woff2"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
