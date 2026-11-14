@@ -1066,7 +1066,7 @@ function renderWiz(){
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
-    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New crawl</div><h1 class="q">How long's the crawl?</h1><p class="sub" style="margin:6px 0 0">The clock starts on your first spin.</p></div>
+    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New crawl</div><h1 class="q">How long's the crawl?</h1><p class="sub" style="margin:6px 0 0">The clock starts when you reach your first bar.</p></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few bars, quick drinks.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
@@ -1529,8 +1529,8 @@ function doSpin(force,vel){
   if(!g.started){track("crawl_start",{demo:!!g.demo,mode:CR(g)?"rr":"rush",length_min:CR(g)?null:g.len,radius_km:g.radius||null,city:g.city||S.city||null,camera:!!(typeof CAM!=="undefined"&&CAM.once)});prewarmAudio();const t=now();g.started=true;g.startedAt=t;g.ff0=S.test?(S.ff||0):0;g.endsAt=t+g.len*60000;if(CR(g))g.autoAt=t+RR_AUTO;const y=you();if(y)g.startPos={lat:y.lat,lng:y.lng}}
   const a=atVisit();if(a){a.dep=now();if(a._ans!==undefined)a._inCount=a._ans}
   endTripFreeze(g);
-  // Starting outside your zone (spin over lunch in Surry Hills, crawl the city): the clock waits till your first bar. Capped at 45 min.
-  if(firstSpin&&!g.demo&&!CR(g)&&!g.noLoc&&!g.frz){const y=you();if(y&&g.center&&dist(y,g.center)>g.radius*1000+150){startFreeze(g,45*60000,true);g.frz.zone=true;g.frz.start=true}}
+  // The clock starts when you reach your first bar, wherever you spin from (in the zone or across town). Capped at 45 min.
+  if(firstSpin&&!g.demo&&!CR(g)&&!g.frz){startFreeze(g,45*60000,true);g.frz.until=g.endsAt-g.len*60000;g.frz.zone=true;g.frz.start=true}
   if(!g.demo&&!CR(g)&&!g.jp){if(g.jpAt==null)g.jpAt=jpPlan(g);
     const n=g.visits.length+1;   // the spin for bar n
     const late=g.len!==60&&n>=4&&remaining()<45*60000;   // 2 hours: bar 4 with under 45 minutes left gets it, so it isn't missed
@@ -2304,7 +2304,7 @@ function bindDemo(afterHTML,landed,boxEl){
   mk();
 }
 const HOW={rush:()=>[
-    ["Spin","You get a random rooftop in your zone. The clock starts on your first spin."],
+    ["Spin","You get a random rooftop in your zone. The clock starts when you reach your first bar."],
     ["Get to the bar","Walk, run or Uber. One drink at each bar."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Stuck somewhere quiet?","Move your zone once a crawl. If it's far, the clock waits."],
@@ -2622,13 +2622,13 @@ function renderClock(){
     $("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
   $("tbar").hidden=false;
   $("clockT").textContent=mmss(r);
-  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts on spin";return}
+  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first bar";return}
   const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
   $("clock").className="clock"+(red?" red":warn?" warn":"");
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL")._h=null;$("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
-  if(frozen(g)){$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=g.frz.start?"Starts at your first bar":(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}
+  if(frozen(g)){if(g.frz.start){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first bar"}else{$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}}
 }
 
 /* ---------- stats + scorecard ---------- */
@@ -3748,7 +3748,8 @@ function liveNote(){
   else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode+(y?` · ${kmTxt(dist(y,v)/1000)} away`:"")}
   else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"bar")}`}
   const o={title,text};
-  if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
+  if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first bar"}
+  else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
   else if(a)o.since=Math.round(realAt(a.arrivedAt));
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);
   if(key===NOTE.live&&Date.now()-NOTE.liveAt<60000)return;   // text changes go straight out; the bar moves once a minute
