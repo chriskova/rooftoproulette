@@ -2314,6 +2314,15 @@ html,body{overflow-x:hidden;max-width:100%}
   /* the landing box that grows into the card: light unless it's growing into a photo card */
   html:not(.dark) body:not(.camon) .flybox:not(.fb-dk){background:linear-gradient(#FFFFFF,#FBF1DD);box-shadow:0 0 0 4px rgba(245,184,61,.14),0 10px 30px rgba(120,80,10,.15)}
   html:not(.dark) body:not(.camon) .bodt.phd:not(.on){border-color:transparent}
+  /* photo cards in light mode: a warm, shorter scrim (dark mode keeps its black one) */
+  html:not(.dark) body:not(.camon) .bar.phd::before,html:not(.dark) body:not(.camon) .sheetbar.phd::before{background:linear-gradient(to top,rgba(34,22,6,.88) 0%,rgba(34,22,6,.74) 30%,rgba(34,22,6,.4) 50%,rgba(34,22,6,.12) 64%,rgba(34,22,6,0) 76%)}
+  html:not(.dark) body:not(.camon) .bar.phd>*:not(.cr):not(.wild):not(.btn){text-shadow:0 1px 6px rgba(34,22,6,.45)}
+  html:not(.dark) body:not(.camon) .bodt.phd::before{background:linear-gradient(rgba(34,22,6,0) 38%,rgba(34,22,6,.35) 60%,rgba(34,22,6,.82))}
+  html:not(.dark) body:not(.camon) .bodt.phd b{text-shadow:0 1px 6px rgba(34,22,6,.45)}
+  /* Directions is the secondary action: frosted glass, so the amber Spin button stays the one solid button */
+  html:not(.dark) body:not(.camon) .bar.phd .btn.dir{background:rgba(255,255,255,.16);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.4);color:#fff}
+  html:not(.dark) body:not(.camon) .bar.phd .btn.dir svg{color:#F5B83D}
+  html:not(.dark) body:not(.camon) .bar.phd .wild{background:rgba(34,22,6,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
