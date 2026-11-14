@@ -553,13 +553,6 @@ function loadPhotoImage(url){
     img.onload=()=>finish(img.naturalWidth>0);img.onerror=()=>finish(false);img.src=url;
   });
 }
-// How bright the bottom of a photo is, where the bar's name sits, so light mode can pick dark or white text
-// (like a phone's lock-screen clock). null when the photo can't be read (then the card keeps its cream fade).
-function photoTone(url){return new Promise(res=>{let done=false;const fin=t=>{if(!done){done=true;res(t)}};setTimeout(()=>fin(null),2500);
-  const im=new Image();im.crossOrigin="anonymous";im.onerror=()=>fin(null);
-  im.onload=()=>{try{const c=document.createElement("canvas");c.width=40;c.height=40;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,40,40);
-    const d=x.getImageData(0,18,40,22).data;let sum=0,sq=0,n=0;for(let i=0;i<d.length;i+=4){const l=(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])/255;sum+=l;sq+=l*l;n++}
-    const m=sum/n,sd=Math.sqrt(Math.max(0,sq/n-m*m));fin(m>.62&&sd<.22?"light":m<.42?"dark":"mid")}catch(e){fin(null)}};im.src=url})}
 function barPhoto(v,kind="play"){
   if(phMem[v.id])return Promise.resolve(phMem[v.id]);
   if(!phAllowed(v.id,kind)||Date.now()<(photoRetryAfter.get(v.id)||0))return Promise.resolve(null);
@@ -576,8 +569,7 @@ function barPhoto(v,kind="play"){
         const url=ph.getURI(kind==="browse"?{maxWidth:640,maxHeight:440}:{maxWidth:800,maxHeight:560});
         await loadPhotoImage(url);
         const a=(ph.authorAttributions||[])[0]||{};
-        const tone=await photoTone(url);
-        return phMem[v.id]={url,tone,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
+        return phMem[v.id]={url,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
       }catch(e){/* Try the next available photo. */}
     }
     return null;
@@ -604,7 +596,7 @@ function fillPhotos(root){
 }
 const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.parentNode.remove()"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
 function cardPhoto(v){const ph=phMem[v.id];if(!ph)return {cls:"",style:"",cr:""};
-  return {cls:" photo"+(ph.tone?" tone-"+ph.tone:""),style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
+  return {cls:" photo phd",style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
 // The card at the top of a bar's sheet: same look as the game's bar card. Tap it to open the Google listing.
 function sheetCard(v,facts){const cp=cardPhoto(v),wait=phMem[v.id]===undefined&&phAllowed(v.id,"browse")&&!gBad;
   return `<div class="bar sheetbar${cp.cls||" photo blank"}${wait?" loading":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" data-sc="${v.id}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">${esc(v.area)}</span><h2>${esc(v.name)}</h2><div class="facts">${facts}</div></div>`}
@@ -1645,7 +1637,7 @@ function jvRun(j,card,ctx,choose){
   const q=sel=>[...card.querySelectorAll(sel)];
   if(j.k==="call"){
     const tiles=q(".jv-tile");
-    ctx.bars.forEach((v,i)=>barPhoto(v).then(ph=>{if(ph)tiles[i].querySelector(".jv-ph").style.backgroundImage=`url("${ph.url}")`}));
+    ctx.bars.forEach((v,i)=>barPhoto(v).then(ph=>{if(ph){tiles[i].querySelector(".jv-ph").style.backgroundImage=`url("${ph.url}")`;tiles[i].querySelector(".jv-b").classList.add("phd")}}));
     tiles.forEach((t,i)=>setTimeout(()=>{t.classList.add("on");sfx("flip");buzz(8)},i*260));
     setTimeout(()=>{tiles.forEach(t=>{t.disabled=false;t.onclick=()=>choose({bar:ctx.bars[+t.dataset.i]})});
       const bar=card.querySelector(".jv-timer i"),t0=Date.now();card.classList.add("timing");
@@ -1752,7 +1744,7 @@ function dealWild(delay){
   setTimeout(()=>{
     const slot=$("stage")&&$("stage").querySelector(".bar .wild,.camtgt .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
     g.wild.shown=true;g.wild.flying=true;delete g.wild.dealing;save();
-    const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");{const card=slot.closest(".bar");if(card&&/\btone-(dark|mid)\b/.test(card.className))fly.classList.add("wfly-dk")}   // light mode: matches the card it lands on
+    const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");{const card=slot.closest(".bar");if(card&&/\bphd\b/.test(card.className))fly.classList.add("wfly-dk")}   // light mode: matches the card it lands on
     Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
     const calm=matchMedia("(prefers-reduced-motion: reduce)").matches,dy=-(b.top+b.height+80),dx=innerWidth*.35;
     sfx("deal");buzz(20);
@@ -2831,7 +2823,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean);
-    m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov?Math.round(ov.offsetHeight*.55):40,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
+    m._fit=()=>{if(eMap!==m||!document.contains(el))return;const ov=box.querySelector(".scmap .scov"),h=el.offsetHeight,ob=ov&&getComputedStyle(ov).position==="absolute"?Math.round(ov.offsetHeight*.55):24,pad=h-ob-20>70?{top:20,left:26,right:26,bottom:ob}:{top:10,left:20,right:20,bottom:Math.max(10,h-80)};m.fitPts(all,17,pad)};m._fit();
   });
   fitEnd();
 }

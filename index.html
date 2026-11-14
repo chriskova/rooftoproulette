@@ -711,7 +711,7 @@ html.dark{
   --map-bg:#0F1218;--reel-bg:#0E1117;--board:#0E1117;--pin-off:#4B5160;--tabbar:rgba(14,17,23,.94);
   color-scheme:dark;
 }
-body.camon,.sharev,.mview,.campop,.camrec,.camtip,body.camon .bar.photo,body.camon .bar.jpcard,body.camon .jpx{
+body.camon,.sharev,.mview,.campop,.camrec,.camtip,.phd,body.camon .bar.photo,body.camon .bar.jpcard,body.camon .jpx{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;--line2:#3a4150;
   --text:#F4F1EA;--muted:#9AA1AD;--dim:#6B7280;
   --amber-soft:rgba(245,184,61,.14);--amber-text:#F5B83D;--amber-display:#F5B83D;
@@ -2243,23 +2243,19 @@ html,body{overflow-x:hidden;max-width:100%}
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
 .strow.stseg{padding:10px 12px;border-top:0}.stseg .seg{flex:1}
 /* (light mode only) */
-  html:not(.dark) body:not(.camon) .bar.photo,html:not(.dark) body:not(.camon) .sheetbar.photo,html:not(.dark) body:not(.camon) .sheetbar.loading{color:var(--text);background-color:var(--s2)}
-  html:not(.dark) body:not(.camon) .bar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
-  html:not(.dark) body:not(.camon) .bar.photo .small{color:var(--muted)}
-  html:not(.dark) body:not(.camon) .bar.tgt .eyebrow{color:var(--text)}
-  html:not(.dark) body:not(.camon) .bar .wild,html:not(.dark) body:not(.camon) .bar.photo .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.photo:not(.phd),html:not(.dark) body:not(.camon) .sheetbar.photo:not(.phd),html:not(.dark) body:not(.camon) .sheetbar.loading{color:var(--text);background-color:var(--s2)}
+  html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .small{color:var(--muted)}
+  html:not(.dark) body:not(.camon) .bar.tgt:not(.phd) .eyebrow{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar:not(.phd) .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
   html:not(.dark) body:not(.camon) .camtgt .wild{color:rgba(255,255,255,.92)}
-  html:not(.dark) body:not(.camon) .bar.photo .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
-  html:not(.dark) body:not(.camon) .bar.photo .nudge{color:var(--text)}
-  html:not(.dark) body:not(.camon) .bar.tapmaps.photo .gmgo,html:not(.dark) body:not(.camon) .sheetbar .gmgo{background:rgba(255,255,255,.8);color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
+  html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .nudge{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.tapmaps.photo:not(.phd) .gmgo,html:not(.dark) body:not(.camon) .sheetbar:not(.phd) .gmgo{background:rgba(255,255,255,.8);color:var(--text)}
   html:not(.dark) body:not(.camon) .bar.photo.blank{background:var(--s1)}
   html:not(.dark) body:not(.camon) .bar.tapmaps.photo.blank .gmgo{background:var(--s2)}
   html:not(.dark) body:not(.camon) .bar.photo.loading,html:not(.dark) body:not(.camon) .sheetbar.loading{background:var(--s3)}
   html:not(.dark) body:not(.camon) .bar.photo.loading::after,html:not(.dark) body:not(.camon) .sheetbar.loading::after{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%}
   html:not(.dark) body:not(.camon) .sheetbar.loading .gmgo{background:rgba(255,255,255,.7);color:var(--text)}
-  html:not(.dark) body:not(.camon) .sheetbar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
-  html:not(.dark) body:not(.camon) .bodt{color:var(--text)}
-  html:not(.dark) body:not(.camon) .bodt::before{background:linear-gradient(rgba(251,247,240,0) 35%,rgba(251,247,240,.95))}
   html:not(.dark) body:not(.camon) .camfab.ontop{background:rgba(255,255,255,.92);color:var(--text);border-color:var(--line)}
   html:not(.dark) body:not(.camon) .tbar i{background:var(--amber)}
   html:not(.dark) body:not(.camon) .tbar.warn i{background:#E8891C}
@@ -2279,7 +2275,7 @@ html,body{overflow-x:hidden;max-width:100%}
   html:not(.dark) body:not(.camon) .jv-tile .jv-f,html:not(.dark) body:not(.camon) .jpcard .jv-tile .jv-f{background:linear-gradient(160deg,#F7C55A,#E9A62C);color:#241803;box-shadow:inset 0 0 0 1.5px rgba(190,127,12,.5)}
   html:not(.dark) body:not(.camon) .jv-tile .jv-b,html:not(.dark) body:not(.camon) .jpcard .jv-tile .jv-b{background:#FFFFFF;color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
   html:not(.dark) body:not(.camon) .jv-tile .jv-ph{background-color:var(--s3);opacity:1}
-  html:not(.dark) body:not(.camon) .jv-tile .jv-ph::after{background:linear-gradient(rgba(255,255,255,0) 20%,rgba(255,255,255,.95) 78%)}
+  html:not(.dark) body:not(.camon) .jv-tile .jv-b:not(.phd) .jv-ph::after{background:linear-gradient(rgba(255,255,255,0) 20%,rgba(255,255,255,.95) 78%)}
   html:not(.dark) body:not(.camon) .jv-tile small{color:var(--muted)}
   html:not(.dark) body:not(.camon) .jv-freeze{background:radial-gradient(circle at 50% 45%,#F2F9FF,#D6EBF8 72%);box-shadow:inset 0 0 0 1px rgba(60,140,200,.25)}
   html:not(.dark) body:not(.camon) .jv-freeze .trk{stroke:rgba(29,24,19,.08)}
@@ -2302,22 +2298,21 @@ html,body{overflow-x:hidden;max-width:100%}
   html:not(.dark) body:not(.camon) .clock.frozen b{color:#2B86C5;text-shadow:0 0 6px rgba(143,211,255,.7)}
   html:not(.dark) body:not(.camon) .clock.frozen small{color:#2B86C5}
   html:not(.dark) body:not(.camon) .tbar.frozen i{background:#5DB3EA}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light::before,html:not(.dark) body:not(.camon) .bar.photo.tone-dark::before{display:none}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-mid::before{background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.32) 38%,rgba(0,0,0,0) 62%)}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light{color:var(--text)}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light>*{text-shadow:0 0 2px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.85)}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light .small{color:#4A433B}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light .btn.dir{background:rgba(255,255,255,.82);text-shadow:none}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-light .wild{background:rgba(255,250,238,.88)!important;text-shadow:none}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark,html:not(.dark) body:not(.camon) .bar.photo.tone-mid{color:#fff;--text:#fff;--muted:rgba(255,255,255,.82);--amber-text:#F5B83D;--amber-display:#F5B83D;--green:#4ADE80}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark>*,html:not(.dark) body:not(.camon) .bar.photo.tone-mid>*{text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 14px rgba(0,0,0,.4)}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .small,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .small{color:rgba(255,255,255,.85)}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .eyebrow,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .eyebrow,html:not(.dark) body:not(.camon) .bar.tgt.tone-dark .eyebrow,html:not(.dark) body:not(.camon) .bar.tgt.tone-mid .eyebrow{color:#fff}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .btn.dir,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .btn.dir{background:rgba(0,0,0,.3);border-color:rgba(245,184,61,.75);text-shadow:none}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .wild,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .wild{background:rgba(0,0,0,.35)!important;border-color:rgba(245,184,61,.75)!important;color:#fff!important;text-shadow:none}
-  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .nudge,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .nudge{color:#fff}
   html:not(.dark) body:not(.camon) .wfly.wfly-dk{background:rgba(28,21,8,.92)!important;color:#fff!important;border-color:rgba(245,184,61,.75)!important;box-shadow:0 18px 40px rgba(0,0,0,.45)}
   html:not(.dark) body:not(.camon) .wfly.wfly-dk svg,html:not(.dark) body:not(.camon) .wfly.wfly-dk b{color:#F5B83D!important}
+  /* photo cards keep the dark scrim and white text, same as dark mode (no cream fades or glowing text) */
+  html:not(.dark) body:not(.camon) .bar.photo:not(.phd)::before,html:not(.dark) body:not(.camon) .sheetbar.photo:not(.phd)::before{display:none}
+  html:not(.dark) body:not(.camon) .bodt:not(.phd){color:var(--text)}html:not(.dark) body:not(.camon) .bodt:not(.phd)::before{display:none}
+  /* the countdown is brand amber, like dark mode */
+  html:not(.dark) body:not(.camon) #v-play .clock:not(.frozen) b{color:var(--amber)}
+  /* summary: stats sit under the map on the card, not on a white fade over it */
+  html:not(.dark) body:not(.camon) #v-end .scmap.wide{overflow:visible;box-shadow:none;border-radius:0}
+  html:not(.dark) body:not(.camon) #v-end .scmap.wide #endMap{border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
+  html:not(.dark) body:not(.camon) #v-end .scmap.wide .scov{position:static;background:none;padding:12px 2px 0}
+  html:not(.dark) body:not(.camon) #v-end .aw-t,html:not(.dark) body:not(.camon) #v-end .aw-w,html:not(.dark) body:not(.camon) #v-end .scmeta,html:not(.dark) body:not(.camon) #v-end .schead *{text-shadow:none}
+  /* no glowing text on light backgrounds */
+  html:not(.dark) body:not(.camon) .jpx-sub b,html:not(.dark) body:not(.camon) .jpk,html:not(.dark) body:not(.camon) .reel .row.jp .t,html:not(.dark) body:not(.camon) .reel .row.jp .b,html:not(.dark) body:not(.camon) .clock.frozen b,html:not(.dark) body:not(.camon) .jv-freeze.on b{text-shadow:none}
+  html:not(.dark) body:not(.camon) .reel .row.jp .t,html:not(.dark) body:not(.camon) .reel .row.jp .b{color:var(--amber-display)}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};

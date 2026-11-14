@@ -10,7 +10,7 @@ const p=await ctx.newPage();const errs=[];p.on('pageerror',x=>errs.push(x.messag
 const ph='data:image/jpeg;base64,'+fs.readFileSync('fixtures/crew.jpg').toString('base64');
 let n=0;const shot=async t=>{await p.screenshot({path:`${D}/${String(n++).padStart(2,'0')}-${t}.png`})};
 const step=async(t,fn,wait=700)=>{try{await fn();await p.waitForTimeout(wait);await shot(t)}catch(e){console.log('step failed:',t,e.message.split('\n')[0])}};
-const ev=f=>p.evaluate(f);
+const ev=(f,a)=>p.evaluate(f,a);
 await p.goto('file://'+FILE+'?test');await p.waitForTimeout(800);
 await shot('intro');
 await ev(()=>{S.onboarded=true;{const d=new Date();d.setHours(19,0,0,0);S.ff=d.getTime()-Date.now();}S.sound=false;S.city='Sydney';S.fake={lat:-33.8662,lng:151.2059};save();go('home')});
