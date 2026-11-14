@@ -686,7 +686,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   /* light by default (warm cream); the phone's dark mode switches to the dark set below */
   --bg:#FBF7F0;--s1:#FFFFFF;--s2:#F4EEE4;--s3:#EAE2D5;--line:#E5DCCD;--line2:#D3C8B6;
   --text:#1D1813;--muted:#6B6257;--dim:#8C8276;
-  --amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.2);--amber-text:#9E6806;--amber-display:#BE7F0C;
+  --amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.2);--amber-text:#A87008;--amber-display:#A87008;
   --green:#157F40;--green-soft:rgba(21,127,64,.12);--red:#D93A2F;--blue:#2F7FE0;
   --cream:#1D1813;
   --bgr:251,247,240;--track:rgba(29,24,19,.12);--sh:rgba(70,45,10,.16);--scrim:rgba(29,24,19,.38);
@@ -708,7 +708,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --map-bg:#0F1218;--reel-bg:#0E1117;--board:#0E1117;--pin-off:#4B5160;--tabbar:rgba(14,17,23,.94);
   color-scheme:dark;
 }}
-body.camon,.sharev,.bar.photo,.bar.jpcard,.jpx,.mview,.sheetbar,.bodt,.campop,.camrec,.camtip{
+body.camon,.sharev,.bar.jpcard,.jpx,.mview,.campop,.camrec,.camtip,body.camon .bar.photo{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;--line2:#3a4150;
   --text:#F4F1EA;--muted:#9AA1AD;--dim:#6B7280;
   --amber-soft:rgba(245,184,61,.14);--amber-text:#F5B83D;--amber-display:#F5B83D;
@@ -2206,6 +2206,60 @@ html,body{overflow-x:hidden;max-width:100%}
 @media (max-width:350px){.ptop .iconbtn{width:38px;height:38px}.ptop{gap:6px}}
 #v-play .bar.tgt .facts,#v-play .facts{flex-wrap:wrap;white-space:normal;row-gap:6px}
 .demobar .btn.sm{white-space:nowrap}
+
+/* bar of the day: the tiles share the screen's height so it doesn't scroll (square at most) */
+#v-end .bodpick{flex:1;min-height:0}
+#v-end .bodpick>div:last-child,#v-end .bodgrid{min-height:0}
+.bodgrid{flex:1;grid-template-rows:repeat(var(--rows,3),minmax(56px,1fr));align-content:start}
+.bodt{aspect-ratio:auto;height:100%;max-height:calc((min(100vw,480px) - 46px)/2*1.05);min-height:56px}
+/* closed zone warning: tighter, and the move button keeps the area name on one line */
+.zwarn{padding:10px 14px;gap:2px}
+.zwarn .btn{margin-top:8px;display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0}
+.zwarn .btn svg{flex:none;width:17px;height:17px}
+.zwarn .btn span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.zwarn .btn small{flex:none;font-size:13px;font-weight:600;opacity:.75}
+
+/* short phones (iPhone SE size): tighten spacing so setup and the summary fit without scrolling. The setup map keeps its size. */
+@media (max-height:690px){
+  #v-wiz{gap:10px}
+  #v-wiz h1.q{font-size:26px;line-height:1.1}
+  #v-wiz .zwarn small{display:none}
+  #v-end{gap:10px}
+  #v-end .sc{gap:9px;padding:12px 14px}
+  .bcard .bth{height:46px}
+  #v-wiz .rrticks{margin-bottom:0}
+  #v-end .scmap{margin-bottom:-4px}
+}
+
+/* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
+@media not (prefers-color-scheme:dark){
+  .bar.photo,.sheetbar.photo,.sheetbar.loading{color:var(--text);background-color:var(--s2)}
+  .bar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
+  .bar.photo .small{color:var(--muted)}
+  .bar.tgt .eyebrow{color:var(--text)}
+  .bar .wild,.bar.photo .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
+  .camtgt .wild{color:rgba(255,255,255,.92)}
+  .bar.photo .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
+  .bar.photo .nudge{color:var(--text)}
+  .bar.tapmaps.photo .gmgo,.sheetbar .gmgo{background:rgba(255,255,255,.8);color:var(--text)}
+  .bar.photo.blank{background:var(--s1)}
+  .bar.tapmaps.photo.blank .gmgo{background:var(--s2)}
+  .bar.photo.loading,.sheetbar.loading{background:var(--s3)}
+  .bar.photo.loading::after,.sheetbar.loading::after{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%}
+  .sheetbar.loading .gmgo{background:rgba(255,255,255,.7);color:var(--text)}
+  .sheetbar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
+  .bodt{color:var(--text)}
+  .bodt::before{background:linear-gradient(rgba(251,247,240,0) 35%,rgba(251,247,240,.95))}
+  .camfab.ontop{background:rgba(255,255,255,.92);color:var(--text);border-color:var(--line)}
+  .tbar i{background:var(--amber)}
+  .tbar.warn i{background:#E8891C}
+  .pin:not(.jv-short .pin){border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.32)}
+  .pin.off{background:#7A7064;border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.25)}
+  .pin.seen{border-color:#fff}
+  .num{border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.3)}
+  .scov .tri.s6c small{color:var(--muted)!important}
+  .scov .tri.s6 small,.scov .tri small{color:var(--muted);opacity:1}
+}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};

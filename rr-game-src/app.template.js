@@ -425,7 +425,7 @@ const themeBg=()=>getComputedStyle(document.documentElement).getPropertyValue("-
 const themeAmberText=el=>getComputedStyle(el||document.documentElement).getPropertyValue("--amber-text").trim()||"#F5B83D";
 const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";   // share cards stay dark
 const ESRI_LBL="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
-const ESRI_T=k=>`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${isDark()?"Dark":"Light"}_Gray_${k}/MapServer/tile/{z}/{y}/{x}`;
+const ESRI_T=(k,dark=isDark())=>`https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_${dark?"Dark":"Light"}_Gray_${k}/MapServer/tile/{z}/{y}/{x}`;
 const OSM="https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 let tilesFallback=false;
 function mkMap(el,opts){
@@ -1092,10 +1092,11 @@ function renderWiz(){
       $("rrNs").textContent=(!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):P.open.length?`${P.open.length} open now`:"Drag the map or widen the circle.")+(S.route==="wiz"&&P.open.length?" · Move once mid-crawl":"");
       $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
-      if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":P.all.length?"Nothing open here right now":"No rooftops here";
+      if(!ok&&!P.open.length)$("rrNB").hidden=true;   // the warning says it all (and the setup screen has to fit without scrolling)
+      if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":!P.all.length?"No rooftops here":op?`Nothing open here till ${op}`:"Nothing open here today";
         $("zWarnS").textContent="Move the circle, or try a demo crawl.";
         const c_=GAME_AREAS().map(area=>({area,open:pool({...area,r:z.r},t).open.length})).filter(x=>x.open>=2).sort((a,b)=>dist(z,a.area)-dist(z,b.area));
-        if(c_.length){const {area,open}=c_[0];sug.hidden=false;sug.textContent=`Move to ${area.name} · ${open} open`;sug.onclick=()=>{w.z={lat:area.lat,lng:area.lng,r:z.r};save();renderWiz()}}}
+        if(c_.length){const {area,open}=c_[0];sug.hidden=false;sug.innerHTML=`${I.move}<span>${esc(area.name)}</span><small>${open} open</small>`;sug.setAttribute("aria-label",`Move to ${area.name}, ${open} open`);sug.onclick=()=>{w.z={lat:area.lat,lng:area.lng,r:z.r};save();renderWiz()}}}
       if($("newTogS")){const all=playable(inCircle(z,z.r),false),c=collectedMap(),n=all.filter(v=>c[v.id]).length;$("newTogS").textContent=n?`You've been to ${n} of ${all.length} here`:`You haven't been to any here yet`}
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
@@ -2533,7 +2534,7 @@ function renderPlay(){
     if(g.noLoc){if(now()<hereAt(g)){toast("Check-in opens once estimated arrival time elapses.",2600);return}buzz(30);logArrival(true);return}   // playing without location: the tap is the check-in
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
   const gn=$("gpsNote");
-  if(S.test||(G()&&G().noLoc))gn.textContent="";
+  if(S.test||(G()&&(G().noLoc||G().demo)))gn.textContent="";   // the demo moves you itself: no GPS to wait for
   else if(locErr===1)gn.innerHTML=`<b style="color:var(--red)">Location is off.</b> Turn it back on so visits log automatically.`;
   else if(!here&&!(G()&&G().noLoc))gn.textContent="Finding you…";
   // The phone app tracks with the screen locked. Only a browser (or the app if background tracking failed to start) needs the app left open.
@@ -2741,7 +2742,7 @@ function renderEnd(){
   const reopen=S.bodOpen===r.id;
   if(reopen||((S.rackEnd===r.id||S.bodDue===r.id)&&n>=2&&!r.barOfDay&&!r.bodDone)){
     box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} bar${n===1?"":"s"} ${dayWord(r.startedAt)}</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
-      <div class="bodgrid">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
+      <div class="bodgrid" style="--rows:${Math.ceil(st.counted.length/2)}">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
     box.scrollTop=0;
     box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();buzz(15);renderEnd()});
     $("bodSkip").onclick=()=>{r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();renderEnd()};
@@ -2825,8 +2826,8 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   const plain=t=>String(t).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'");
   const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
   const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
-  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,rund=look==="rund",RV=rund?(window.RUND_VAR||(r.photo?"photo":"map")):"",mapc=look==="map",photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
-  x.fillStyle=BG;x.fillRect(0,0,W,Hh);
+  const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,rund=look==="rund",RV=rund?(window.RUND_VAR||(r.photo?"photo":"map")):"",mapc=look==="map"||look==="map2",photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
+  x.fillStyle=BG;x.fillRect(0,0,W,Hh);x._day=look==="map2"?!dayCrawl(r):dayCrawl(r);   // daytime crawls get the light map, under the same dark gradient
   // hero
   // where the Rundown's title will land, so the map above it can reach down to meet it
   const L4=Math.min(8,st.arrived.length),LT=RV==="plain"?Math.max(760,1700-(L4-1)*96):Math.max(1180,1700-(L4-1)*78),T4=LT-265,RMH=LT-10;
@@ -2837,7 +2838,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
       if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
     else{const g4=x.createRadialGradient(W*.8,250,0,W*.8,250,1100);g4.addColorStop(0,"rgba(245,184,61,.16)");g4.addColorStop(1,"rgba(245,184,61,0)");x.fillStyle=g4;x.fillRect(0,0,W,Hh)}}
   else if(photo){const img=await loadImg(r.photo);const s=Math.max(W/img.width,HH/img.height);x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.drawImage(img,(W-img.width*s)/2,(HH-img.height*s)/2,img.width*s,img.height*s);x.restore();
-    if(!full){const oc=document.createElement("canvas");oc.width=W;oc.height=HH;const o=oc.getContext("2d");o.fillStyle="#10141B";o.fillRect(0,0,W,HH);
+    if(!full){const oc=document.createElement("canvas");oc.width=W;oc.height=HH;const o=oc.getContext("2d");o._day=x._day;o.fillStyle="#10141B";o.fillRect(0,0,W,HH);
       mapP=await mapTiles(o,r,st,W,HH,{cx:830,cy:680,bw:360,bh:560}).catch(()=>null);
       if(!mapP){o.save();o.translate(W/2,HH/2);o.rotate(-12*Math.PI/180);o.strokeStyle="rgba(255,255,255,.04)";o.lineWidth=2;for(let i=-1400;i<=1400;i+=90){o.beginPath();o.moveTo(i,-1400);o.lineTo(i,1400);o.stroke();o.beginPath();o.moveTo(-1400,i);o.lineTo(1400,i);o.stroke()}o.restore()}
       o.globalCompositeOperation="destination-in";const mg=o.createLinearGradient(380,0,720,0);mg.addColorStop(0,"rgba(0,0,0,0)");mg.addColorStop(1,"rgba(0,0,0,1)");o.fillStyle=mg;o.fillRect(0,0,W,HH);
@@ -3012,7 +3013,9 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
-async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
+function dayCrawl(r){const t=rt(r,r.startedAt),d=new Date(t+((r.endedAt||r.endsAt||t)-t)/2),m=d.getMonth(),c=Math.cos((m-11.5)/12*2*Math.PI);   // 1 in late Dec, -1 in late Jun
+  const h=d.getHours()+d.getMinutes()/60,rise=6.4-0.6*c,set=18.6+1.4*c;return h>=rise&&h<set}
+async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),all=stops.concat((r.trail||[]).map(p=>({lat:p[0],lng:p[1]})));if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
   let SC=2;const BW=AR.bw,BH=AR.bh,cy0=AR.cy,cxp=AR.cx;let z=17;
@@ -3029,17 +3032,19 @@ async function mapTiles(x,r,st,W,HH,area){const AR=area||{cx:W/2,cy:670,bw:860,b
   const ll=(px,py)=>{const n=256*Math.pow(2,z),lng=px/n*360-180,lat=Math.atan(Math.sinh(Math.PI*(1-2*py/n)))*180/Math.PI;return lat.toFixed(6)+","+lng.toFixed(6)};
   const GST=["element:geometry|color:0x1b2130","element:labels.text.fill|color:0x8d96a8","element:labels.text.stroke|color:0x10141b","element:labels.icon|visibility:off","feature:poi|visibility:off","feature:transit|visibility:off",
     "feature:road|element:geometry|color:0x2b3345","feature:road.arterial|element:geometry|color:0x323b4f","feature:road.highway|element:geometry|color:0x3b455b","feature:water|element:geometry|color:0x0c1422","feature:administrative|element:geometry|visibility:off","feature:landscape.man_made|element:geometry|color:0x1e2534"].map(v=>"&style="+encodeURIComponent(v)).join("");
+  const GSTL=["element:geometry|color:0xf3efe8","element:labels.text.fill|color:0x7a7064","element:labels.text.stroke|color:0xffffff","element:labels.icon|visibility:off","feature:poi|visibility:off","feature:transit|visibility:off",
+    "feature:road|element:geometry|color:0xffffff","feature:road.arterial|element:geometry|color:0xfbf7f0","feature:road.highway|element:geometry|color:0xe8dccb","feature:water|element:geometry|color:0xc9dbe3","feature:landscape.natural|element:geometry|color:0xe3ead9","feature:poi.park|element:geometry|color:0xdde7d2","feature:administrative|element:geometry|visibility:off"].map(v=>"&style="+encodeURIComponent(v)).join("");
   {const MAXH=Math.floor(600*SC),EX=Math.ceil(70*SC/2),parts=[];for(let y=0;y<HH;y+=MAXH)parts.push([y,Math.min(MAXH,HH-y)]);
-    const gi=await Promise.all(parts.map(([py,ph],i)=>{const last=i===parts.length-1,rh=last?ph:ph+EX,ccx=x0+W/2/SC,ccy=y0+(py+rh/2)/SC;return load(`https://maps.googleapis.com/maps/api/staticmap?center=${ll(ccx,ccy)}&zoom=${z}&size=${Math.ceil(W/SC)}x${Math.ceil(rh/SC)}&scale=2&key=${GKEY}${GST}`).then(im=>im&&{im,rh})}));
-    if(gi.every(Boolean)){x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();gi.forEach((g,i)=>{const[py,ph]=parts[i],sh=g.im.height*ph/g.rh;x.drawImage(g.im,0,0,g.im.width,sh,0,py,W,ph)});x.fillStyle="rgba(11,13,18,.18)";x.fillRect(0,0,W,HH);x.restore();x._mapSrc="google";return P}
+    const gi=await Promise.all(parts.map(([py,ph],i)=>{const last=i===parts.length-1,rh=last?ph:ph+EX,ccx=x0+W/2/SC,ccy=y0+(py+rh/2)/SC;return load(`https://maps.googleapis.com/maps/api/staticmap?center=${ll(ccx,ccy)}&zoom=${z}&size=${Math.ceil(W/SC)}x${Math.ceil(rh/SC)}&scale=2&key=${GKEY}${DAY?GSTL:GST}`).then(im=>im&&{im,rh})}));
+    if(gi.every(Boolean)){x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();gi.forEach((g,i)=>{const[py,ph]=parts[i],sh=g.im.height*ph/g.rh;x.drawImage(g.im,0,0,g.im.width,sh,0,py,W,ph)});x.fillStyle=DAY?"rgba(11,13,18,.08)":"rgba(11,13,18,.18)";x.fillRect(0,0,W,HH);x.restore();x._mapSrc="google";return P}
     console.warn("story map: Google static map didn't load")}
-  const imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(ESRI,tx,ty)),load(url(ESRI_LBL,tx,ty))])));const src="esri";
+  const imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(DAY?ESRI_T("Base",false):ESRI,tx,ty)),load(url(DAY?ESRI_T("Reference",false):ESRI_LBL,tx,ty))])));const src="esri";
   if(imgs.filter(q=>q[0]).length<T.length*.6){console.warn("story map: tiles didn't load");return null}
   x._mapSrc=src;
   x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();x.imageSmoothingQuality="high";
   T.forEach(([tx,ty],i)=>{if(!imgs[i][0])return;const X=Math.floor((tx*256-x0)*SC),Y=Math.floor((ty*256-y0)*SC),Z=Math.ceil(256*SC)+1;x.drawImage(imgs[i][0],X,Y,Z,Z)});
   T.forEach(([tx,ty],i)=>{if(!imgs[i][1])return;const X=Math.floor((tx*256-x0)*SC),Y=Math.floor((ty*256-y0)*SC),Z=Math.ceil(256*SC)+1;x.globalAlpha=.75;x.drawImage(imgs[i][1],X,Y,Z,Z);x.globalAlpha=1});
-  x.fillStyle="rgba(11,13,18,.25)";x.fillRect(0,0,W,HH);x.restore();
+  x.fillStyle=DAY?"rgba(11,13,18,.1)":"rgba(11,13,18,.25)";x.fillRect(0,0,W,HH);x.restore();
   return P;
 }
 async function shareStory(r){track("share_open",{has_photo:!!r.photo});
@@ -3055,7 +3060,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
     bindX();$("shvAdd").onclick=()=>addPhoto(true);$("shvGal").onclick=()=>addPhoto(false);$("shvSkip").onclick=()=>cards(0)};
   async function cards(start){
     ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
-    looks=r.photo?["full","map","rund"]:["map","rund"];
+    looks=r.photo?["full","map","map2","rund"]:["map","map2","rund"];   // map2: the same map card with the other map (day vs night)
     const inTime=(p,ms,fb)=>Promise.race([Promise.resolve(p).catch(e=>{console.warn(e);return fb}),new Promise(z=>setTimeout(()=>z(fb),ms))]);
     window._mapErrs=[];blobs=await Promise.all(looks.map(l=>inTime(storyCard(r,l),20000,null)));
     {const keep=blobs.map((b,i)=>b?i:-1).filter(i=>i>=0);looks=keep.map(i=>looks[i]);blobs=keep.map(i=>blobs[i])}
@@ -3065,11 +3070,11 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
     urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map((u,i)=>looks[i]==="clip"?`<div class="shv-s clip"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`:`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"?"Map":l==="clip"?"Clip":"Rundown"}"${l==="clip"?' class="cdot"':""}></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
+      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"||l==="map2"?"Map":l==="clip"?"Clip":"Rundown"}"${l==="clip"?' class="cdot"':""}></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
       ${mapDiag}<div class="shv-go"><button class="btn dark" type="button" id="shvSave" hidden>Save</button><button class="btn" type="button" id="shvGo">${I.share} Share</button></div>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const vids=[...ov.querySelectorAll(".shv-s")].map(sl=>sl.querySelector("video"));
-    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="clip"?"hidden":"visible";
+    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="map2"||looks[cur]==="clip"?"hidden":"visible";
       $("shvSave").hidden=false;vids.forEach((v,i)=>{if(!v)return;if(i===cur)v.play().catch(()=>{});else v.pause()})};
     ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
