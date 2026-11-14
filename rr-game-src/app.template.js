@@ -1752,7 +1752,7 @@ function dealWild(delay){
   setTimeout(()=>{
     const slot=$("stage")&&$("stage").querySelector(".bar .wild,.camtgt .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
     g.wild.shown=true;g.wild.flying=true;delete g.wild.dealing;save();
-    const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");
+    const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");{const card=slot.closest(".bar");if(card&&/\btone-(dark|mid)\b/.test(card.className))fly.classList.add("wfly-dk")}   // light mode: matches the card it lands on
     Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
     const calm=matchMedia("(prefers-reduced-motion: reduce)").matches,dy=-(b.top+b.height+80),dx=innerWidth*.35;
     sfx("deal");buzz(20);
