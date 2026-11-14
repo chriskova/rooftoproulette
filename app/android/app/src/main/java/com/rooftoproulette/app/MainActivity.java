@@ -50,12 +50,19 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    private Boolean appDark = null;   // set by the page once it knows Settings > Appearance; null until then
+
+    void setAppDark(boolean dark) {
+        appDark = dark;
+        applyBars(getResources().getConfiguration());
+    }
+
     static boolean isNight(Configuration c) {
         return (c.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
     void applyBars(Configuration c) {
-        boolean night = isNight(c);
+        boolean night = appDark != null ? appDark : isNight(c);
         int bg = night ? BG_DARK : BG_LIGHT;
         getWindow().getDecorView().setBackgroundColor(bg);
         getWindow().setStatusBarColor(bg);

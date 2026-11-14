@@ -420,7 +420,13 @@ function ding(){if(!S.sound)return;const a=ac();if(!a)return;const t=a.currentTi
 const buzz=ms=>{if(S.vib===false)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 
 /* ---------- maps ---------- */
-const isDark=()=>matchMedia("(prefers-color-scheme: dark)").matches;   // follows the phone's light or dark mode
+// Light or dark: Settings > Appearance (auto follows the phone). The page's class is set before first paint in index.html.
+const isDark=()=>document.documentElement.classList.contains("dark");
+function applyTheme(rerender){const t=S.theme||"auto",d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches),was=isDark();
+  document.documentElement.classList.toggle("dark",d);const m=document.getElementById("themeColor");if(m)m.content=d?"#0B0D12":"#FBF7F0";
+  try{window.__setBars&&window.__setBars()}catch(e){}
+  if(rerender&&was!==d&&S.route)try{go(S.route)}catch(e){}}   // maps pick their tiles when drawn
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>applyTheme(true))}catch(e){}
 const themeBg=()=>getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#FBF7F0";
 const themeAmberText=el=>getComputedStyle(el||document.documentElement).getPropertyValue("--amber-text").trim()||"#F5B83D";
 const ESRI="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";   // share cards stay dark
@@ -478,9 +484,11 @@ function gWrap(el,o){
     pin(v,cls,onClick){ov.push(mk(v,`<div class="pin ${cls||""}"></div>`,cls==="big"?500:cls==="seen"?1100:0,onClick,v.name))},   // ticked bars sit above your dot
     num(p,n,x,title,onClick){ov.push(mk(p,`<div class="num sm${x?" x":""}">${n}</div>`,300,onClick||null,title))},
     dot(p){ov.push(mk(p,'<div class="me"></div>',1000))},
-    route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:"#F5B83D",strokeOpacity:.45,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
-      ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:.18,strokeWeight:8,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:3,clickable:false}))},
-    line(pts){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:themeBg(),strokeOpacity:.85,strokeWeight:9,clickable:false}));ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:"#F5B83D",strokeOpacity:1,strokeWeight:5,clickable:false}))},
+    route(pts,dashed){if(dashed){ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeOpacity:0,clickable:false,icons:[{icon:{path:"M 0,-1 0,1",strokeColor:isDark()?"#F5B83D":"#C98A10",strokeOpacity:isDark()?.45:.8,strokeWeight:2,scale:1.5},offset:"0",repeat:"9px"}]}));return}
+      const P=(c,o,w)=>ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:c,strokeOpacity:o,strokeWeight:w,clickable:false}));
+      if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},   // light map: a white casing and a deeper amber so the line stands out
+    line(pts){const P=(c,o,w)=>ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:c,strokeOpacity:o,strokeWeight:w,clickable:false}));
+      if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
     fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.03}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
       if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
@@ -501,9 +509,11 @@ function lWrap(el){
     pin(v,cls,onClick){const mm=L.marker([v.lat,v.lng],{icon:pinIcon(cls),zIndexOffset:cls==="big"?500:cls==="seen"?1100:0}).addTo(ov);if(onClick)mm.on("click",onClick);mm.bindTooltip(v.name,{direction:"top",offset:[0,-10]})},
     num(p,n,x,title,onClick){const mm=L.marker([p.lat,p.lng],{icon:numIcon(n,x)}).addTo(ov);if(title&&!onClick)mm.bindTooltip(title);if(onClick)mm.on("click",onClick)},
     dot(p){L.marker([p.lat,p.lng],{icon:meIcon}).addTo(ov)},
-    route(pts,dashed){const ll=pts.map(p=>[p.lat,p.lng]);if(dashed){L.polyline(ll,{color:"#F5B83D",weight:2,opacity:.35,dashArray:"2 7",lineCap:"round"}).addTo(ov);return}
-      L.polyline(ll,{color:"#F5B83D",weight:8,opacity:.18,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:3,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
-    line(pts){const ll=pts.map(p=>[p.lat,p.lng]);L.polyline(ll,{color:themeBg(),weight:9,opacity:.85,lineCap:"round",lineJoin:"round"}).addTo(ov);L.polyline(ll,{color:"#F5B83D",weight:5,opacity:1,lineCap:"round",lineJoin:"round"}).addTo(ov)},
+    route(pts,dashed){const ll=pts.map(p=>[p.lat,p.lng]);if(dashed){L.polyline(ll,{color:isDark()?"#F5B83D":"#C98A10",weight:2,opacity:isDark()?.35:.75,dashArray:"2 7",lineCap:"round"}).addTo(ov);return}
+      const P=(c,o,w)=>L.polyline(ll,{color:c,weight:w,opacity:o,lineCap:"round",lineJoin:"round"}).addTo(ov);
+      if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},
+    line(pts){const ll=pts.map(p=>[p.lat,p.lng]),P=(c,o,w)=>L.polyline(ll,{color:c,weight:w,opacity:o,lineCap:"round",lineJoin:"round"}).addTo(ov);
+      if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
     fitZone(c,r,extra,pad){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad)},
     fitPts(pts,maxZoom,pad){const bb=L.latLngBounds(pts.map(p=>[p.lat,p.lng]));pad?m.fitBounds(bb,{animate:false,maxZoom:maxZoom||16,paddingTopLeft:[pad.left,pad.top],paddingBottomRight:[pad.right,pad.bottom]}):m.fitBounds(bb.pad(.3),{animate:false,maxZoom:maxZoom||16})},
     setView(p,z){m.setView([p.lat,p.lng],z,{animate:true})},
@@ -543,6 +553,13 @@ function loadPhotoImage(url){
     img.onload=()=>finish(img.naturalWidth>0);img.onerror=()=>finish(false);img.src=url;
   });
 }
+// How bright the bottom of a photo is, where the bar's name sits, so light mode can pick dark or white text
+// (like a phone's lock-screen clock). null when the photo can't be read (then the card keeps its cream fade).
+function photoTone(url){return new Promise(res=>{let done=false;const fin=t=>{if(!done){done=true;res(t)}};setTimeout(()=>fin(null),2500);
+  const im=new Image();im.crossOrigin="anonymous";im.onerror=()=>fin(null);
+  im.onload=()=>{try{const c=document.createElement("canvas");c.width=40;c.height=40;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(im,0,0,40,40);
+    const d=x.getImageData(0,18,40,22).data;let sum=0,sq=0,n=0;for(let i=0;i<d.length;i+=4){const l=(.2126*d[i]+.7152*d[i+1]+.0722*d[i+2])/255;sum+=l;sq+=l*l;n++}
+    const m=sum/n,sd=Math.sqrt(Math.max(0,sq/n-m*m));fin(m>.62&&sd<.22?"light":m<.42?"dark":"mid")}catch(e){fin(null)}};im.src=url})}
 function barPhoto(v,kind="play"){
   if(phMem[v.id])return Promise.resolve(phMem[v.id]);
   if(!phAllowed(v.id,kind)||Date.now()<(photoRetryAfter.get(v.id)||0))return Promise.resolve(null);
@@ -559,7 +576,8 @@ function barPhoto(v,kind="play"){
         const url=ph.getURI(kind==="browse"?{maxWidth:640,maxHeight:440}:{maxWidth:800,maxHeight:560});
         await loadPhotoImage(url);
         const a=(ph.authorAttributions||[])[0]||{};
-        return phMem[v.id]={url,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
+        const tone=await photoTone(url);
+        return phMem[v.id]={url,tone,by:a.displayName||"",byUri:a.uri||"",gm:ph.googleMapsURI||""};
       }catch(e){/* Try the next available photo. */}
     }
     return null;
@@ -586,7 +604,7 @@ function fillPhotos(root){
 }
 const phInner=(v,ph)=>`<img src="${ph.url}" alt="${esc(v.name)}" onerror="this.parentNode.remove()"><span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`;
 function cardPhoto(v){const ph=phMem[v.id];if(!ph)return {cls:"",style:"",cr:""};
-  return {cls:" photo",style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
+  return {cls:" photo"+(ph.tone?" tone-"+ph.tone:""),style:` style="background-image:url('${ph.url}')"`,cr:`<span class="cr">${ph.by?`Photo: <a href="${esc(ph.byUri)}" target="_blank" rel="noopener">${esc(ph.by)}</a> · `:""}<a href="${esc(ph.gm||"https://maps.google.com")}" target="_blank" rel="noopener">Google Maps</a></span>`}}
 // The card at the top of a bar's sheet: same look as the game's bar card. Tap it to open the Google listing.
 function sheetCard(v,facts){const cp=cardPhoto(v),wait=phMem[v.id]===undefined&&phAllowed(v.id,"browse")&&!gBad;
   return `<div class="bar sheetbar${cp.cls||" photo blank"}${wait?" loading":""}"${cp.style} data-gm="${esc(gmapsURL(v))}" data-sc="${v.id}" role="link" tabindex="0">${cp.cr}<span class="gmgo" aria-hidden="true">${I.nav}</span><span class="eyebrow">${esc(v.area)}</span><h2>${esc(v.name)}</h2><div class="facts">${facts}</div></div>`}
@@ -2844,7 +2862,10 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
       o.globalCompositeOperation="destination-in";const mg=o.createLinearGradient(380,0,720,0);mg.addColorStop(0,"rgba(0,0,0,0)");mg.addColorStop(1,"rgba(0,0,0,1)");o.fillStyle=mg;o.fillRect(0,0,W,HH);
       x.drawImage(oc,0,0);x._mapSrc=o._mapSrc;sideMap=true}}
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,mapc?{cx:W/2,cy:780,bw:860,bh:900}:null).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
-  const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");gr.addColorStop(q(T4-330),"rgba(11,13,18,0)");gr.addColorStop(q(T4-180),"rgba(11,13,18,.35)");gr.addColorStop(q(T4-40),"rgba(11,13,18,.74)");gr.addColorStop(q(LT-50),"rgba(11,13,18,.9)");gr.addColorStop(1,BG)}else if(mapc){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");gr.addColorStop(q(1230),"rgba(11,13,18,0)");gr.addColorStop(q(1380),"rgba(11,13,18,.35)");gr.addColorStop(q(1520),"rgba(11,13,18,.74)");gr.addColorStop(q(1660),"rgba(11,13,18,.9)");gr.addColorStop(1,BG)}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
+  const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");if(x._day){[[T4-520,0],[T4-380,.14],[T4-240,.38],[T4-100,.66],[T4+20,.84]].forEach(([y,a])=>gr.addColorStop(q(y),`rgba(11,13,18,${a})`));gr.addColorStop(q(LT-50),"rgba(11,13,18,.94)")}
+    else{gr.addColorStop(q(T4-330),"rgba(11,13,18,0)");gr.addColorStop(q(T4-180),"rgba(11,13,18,.35)");gr.addColorStop(q(T4-40),"rgba(11,13,18,.74)");gr.addColorStop(q(LT-50),"rgba(11,13,18,.9)")}gr.addColorStop(1,BG)}else if(mapc){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");
+    if(x._day){[[960,0],[1100,.12],[1240,.32],[1380,.56],[1520,.78],[1650,.92],[1760,.99]].forEach(([y,a])=>gr.addColorStop(q(y),`rgba(11,13,18,${a})`))}   // a light map needs a longer, softer fade so it doesn't look cut off
+    else{gr.addColorStop(q(1230),"rgba(11,13,18,0)");gr.addColorStop(q(1380),"rgba(11,13,18,.35)");gr.addColorStop(q(1520),"rgba(11,13,18,.74)");gr.addColorStop(q(1660),"rgba(11,13,18,.9)")}gr.addColorStop(1,BG)}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
   const stops=[r.startPos,...st.arrived.map(v=>byId(v.id))].filter(Boolean),tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),line=tr.length>1?tr:stops;
@@ -3569,6 +3590,7 @@ function settingsSheet(){
   const grp=(h,rows)=>rows.filter(Boolean).length?`<div class="sgh">${h}</div><div class="sgrp">${rows.filter(Boolean).join("")}</div>`:"";
   const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat(),top=pg.querySelector(".spbody")?pg.querySelector(".spbody").scrollTop:0;
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="spBack" aria-label="Back">${I.back}</button><b>Settings</b></div><div class="spbody">
+    ${grp("Appearance",[`<div class="strow stseg"><div class="seg" id="stTheme">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-th="${k}" aria-pressed="${(S.theme||"auto")===k}">${l}</button>`).join("")}</div></div>`])}
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
     ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
     ${grp("Your tab",[lk("stBk","Back up My Tab"),lk("stRs","Restore My Tab")])}
@@ -3581,6 +3603,7 @@ function settingsSheet(){
   pg.querySelector(".spbody").scrollTop=top;
   const ext=u=>{try{window.open(u,"_blank","noopener")}catch(e){location.href=u}};
   $("spBack").onclick=()=>{try{if(history.state&&history.state.setPage)history.back();else closeSettings()}catch(e){closeSettings()}};
+  $("stTheme").querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{S.theme=b.dataset.th;save();track("theme",{theme:S.theme});applyTheme(true);settingsSheet()});
   $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
   $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
   if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
@@ -3645,8 +3668,9 @@ function natCall(plugin,method,opts){const C=window.Capacitor;if(!C||!C.isNative
   if(typeof C.nativePromise==="function")return C.nativePromise(plugin,method,opts||{});return Promise.reject(new Error("no bridge"))}
 const openAppSettings=()=>natCall("NativeSettings","open",{optionAndroid:"application_details",optionIOS:"app"});
 // status bar icons that suit the screen: dark on the cream theme, light in dark mode and over the camera
-if(NATIVE){const setBars=()=>natCall("SystemBars","setStyle",{style:isDark()||document.body.classList.contains("camon")?"DARK":"LIGHT"}).catch(()=>{});
-  setBars();try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",setBars)}catch(e){}
+if(NATIVE){const setBars=()=>{const cam=document.body.classList.contains("camon");natCall("SystemBars","setStyle",{style:isDark()||cam?"DARK":"LIGHT"}).catch(()=>{});
+    natCall("CrawlNotify","setTheme",{dark:isDark()}).catch(()=>{})};   // the bar colours behind the icons (Android)
+  window.__setBars=setBars;setBars();
   let camWas=false;new MutationObserver(()=>{const c=document.body.classList.contains("camon");if(c!==camWas){camWas=c;setBars()}}).observe(document.body,{attributes:true,attributeFilter:["class"]})}
 // Permissions: apps can only ask; switching one off (or back on after a no) happens in the phone's settings.
 // Each row: not asked yet → tap asks; allowed or off → tap opens this app's page in the phone's settings.

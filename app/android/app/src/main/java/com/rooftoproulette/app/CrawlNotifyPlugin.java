@@ -132,4 +132,17 @@ public class CrawlNotifyPlugin extends Plugin {
         try { NotificationManagerCompat.from(getContext()).cancel(ID); } catch (Exception ignore) {}
         call.resolve();
     }
+
+    /** The app's own light/dark choice (Settings > Appearance) for the system bars behind the icons. */
+    @PluginMethod
+    public void setTheme(PluginCall call) {
+        final boolean dark = Boolean.TRUE.equals(call.getBoolean("dark", false));
+        try {
+            if (getActivity() instanceof MainActivity) {
+                final MainActivity a = (MainActivity) getActivity();
+                a.runOnUiThread(() -> a.setAppDark(dark));
+            }
+        } catch (Exception ignore) {}
+        call.resolve();
+    }
 }

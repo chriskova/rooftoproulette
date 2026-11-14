@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Rooftop Roulette</title>
 <meta name="description" content="A rooftop bar crawl game for Sydney, Melbourne, Brisbane, Perth and the Gold Coast.">
-<meta name="theme-color" content="#FBF7F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0B0D12" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FBF7F0" id="themeColor">
+<script>/* light or dark before the first paint: Settings > Appearance, or the phone's own mode */
+(function(){var t="auto";try{t=(JSON.parse(localStorage.getItem("rr-app-v3")||"{}")||{}).theme||"auto"}catch(e){}
+var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);
+var m=document.getElementById("themeColor");if(m)m.content=d?"#0B0D12":"#FBF7F0"})()</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -698,7 +701,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   color-scheme:light;
 }
 /* the dark set: the phone's dark mode, and anything that always sits on a photo, the camera or the jackpot card */
-@media (prefers-color-scheme:dark){:root{
+html.dark{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;--line2:#3a4150;
   --text:#F4F1EA;--muted:#9AA1AD;--dim:#6B7280;
   --amber-soft:rgba(245,184,61,.14);--amber-text:#F5B83D;--amber-display:#F5B83D;
@@ -707,8 +710,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
   --bgr:11,13,18;--track:rgba(244,241,234,.14);--sh:rgba(0,0,0,.5);--scrim:rgba(0,0,0,.6);
   --map-bg:#0F1218;--reel-bg:#0E1117;--board:#0E1117;--pin-off:#4B5160;--tabbar:rgba(14,17,23,.94);
   color-scheme:dark;
-}}
-body.camon,.sharev,.bar.jpcard,.jpx,.mview,.campop,.camrec,.camtip,body.camon .bar.photo{
+}
+body.camon,.sharev,.mview,.campop,.camrec,.camtip,body.camon .bar.photo,body.camon .bar.jpcard,body.camon .jpx{
   --bg:#0B0D12;--s1:#141820;--s2:#1C212C;--s3:#262C39;--line:#2A303D;--line2:#3a4150;
   --text:#F4F1EA;--muted:#9AA1AD;--dim:#6B7280;
   --amber-soft:rgba(245,184,61,.14);--amber-text:#F5B83D;--amber-display:#F5B83D;
@@ -1995,7 +1998,7 @@ html.fl .app{visibility:hidden}
 .jv-freeze.on .spk{animation:glint .9s ease-out forwards}
 @keyframes glint{40%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(.4)}}
 /* the real clock frosts over too while frozen */
-.clock.frozen b{text-shadow:0 0 8px rgba(190,230,255,.8),0 0 24px rgba(143,211,255,.5);animation:frostin 1s ease-out}
+.clock.frozen b{text-shadow:0 0 8px rgba(190,230,255,.8),0 0 14px rgba(143,211,255,.45);animation:frostin 1s ease-out}
 @keyframes frostin{from{color:var(--cream);text-shadow:none;filter:blur(0)}50%{filter:blur(.6px)}to{filter:blur(0)}}
 
 #v-home{overflow-x:hidden;overflow-y:auto}
@@ -2232,34 +2235,81 @@ html,body{overflow-x:hidden;max-width:100%}
 }
 
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
-@media not (prefers-color-scheme:dark){
-  .bar.photo,.sheetbar.photo,.sheetbar.loading{color:var(--text);background-color:var(--s2)}
-  .bar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
-  .bar.photo .small{color:var(--muted)}
-  .bar.tgt .eyebrow{color:var(--text)}
-  .bar .wild,.bar.photo .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
-  .camtgt .wild{color:rgba(255,255,255,.92)}
-  .bar.photo .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
-  .bar.photo .nudge{color:var(--text)}
-  .bar.tapmaps.photo .gmgo,.sheetbar .gmgo{background:rgba(255,255,255,.8);color:var(--text)}
-  .bar.photo.blank{background:var(--s1)}
-  .bar.tapmaps.photo.blank .gmgo{background:var(--s2)}
-  .bar.photo.loading,.sheetbar.loading{background:var(--s3)}
-  .bar.photo.loading::after,.sheetbar.loading::after{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%}
-  .sheetbar.loading .gmgo{background:rgba(255,255,255,.7);color:var(--text)}
-  .sheetbar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
-  .bodt{color:var(--text)}
-  .bodt::before{background:linear-gradient(rgba(251,247,240,0) 35%,rgba(251,247,240,.95))}
-  .camfab.ontop{background:rgba(255,255,255,.92);color:var(--text);border-color:var(--line)}
-  .tbar i{background:var(--amber)}
-  .tbar.warn i{background:#E8891C}
-  .pin:not(.jv-short .pin){border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.32)}
-  .pin.off{background:#7A7064;border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.25)}
-  .pin.seen{border-color:#fff}
-  .num{border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.3)}
-  .scov .tri.s6c small{color:var(--muted)!important}
-  .scov .tri.s6 small,.scov .tri small{color:var(--muted);opacity:1}
-}
+.strow.stseg{padding:10px 12px;border-top:0}.stseg .seg{flex:1}
+/* (light mode only) */
+  html:not(.dark) body:not(.camon) .bar.photo,html:not(.dark) body:not(.camon) .sheetbar.photo,html:not(.dark) body:not(.camon) .sheetbar.loading{color:var(--text);background-color:var(--s2)}
+  html:not(.dark) body:not(.camon) .bar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
+  html:not(.dark) body:not(.camon) .bar.photo .small{color:var(--muted)}
+  html:not(.dark) body:not(.camon) .bar.tgt .eyebrow{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar .wild,html:not(.dark) body:not(.camon) .bar.photo .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
+  html:not(.dark) body:not(.camon) .camtgt .wild{color:rgba(255,255,255,.92)}
+  html:not(.dark) body:not(.camon) .bar.photo .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
+  html:not(.dark) body:not(.camon) .bar.photo .nudge{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.tapmaps.photo .gmgo,html:not(.dark) body:not(.camon) .sheetbar .gmgo{background:rgba(255,255,255,.8);color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.photo.blank{background:var(--s1)}
+  html:not(.dark) body:not(.camon) .bar.tapmaps.photo.blank .gmgo{background:var(--s2)}
+  html:not(.dark) body:not(.camon) .bar.photo.loading,html:not(.dark) body:not(.camon) .sheetbar.loading{background:var(--s3)}
+  html:not(.dark) body:not(.camon) .bar.photo.loading::after,html:not(.dark) body:not(.camon) .sheetbar.loading::after{background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:220% 100%}
+  html:not(.dark) body:not(.camon) .sheetbar.loading .gmgo{background:rgba(255,255,255,.7);color:var(--text)}
+  html:not(.dark) body:not(.camon) .sheetbar.photo::before{background:linear-gradient(to top,rgba(251,247,240,.98) 0%,rgba(251,247,240,.93) 36%,rgba(251,247,240,.35) 66%,rgba(251,247,240,0) 86%)}
+  html:not(.dark) body:not(.camon) .bodt{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bodt::before{background:linear-gradient(rgba(251,247,240,0) 35%,rgba(251,247,240,.95))}
+  html:not(.dark) body:not(.camon) .camfab.ontop{background:rgba(255,255,255,.92);color:var(--text);border-color:var(--line)}
+  html:not(.dark) body:not(.camon) .tbar i{background:var(--amber)}
+  html:not(.dark) body:not(.camon) .tbar.warn i{background:#E8891C}
+  html:not(.dark) body:not(.camon) .pin:not(.jv-short .pin){border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.32)}
+  html:not(.dark) body:not(.camon) .pin.off{background:#7A7064;border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.25)}
+  html:not(.dark) body:not(.camon) .pin.seen{border-color:#fff}
+  html:not(.dark) body:not(.camon) .num{border-color:#fff;box-shadow:0 1px 3px rgba(60,40,10,.3)}
+  html:not(.dark) body:not(.camon) .scov .tri.s6c small{color:var(--muted)!important}
+  html:not(.dark) body:not(.camon) .scov .tri.s6 small,html:not(.dark) body:not(.camon) .scov .tri small{color:var(--muted);opacity:1}
+  html:not(.dark) body:not(.camon) .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(255,232,180,.92),rgba(251,247,240,.97) 62%)}
+  html:not(.dark) body:not(.camon) .jdim{background:radial-gradient(circle at 50% 40%,rgba(251,247,240,.15),rgba(251,247,240,.85) 70%)}
+  html:not(.dark) body:not(.camon) .reel.jpbig{box-shadow:0 24px 60px rgba(120,80,10,.22),0 0 0 1px rgba(245,184,61,.6),0 0 90px rgba(245,184,61,.35)}
+  html:not(.dark) body:not(.camon) .jpx-sub b{color:#C98A10;text-shadow:0 0 18px rgba(245,184,61,.45)}
+  html:not(.dark) body:not(.camon) .jpx-streaks i{background:linear-gradient(rgba(245,184,61,0),rgba(245,184,61,.75))}
+  html:not(.dark) body:not(.camon) .bar.jpcard{background:linear-gradient(170deg,#FFFFFF,#FBF1DD 75%);color:var(--text);box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.6),0 24px 60px rgba(120,80,10,.2),0 0 60px rgba(245,184,61,.25)}
+  html:not(.dark) body:not(.camon) .bar.jpcard h2{color:var(--text)}
+  html:not(.dark) body:not(.camon) .jv-tile .jv-f,html:not(.dark) body:not(.camon) .jpcard .jv-tile .jv-f{background:linear-gradient(160deg,#F7C55A,#E9A62C);color:#241803;box-shadow:inset 0 0 0 1.5px rgba(190,127,12,.5)}
+  html:not(.dark) body:not(.camon) .jv-tile .jv-b,html:not(.dark) body:not(.camon) .jpcard .jv-tile .jv-b{background:#FFFFFF;color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+  html:not(.dark) body:not(.camon) .jv-tile .jv-ph{background-color:var(--s3);opacity:1}
+  html:not(.dark) body:not(.camon) .jv-tile .jv-ph::after{background:linear-gradient(rgba(255,255,255,0) 20%,rgba(255,255,255,.95) 78%)}
+  html:not(.dark) body:not(.camon) .jv-tile small{color:var(--muted)}
+  html:not(.dark) body:not(.camon) .jv-freeze{background:radial-gradient(circle at 50% 45%,#F2F9FF,#D6EBF8 72%);box-shadow:inset 0 0 0 1px rgba(60,140,200,.25)}
+  html:not(.dark) body:not(.camon) .jv-freeze .trk{stroke:rgba(29,24,19,.08)}
+  html:not(.dark) body:not(.camon) .jv-freeze .arc{stroke:#4FA6DE}
+  html:not(.dark) body:not(.camon) .jv-freeze b{color:var(--amber-display)}
+  html:not(.dark) body:not(.camon) .jv-freeze.on b{color:#1E6FA6;text-shadow:0 0 8px rgba(143,211,255,.8);filter:none}
+  html:not(.dark) body:not(.camon) .jv-short,html:not(.dark) body:not(.camon) .jpcard .jv-short{background:#F1ECE3;box-shadow:inset 0 0 0 1px var(--line)}
+  html:not(.dark) body:not(.camon) .jv-short .grid{stroke:rgba(29,24,19,.07)}
+  html:not(.dark) body:not(.camon) .jv-short .lbl{color:var(--muted)}
+  html:not(.dark) body:not(.camon) .jv-short .lbl b{color:var(--text)}
+  html:not(.dark) body:not(.camon) .jv-card .jv-f{background:repeating-linear-gradient(45deg,#F5B83D 0 6px,#ECAA2E 6px 12px);color:#241803;box-shadow:inset 0 0 0 1.5px rgba(190,127,12,.5)}
+  html:not(.dark) body:not(.camon) .jv-card .jv-b,html:not(.dark) body:not(.camon) .jpcard .jv-card .jv-b{background:linear-gradient(160deg,#FFFFFF,#FBF1DD);color:var(--text);box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.55)}
+  html:not(.dark) body:not(.camon) .jv-card.picked .jv-b{background:linear-gradient(160deg,#FFF6DC,#F8E2AE);box-shadow:inset 0 0 0 2px #E9A62C,0 0 18px rgba(245,184,61,.35)}
+  html:not(.dark) body:not(.camon) .jv-face svg{color:var(--amber-display)}
+  html:not(.dark) body:not(.camon) .jv-txt b{color:var(--amber-display)}
+  html:not(.dark) body:not(.camon) .wfly{background:rgba(255,248,232,.98)!important;color:var(--text)!important;border-color:rgba(190,127,12,.7)!important;box-shadow:0 14px 34px rgba(120,80,10,.22)}
+  html:not(.dark) body:not(.camon) .wfly svg{color:var(--amber-display)!important}
+  html:not(.dark) body:not(.camon) .reel .hint i{background:rgba(29,24,19,.08);border-color:rgba(29,24,19,.35);box-shadow:0 0 0 8px rgba(29,24,19,.04)}
+  html:not(.dark) body:not(.camon) .reel .hint i::before{background:linear-gradient(rgba(29,24,19,0),rgba(29,24,19,.25))}
+  html:not(.dark) body:not(.camon) .clock.frozen b{color:#2B86C5;text-shadow:0 0 6px rgba(143,211,255,.7)}
+  html:not(.dark) body:not(.camon) .clock.frozen small{color:#2B86C5}
+  html:not(.dark) body:not(.camon) .tbar.frozen i{background:#5DB3EA}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light::before,html:not(.dark) body:not(.camon) .bar.photo.tone-dark::before{display:none}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-mid::before{background:linear-gradient(to top,rgba(0,0,0,.55) 0%,rgba(0,0,0,.32) 38%,rgba(0,0,0,0) 62%)}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light{color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light>*{text-shadow:0 0 2px rgba(255,255,255,.7),0 0 12px rgba(255,255,255,.85)}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light .small{color:#4A433B}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light .btn.dir{background:rgba(255,255,255,.82);text-shadow:none}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-light .wild{background:rgba(255,250,238,.88)!important;text-shadow:none}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark,html:not(.dark) body:not(.camon) .bar.photo.tone-mid{color:#fff;--text:#fff;--muted:rgba(255,255,255,.82);--amber-text:#F5B83D;--amber-display:#F5B83D;--green:#4ADE80}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark>*,html:not(.dark) body:not(.camon) .bar.photo.tone-mid>*{text-shadow:0 1px 3px rgba(0,0,0,.55),0 0 14px rgba(0,0,0,.4)}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .small,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .small{color:rgba(255,255,255,.85)}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .eyebrow,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .eyebrow,html:not(.dark) body:not(.camon) .bar.tgt.tone-dark .eyebrow,html:not(.dark) body:not(.camon) .bar.tgt.tone-mid .eyebrow{color:#fff}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .btn.dir,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .btn.dir{background:rgba(0,0,0,.3);border-color:rgba(245,184,61,.75);text-shadow:none}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .wild,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .wild{background:rgba(0,0,0,.35)!important;border-color:rgba(245,184,61,.75)!important;color:#fff!important;text-shadow:none}
+  html:not(.dark) body:not(.camon) .bar.photo.tone-dark .nudge,html:not(.dark) body:not(.camon) .bar.photo.tone-mid .nudge{color:#fff}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
