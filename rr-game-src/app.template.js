@@ -1478,7 +1478,7 @@ function reveal(info,scope){
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
   const host=scope.closest("dialog")||scope.closest(".jpx,.jpdemo")||document.body;
-  const box=document.createElement("div");box.className="flybox";host.appendChild(box);
+  const box=document.createElement("div");box.className="flybox"+(card.classList.contains("phd")?" fb-dk":"");host.appendChild(box);
   box.animate([
     {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},
     {left:cr.left+"px",top:cr.top+"px",width:cr.width+"px",height:cr.height+"px",borderRadius:cs.borderTopLeftRadius}],{duration:D,easing:E,fill:"forwards"});

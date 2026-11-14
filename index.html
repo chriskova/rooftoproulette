@@ -2213,7 +2213,7 @@ html,body{overflow-x:hidden;max-width:100%}
 /* bar of the day: the tiles share the screen's height so it doesn't scroll (square at most) */
 #v-end .bodpick{flex:1;min-height:0}
 #v-end .bodpick>div:last-child,#v-end .bodgrid{min-height:0}
-.bodgrid{flex:1;grid-template-rows:repeat(var(--rows,3),minmax(56px,1fr));align-content:start}
+.bodgrid{flex:1;grid-template-rows:repeat(var(--rows,3),minmax(56px,calc((min(100vw,480px) - 46px)/2*1.05)));align-content:start}
 .bodt{aspect-ratio:auto;height:100%;max-height:calc((min(100vw,480px) - 46px)/2*1.05);min-height:56px}
 /* closed zone warning: tighter, and the move button keeps the area name on one line */
 .zwarn{padding:10px 14px;gap:2px}
@@ -2303,8 +2303,6 @@ html,body{overflow-x:hidden;max-width:100%}
   /* photo cards keep the dark scrim and white text, same as dark mode (no cream fades or glowing text) */
   html:not(.dark) body:not(.camon) .bar.photo:not(.phd)::before,html:not(.dark) body:not(.camon) .sheetbar.photo:not(.phd)::before{display:none}
   html:not(.dark) body:not(.camon) .bodt:not(.phd){color:var(--text)}html:not(.dark) body:not(.camon) .bodt:not(.phd)::before{display:none}
-  /* the countdown is brand amber, like dark mode */
-  html:not(.dark) body:not(.camon) #v-play .clock:not(.frozen) b{color:var(--amber)}
   /* summary: stats sit under the map on the card, not on a white fade over it */
   html:not(.dark) body:not(.camon) #v-end .scmap.wide{overflow:visible;box-shadow:none;border-radius:0}
   html:not(.dark) body:not(.camon) #v-end .scmap.wide #endMap{border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px var(--line)}
@@ -2313,6 +2311,9 @@ html,body{overflow-x:hidden;max-width:100%}
   /* no glowing text on light backgrounds */
   html:not(.dark) body:not(.camon) .jpx-sub b,html:not(.dark) body:not(.camon) .jpk,html:not(.dark) body:not(.camon) .reel .row.jp .t,html:not(.dark) body:not(.camon) .reel .row.jp .b,html:not(.dark) body:not(.camon) .clock.frozen b,html:not(.dark) body:not(.camon) .jv-freeze.on b{text-shadow:none}
   html:not(.dark) body:not(.camon) .reel .row.jp .t,html:not(.dark) body:not(.camon) .reel .row.jp .b{color:var(--amber-display)}
+  /* the landing box that grows into the card: light unless it's growing into a photo card */
+  html:not(.dark) body:not(.camon) .flybox:not(.fb-dk){background:linear-gradient(#FFFFFF,#FBF1DD);box-shadow:0 0 0 4px rgba(245,184,61,.14),0 10px 30px rgba(120,80,10,.15)}
+  html:not(.dark) body:not(.camon) .bodt.phd:not(.on){border-color:transparent}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};
