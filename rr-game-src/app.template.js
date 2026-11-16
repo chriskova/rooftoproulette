@@ -2266,13 +2266,15 @@ function nightSheet(){
     <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
     <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
     ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
-    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
+    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it. Swipe left to remove one.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
     $("ngX").onclick=closeSheet;
     const open=id=>{const v=byId(id),vi=g.visits.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
       const ms=vi&&vi.arrivedAt!=null?(vi.leftAt||now())-vi.arrivedAt:0;
-      barSheet(v,null,{lite:true,back:nightSheet,backTxt:"Your crawl",cv:vi&&vi.arrivedAt!=null?vi:null,visit:vi&&vi.arrivedAt!=null?`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`:""})};
-    $("sheetBody").querySelectorAll(".ngrow").forEach(x=>x.onclick=()=>open(x.dataset.b));
+      barSheet(v,null,{lite:true,back:nightSheet,backTxt:"Your crawl",visit:vi&&vi.arrivedAt!=null?`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`:""})};
+    $("sheetBody").querySelectorAll(".ngrow").forEach(x=>{x.onclick=()=>open(x.dataset.b);
+      const vis=g.visits.find(y=>y.id===x.dataset.b&&y.arrivedAt!=null);if(!vis||g.demo)return;
+      swipeRow(x,()=>removeVisit(g,vis,true));longPress(x,()=>removeAsk(g,vis,true))});
     // the bars so far, joined bar to bar. The real walking route waits for the summary.
     if(arr.length){try{ngMap&&ngMap.remove()}catch(e){}ngMap=null;
       makeMap("ngMap",{}).then(m=>{if(!m||!$("ngMap"))return;ngMap=m;const pts=arr.map(v=>byId(v.id));
@@ -2902,7 +2904,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
-  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r,isShared?{}:{cv:r.visits.find(x=>x.id===v.id&&x.arrivedAt!=null),crawl:r})});
+  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
+  if(!isShared&&!r.demo)box.querySelectorAll(".bcard,.brow").forEach((c,i)=>{const vis=st.arrived[i];if(vis)longPress(c,()=>removeAsk(r,vis,false))});
   // the stats on the map open what they're about: the leg, the stop, the breakdown
   box.querySelectorAll("[data-st]").forEach(t=>t.onclick=e=>{e.stopPropagation();const k=t.dataset.st,l=t.dataset.sl,v=t.dataset.sv;
     const stays=st.arrived.filter(x=>x.leftAt&&!x.lastOrders),by=f=>stays.slice().sort((a,b)=>f*((a.leftAt-a.arrivedAt)-(b.leftAt-b.arrivedAt)))[0];
@@ -3491,7 +3494,6 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
   const bf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>${y?`<span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}`;
   sheet(`${opt.back?`<button class="txtbtn bsback" type="button" id="bsBack">‹ ${esc(opt.backTxt||"Back")}</button>`:""}<div class="bswrap">${sheetCard(v,bf)}${true?`<button class="favbtn" type="button" id="bsFav" aria-pressed="${!!S.fav[v.id]}" aria-label="Favourite">${HRT}${HRTF}</button>`:""}</div>
     ${opt.visit?`<p class="note bsvisit">${opt.visit}</p>`:""}
-    ${opt.cv&&opt.cv.leftAt!=null&&!opt.cv.lastOrders?`<button class="toggle cnttog" type="button" id="tgCount" role="switch" aria-checked="${opt.cv.counted===true}"><span class="t"><b>Counts on this crawl</b><small>Off if you didn't have a drink here</small></span><span class="sw"></span></button>`:""}
     ${v.fact&&!opt.lite?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
@@ -3501,12 +3503,6 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
-    if($("tgCount"))$("tgCount").onclick=()=>{const cv=opt.cv,on=cv.counted!==true;cv.counted=on;if(!on){delete cv.cant}buzz(10);
-      if(opt.crawl){const r=opt.crawl;if(!on&&r.barOfDay===v.id)delete r.barOfDay;
-        const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
-        r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();if(S.route==="end")renderEnd();if(S.route==="hist")renderHist()}
-      else{save();if(S.route==="play")renderPlay()}
-      $("tgCount").setAttribute("aria-checked",String(on));toast(on?`${esc(v.name)} counts`:`${esc(v.name)} won't count`,1800)};
     $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
@@ -3523,6 +3519,7 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
 let toastT=null;
 function toast(html,ms,bind){let t=$("toast");if(!t){t=document.createElement("div");t.id="toast";t.className="toast";document.body.appendChild(t);swipeAway(t)}
   t.style.transition="";t.style.translate="";
+  {const sh=$("sheet"),host=sh&&sh.open?sh:document.body;if(t.parentNode!==host)host.appendChild(t)}   // above an open panel, not hidden behind it
   clearTimeout(toastT);t.innerHTML=html;t.classList.add("on");if(bind)bind(t);toastT=setTimeout(()=>t.classList.remove("on"),ms)}
 // drag a map card or the bar list down (or sideways) to put it away
 function swipeHide(el,handle){let x0=null,y0=0,dx=0,dy=0;
@@ -3710,6 +3707,33 @@ function crawlStatSheet(kind,id,rec){
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     $("sheetBody").querySelectorAll("[data-cs]").forEach(b_=>b_.onclick=()=>crawlStatSheet(kind,b_.dataset.cs))});
 }
+
+// Take a bar off a crawl (didn't go in, logged by mistake). Live crawl or finished one; undo for a few seconds.
+function removeVisit(r,vis,live){const i=r.visits.indexOf(vis);if(i<0)return;const b=byId(vis.id),bod=r.barOfDay===vis.id;
+  if(live&&vis.leftAt==null)vis.leftAt=now();
+  r.visits.splice(i,1);if(bod)delete r.barOfDay;
+  const reNew=()=>{if(live)return;const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id)};
+  const sk=live&&!(r.skipped||[]).includes(vis.id);if(sk)(r.skipped=r.skipped||[]).push(vis.id);   // and it won't come up again this crawl
+  const redo=()=>{if(live){save();if(S.route==="play")renderPlay();if($("sheet").open&&$("ngMap"))nightSheet()}else{reNew();saveH();if(S.route==="end")renderEnd();if(S.route==="hist")renderHist()}};
+  redo();buzz(15);
+  toast(`<span>${esc(b?b.name:"Bar")} removed</span><button type="button" class="tundo">Undo</button>`,5000,t=>{t.querySelector(".tundo").onclick=()=>{
+    r.visits.splice(Math.min(i,r.visits.length),0,vis);if(bod)r.barOfDay=vis.id;if(sk)r.skipped=r.skipped.filter(x=>x!==vis.id);hideToast();redo()}})}
+function removeAsk(r,vis,live){const b=byId(vis.id);if(!b)return;
+  sheet(`<h3>Remove ${esc(b.name)}?</h3><p class="note">It comes off this crawl and your stats.</p><div class="acts"><button class="btn" type="button" id="rmGo">Remove from crawl</button><button class="btn dark" type="button" id="rmX">Keep it</button></div>`,()=>{
+    $("rmGo").onclick=()=>{closeSheet();removeVisit(r,vis,live)};$("rmX").onclick=closeSheet})}
+// Swipe a row left for Remove, like a phone's own lists
+function swipeRow(row,onRemove){const w=document.createElement("div");w.className="swp";row.parentNode.insertBefore(w,row);w.appendChild(row);
+  const x=document.createElement("button");x.type="button";x.className="swpx";x.textContent="Remove";w.insertBefore(x,row);
+  let x0=null,y0=0,dx=0,open=false,drag=false;const W=96;
+  const set=(v,anim)=>{row.style.transition=anim?"transform .2s":"none";row.style.transform=v?`translateX(${v}px)`:""};
+  row.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;drag=false},{passive:true});
+  row.addEventListener("touchmove",e=>{if(x0===null)return;const ddx=e.touches[0].clientX-x0,ddy=e.touches[0].clientY-y0;
+    if(!drag){if(Math.abs(ddy)>Math.abs(ddx)||Math.abs(ddx)<8){if(Math.abs(ddy)>8)x0=null;return}drag=true}
+    dx=Math.min(0,Math.max(-W*1.4,(open?-W:0)+ddx));set(dx)},{passive:true});
+  let dragAt=0;
+  row.addEventListener("touchend",()=>{if(x0===null)return;x0=null;if(!drag)return;dragAt=Date.now();open=dx<-W/2;set(open?-W:0,true)});
+  row.addEventListener("click",e=>{if(open||Date.now()-dragAt<400){e.stopImmediatePropagation();e.preventDefault();if(open&&Date.now()-dragAt>=400){open=false;set(0,true)}}},true);
+  x.onclick=e=>{e.stopPropagation();onRemove()}}
 
 // One leg of a crawl (longest walk, fastest changeover): the two bars on a map with the route between them,
 // then the crawl it came from.
