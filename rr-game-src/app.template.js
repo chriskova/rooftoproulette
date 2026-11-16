@@ -133,7 +133,7 @@ const byId=id=>VENUES.find(v=>v.id===id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ---------- icons ---------- */
-const I={map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+const I={link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',map:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
  dice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>',
  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>',
@@ -3103,7 +3103,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=top+`<div class="shv-car">${urls.map((u,i)=>looks[i]==="clip"?`<div class="shv-s clip"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`:`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
       <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"||l==="map2"?"Map":l==="clip"?"Clip":"Rundown"}"${l==="clip"?' class="cdot"':""}></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
-      ${mapDiag}<div class="shv-go"><button class="btn dark" type="button" id="shvSave" hidden>Save</button><button class="btn" type="button" id="shvGo">${I.share} Share</button></div>`;
+      ${mapDiag}<div class="shv-go"><button class="btn dark" type="button" id="shvSave" hidden>Save</button>${r.shared?"":`<button class="btn dark shv-link" type="button" id="shvLink" aria-label="Copy link">${I.link}</button>`}<button class="btn" type="button" id="shvGo">${I.share} Share</button></div>`;
     bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
     const vids=[...ov.querySelectorAll(".shv-s")].map(sl=>sl.querySelector("video"));
     const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="map2"||looks[cur]==="clip"?"hidden":"visible";
@@ -3118,6 +3118,9 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
       const name=`rooftop-roulette-${looks[cur]}.png`;if(NATIVE){nativeSavePhoto(blobs[cur],name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)});return}
       const a=document.createElement("a");a.href=urls[cur];a.download=name;document.body.appendChild(a);a.click();a.remove()};
     const linkP=r.shared?Promise.resolve(null):crawlLink(r);
+    if($("shvLink"))$("shvLink").onclick=async()=>{const link=await linkP;if(!link)return;track("link_copied");
+      const ok=await (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(link).then(()=>true,()=>false):Promise.resolve(false))||(()=>{try{const t=document.createElement("textarea");t.value=link;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();const r_=document.execCommand("copy");t.remove();return r_}catch(e){return false}})();
+      buzz(10);toast(ok?"Link copied.":"Couldn't copy the link.",2200)};
     $("shvGo").onclick=async()=>{track("share_sent",{kind:looks[cur]});const link=await linkP,text=link?`${crawlLine(r)}\n${link}`:"";
       if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at,text);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
       if(NATIVE){nativeShare(blobs[cur],file.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}
