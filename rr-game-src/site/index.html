@@ -51,7 +51,6 @@ input[type=email]:focus{border-color:var(--amber)}
   font:700 16px var(--head);color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
 .phones input:checked+span{border-color:var(--amber);background:var(--amber-soft)}
 .phones input:focus-visible+span{outline:2px solid var(--amber);outline-offset:2px}
-#playRow[hidden]{display:none}
 .btn{appearance:none;border:0;border-radius:16px;height:56px;width:100%;font:700 17px var(--head);background:var(--amber);color:var(--amber-ink);
   cursor:pointer;margin-top:4px;transition:transform .08s,opacity .15s;text-decoration:none;display:flex;align-items:center;justify-content:center}
 .btn:active{transform:scale(.98)}.btn[disabled]{opacity:.6;cursor:default}
@@ -86,10 +85,6 @@ footer a{color:var(--muted);text-decoration:none}
       <label><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
       <label><input type="radio" name="phone" value="android"><span>Android</span></label>
     </div>
-    <div id="playRow" hidden>
-      <p class="lbl" style="margin-bottom:8px">Google Play email</p>
-      <input type="email" id="play" name="play" placeholder="Same as above" autocomplete="off" inputmode="email" aria-label="Google Play email">
-    </div>
     <p class="err" id="err" role="alert"></p>
     <button class="btn" id="go" type="submit">Get early access</button>
     <p class="fine">Launch emails only. Unsubscribe anytime.</p>
@@ -122,18 +117,16 @@ var src=(function(){try{var p=new URLSearchParams(location.search),s=p.get("from
   if(!s&&document.referrer){var h=new URL(document.referrer).hostname.replace(/^www\.|^l\.|^m\./,"");if(h&&h!==location.hostname)s=h}
   return (s||"").slice(0,39)}catch(e){return ""}})();
 var phone=function(){var r=f.querySelector("input[name=phone]:checked");return r?r.value:""};
-f.addEventListener("change",function(e){if(e.target.name==="phone"){$("playRow").hidden=phone()!=="android";err.textContent=""}});
+f.addEventListener("change",function(e){if(e.target.name==="phone")err.textContent=""});
 async function hash(s){try{var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
   catch(e){return s.replace(/[^a-z0-9]/g,"_").slice(0,120)}}
 function done(again){f.hidden=true;$("done").hidden=false;if(again)$("doneH").textContent="You're already on the list.";
   try{localStorage.setItem("rr-waitlist","1")}catch(e){}}
 f.addEventListener("submit",async function(e){e.preventDefault();err.textContent="";
-  var email=$("email").value.trim().toLowerCase(),ph=phone(),play=$("play").value.trim().toLowerCase();
+  var email=$("email").value.trim().toLowerCase(),ph=phone();
   if(!okEmail(email)){err.textContent="Check your email.";$("email").focus();return}
   if(!ph){err.textContent="Pick your phone.";return}
-  if(ph==="android"&&play&&!okEmail(play)){err.textContent="Check your Google Play email.";$("play").focus();return}
   var fields={email:{stringValue:email},phone:{stringValue:ph}};
-  if(ph==="android"&&play&&play!==email)fields.play={stringValue:play};
   if(src)fields.src={stringValue:src};
   go.disabled=true;go.textContent="Signing you up…";
   try{var id=await hash(email);

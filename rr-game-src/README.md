@@ -64,7 +64,7 @@ The app is light (warm cream) by default and switches to the dark look when the 
 
 `rooftoproulette.com` is the website: for now an early-access signup, swapped for the launch site (store buttons) after launch. Anything that should open the game goes on to `/play/` from there: the native app (it loads the live site; current builds load `/`, new ones `/play/`), an installed web app, `#crawl=`/`#live=` links, `?test` and `?fakecloud=`.
 
-Signups go into the Firestore `waitlist` collection over the REST API, no sign-in needed: email, phone (`iphone`/`android`), `play` (an Android user's Google Play email, if different) and `src` (`?from=` or the referring site). The document id is a hash of the email, so signing up twice doesn't add a second entry. The rules in `firebase/firestore.rules` only allow adding a well-formed entry, never reading it. Read the list in the Firebase console (Firestore > Data > waitlist). On the free Spark plan a flood of signups stops at the daily write cap rather than billing.
+Signups go into the Firestore `waitlist` collection over the REST API, no sign-in needed: email, phone (`iphone`/`android`) and `src` (`?from=` or the referring site). The document id is a hash of the email, so signing up twice doesn't add a second entry. The rules in `firebase/firestore.rules` only allow adding a well-formed entry, never reading it. Read the list in the Firebase console (Firestore > Data > waitlist). On the free Spark plan a flood of signups stops at the daily write cap rather than billing.
 
 ## Site pages (site/)
 
