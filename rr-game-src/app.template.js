@@ -1880,7 +1880,10 @@ function mp4Flat(buf){
   T.forEach(x=>x.t.smp.forEach(s=>{out.set(u.subarray(s.off,s.off+s.sz),k);k+=s.sz}));
   return out.buffer}
 /* ---------- crawl links: the whole crawl packed into the link, so mates can see it and add it to their tab ---------- */
-const SHARE_BASE="https://chriskova.github.io/rooftoproulette/";
+// Crawl links go to the link site (rooftoproulette.com/crawl/, set as linkBase in data/config.json) once it's live:
+// tapping one there opens the app straight away (Android App Links / iOS Universal Links). Until then, the GitHub Pages site.
+const APP_SITE="https://chriskova.github.io/rooftoproulette/",SHARE_BASE=(window.RR_CONFIG&&RR_CONFIG.linkBase)||APP_SITE;
+const crawlCode=u=>{const m=String(u||"").match(/[#?&]crawl=([A-Za-z0-9_-]+)/);return m?m[1]:null};
 const b64u=bytes=>{let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
 const unb64u=str=>{const s=atob(str.replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))};
 async function packCrawl(r){const t0=r.startedAt,sec=t=>t==null?-1:Math.round((t-t0)/1000);
@@ -1902,10 +1905,12 @@ async function unpackCrawl(str){let raw=unb64u(str.slice(1));
 async function crawlLink(r){try{return SHARE_BASE+"#crawl="+(await packCrawl(r))}catch(e){return SHARE_BASE}}
 const crawlLine=r=>{const st=stats(r),n=st.counted.length;return `${r.title?r.title+": ":""}${n} bar${n===1?"":"s"} on Rooftop Roulette.`};
 let SHARED=null;
-async function openSharedFromHash(){const m=location.hash.match(/crawl=([A-Za-z0-9_-]+)/);if(!m)return;
-  try{const r=await unpackCrawl(m[1]);SHARED=r;S.lastEnd=r.id;S.route="end";track("crawl_link_open",{in_tab:readH(HKEY).some(x=>x.id===r.id)});render()}
-  catch(e){toast("That crawl link didn't work.",3500)}
-  history.replaceState(null,"",location.pathname+location.search)}
+let SHARED_CODE=null;
+async function openCrawlCode(code){if(!code)return;
+  try{const r=await unpackCrawl(code);SHARED=r;SHARED_CODE=code;S.lastEnd=r.id;S.route="end";track("crawl_link_open",{in_tab:readH(HKEY).some(x=>x.id===r.id),native:NATIVE});render()}
+  catch(e){toast("That crawl link didn't work.",3500)}}
+async function openSharedFromHash(){const code=crawlCode(location.hash)||crawlCode(location.search);if(!code)return;
+  await openCrawlCode(code);history.replaceState(null,"",location.pathname+location.search.replace(/[?&]crawl=[A-Za-z0-9_-]+/,"").replace(/^&/,"?"))}
 function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.some(x=>x.id===r.id)){L.push(r);L.sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,L)}
   if(!hTest)H=readH(HKEY);track("crawl_link_add");SHARED=null;toast("Added to your tab.",2500);
   if(hTest){go("home")}else{S.lastEnd=r.id;save();renderEnd()}}
@@ -2032,6 +2037,14 @@ const clipList=gid=>clipDB().then(db=>new Promise(res=>{const st=db.transaction(
 const clipDel=id=>clipDB().then(db=>new Promise(res=>{const t=db.transaction("clips","readwrite");t.objectStore("clips").delete(id);t.oncomplete=res;t.onerror=res}));
 /* in the native app the browser's share and download don't exist: use the phone's own share sheet and gallery */
 const CAPX=window.Capacitor,NATIVE=!!(CAPX&&CAPX.isNativePlatform&&CAPX.isNativePlatform());
+// in the app: a crawl link tapped in a chat opens here (App Links / Universal Links, or the "Open in the app" button)
+if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App){const A=CAPX.Plugins.App;
+  try{A.addListener("appUrlOpen",e=>openCrawlCode(crawlCode(e&&e.url)))}catch(e){}
+  try{A.getLaunchUrl&&A.getLaunchUrl().then(o=>{const c=crawlCode(o&&o.url);if(c)setTimeout(()=>openCrawlCode(c),300)}).catch(()=>{})}catch(e){}}
+// a crawl link opened in a phone browser (an old link, or inside Instagram's browser): offer to open it in the app
+const ANDROID_WEB=!NATIVE&&/Android/i.test(navigator.userAgent);
+function openInApp(){const c=SHARED_CODE;if(!c)return;track("crawl_link_app");
+  location.href=`intent://chriskova.github.io/rooftoproulette/?crawl=${c}#Intent;scheme=https;package=com.rooftoproulette.app;S.browser_fallback_url=${encodeURIComponent(APP_SITE+"#crawl="+c)};end`}
 // Native plugins: the plugin's own object when the bridge made one, otherwise straight calls through the bridge
 const PLG=NATIVE?new Proxy({},{get:(_,pl)=>{const o=CAPX.Plugins&&CAPX.Plugins[pl];if(o)return o;
   return new Proxy({},{get:(_,m)=>opts=>typeof CAPX.nativePromise==="function"?CAPX.nativePromise(pl,m,opts||{}):Promise.reject(new Error("no bridge"))})}}):{};
@@ -2788,7 +2801,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
             <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
-    ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>`
+    ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>${ANDROID_WEB&&SHARED_CODE?`<button class="txtbtn amber openapp" type="button" id="openApp">Open in the app</button>`:""}`
       :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share card</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
@@ -2810,7 +2823,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   $("doneBtn").onclick=()=>{SHARED=null;const to=["hist","bars"].includes(S.endBack)?S.endBack:"home";go(to)};
   fitLine(box.querySelector(".scttl"),9);
   // an old crawl: no "Play again", Share takes the row
-  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;
+  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;if($("openApp"))$("openApp").onclick=openInApp;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card

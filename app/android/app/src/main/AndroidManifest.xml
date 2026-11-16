@@ -25,6 +25,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Crawl links (rooftoproulette.com/crawl/...) open straight in the app. Verified by
+                 https://rooftoproulette.com/.well-known/assetlinks.json on the link site. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="rooftoproulette.com" />
+                <data android:host="www.rooftoproulette.com" />
+                <data android:pathPrefix="/crawl" />
+            </intent-filter>
+
+            <!-- Not verified, so it never takes over the website: only the "Open in the app" button
+                 (an intent aimed at this app) lands here, for old GitHub Pages crawl links. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="chriskova.github.io" />
+                <data android:pathPrefix="/rooftoproulette" />
+            </intent-filter>
+
         </activity>
 
         <provider
