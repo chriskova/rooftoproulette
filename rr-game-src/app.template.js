@@ -1984,7 +1984,7 @@ async function openSharedFromHash(){const code=crawlCode(location.hash)||crawlCo
   await openCrawlCode(code);history.replaceState(null,"",location.pathname+location.search.replace(/[?&]crawl=[A-Za-z0-9_-]+/,"").replace(/^&/,"?"))}
 function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.some(x=>x.id===r.id)){L.push(r);L.sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,L)}
   if(!hTest)H=readH(HKEY);track("crawl_link_add");SHARED=null;toast("Added to your tab.",2500);
-  if(cloudOn()&&!signedIn()&&canGoogle())setTimeout(()=>signInSheet("Sign in and the next crawl you're on lands on your tab without a link.","link_add"),1500);
+  if(cloudOn()&&!signedIn()&&canGoogle())setTimeout(()=>signInSheet("Keep your crawls, photos and saved lists across devices.","link_add","Save your tab"),1500);
   if(hTest){go("home")}else{S.lastEnd=r.id;save();renderEnd()}}
 let camPopT=null;
 function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}

@@ -82,13 +82,13 @@ async function signIn(from){track("sign_in_tap",{from,via:"google"});
   try{const B=await cloud();await B.google();track("signed_in",{from,via:"google"});afterSignIn(from);return true}
   catch(e){console.warn("sign in",e);if(!isCancel(e))toast(esc(authErr(e)),3500);return false}}
 // one sign-in sheet everywhere: Google or email
-// Signing in from Settings or the account button lists every perk; from an action, only the one that action needs.
+// Signing in from Settings or the account button lists the perks; from an action, just the line that action needs.
 const PERK_TAB=()=>`<div>${I.check}<span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></div>`;
 const PERK_LIVE=()=>`<div>${I.check}<span><b>Share your crawl live</b><small>Let friends follow every spin and the timer from their own phones</small></span></div>`;
 function signInSheet(why,from,title){from=from||"sheet";
-  const perks=from==="live"?PERK_LIVE():(from==="follow_end"||from==="scorecard")?PERK_TAB():PERK_TAB()+PERK_LIVE();
+  const perks=(from==="acct"||from==="settings"||from==="sheet"||from==="mytab")?PERK_TAB()+PERK_LIVE():"";
   sheet(`<h3>${title||"Sign in"}</h3>${why?`<p class="note">${why}</p>`:""}
-    <div class="aperks">${perks}</div>
+    ${perks?`<div class="aperks">${perks}</div>`:""}
     <div class="acts">
     ${canGoogle()?`<button class="btn" type="button" id="siG">${GIC} Continue with Google</button>`:""}
     <button class="btn dark" type="button" id="siE">${I.mail||MAILI} Continue with email</button></div>`,()=>{
@@ -277,7 +277,7 @@ function nameSheet(after){
   sheet(`<h3>What's your name?</h3><p class="note">So friends know whose crawl it is.</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
     <div class="acts"><button class="btn" type="button" id="nmOk">Done</button><button class="btn dark" type="button" id="nmG">Sign in instead</button></div>`,()=>{
     const ok=()=>{const v=$("nmIn").value.trim();if(!v)return;S.myName=v;save();closeSheet();after&&after()};
-    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So your mates see your name, and the crawl lands on your tab.","live");setTimeout(()=>$("nmIn").focus(),50)})}
+    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So friends see your name.");setTimeout(()=>$("nmIn").focus(),50)})}
 
 // host: push the crawl when something happened, plus a "still here" every 2 minutes
 async function liveSync(force){const g=G();if(!g||!g.live||!CLP||liveBusy||!isHost())return;
@@ -365,7 +365,7 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   let r;try{r=JSON.parse(d.rec)}catch(e){return}const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
   delete r.newIds;r.bodDone=true;r.test=false;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});
-  toast("The crawl's on your tab.",3000);if(!signedIn())setTimeout(()=>signInSheet(null,"follow_end","Save your tab"),1800)}
+  toast("The crawl's on your tab.",3000);if(!signedIn())setTimeout(()=>signInSheet("Keep your crawls, photos and saved lists across devices.","follow_end","Save your tab"),1800)}
 async function matesFrom(d){if(!d||!signedIn())return;const B=await cloud(),me=ME.uid,add={};
   const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me)add[u]={n:m.n||"",t:Date.now()}});
   if(Object.keys(add).length)try{const cur=(await B.get(`users/${me}`))||{};await B.set(`users/${me}`,{mates:Object.assign({},cur.mates||{},add)},true)}catch(e){console.warn(e)}}
@@ -436,7 +436,7 @@ function accountBind(){if($("stIn"))$("stIn").onclick=()=>signInSheet(null,"sett
 // scorecard nudge, once, after your first real crawl
 function endSignInNudge(r){if(!cloudOn()||signedIn()||S.siNudged||r.demo||r.shared||!H.length)return "";
   return `<button class="sinudge" type="button" id="siNudge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></button>`}
-function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet(null,"scorecard","Save your tab")}}
+function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet("Keep your crawls, photos and saved lists across devices.","scorecard","Save your tab")}}
 
 // start up
 function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
