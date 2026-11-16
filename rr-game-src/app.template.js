@@ -1358,7 +1358,12 @@ function spinPool(){
   return {pool:P,final:false};
 }
 function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)>=DWELL();
-  if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
+  // Walked away without spinning: usually a line, a door policy or a change of plans, however long the wait took.
+  // Ask rather than count it (the demo just counts it).
+  const walkedOff=reason==="walk"&&!v.dep&&!(G()&&G().demo);
+  if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else if(walkedOff)v.counted=v._ans!==undefined?v._ans:null;else v.counted=ok?true:v._ans!==undefined?v._ans:null;
+  if(walkedOff&&v.counted===null){v.walkedOff=1;try{if(NATIVE&&document.hidden){noteSetup();natCall("LocalNotifications","schedule",{notifications:[{id:105,title:`Did you have a drink at ${byId(v.id).name}?`,body:"You left without spinning. Tap to say if it counts.",channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(Date.now()+1500),allowWhileIdle:true}}]}).catch(()=>{})}}catch(e){}}
+  delete v._ans}
 function onLocation(){liveNote();alertSync();if(S.game&&S.game.live)liveSync(false);
   const g=G();[bMap,zMap].forEach(setMe);meAll();
   if(!g||g.ended)return;
@@ -2266,7 +2271,7 @@ function nightSheet(){
     $("ngX").onclick=closeSheet;
     const open=id=>{const v=byId(id),vi=g.visits.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
       const ms=vi&&vi.arrivedAt!=null?(vi.leftAt||now())-vi.arrivedAt:0;
-      barSheet(v,null,{lite:true,back:nightSheet,backTxt:"Your crawl",visit:vi&&vi.arrivedAt!=null?`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`:""})};
+      barSheet(v,null,{lite:true,back:nightSheet,backTxt:"Your crawl",cv:vi&&vi.arrivedAt!=null?vi:null,visit:vi&&vi.arrivedAt!=null?`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`:""})};
     $("sheetBody").querySelectorAll(".ngrow").forEach(x=>x.onclick=()=>open(x.dataset.b));
     // the bars so far, joined bar to bar. The real walking route waits for the summary.
     if(arr.length){try{ngMap&&ngMap.remove()}catch(e){}ngMap=null;
@@ -2542,7 +2547,7 @@ function renderPlay(){
   if(spinning)return;
   const st=$("stage"),a=atVisit(),t=now(),rem=remaining();
   const qi=g.visits.findIndex(v=>v.leftAt!=null&&v.counted===null);
-  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No, don't count it</button></div><button class="txtbtn acant" type="button" id="aC">Couldn't get in?</button></div>`:"";
+  const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b>${g.visits[qi].walkedOff?`<span class="small">You left without spinning.</span>`:""}<div class="row"><button class="btn sm" type="button" id="aY">Count it</button><button class="btn sm dark" type="button" id="aN">Don't count it</button></div><button class="txtbtn acant" type="button" id="aC">Couldn't get in?</button></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
   if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Out of time on the way? It still counts.</div>`;
@@ -2897,7 +2902,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
-  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
+  box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r,isShared?{}:{cv:r.visits.find(x=>x.id===v.id&&x.arrivedAt!=null),crawl:r})});
   // the stats on the map open what they're about: the leg, the stop, the breakdown
   box.querySelectorAll("[data-st]").forEach(t=>t.onclick=e=>{e.stopPropagation();const k=t.dataset.st,l=t.dataset.sl,v=t.dataset.sv;
     const stays=st.arrived.filter(x=>x.leftAt&&!x.lastOrders),by=f=>stays.slice().sort((a,b)=>f*((a.leftAt-a.arrivedAt)-(b.leftAt-b.arrivedAt)))[0];
@@ -3486,6 +3491,7 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
   const bf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>${y?`<span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}`;
   sheet(`${opt.back?`<button class="txtbtn bsback" type="button" id="bsBack">‹ ${esc(opt.backTxt||"Back")}</button>`:""}<div class="bswrap">${sheetCard(v,bf)}${true?`<button class="favbtn" type="button" id="bsFav" aria-pressed="${!!S.fav[v.id]}" aria-label="Favourite">${HRT}${HRTF}</button>`:""}</div>
     ${opt.visit?`<p class="note bsvisit">${opt.visit}</p>`:""}
+    ${opt.cv&&opt.cv.leftAt!=null&&!opt.cv.lastOrders?`<button class="toggle cnttog" type="button" id="tgCount" role="switch" aria-checked="${opt.cv.counted===true}"><span class="t"><b>Counts on this crawl</b><small>Off if you didn't have a drink here</small></span><span class="sw"></span></button>`:""}
     ${v.fact&&!opt.lite?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
@@ -3495,6 +3501,12 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
+    if($("tgCount"))$("tgCount").onclick=()=>{const cv=opt.cv,on=cv.counted!==true;cv.counted=on;if(!on){delete cv.cant}buzz(10);
+      if(opt.crawl){const r=opt.crawl;if(!on&&r.barOfDay===v.id)delete r.barOfDay;
+        const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
+        r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();if(S.route==="end")renderEnd();if(S.route==="hist")renderHist()}
+      else{save();if(S.route==="play")renderPlay()}
+      $("tgCount").setAttribute("aria-checked",String(on));toast(on?`${esc(v.name)} counts`:`${esc(v.name)} won't count`,1800)};
     $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
