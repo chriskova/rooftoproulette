@@ -1,6 +1,8 @@
 # Rooftop Roulette: source
 
-The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is generated from this folder. Don't edit those three files by hand.
+The game lives at `/play/` (`play/index.html`) and the website at the root (`index.html`, built from `site/index.html`). Both, plus `manifest.webmanifest` and `sw.js`, are generated from this folder. Don't edit them by hand.
+
+The game page loads shared files from the root (`../rooftop-app.js`, `../venues.json`, `../sw.js` and so on) through `window.RR_ROOT` (`"../"`), set at the top of `index.template.html`.
 
 ## Files
 
@@ -8,7 +10,7 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 - `data/config.json` holds the public browser settings (Google Maps browser key, PostHog key). The build writes them to `../browser-config.js`, which loads before `rooftop-app.js`. The Maps key is restricted to the site's address and APIs in Google Cloud, so it's fine for it to be public.
 - `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane, Perth and the Gold Coast).
 - `data/manifest.webmanifest` is the PWA manifest.
-- `build.py` writes `../index.html`, `../rooftop-app.js`, `../browser-config.js`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts.
+- `build.py` writes `../play/index.html`, `../rooftop-app.js`, `../browser-config.js`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts.
 - `tests/` holds Playwright checks (see below).
 
 ## Updating bars without an app release
@@ -17,7 +19,7 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 
 ## Crawl links
 
-Sharing a card or clip also sends a line and a link. The whole crawl (bars, times, name, jackpot) is packed into the link after `#crawl=`, so no server is involved. Opening it shows the crawl's summary with **Add to My Tab** and **Save card**. The app lives at https://rooftoproulette.com (GitHub Pages with the custom domain in `CNAME`; the old chriskova.github.io address forwards there). Crawl links are `rooftoproulette.com/crawl/#crawl=...` and live-crawl invites `rooftoproulette.com/live/#live=...`. Both pages just hand over to the app at `/`. With the app installed, Android App Links and iOS Universal Links open them straight in the app, verified by the files in `.well-known/` at the repo root: `assetlinks.json` lists the test build's key and the Play App Signing key, `apple-app-site-association` the Apple Team ID.
+Sharing a card or clip also sends a line and a link. The whole crawl (bars, times, name, jackpot) is packed into the link after `#crawl=`, so no server is involved. Opening it shows the crawl's summary with **Add to My Tab** and **Save card**. The app lives at https://rooftoproulette.com (GitHub Pages with the custom domain in `CNAME`; the old chriskova.github.io address forwards there). Crawl links are `rooftoproulette.com/crawl/#crawl=...` and live-crawl invites `rooftoproulette.com/live/#live=...`. Both pages just hand over to the game at `/play/`. With the app installed, Android App Links and iOS Universal Links open them straight in the app, verified by the files in `.well-known/` at the repo root: `assetlinks.json` lists the test build's key and the Play App Signing key, `apple-app-site-association` the Apple Team ID.
 
 ## Analytics and crash reports
 
@@ -57,6 +59,12 @@ The app is light (warm cream) by default and switches to the dark look when the 
 - `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`. Placeholder for now: swap those for the final logo and re-run.
 - Every push to `main` that changes `index.html` or `app/` builds an Android test APK on GitHub Actions and puts it on the `android-test` release (download it on the phone and install).
 - iOS needs the Apple Developer account before builds can be signed.
+
+## Website and early access (site/index.html)
+
+`rooftoproulette.com` is the website: for now an early-access signup, swapped for the launch site (store buttons) after launch. Anything that should open the game goes on to `/play/` from there: the native app (it loads the live site; current builds load `/`, new ones `/play/`), an installed web app, `#crawl=`/`#live=` links, `?test` and `?fakecloud=`.
+
+Signups go into the Firestore `waitlist` collection over the REST API, no sign-in needed: email, phone (`iphone`/`android`), `play` (an Android user's Google Play email, if different) and `src` (`?from=` or the referring site). The document id is a hash of the email, so signing up twice doesn't add a second entry. The rules in `firebase/firestore.rules` only allow adding a well-formed entry, never reading it. Read the list in the Firebase console (Firestore > Data > waitlist). On the free Spark plan a flood of signups stops at the daily write cap rather than billing.
 
 ## Site pages (site/)
 

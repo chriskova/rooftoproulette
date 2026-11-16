@@ -2,7 +2,7 @@
  "name": "Rooftop Roulette",
  "short_name": "Rooftops",
  "description": "A rooftop bar crawl against the clock.",
- "start_url": "./",
+ "start_url": "play/",
  "scope": "./",
  "display": "standalone",
  "orientation": "portrait",

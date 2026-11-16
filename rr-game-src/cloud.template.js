@@ -40,7 +40,7 @@ function fbBackend(){return new Promise((res,rej)=>{
       watchList:(p,cb)=>F.onSnapshot(c(p),s=>cb(s.docs.map(x=>Object.assign({_id:x.id},x.data()))),e=>console.warn("watchList",e)),
       tx:(p,fn)=>F.runTransaction(db,async t=>{const r=d(p),s=await t.get(r),v=fn(s.exists()?s.data():null);if(v===undefined)return false;t.set(r,v);return true})})}catch(e){rej(e)}};
   if(window.RRFB)return go_();
-  const sc=document.createElement("script");sc.src="vendor/firebase/rr-firebase.js";sc.onload=go_;sc.onerror=()=>rej(new Error("firebase didn't load"));document.head.appendChild(sc)})}
+  const sc=document.createElement("script");sc.src=(window.RR_ROOT||"")+"vendor/firebase/rr-firebase.js";sc.onload=go_;sc.onerror=()=>rej(new Error("firebase didn't load"));document.head.appendChild(sc)})}
 
 // ----- backend: a stand-in for tests (?fakecloud=http://127.0.0.1:PORT, served by tests/fakecloud-server.js) -----
 function fakeBackend(){
@@ -253,7 +253,7 @@ async function liveInvite(){if(!myName()&&!signedIn()){nameSheet(()=>liveInvite(
 // QR code of the follow link: for when everyone's standing together. Always black on white so cameras read it.
 const QRI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h2.5v2.5H14zM18.5 18.5h2M14 20.5h2.5M20.5 14v2.5"/></svg>';
 let qrP=null;
-const qrLib=()=>qrP||(qrP=new Promise((res,rej)=>{if(window.qrcode)return res(window.qrcode);const sc=document.createElement("script");sc.src="vendor/qr/qrcode.js";sc.onload=()=>res(window.qrcode);sc.onerror=()=>{qrP=null;rej(new Error("qr didn't load"))};document.head.appendChild(sc)}));
+const qrLib=()=>qrP||(qrP=new Promise((res,rej)=>{if(window.qrcode)return res(window.qrcode);const sc=document.createElement("script");sc.src=(window.RR_ROOT||"")+"vendor/qr/qrcode.js";sc.onload=()=>res(window.qrcode);sc.onerror=()=>{qrP=null;rej(new Error("qr didn't load"))};document.head.appendChild(sc)}));
 async function qrSheet(link,back){let svg="";
   try{const Q=await qrLib(),q=Q(0,"M");q.addData(link);q.make();svg=q.createSvgTag({cellSize:6,margin:3,scalable:true})}catch(e){console.warn(e);toast("Couldn't make the code. Send the link instead.",3000);return}
   track("live_qr");

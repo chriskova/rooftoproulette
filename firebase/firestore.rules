@@ -16,6 +16,16 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['from','fromUid','at']) && request.resource.data.from.size() < 40;
       }
     }
+    // early-access list (the signup page at rooftoproulette.com): anyone can add themselves; nobody can read, change or list it from the web.
+    // Read it in the Firebase console (Firestore > Data > waitlist).
+    match /waitlist/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['email','phone','play','src'])
+        && request.resource.data.email is string && request.resource.data.email.size() < 120
+        && request.resource.data.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')
+        && request.resource.data.phone in ['iphone','android']
+        && request.resource.data.get('play','') is string && request.resource.data.get('play','').size() < 120
+        && request.resource.data.get('src','') is string && request.resource.data.get('src','').size() < 40;
+    }
     // live crawls: anyone with the link (a random id) reads; the spinner writes the crawl;
     // followers can only add themselves, take over when the spinner's gone quiet for 5 minutes, or be handed the spin
     match /live/{id} {

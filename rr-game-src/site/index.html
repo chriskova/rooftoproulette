@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>/* The game lives at /play/. The app, an installed web app, crawl and live-crawl links, and test links go straight there. */
+(function(){var C=window.Capacitor,n=!!(C&&C.isNativePlatform&&C.isNativePlatform()),
+sa=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true,
+q=location.search+location.hash;
+if(n||sa||/(^|[?&#])(crawl|live)=|[?&]test\b|fakecloud=/.test(q))location.replace("/play/"+location.search+location.hash)})()</script>
+<title>Rooftop Roulette · Early access</title>
+<meta name="description" content="A rooftop bar crawl against the clock. Sign up for early access.">
+<meta name="theme-color" content="#FBF7F0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0D12" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rooftoproulette.com/">
+<meta property="og:title" content="Rooftop Roulette · Early access">
+<meta property="og:description" content="Race the clock. How many rooftops can you hit?">
+<meta property="og:image" content="https://rooftoproulette.com/icons/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/big-shoulders-display-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:"Big Shoulders Display";font-weight:800;font-display:block;src:url(fonts/big-shoulders-display-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:800;font-display:swap;src:url(fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:700;font-display:swap;src:url(fonts/plus-jakarta-sans-latin-700-normal.woff2) format("woff2")}
+:root{--bg:#FBF7F0;--s1:#FFFFFF;--line:#E5DCCD;--text:#1D1813;--muted:#6B6257;--dim:#8C8276;--amber:#F5B83D;--amber-ink:#241803;--amber-soft:rgba(245,184,61,.2);--amber-text:#A87008;--red:#C0392B;--pin:.2;
+--display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;--head:"Plus Jakarta Sans",system-ui,sans-serif;--ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0B0D12;--s1:#141820;--line:#262d3a;--text:#F4F1EA;--muted:#9aa3b2;--dim:#7d8696;--amber-text:#F5B83D;--red:#FF6B5E;--pin:.14}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 var(--ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;min-height:100svh;overflow-x:hidden;position:relative}
+.pin{position:absolute;right:-90px;top:calc(60px + 6vh);height:min(440px,58vh);width:auto;opacity:var(--pin);pointer-events:none;user-select:none;z-index:0}
+main{position:relative;z-index:1;max-width:440px;margin:0 auto;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 12vh) 22px calc(env(safe-area-inset-bottom) + 22px)}
+.kick{font:700 12px/1 var(--head);letter-spacing:.16em;text-transform:uppercase;color:var(--amber-text);margin:0 0 14px}
+.brand{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:.92;font-size:clamp(58px,17vw,84px);margin:0}
+.brand span{color:var(--amber-text)}
+.line{font:700 19px/1.3 var(--head);margin:18px 0 0;color:var(--text)}
+form,.done{margin-top:auto;padding-top:40px;display:flex;flex-direction:column;gap:12px}
+input[type=email]{appearance:none;width:100%;height:56px;border-radius:16px;border:1.5px solid var(--line);background:var(--s1);color:var(--text);
+  font:16px var(--ui);padding:0 18px;outline:none;transition:border-color .15s}
+input[type=email]::placeholder{color:var(--dim)}
+input[type=email]:focus{border-color:var(--amber)}
+.lbl{font:700 13px/1 var(--head);color:var(--muted);margin:6px 2px 0}
+.phones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.phones label{position:relative}
+.phones input{position:absolute;opacity:0;pointer-events:none}
+.phones span{display:flex;align-items:center;justify-content:center;height:52px;border-radius:16px;border:1.5px solid var(--line);background:var(--s1);
+  font:700 16px var(--head);color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
+.phones input:checked+span{border-color:var(--amber);background:var(--amber-soft)}
+.phones input:focus-visible+span{outline:2px solid var(--amber);outline-offset:2px}
+#playRow[hidden]{display:none}
+.btn{appearance:none;border:0;border-radius:16px;height:56px;width:100%;font:700 17px var(--head);background:var(--amber);color:var(--amber-ink);
+  cursor:pointer;margin-top:4px;transition:transform .08s,opacity .15s;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.btn:active{transform:scale(.98)}.btn[disabled]{opacity:.6;cursor:default}
+.fine{font-size:13px;color:var(--dim);text-align:center;margin:2px 0 0}
+.err{font-size:14px;color:var(--red);text-align:center;margin:0;min-height:0}
+.err:empty{display:none}
+.done[hidden]{display:none}
+.done h2{font:800 30px/1.1 var(--head);margin:0}
+.done p{margin:0 0 8px;color:var(--muted)}
+.ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
+footer{display:flex;align-items:center;justify-content:space-between;margin-top:28px;font-size:14px}
+footer nav{display:flex;gap:16px}
+footer a{color:var(--muted);text-decoration:none}
+.soc{display:flex;gap:6px}
+.soc a{display:flex;width:40px;height:40px;align-items:center;justify-content:center;color:var(--muted)}
+.soc svg{width:22px;height:22px}
+@media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:14vh}}
+@media (max-height:640px){main{padding-top:calc(env(safe-area-inset-top) + 7vh)}.pin{top:40px}}
+</style>
+</head>
+<body>
+<img class="pin" src="icons/logo-pin.png" alt="" aria-hidden="true">
+<main>
+  <p class="kick">Early access</p>
+  <h1 class="brand">Rooftop<br><span>Roulette</span></h1>
+  <p class="line">Race the clock.<br>How many rooftops can you hit?</p>
+
+  <form id="f" novalidate>
+    <input type="email" id="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" required aria-label="Email">
+    <p class="lbl" id="phoneLbl">Your phone</p>
+    <div class="phones" role="radiogroup" aria-labelledby="phoneLbl">
+      <label><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+      <label><input type="radio" name="phone" value="android"><span>Android</span></label>
+    </div>
+    <div id="playRow" hidden>
+      <p class="lbl" style="margin-bottom:8px">Google Play email</p>
+      <input type="email" id="play" name="play" placeholder="Same as above" autocomplete="off" inputmode="email" aria-label="Google Play email">
+    </div>
+    <p class="err" id="err" role="alert"></p>
+    <button class="btn" id="go" type="submit">Get early access</button>
+    <p class="fine">Launch emails only. Unsubscribe anytime.</p>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2 id="doneH">You're on the list.</h2>
+    <p>We'll email you when it's ready.</p>
+    <button class="btn" id="share" type="button">Send it to a mate</button>
+  </div>
+
+  <footer>
+    <div class="soc">
+      <a href="https://www.instagram.com/rooftoproulette/" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/></svg></a>
+      <a href="https://www.tiktok.com/@rooftoproulette" aria-label="TikTok" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 3c.3 2.2 1.6 3.7 3.9 3.9v3.2c-1.4.1-2.7-.3-3.9-1.1v5.9c0 3.6-2.6 6.1-6 6.1-3.3 0-5.9-2.6-5.9-5.8 0-3.6 3.1-6.3 6.8-5.7v3.3c-1.6-.4-3.3.6-3.3 2.4 0 1.4 1.1 2.5 2.5 2.5 1.6 0 2.6-1.1 2.6-2.8V3z"/></svg></a>
+    </div>
+    <nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav>
+  </footer>
+</main>
+<script>
+/* Signups go straight into Firestore (waitlist collection) over the REST API: no SDK, no sign-in.
+   The rules (firebase/firestore.rules) only allow adding a well-formed entry; nobody can read the list from the web.
+   The document id is a hash of the email, so signing up twice doesn't make a second entry.
+   The project is on Firebase's free Spark plan: if someone floods it, writes stop at the daily cap instead of billing. */
+(function(){
+var PROJECT="rooftop-roulette",KEY="AIzaSyBBqzxMQeii9V__clMwfMwnx6-E7g2pU-8",SHARE="https://rooftoproulette.com/";
+var $=function(i){return document.getElementById(i)},f=$("f"),err=$("err"),go=$("go");
+var okEmail=function(e){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)&&e.length<120};
+var src=(function(){try{var p=new URLSearchParams(location.search),s=p.get("from")||p.get("utm_source");
+  if(!s&&document.referrer){var h=new URL(document.referrer).hostname.replace(/^www\.|^l\.|^m\./,"");if(h&&h!==location.hostname)s=h}
+  return (s||"").slice(0,39)}catch(e){return ""}})();
+var phone=function(){var r=f.querySelector("input[name=phone]:checked");return r?r.value:""};
+f.addEventListener("change",function(e){if(e.target.name==="phone"){$("playRow").hidden=phone()!=="android";err.textContent=""}});
+async function hash(s){try{var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
+  catch(e){return s.replace(/[^a-z0-9]/g,"_").slice(0,120)}}
+function done(again){f.hidden=true;$("done").hidden=false;if(again)$("doneH").textContent="You're already on the list.";
+  try{localStorage.setItem("rr-waitlist","1")}catch(e){}}
+f.addEventListener("submit",async function(e){e.preventDefault();err.textContent="";
+  var email=$("email").value.trim().toLowerCase(),ph=phone(),play=$("play").value.trim().toLowerCase();
+  if(!okEmail(email)){err.textContent="Check your email.";$("email").focus();return}
+  if(!ph){err.textContent="Pick your phone.";return}
+  if(ph==="android"&&play&&!okEmail(play)){err.textContent="Check your Google Play email.";$("play").focus();return}
+  var fields={email:{stringValue:email},phone:{stringValue:ph}};
+  if(ph==="android"&&play&&play!==email)fields.play={stringValue:play};
+  if(src)fields.src={stringValue:src};
+  go.disabled=true;go.textContent="Signing you up…";
+  try{var id=await hash(email);
+    var r=await fetch("https://firestore.googleapis.com/v1/projects/"+PROJECT+"/databases/(default)/documents/waitlist?documentId="+id+"&key="+KEY,
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({fields:fields})});
+    if(r.ok)return done(false);
+    if(r.status===409)return done(true);
+    throw new Error(r.status)}
+  catch(x){err.textContent="Didn't go through. Try again.";go.disabled=false;go.textContent="Get early access"}});
+$("share").addEventListener("click",async function(){var d={title:"Rooftop Roulette",text:"Rooftop Roulette early access",url:SHARE};
+  try{if(navigator.share){await navigator.share(d);return}}catch(e){if(e&&e.name==="AbortError")return}
+  try{await navigator.clipboard.writeText(SHARE);$("share").textContent="Link copied"}catch(e){prompt("Copy the link",SHARE)}});
+})();
+</script>
+</body>
+</html>

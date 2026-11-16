@@ -39,7 +39,7 @@ jobs:
         working-directory: app
         # Same as the test app: it opens the live site, so fixes reach everyone without a new Play release.
         run: |
-          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/play/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- android
       - name: Build the signed bundle
         working-directory: app/android
