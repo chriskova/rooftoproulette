@@ -178,20 +178,49 @@ function deleteAccountSheet(){
 // ----- My Tab backup (signed in) -----
 const syncedMap=()=>{try{return JSON.parse(localStorage.getItem("rr-synced")||"{}")}catch(e){return {}}};
 const recHash=s=>{let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return String(h)};
-const recForCloud=r=>{const o=Object.assign({},r);delete o.photo;delete o.photos;if(o.trail&&o.trail.length>600)o.trail=o.trail.filter((_,i)=>i%Math.ceil(o.trail.length/600)===0);return JSON.stringify(o)};
-let tabT=null;
+// Everything on your tab comes back when you sign in on another phone: crawls, their photos, your lists and crawl names.
+// Photos (already shrunk to 1000px, 3 a crawl at most) go as their own docs next to the crawl: "<crawl id>~p0", "~p1"…
+const crawlPics=r=>{const P=(r.photos||[]).slice();if(r.photo&&!P.includes(r.photo))P.push(r.photo);return P};
+const recForCloud=r=>{const o=Object.assign({},r),P=crawlPics(r);delete o.photo;delete o.photos;if(P.length){o.np=P.length;o.pi=r.photo?P.indexOf(r.photo):-1}
+  if(o.trail&&o.trail.length>600)o.trail=o.trail.filter((_,i)=>i%Math.ceil(o.trail.length/600)===0);return JSON.stringify(o)};
+const isPicDoc=id=>/~p\d+$/.test(id);
+// a photo has to fit the cloud's size cap; most already do, the rest get re-squeezed
+function fitPic(d){if(!d||d.length<380000)return Promise.resolve(d);return new Promise(res=>{const img=new Image();img.onload=()=>{let s=.85,q=.72,out=d;
+  for(let k=0;k<6&&out.length>=380000;k++){const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);s*=.85;q=Math.max(.5,q-.05)}
+  res(out.length<380000?out:null)};img.onerror=()=>res(null);img.src=d})}
+// lists (been, not for us, hit list, favourites) and crawl names live on your account too
+const PREF_KEYS=["been","nfu","want","fav","names"];
+const prefsNow=()=>{const o={};PREF_KEYS.forEach(k=>{if(S[k]&&typeof S[k]==="object")o[k]=S[k]});return JSON.stringify(o)};
+let tabT=null,prefsSent=null;
 function tabSyncSoon(){if(!signedIn())return;clearTimeout(tabT);tabT=setTimeout(tabPush,2500)}
 async function tabPush(){if(!signedIn())return;const B=await cloud(),uid=ME.uid,m=syncedMap(),L=readH(HKEY),seen={};
-  for(const r of L){if(r.demo)continue;seen[r.id]=1;const j=recForCloud(r),h=recHash(j);if(m[r.id]===h)continue;
-    try{await B.set(`users/${uid}/crawls/${r.id}`,{j,at:r.startedAt||0});m[r.id]=h}catch(e){console.warn("tab push",e);break}}
+  for(const r of L){if(r.demo)continue;seen[r.id]=1;const j=recForCloud(r),h=recHash(j);
+    if(m[r.id]!==h){try{await B.set(`users/${uid}/crawls/${r.id}`,{j,at:r.startedAt||0});m[r.id]=h}catch(e){console.warn("tab push",e);break}}
+    const P=crawlPics(r);
+    for(let i=0;i<P.length;i++){const k=`${r.id}~p${i}`,ph=recHash(P[i]);seen[k]=1;if(m[k]===ph)continue;
+      try{const d=await fitPic(P[i]);if(d)await B.set(`users/${uid}/crawls/${k}`,{j:d,at:r.startedAt||0});m[k]=ph}catch(e){console.warn("photo push",e);break}}}
   for(const id of Object.keys(m))if(!seen[id]){try{await B.del(`users/${uid}/crawls/${id}`);delete m[id]}catch(e){}}
-  localStorage.setItem("rr-synced",JSON.stringify(m))}
+  localStorage.setItem("rr-synced",JSON.stringify(m));await prefsPush()}
+async function prefsPush(){if(!signedIn())return;const j=prefsNow();if(j===prefsSent)return;
+  try{const B=await cloud();await B.set(`users/${ME.uid}`,{prefs:j},true);prefsSent=j}catch(e){console.warn("prefs push",e)}}
+// save the whole tab, falling back to cover photos only if the phone's storage is full
+function writeTab(L){try{localStorage.setItem(HKEY,JSON.stringify(L));return}catch(e){}
+  L.forEach(r=>{if(r.photos&&r.photos.length>1)r.photos=r.photo?[r.photo]:r.photos.slice(-1)});writeH(HKEY,L)}
 async function tabSyncAll(){if(!signedIn())return;const B=await cloud(),uid=ME.uid;
-  try{B.set(`users/${uid}`,{name:ME.name||"",photo:ME.photo||"",seen:Date.now()},true);
-    const L=readH(HKEY),have=new Set(L.map(r=>r.id)),m=syncedMap();let added=0;
-    for(const x of await B.list(`users/${uid}/crawls`)){if(have.has(x._id))continue;try{const r=JSON.parse(x.j);L.push(r);m[r.id]=recHash(x.j);added++}catch(e){}}
-    if(added){L.sort((a,b)=>b.startedAt-a.startedAt);writeH(HKEY,L);if(!hTest)H=readH(HKEY);localStorage.setItem("rr-synced",JSON.stringify(m));toast(`${added} crawl${added===1?"":"s"} back on your tab.`,3000);if(S.route==="hist")renderHist()}
+  try{const u=(await B.get(`users/${uid}`))||{};B.set(`users/${uid}`,{name:ME.name||"",photo:ME.photo||"",seen:Date.now()},true);
+    // lists: merge what's on the account with what's on this phone
+    if(u.prefs){try{const p=JSON.parse(u.prefs);PREF_KEYS.forEach(k=>{if(p[k]&&typeof p[k]==="object")S[k]=Object.assign({},p[k],S[k]||{})});save();if(typeof render==="function"&&S.route!=="play")render()}catch(e){}}
+    const L=readH(HKEY),have=new Set(L.map(r=>r.id)),m=syncedMap(),docs=await B.list(`users/${uid}/crawls`),pics={};let added=0,picsBack=0;
+    docs.filter(x=>isPicDoc(x._id)).forEach(x=>{const [id,n]=x._id.split("~p");(pics[id]=pics[id]||[])[+n]=x.j});
+    for(const x of docs){if(isPicDoc(x._id)||have.has(x._id))continue;try{const r=JSON.parse(x.j);m[r.id]=recHash(x.j);
+      const P=(pics[r.id]||[]).filter(Boolean);if(P.length){r.photos=P;if(r.pi>=0&&P[r.pi])r.photo=P[r.pi]}delete r.np;delete r.pi;L.push(r);added++}catch(e){}}
+    // crawls already on this phone that lost their photos get them back too
+    L.forEach(r=>{const P=(pics[r.id]||[]).filter(Boolean);if(P.length&&!crawlPics(r).length){r.photos=P;r.photo=P[P.length-1];picsBack++}});
+    if(added||picsBack){L.sort((a,b)=>b.startedAt-a.startedAt);writeTab(L);if(!hTest)H=readH(HKEY);localStorage.setItem("rr-synced",JSON.stringify(m));
+      if(added)toast(`${added} crawl${added===1?"":"s"} back on your tab.`,3000);if(S.route==="hist")renderHist()}
     await tabPush()}catch(e){console.warn("tab sync",e)}}
+// lists change all over the app: check every 15 seconds and send them when they have
+setInterval(()=>{if(CLP&&signedIn())prefsPush()},15000);
 
 // ----- live crawls -----
 const liveId=()=>"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);

@@ -3615,26 +3615,6 @@ function crawlStatSheet(kind,id){
     $("sheetBody").querySelectorAll("[data-cs]").forEach(b_=>b_.onclick=()=>crawlStatSheet(kind,b_.dataset.cs))});
 }
 
-/* ---------- back up / restore: crawls, stats and lists as one file ---------- */
-function backupTab(){track("backup");
-  const keep=["been","nfu","want","fav","names","clipAuto","camLight","film","sound","vib","last"],st={};keep.forEach(k=>{if(S[k]!==undefined)st[k]=S[k]});
-  const data={app:"rooftop-roulette",kind:"tab-backup",v:1,at:Date.now(),history:readH(HKEY),settings:st},d=new Date(),name=`rooftop-roulette-backup-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.json`;
-  const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
-  // in the app: the phone's share sheet (save to Files or Drive, send it anywhere). On the web: a download (phones won't share .json files)
-  if(NATIVE){nativeShare(blob,name,"My Tab backup").catch(e=>{if(e&&/cancel/i.test(e.message||""))return;anErr("Backup",(e&&e.message)||String(e),e&&e.stack);toast("Couldn't back up your tab.",3500)});return}
-  try{const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast("Backup saved to your downloads.",3000)}
-  catch(e){anErr("Backup",e.message,e.stack);toast("Couldn't back up your tab.",3500)}}
-function restoreTab(){const i=document.createElement("input");i.type="file";i.accept="application/json,.json";
-  i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;f.text().then(t=>{let d;try{d=JSON.parse(t)}catch(e){d=null}
-    if(!d||d.kind!=="tab-backup"||!Array.isArray(d.history)){toast("That's not a Rooftop Roulette backup.",3500);return}
-    const cur=readH(HKEY),ids=new Set(cur.map(r=>r.id)),add=d.history.filter(r=>r&&r.id&&!ids.has(r.id));
-    sheet(`<h3>Restore My Tab?</h3><p class="note">${add.length?`Adds ${add.length} crawl${add.length===1?"":"s"} from ${new Date(d.at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})}. Nothing already on this phone is removed.`:"Everything in this backup is already on this phone."}</p><div class="acts">${add.length?`<button class="btn" type="button" id="rsY">Restore</button>`:""}<button class="btn line" type="button" id="rsN">${add.length?"Cancel":"Close"}</button></div>`,()=>{
-      $("rsN").onclick=closeSheet;
-      if($("rsY"))$("rsY").onclick=()=>{const all=cur.concat(add).sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,all);
-        const st=d.settings||{};["been","nfu","want","fav"].forEach(k=>{if(st[k]&&typeof st[k]==="object")S[k]=Object.assign({},st[k],S[k]||{})});save();
-        if(!hTest){H=readH(HKEY)}closeSheet();toast(`Restored ${add.length} crawl${add.length===1?"":"s"}.`,3000);render()}})})};
-  i.click()}
-
 /* ---------- settings (the gear) ---------- */
 // Settings: a full page that slides in from the right (back arrow, or the phone's back gesture, to close).
 // Grouped like the phone's own settings; links and version at the bottom.
@@ -3654,7 +3634,6 @@ function settingsSheet(){
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
     ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
     ${grp("Account",accountRows(lk))}
-    ${grp("Your tab",[lk("stBk","Back up My Tab"),lk("stRs","Restore My Tab")])}
     ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous. Never names, locations, photos or clips"),lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
     ${grp("Testing",[tg("stTest",S.test,"Test mode","Tap the map to move. Test crawls stay off your tab"),S.test?lk("stTips","Reset tips"):"",nT?lk("stClr","Clear test crawls",String(nT),"danger"):""])}
@@ -3670,7 +3649,7 @@ function settingsSheet(){
   if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
   $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
   $("stFilm").onclick=()=>{S.film=S.film===false;save();track("film_toggle",{on:S.film!==false,where:"settings"});settingsSheet();if(S.route==="play")renderPlay()};
-  $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();accountBind();
+  accountBind();
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
     el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
   $("stPerm").onclick=permSheet;
