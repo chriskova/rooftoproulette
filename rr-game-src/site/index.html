@@ -30,9 +30,12 @@ if(n||sa||/(^|[?&#])(crawl|live)=|[?&]test\b|fakecloud=/.test(q))location.replac
 @media (prefers-color-scheme:dark){:root{--bg:#0B0D12;--s1:#141820;--line:#262d3a;--text:#F4F1EA;--muted:#9aa3b2;--dim:#7d8696;--amber-text:#F5B83D;--red:#FF6B5E;--pin:.14}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 var(--ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-body{min-height:100vh;min-height:100svh;overflow-x:hidden;position:relative}
+html,body{overflow-x:hidden}
+body{position:relative}
+/* the faded pin sits in a fixed, clipped layer so it can never make the page scroll */
+.bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .pin{position:absolute;right:-90px;top:calc(60px + 6vh);height:min(440px,58vh);width:auto;opacity:var(--pin);pointer-events:none;user-select:none;z-index:0}
-main{position:relative;z-index:1;max-width:440px;margin:0 auto;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;
+main{position:relative;z-index:1;max-width:440px;margin:0 auto;min-height:100vh;min-height:100svh;min-height:var(--h,100svh);display:flex;flex-direction:column;
   padding:calc(env(safe-area-inset-top) + 12vh) 22px calc(env(safe-area-inset-bottom) + 22px)}
 .kick{font:700 12px/1 var(--head);letter-spacing:.16em;text-transform:uppercase;color:var(--amber-text);margin:0 0 14px}
 .brand{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:.92;font-size:clamp(58px,17vw,84px);margin:0}
@@ -59,6 +62,8 @@ input[type=email]:focus{border-color:var(--amber)}
 .err:empty{display:none}
 .done[hidden],form[hidden]{display:none}
 /* signed up: everything goes except the faded pin, and the confirmation sits in the middle */
+body.sent{overflow:hidden}
+body.sent main{height:var(--h,100svh);min-height:0}
 body.sent main>*:not(.done){display:none}
 body.sent .done{margin:auto 0;padding:0;animation:in .35s ease both}
 @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -71,12 +76,12 @@ footer a{color:var(--muted);text-decoration:none}
 .soc{display:flex;gap:6px}
 .soc a{display:flex;width:40px;height:40px;align-items:center;justify-content:center;color:var(--muted)}
 .soc svg{width:22px;height:22px}
-@media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:14vh}}
-@media (max-height:640px){main{padding-top:calc(env(safe-area-inset-top) + 7vh)}.pin{top:40px}}
+@media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:10vh}}
+@media (max-height:700px){main{padding-top:calc(env(safe-area-inset-top) + 6vh)}form{padding-top:24px}.pin{top:40px}}
 </style>
 </head>
 <body>
-<img class="pin" src="icons/logo-pin.png" alt="" aria-hidden="true">
+<div class="bg" aria-hidden="true"><img class="pin" src="icons/logo-pin.png" alt=""></div>
 <main>
   <p class="kick">Early access</p>
   <h1 class="brand">Rooftop<br><span>Roulette</span></h1>
@@ -113,6 +118,8 @@ footer a{color:var(--muted);text-decoration:none}
    The rules (firebase/firestore.rules) only allow adding a well-formed entry; nobody can read the list from the web.
    The document id is a hash of the email, so signing up twice doesn't make a second entry.
    The project is on Firebase's free Spark plan: if someone floods it, writes stop at the daily cap instead of billing. */
+/* page height = the visible screen (phones with toolbars, in-app browsers) */
+(function(){var s=function(){document.documentElement.style.setProperty("--h",innerHeight+"px")};s();addEventListener("resize",s)})();
 (function(){
 var PROJECT="rooftop-roulette",KEY="AIzaSyBBqzxMQeii9V__clMwfMwnx6-E7g2pU-8",SHARE="https://rooftoproulette.com/";
 var $=function(i){return document.getElementById(i)},f=$("f"),err=$("err"),go=$("go");
