@@ -18,11 +18,16 @@ function fbBackend(){return new Promise((res,rej)=>{
     const auth=F.initializeAuth(app,{persistence:[F.indexedDBLocalPersistence,F.browserLocalPersistence]}),db=F.initializeFirestore(app,{});
     const d=p=>F.doc(db,...p.split("/")),c=p=>F.collection(db,...p.split("/"));
     res({
-      onUser:cb=>F.onAuthStateChanged(auth,u=>{if(!u){F.signInAnonymously(auth).catch(e=>console.warn("anon",e));return}cb({uid:u.uid,anon:u.isAnonymous,name:u.displayName||"",photo:u.photoURL||"",email:u.email||""})}),
+      onUser:cb=>F.onAuthStateChanged(auth,u=>{if(!u){F.signInAnonymously(auth).catch(e=>console.warn("anon",e));return}const pd=(u.providerData||[]).find(x=>x&&(x.displayName||x.email))||{};
+        cb({uid:u.uid,anon:u.isAnonymous,name:u.displayName||pd.displayName||"",photo:u.photoURL||pd.photoURL||"",email:u.email||pd.email||"",via:(pd.providerId||"").replace(".com","")})}),
+      emailUp:async(email,pass,name)=>{const cred=F.EmailAuthProvider.credential(email,pass);const r=await F.linkWithCredential(auth.currentUser,cred);if(name)await F.updateProfile(r.user,{displayName:name});await r.user.reload();return r},
+      emailIn:(email,pass)=>F.signInWithEmailAndPassword(auth,email,pass),
+      resetPw:email=>F.sendPasswordResetEmail(auth,email),
+      refresh:()=>auth.currentUser,
       google:async()=>{let cred=null;
         if(NATIVE){const o=await PLG.GoogleAuth.signIn({webClientId:RR_CONFIG.googleWebClientId});cred=F.GoogleAuthProvider.credential(o.idToken)}
         const u=auth.currentUser;
-        if(cred){try{return await F.linkWithCredential(u,cred)}catch(e){if(e.code==="auth/credential-already-in-use"||e.code==="auth/email-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e)||cred);throw e}}
+        if(cred){try{const r=await F.linkWithCredential(u,cred);if(!r.user.displayName){const pd=(r.user.providerData||[])[0];if(pd&&pd.displayName)await F.updateProfile(r.user,{displayName:pd.displayName,photoURL:pd.photoURL||null})}return r}catch(e){if(e.code==="auth/credential-already-in-use"||e.code==="auth/email-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e)||cred);throw e}}
         const p=new F.GoogleAuthProvider();try{return await F.linkWithPopup(u,p)}catch(e){if(e.code==="auth/credential-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e));throw e}},
       signOut:async()=>{try{if(NATIVE)await PLG.GoogleAuth.signOut()}catch(e){}await F.signOut(auth)},
       deleteMe:async()=>{await F.deleteUser(auth.currentUser)},
@@ -47,6 +52,9 @@ function fakeBackend(){
     onUser:cb=>{ucbs.push(cb);setTimeout(()=>cb(user),0)},
     google:async()=>{user=Object.assign({},user,{anon:false,name:sessionStorage.getItem("rrfake-name")||"Test Person",email:"test@example.com"});ucbs.forEach(f=>f(user))},
     signOut:async()=>{user={uid,anon:true,name:"",photo:"",email:""};ucbs.forEach(f=>f(user))},
+    emailUp:async(email,pass,name)=>{if(pass.length<6)throw {code:"auth/weak-password"};user=Object.assign({},user,{anon:false,name:name||"",email,via:"password"});ucbs.forEach(f=>f(user))},
+    emailIn:async(email,pass)=>{if(pass!=="secret1")throw {code:"auth/invalid-credential"};user=Object.assign({},user,{anon:false,name:"Email Person",email,via:"password"});ucbs.forEach(f=>f(user))},
+    resetPw:async()=>true,
     deleteMe:async()=>{user={uid,anon:true,name:"",photo:"",email:""};ucbs.forEach(f=>f(user))},
     get:p=>req("get",p),set:(p,v,merge)=>req(merge?"merge":"set",p,v),del:p=>req("del",p,null),list:p=>req("list",p),
     watch:(p,cb)=>poll(cb,()=>req("get",p)),watchList:(p,cb)=>poll(cb,()=>req("list",p)),
@@ -60,17 +68,59 @@ const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="and
 function onUserChange(was,u){
   if(u&&!u.anon&&(!was||was.anon||was.uid!==u.uid)){tabSyncAll();watchInvites()}
   if(u&&u.anon&&was&&!was.anon){if(inviteUnsub){inviteUnsub();inviteUnsub=null}}
-  if($("setPage"))settingsSheet();
+  if($("setPage"))settingsSheet();if(S.route==="hist")renderHist();if(u&&!u.anon&&$("siNudge"))$("siNudge").remove();
   if(S.follow||(S.game&&S.game.live))liveAttach();
 }
 
 // ----- sign in -----
-async function signIn(from){track("sign_in_tap",{from});
-  try{const B=await cloud();await B.google();track("signed_in",{from});toast(`Signed in${ME&&ME.name?" as "+esc(ME.name.split(" ")[0]):""}.`,2500);return true}
-  catch(e){const m=String(e&&(e.code||e.message)||e);console.warn("sign in",e);if(!/cancel|popup-closed|16|NoCredential/i.test(m))toast("Couldn't sign in. Try again.",3000);return false}}
-function signInSheet(why,from){
-  sheet(`<h3>Sign in</h3><p class="note">${why}</p><div class="acts"><button class="btn" type="button" id="siG">${GIC} Continue with Google</button><button class="btn dark" type="button" id="siN">Not now</button></div>`,()=>{
-    $("siN").onclick=closeSheet;$("siG").onclick=async()=>{if(await signIn(from))closeSheet()}})}
+const AUTH_ERR={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Create one instead.","auth/email-already-in-use":"That email already has an account. Sign in instead.","auth/credential-already-in-use":"That email already has an account. Sign in instead.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"That email doesn't look right.","auth/too-many-requests":"Too many tries. Wait a minute and try again.","auth/network-request-failed":"No connection. Check your signal."};
+const authErr=e=>AUTH_ERR[e&&e.code]||"Couldn't sign in. Try again.";
+const isCancel=e=>/cancel|popup-closed|user.?cancel/i.test(String(e&&(e.code||e.message)||e));
+async function signIn(from){track("sign_in_tap",{from,via:"google"});
+  try{const B=await cloud();await B.google();track("signed_in",{from,via:"google"});signedInSheet();return true}
+  catch(e){console.warn("sign in",e);if(!isCancel(e))toast(esc(authErr(e)),3500);return false}}
+// one sign-in sheet everywhere: Google or email
+function signInSheet(why,from){from=from||"sheet";
+  sheet(`<h3>Sign in</h3><p class="note">${why||"Back up My Tab and get crawls from your mates."}</p><div class="acts">
+    ${canGoogle()?`<button class="btn" type="button" id="siG">${GIC} Continue with Google</button>`:""}
+    <button class="btn dark" type="button" id="siE">${I.mail||MAILI} Continue with email</button></div>`,()=>{
+    if($("siG"))$("siG").onclick=()=>signIn(from);$("siE").onclick=()=>emailSheet("in",from)})}
+const MAILI='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg>';
+function emailSheet(mode,from,em){const up=mode==="up";
+  sheet(`<h3>${up?"Create an account":"Sign in with email"}</h3>
+    <div class="aform">${up?`<input class="cnin" id="aeName" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">`:""}
+    <input class="cnin" id="aeMail" type="email" autocomplete="email" inputmode="email" placeholder="Email" value="${esc(em||"")}">
+    <input class="cnin" id="aePw" type="password" autocomplete="${up?"new-password":"current-password"}" placeholder="${up?"Password (6+ characters)":"Password"}">
+    <p class="aerr" id="aeErr"></p></div>
+    <div class="acts"><button class="btn" type="button" id="aeGo">${up?"Create account":"Sign in"}</button>
+    <button class="txtbtn" type="button" id="aeSwap">${up?"Already have an account? Sign in":"New here? Create an account"}</button>
+    ${up?"":`<button class="txtbtn" type="button" id="aeForgot">Forgot password</button>`}</div>`,()=>{
+    const err=t=>{$("aeErr").textContent=t||""};
+    $("aeSwap").onclick=()=>emailSheet(up?"in":"up",from,$("aeMail").value.trim());
+    if($("aeForgot"))$("aeForgot").onclick=async()=>{const m=$("aeMail").value.trim();if(!m){err("Type your email first.");return}
+      try{const B=await cloud();await B.resetPw(m);err("");toast("Check your email for a reset link.",3500)}catch(e){err(authErr(e))}};
+    const go=async()=>{const m=$("aeMail").value.trim(),pw=$("aePw").value,nm=up?$("aeName").value.trim():"";
+      if(!m||!pw){err("Fill in your email and password.");return}if(up&&!nm){err("Add your first name.");return}
+      const b=$("aeGo");b.disabled=true;err("");
+      try{const B=await cloud();if(up){await B.emailUp(m,pw,nm);S.myName=nm;save();const u=B.refresh&&B.refresh();if(u&&!FAKE_CLOUD){const was=ME;ME=Object.assign({},ME,{anon:false,name:nm,email:m,via:"password"});onUserChange(was,ME)}}else await B.emailIn(m,pw);
+        track("signed_in",{from,via:"email",created:up});signedInSheet()}
+      catch(e){console.warn(e);err(authErr(e));b.disabled=false}};
+    $("aeGo").onclick=go;$("aePw").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>(up?$("aeName"):$("aeMail")).focus(),60)})}
+// what you see once you're in, and from the account button on My Tab
+function signedInSheet(){const n=readH(HKEY).filter(r=>!r.demo).length,first=((ME&&ME.name)||"").split(" ")[0];
+  sheet(`<div class="acct"><span class="aav big">${esc(((ME&&ME.name)||(ME&&ME.email)||"?")[0].toUpperCase())}</span>
+    <h3>${first?`You're in, ${esc(first)}`:"You're signed in"}</h3><p class="note">${esc((ME&&ME.email)||"")}</p></div>
+    <div class="aperks"><div>${I.check}<span><b>My Tab is backed up</b><small>${n?`${n} crawl${n===1?"":"s"} saved to your account. `:""}Delete the app or change phones and it comes back when you sign in.</small></span></div>
+    <div>${I.check}<span><b>Crawls you follow land on your tab</b><small>Follow a mate's live crawl and it's yours too when it ends.</small></span></div>
+    <div>${I.check}<span><b>Mates can invite you</b><small>Anyone you've crawled with can send you their next crawl.</small></span></div></div>
+    <div class="acts"><button class="btn" type="button" id="sdOk">Done</button></div>`,()=>{$("sdOk").onclick=closeSheet})}
+function accountSheet(){if(signedIn()){signedInSheet();const a=document.querySelector("#sheetBody .acts");if(a)a.insertAdjacentHTML("beforeend",`<button class="txtbtn" type="button" id="sdOut">Sign out</button>`);if($("sdOut"))$("sdOut").onclick=()=>{closeSheet();signOutNow()}}
+  else signInSheet("Back up My Tab and get crawls from your mates.","mytab")}
+// the account button on My Tab: your initial when signed in, an outline when not
+function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
+  return signedIn()?`<button class="achip on" type="button" id="acctChip" aria-label="Your account"><span class="aav">${esc(((ME.name||ME.email||"?")[0]).toUpperCase())}</span></button>`
+    :`<button class="achip" type="button" id="acctChip" aria-label="Sign in"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span>Sign in</span></button>`}
+function acctChipBind(){const b=$("acctChip");if(b)b.onclick=accountSheet}
 const GIC='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.2-4.7 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1-3.7 1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.6l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>';
 async function signOutNow(){const B=await cloud();await B.signOut();localStorage.removeItem("rr-synced");toast("Signed out. Your tab stays on this phone.",3000)}
 function deleteAccountSheet(){
@@ -123,9 +173,9 @@ async function liveInvite(){if(!myName()&&!signedIn()){nameSheet(()=>liveInvite(
       try{await B.set(`users/${b.dataset.mu}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});b.querySelector(".mst").textContent="Invited";b.disabled=true;track("live_invite_mate")}catch(e){toast("Couldn't send that one.",2500)}})})}
 function nameSheet(after){
   sheet(`<h3>What's your name?</h3><p class="note">So your mates know whose crawl it is.</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
-    <div class="acts"><button class="btn" type="button" id="nmOk">Done</button>${canGoogle()?`<button class="btn dark" type="button" id="nmG">${GIC} Sign in with Google</button>`:""}</div>`,()=>{
+    <div class="acts"><button class="btn" type="button" id="nmOk">Done</button><button class="btn dark" type="button" id="nmG">Sign in instead</button></div>`,()=>{
     const ok=()=>{const v=$("nmIn").value.trim();if(!v)return;S.myName=v;save();closeSheet();after&&after()};
-    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=async()=>{if(await signIn("live")){closeSheet();after&&after()}};setTimeout(()=>$("nmIn").focus(),50)})}
+    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So your mates see your name, and the crawl lands on your tab.","live");setTimeout(()=>$("nmIn").focus(),50)})}
 
 // host: push the crawl when something happened, plus a "still here" every 2 minutes
 async function liveSync(force){const g=G();if(!g||!g.live||!CLP||liveBusy||!isHost())return;
@@ -208,7 +258,7 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   let r;try{r=JSON.parse(d.rec)}catch(e){return}const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
   delete r.newIds;r.bodDone=true;r.test=false;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});
-  toast("The crawl's on your tab.",3000);if(!signedIn()&&canGoogle())setTimeout(()=>signInSheet("Sign in and crawls you're on land on your tab, on any phone.","follow_end"),1800)}
+  toast("The crawl's on your tab.",3000);if(!signedIn())setTimeout(()=>signInSheet("Sign in and crawls you're on land on your tab, on any phone.","follow_end"),1800)}
 async function matesFrom(d){if(!d||!signedIn())return;const B=await cloud(),me=ME.uid,add={};
   const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me)add[u]={n:m.n||"",t:Date.now()}});
   if(Object.keys(add).length)try{const cur=(await B.get(`users/${me}`))||{};await B.set(`users/${me}`,{mates:Object.assign({},cur.mates||{},add)},true)}catch(e){console.warn(e)}}
@@ -231,15 +281,15 @@ function liveMenuRows(g){if(!cloudOn()||!g.started)return "";const n=Object.keys
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows
-function accountRows(lk){if(!cloudOn()&&!FAKE_CLOUD)return [];if(!FB_CFG&&!FAKE_CLOUD)return [];
-  if(signedIn())return [`<div class="strow"><span class="t"><b>${esc(ME.name||"Signed in")}</b><small>${esc(ME.email||"")} · My Tab is backed up</small></span></div>`,lk("stOut","Sign out"),lk("stDel","Delete account",null,"danger")];
-  return canGoogle()?[`<button class="strow" type="button" id="stIn"><span class="t"><b>${GIC} Sign in with Google</b><small>Back up My Tab. Crawls you're on land on your tab</small></span><i class="chev">›</i></button>`]:[]}
-function accountBind(){if($("stIn"))$("stIn").onclick=()=>signIn("settings");if($("stOut"))$("stOut").onclick=()=>signOutNow();if($("stDel"))$("stDel").onclick=deleteAccountSheet}
+function accountRows(lk){if(!(FB_CFG||FAKE_CLOUD))return [];
+  if(signedIn())return [`<button class="strow" type="button" id="stAcct"><span class="t"><b>${esc(ME.name||ME.email||"Signed in")}</b><small>${ME.name&&ME.email?esc(ME.email)+" · ":""}My Tab is backed up</small></span><i class="chev">›</i></button>`,lk("stOut","Sign out"),lk("stDel","Delete account",null,"danger")];
+  return [`<button class="strow" type="button" id="stIn"><span class="t"><b>Sign in</b><small>Back up My Tab. Crawls you follow land on your tab</small></span><i class="chev">›</i></button>`]}
+function accountBind(){if($("stIn"))$("stIn").onclick=()=>signInSheet(null,"settings");if($("stAcct"))$("stAcct").onclick=signedInSheet;if($("stOut"))$("stOut").onclick=()=>signOutNow();if($("stDel"))$("stDel").onclick=deleteAccountSheet}
 
 // scorecard nudge, once, after your first real crawl
-function endSignInNudge(r){if(!cloudOn()||signedIn()||!canGoogle()||S.siNudged||r.demo||r.shared||!H.length)return "";
-  return `<button class="sinudge" type="button" id="siNudge">${GIC}<span><b>Sign in with Google</b><small>Crawls you're on land on your tab, on any phone</small></span></button>`}
-function endSignInBind(){const b=$("siNudge");if(b)b.onclick=async()=>{S.siNudged=true;save();if(await signIn("scorecard"))b.remove()}}
+function endSignInNudge(r){if(!cloudOn()||signedIn()||S.siNudged||r.demo||r.shared||!H.length)return "";
+  return `<button class="sinudge" type="button" id="siNudge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span><b>Sign in to back up My Tab</b><small>And crawls you follow land on your tab, on any phone</small></span></button>`}
+function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet(null,"scorecard")}}
 
 // start up
 function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
@@ -252,3 +302,4 @@ function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
 if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App)try{CAPX.Plugins.App.addListener("appUrlOpen",e=>{const c=liveCode(e&&e.url);if(c)cloud().then(()=>followLive(c))})}catch(e){}
 addEventListener("hashchange",()=>{const c=liveCode(location.hash);if(c){history.replaceState(null,"",location.pathname+location.search);cloud().then(()=>followLive(c))}});
 cloudBoot();
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#acctChip"))accountSheet()});
