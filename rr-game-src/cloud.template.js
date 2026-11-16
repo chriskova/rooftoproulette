@@ -393,10 +393,9 @@ const jsqrLib=()=>jqP||(jqP=new Promise((res,rej)=>{if(window.jsQR)return res(wi
 async function joinScan(){track("join_scan_open");
   const ov=document.createElement("div");ov.className="scanv";
   ov.innerHTML=`<video playsinline muted autoplay></video><div class="scan-frame" aria-hidden="true"></div>
-    <div class="scan-top"><b>Scan a friend's QR code</b><button type="button" class="shv-x" id="scX" aria-label="Close">${I.x}</button></div>
-    <p class="scan-msg" id="scMsg">It's on their screen under Invite friends</p>`;
+    <div class="scan-top"><b>Scan a friend's QR code</b><button type="button" class="shv-x" id="scX" aria-label="Close">${I.x}</button></div>`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
-  const msg=t=>{const m=ov.querySelector("#scMsg");if(m)m.textContent=t};
+  const msg=t=>{toast(esc(t),2500);const tt=$("toast");if(tt){tt.style.zIndex="2001";if(tt.parentNode!==document.body)document.body.appendChild(tt)}};
   const close=()=>{if(scanSt){scanSt.getTracks().forEach(t=>t.stop());scanSt=null}ov.remove()};
   ov.querySelector("#scX").onclick=close;
   try{scanSt=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false})}catch(e){msg("Allow camera access to scan");return}
@@ -405,7 +404,7 @@ async function joinScan(){track("join_scan_open");
   let det=null;try{if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code"))det=new BarcodeDetector({formats:["qr_code"]})}catch(e){}
   let J=null;if(!det){try{J=await jsqrLib()}catch(e){msg("Couldn't start the scanner. Check your signal.");return}}
   const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
-  const found=t=>{const c=liveCode(t);if(!c){msg("That's not a Rooftop Roulette code");return false}
+  let bad="";const found=t=>{const c=liveCode(t);if(!c){if(t!==bad){bad=t;msg("That's not a Rooftop Roulette code")}return false}
     close();buzz(25);track("join_scanned");S.wiz=null;save();cloud().then(()=>followLive(c)).catch(()=>toast("No connection. Check your signal.",3000));return true};
   const tick=async()=>{if(!scanSt||!ov.isConnected)return;
     try{if(v.readyState>=2&&v.videoWidth){if(det){const r=await det.detect(v);if(r&&r[0]&&found(r[0].rawValue))return}
