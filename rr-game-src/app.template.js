@@ -89,7 +89,7 @@ const AREAS=[
 const areaCity=a=>a.city||"Sydney",REG=()=>REGIONS.filter(r=>(r.city||"Sydney")===S.city);
 const areaOf=v=>{const c=v.city||"Sydney",L=AREAS.filter(a=>areaCity(a)===c);return L.find(a=>a.src.includes(v.area))||L.slice().sort((a,b)=>dist(v,a)-dist(v,b))[0]};
 const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
-const CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
+const LAST_ORDERS=10,CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const DWELL=()=>{const g_=S.game;return g_&&g_.demo?0:DWELL_MIN*60000};   // the demo counts a bar the moment you arrive
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const AN=window.RR_CONFIG,APPV="__VERSION__";
@@ -775,12 +775,20 @@ function playingSheet(next){const g=S.game;
     $("pgBack").onclick=()=>{closeSheet();go("play")};
     $("pgNew").onclick=()=>{closeSheet();if(G().started)endGame(now());else{S.game=null;save();stopWatch()}next()}})}
 $("newGame").onclick=()=>{if(S.game){playingSheet(startWizard);return}if(farAway()){farSheet();return}if(firstPlayDue()){firstPlaySheet();return}startWizard()};
+// Before the first real crawl: the safety basics, agreed once.
+function safetySheet(next){sheet(`<h3>Before you head out</h3><div class="safe">
+  <p><b>Walk, don't run.</b> The clock never needs you to rush. If time's up on the way, the bar still counts.</p>
+  <p><b>Drinking is optional.</b> Water, soft drinks or nothing all count. Know your limit.</p>
+  <p><b>Eyes up at roads.</b> Check the app when you've stopped, not while you're crossing.</p>
+  <p><b>Never drive after drinking.</b> Look after your mates and get everyone home.</p></div>
+  <p class="note">You're 18+ and you agree to the <a href="terms.html" target="_blank" rel="noopener">terms of use</a>. You're responsible for your own safety on a crawl.</p>
+  <div class="acts"><button class="btn" type="button" id="sfOk">I'm 18+ and I agree</button></div>`,()=>{$("sfOk").onclick=()=>{S.safeOK=Date.now();save();track("safety_ok");closeSheet();next()}})}
 // Before anyone's played anything: ask straight up whether they're heading out or trying it first.
 function firstPlayDue(){return !S.firstPlay&&!S.test&&!readH(HKEY).length}
 function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying it from home first? The demo plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fpOut">Heading out now</button><button class="btn line" type="button" id="fpDemo">Try a demo crawl</button></div>`,()=>{
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
-if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")})};
+if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{if(!S.safeOK&&!S.test){safetySheet(()=>{S.quick={step:0,from:null};go("quick")});return}S.quick={step:0,from:null};go("quick")})};
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
 if($("rrIcon"))$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
@@ -1051,7 +1059,7 @@ function quickSpin(vel){
 /* ---------- wizard: where → how long → zone size → your zone ---------- */
 // your record for a game length, once you've played it
 const pbHTML=len=>{const b=H.filter(r=>r.mode!=="cruise"&&r.len===len).reduce((m,r)=>Math.max(m,new Set((r.visits||[]).filter(v=>v.counted===true).map(v=>v.id)).size),-1);return b<0?"":`<span class="pbtag">PB: ${b}</span>`};
-function startWizard(){const at=S.test&&S.fake?S.fake:here;if(at&&cityAt(at))zoneCity(at);S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
+function startWizard(){if(!S.safeOK&&!S.test){safetySheet(startWizard);return}const at=S.test&&S.fake?S.fake:here;if(at&&cityAt(at))zoneCity(at);S.wiz={step:0,start:null,radius:null,len:S.last.len||60,newOnly:!!S.last.newOnly};go("wiz")}
 const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
@@ -2376,6 +2384,7 @@ function endGame(at){
   const a=atVisit();if(a)closeVisit(a,t,"end");
   const d=leaving();if(d)closeVisit(d,Math.min(t,awayNow()||document.hidden?leftGuess(d):t),"end");
   if(g.target){const y=you(),v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
+  if(g.loHit){const lv=g.visits[g.visits.length-1];if(lv){lv.counted=true;lv.leftAt=lv.leftAt||lv.arrivedAt;lv.lastOrders=true}g.missed=null}
   g.ended=true;g.endedAt=t;g.early=early;
   const rec=JSON.parse(JSON.stringify(g));
   // which bars were new to the collection in this game
@@ -2409,6 +2418,7 @@ function logArrival(manual){
   g.visits.push({id:v.id,arrivedAt:at,loggedAt:now(),leftAt:null,counted:undefined,manual:!!manual,assumed:late||undefined});
   if((S.test||g.demo)&&g.visits.length===1){g.startPos={lat:v.lat,lng:v.lng};g.trail=[]}   // testing from home: no long line out to the first bar
   g.target=null;save();
+  if(g.lastOrders&&now()>=g.endsAt){g.loHit=true;g.endsAt=at;save();track("last_orders_made");endGame(at);return}
   if(document.hidden){g.celebrate=v.id;save();return}
   if(late){catchUp(v.id);return}
   celebrate(v.id);
@@ -2465,7 +2475,8 @@ function renderPlay(){
   const ask=qi>=0?`<div class="ask"><b>Did you have a drink at ${esc(byId(g.visits[qi].id).name)}?</b><div class="row"><button class="btn sm" type="button" id="aY">Yes, count it</button><button class="btn sm dark" type="button" id="aN">No, don't count it</button></div><button class="txtbtn acant" type="button" id="aC">Couldn't get in?</button></div>`:"";
   let banner="";
   if(g.started&&rem<=FINAL*60000&&!g.shownFinal){g.shownFinal=true;g.finalBanner=true;save()}
-  if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Every minute counts now.</div>`;
+  if(g.finalBanner&&!a)banner=`<div class="banner"><b>Final stretch.</b> Out of time on the way? It still counts.</div>`;
+  if(g.lastOrders&&now()>=g.endsAt&&g.target)banner=`<div class="banner"><b>Last orders.</b> Walk there. It counts if you arrive by ${clock12(new Date(g.lastOrders).getHours()*60+new Date(g.lastOrders).getMinutes())}.</div>`;
   const wild=(id)=>g.wild&&g.wild.id===id&&g.wild.locked?
     '<div class="wild"><span aria-hidden="true">🔒</span><span><b>Locked wildcard</b>Play a real crawl to discover this one.</span></div>':
     g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
@@ -2636,6 +2647,7 @@ function renderClock(){
     if(!g.started){$("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
     $("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
   $("tbar").hidden=false;
+  if(g.lastOrders&&now()>=g.endsAt){$("clockT").textContent=mmss(Math.max(0,g.lastOrders-now()));$("clock").className="clock red";$("tbar").className="tbar red";$("tbarI").style.width=Math.max(0,(g.lastOrders-now())/(LAST_ORDERS*60000)*100)+"%";$("clockL")._h=null;$("clockL").textContent="Last orders";return}
   $("clockT").textContent=mmss(r);
   if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first bar";return}
   const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
@@ -2676,7 +2688,8 @@ const placeOf=r=>{const a=r.areas[r.areas.length-1]||"";return a==="Hit list"||a
 function awards(r,st){
   const L=[],n=st.counted.length,nm=id=>esc(byId(id).name);
   const add=(t,why)=>L.push({t,why});
-  if(st.last&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=3*60000)add("Down to the Wire",`Into ${nm(st.last.id)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`);
+  if(st.last&&st.last.lastOrders)add("Last Orders",`Made it to ${nm(st.last.id)} after the clock ran out`);
+  if(st.last&&!st.last.lastOrders&&!r.early&&!r.missed&&r.endsAt-st.last.arrivedAt<=3*60000)add("Down to the Wire",`Into ${nm(st.last.id)} with ${mmss(r.endsAt-st.last.arrivedAt)} to spare`);
   if(r.missed&&r.missed.m!=null&&r.missed.m<=300)add("So Close",`${nm(r.missed.id)} was ${mOrKm(r.missed.m)} away at zero`);
   if(st.quick&&st.quick.ms>=60000&&st.quick.ms<=6*60000)add("Pit Stop",`${nm(st.quick.from)} to ${nm(st.quick.to)} in ${hmm(st.quick.ms)}`);
   // a counted bar you were in and out of fast (not one the clock ran out at)
@@ -2784,7 +2797,7 @@ function renderEnd(){
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Did you have a drink?</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
       <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
-      ${(()=>{const stays=st.arrived.filter(v=>v.leftAt).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
+      ${(()=>{const stays=st.arrived.filter(v=>v.leftAt&&!v.lastOrders).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
         const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
           :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
@@ -2792,7 +2805,7 @@ function renderEnd(){
         return `<div class="schead"><div class="sct"><button class="scname${r.title&&!cr?"":" add"}" type="button" id="scName">${r.title?(cr?`${IC.edit} Rename`:esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`):"+ Name this crawl"}</button><div class="aw-t">${aw[0].plain?esc(aw[0].t):aw[0].t}</div>${aw[0].why?`<div class="aw-w">${aw[0].why}</div>`:""}<div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
-          const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
+          const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.lastOrders?"Last orders":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
             if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
           const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
@@ -3830,7 +3843,10 @@ function afterNote(rec){
 function loop(){
   liveNote();alertSync();if(S.route!=="play")renderMini();
   const g=G();
-  if(g&&g.started&&!g.ended&&now()>=g.endsAt){endGame(g.endsAt);return}
+  if(g&&g.started&&!g.ended&&now()>=g.endsAt){
+    // last orders: heading to a bar when the clock runs out? It still counts if you get there in the next 10 minutes. Nothing to gain by running.
+    if(!CR(g)&&!g.demo&&g.target&&!g.lastOrders){g.lastOrders=g.endsAt+LAST_ORDERS*60000;save();buzz([60,40,60]);closeSheet();toast(`Time's up. ${esc(byId(g.target).name)} still counts if you get there in the next ${LAST_ORDERS} minutes. No need to run.`,7000);track("last_orders");if(S.route==="play")renderPlay()}
+    if(!(g.lastOrders&&g.target&&now()<g.lastOrders)){endGame(g.endsAt);return}}
   if(CR(g)&&g.started&&!g.ended&&g.autoAt&&now()>=g.autoAt){g.autoEnded=true;endGame(g.autoAt);return}
   if(S.route==="play"&&g&&g.noLoc&&g.target){const hb=$("hereBtn");if(hb&&hb.classList.contains("locked")){if(now()>=hereAt(g)){hb.classList.remove("locked");hb.setAttribute("aria-disabled","false");hb.innerHTML=hereLbl(g);buzz(20)}else hb.innerHTML=hereLbl(g)}}
   if(S.route==="play"&&g){
