@@ -2,5 +2,12 @@
 window.RR_CONFIG={
  "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
  "posthogHost": "https://eu.i.posthog.com",
- "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU"
+ "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",
+ "firebase": {
+  "apiKey": "AIzaSyBBqzxMQeii9V__clMwfMwnx6-E7g2pU-8",
+  "authDomain": "rooftop-roulette.firebaseapp.com",
+  "projectId": "rooftop-roulette",
+  "appId": "1:929028627906:web:e7f1435a5fe44072654a5b"
+ },
+ "googleWebClientId": "929028627906-68c54bo74m1jqrlmo6pdchd1vl2sq3i0.apps.googleusercontent.com"
 };
