@@ -364,6 +364,9 @@ body.mapq .view{padding-bottom:12px!important}
 .scph{position:absolute;top:10px;right:10px;z-index:901;width:58px;height:58px;border-radius:12px;overflow:hidden;padding:0;border:2px solid rgba(var(--bgr),.85);background:rgba(var(--bgr),.8);color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 4px 12px var(--sh)}
 .scph img{width:100%;height:100%;object-fit:cover;display:block}.scph svg{width:20px;height:20px;color:var(--amber-text)}.scph small{font-size:10.5px;font-weight:700}
 .scph.none{border:1.5px dashed var(--amber)}
+.scph small{text-align:center;line-height:1.1;padding:0 3px}
+.scph-chg{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:3px;padding:3px 0 4px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;letter-spacing:.01em}
+.scph .scph-chg svg{width:11px;height:11px;color:#fff}
 .scmeta.onmap{right:76px!important;flex-wrap:wrap;row-gap:4px}
 .sc2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sc2 div{display:flex;justify-content:space-between;align-items:baseline;background:var(--s2);border-radius:12px;padding:9px 12px}
@@ -667,6 +670,11 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 
 .skiplink{display:block;margin:8px auto 0;color:var(--muted);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
 
+.btn.busy{opacity:.75;pointer-events:none}
+.locfind{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px auto 0;font-size:12.5px;font-weight:600;color:var(--muted)}
+.locspin{width:12px;height:12px;border-radius:50%;border:2px solid var(--amber);border-right-color:transparent;animation:locSpin .8s linear infinite;flex:none}
+@keyframes locSpin{to{transform:rotate(360deg)}}
+.herelink{display:block;margin:0 auto;font-size:12.5px}
 .mantag{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px auto 0;font-size:12.5px;font-weight:700;color:var(--muted)}.mantag svg{width:14px;height:14px;color:var(--amber-text)}
 .estnote{margin:8px 2px 0;font-size:12.5px;color:var(--muted)}
 
@@ -691,6 +699,15 @@ body.camon .jpx-bg{background:radial-gradient(ellipse at 50% 50%,rgba(40,28,6,.2
 .clist{display:flex;flex-direction:column;gap:10px;padding-bottom:28px}.clist .vmon{padding:12px 2px 0}
 
 .slist{display:flex;flex-direction:column;margin-top:4px}
+.scov .sttap{pointer-events:auto;cursor:pointer}.scov .sttap .chev{font-size:1.15em;line-height:0;opacity:.9}
+.lgv{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;color:var(--amber-display);margin:4px 0 12px}
+.lgmap{height:210px;border-radius:16px;overflow:hidden;border:1px solid var(--line);position:relative}.lgmap>div{position:absolute;inset:0}
+.lgleg{display:flex;flex-direction:column;gap:8px;margin:14px 0 6px}
+.lgstop{display:flex;align-items:center;gap:10px}.lgstop i.num.sm{position:static;flex:none;display:grid;place-items:center;width:24px;height:24px;font:800 11px/1 var(--ui);font-style:normal}
+.lgstop small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700}.lgstop b{font-size:16px}
+.systay{appearance:none;width:100%;min-height:120px;border:1px solid var(--line);border-radius:16px;background:var(--s1) center/cover no-repeat;color:var(--text);font:inherit;text-align:left;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:14px;position:relative;overflow:hidden}
+.systay.photo{color:#fff;border-color:transparent}.systay.photo::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(0,0,0,0) 30%,rgba(0,0,0,.7))}
+.systay>*{position:relative}.systay small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;opacity:.8}.systay b{display:block;font-family:var(--display);font-size:24px;font-weight:800;text-transform:uppercase;line-height:1.05}.systay .chev{font-size:24px}
 .srow{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}.srow.x{opacity:.55}
 .srow .t{flex:1;min-width:0;text-align:left}.srow small{display:block;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500;text-align:left}.srow b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow .d{flex:none;font-weight:700;font-size:14px}
@@ -1322,6 +1339,8 @@ html.fl .app{visibility:hidden}
 /* the wheel stays seamless (fades into the page top and bottom); a soft pool of light sits behind the middle */
 .reel{background:radial-gradient(ellipse 75% 42% at 50% 50%,rgba(245,184,61,.075),rgba(245,184,61,.025) 55%,rgba(245,184,61,0) 80%),var(--reel-bg)}
 .ready .poolnum{margin-top:-6px}
+.adjz{display:inline-flex;align-items:center;gap:6px;margin:-4px auto 0;font-size:13.5px;font-weight:700;color:var(--amber-text);text-decoration:none}.adjz svg{width:15px;height:15px}
+body.camon #v-play .adjz{display:none}
 
 .bar.jpcard{background:linear-gradient(170deg,#1d1a14,#13110d 70%);color:var(--text);box-shadow:inset 0 0 0 1.5px rgba(245,184,61,.35),0 30px 90px rgba(0,0,0,.6),0 0 70px rgba(245,184,61,.18)}
 .bar.jpcard .eyebrow{color:var(--amber-text)}

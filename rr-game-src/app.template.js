@@ -312,7 +312,8 @@ function natGeo(){const C=window.Capacitor;if(!IOSNAT)return null;
     getCurrentPosition:o=>C.nativePromise("Geolocation","getCurrentPosition",o),
     watchPosition:(o,cb)=>Promise.resolve(C.nativeCallback("Geolocation","watchPosition",o,(res,err)=>cb(res,err))),
     clearWatch:o=>C.nativePromise("Geolocation","clearWatch",o),
-    checkPermissions:()=>C.nativePromise("Geolocation","checkPermissions",{})};
+    checkPermissions:()=>C.nativePromise("Geolocation","checkPermissions",{}),
+    requestPermissions:o=>C.nativePromise("Geolocation","requestPermissions",o||{})};
   return null}
 if(IOSNAT){try{
   const err=e=>{const m=String(e&&(e.message||e)||"");return {code:/denied|permission|not authori[sz]ed|disabled/i.test(m)?1:/time/i.test(m)?3:2,message:m}};
@@ -327,7 +328,7 @@ if(IOSNAT){try{
     clearWatch(id){const G=natGeo(),cid=ids[id];delete ids[id];if(G&&cid)G.clearWatch({id:cid}).catch(()=>{})}};
   Object.defineProperty(navigator,"geolocation",{value:geo,configurable:true});
 }catch(e){}}
-let here=null,watchId=null,locErr=null;
+let here=null,watchId=null,locErr=null,lastFix=Date.now();
 const you=()=>DEMO()?S.game.dpos:S.test?(S.fake||here):here;   // test mode: a fake spot only if you've set one, otherwise where you really are
 // In the phone app, a crawl's location runs in the background too (an "Active crawl" notification on Android,
 // the blue pill on iPhone), so arrivals and departures are logged on time with the phone in a pocket.
@@ -347,15 +348,16 @@ function startWatch(){
   const BG=bgGeo();
   if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
     Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:!IOSNAT,stale:false,distanceFilter:10},(p,err)=>{
-      if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();return}
-      if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy};locErr=null;lastFix=Date.now();onLocation()
+      if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();if(locErr!==1)setTimeout(()=>locKick(true),1500);return}
+      if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy,t:Date.now()};locErr=null;lastFix=Date.now();onLocation()
     })).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
     return}
   webWatch()}
 function webWatch(){
   if(watchId!==null||!navigator.geolocation)return;
-  watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};locErr=null;lastFix=Date.now();onLocation()},
-    e=>{locErr=e.code;if(S.route==="play")renderPlay()},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
+  watchId=navigator.geolocation.watchPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;lastFix=Date.now();onLocation()},
+    e=>{if(e.code!==1&&Date.now()-lastFix<60000)return;   // a timeout while standing still isn't a problem
+      locErr=e.code;if(S.route==="play")renderPlay();if(e.code!==1)setTimeout(()=>locKick(true),1500)},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
   if(NATIVE){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}
@@ -364,13 +366,36 @@ function getOnce(){
   if(S.test&&S.fake){pickCity(S.fake);return Promise.resolve(S.fake)}
   return new Promise((res,rej)=>{
     if(!navigator.geolocation)return rej({code:-1});
-    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};pickCity(S.test&&S.fake?S.fake:here);res(here)},rej,{enableHighAccuracy:true,timeout:15000,maximumAge:30000});
+    const got=p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};lastFix=Date.now();locErr=null;pickCity(S.test&&S.fake?S.fake:here);try{meAll()}catch(x){}res(here)};
+    // GPS slow to lock on (indoors, just woken up): fall back to a rougher fix rather than giving up
+    navigator.geolocation.getCurrentPosition(got,e=>{if(e&&e.code===1)return rej(e);
+      navigator.geolocation.getCurrentPosition(got,rej,{enableHighAccuracy:false,timeout:10000,maximumAge:300000})},{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
   });
 }
+// iPhone app: ask the phone itself and wait for the answer. A position request made while the prompt is up can come back
+// late or not at all once they tap Allow, which left the screen sitting there until the app was reopened.
+async function iosAsk(){const G=natGeo();if(!G||!G.requestPermissions)return null;
+  try{const r=await G.requestPermissions({permissions:["location"]});const st=r&&(r.location||r.coarseLocation);return st==="granted"?"granted":st==="denied"?"denied":null}catch(e){return /denied|disabled|not authori/i.test(String(e&&(e.message||e)))?"denied":null}}
+// Mid-crawl the location feed can go quiet: the background watcher only reports when you move 10 m, so sitting at a bar
+// means nothing new arrives, and phones drop the GPS now and then. Keep asking for a fresh fix in the background so it
+// fixes itself, instead of handing the job to the player.
+let kickAt=0,kicking=false,weakSince=0;
+function locKick(force){const g=G();
+  if(!g||g.ended||S.test||g.demo||g.noLoc||document.hidden||kicking||!navigator.geolocation)return;
+  if(locErr===1)return;   // turned off: nothing to fix from here
+  const stale=Date.now()-lastFix>40000||!here||locErr!=null;if(!stale&&!force)return;
+  if(!force&&Date.now()-kickAt<15000)return;kickAt=Date.now();kicking=true;
+  const done=()=>{kicking=false};
+  navigator.geolocation.getCurrentPosition(p=>{done();here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};locErr=null;lastFix=Date.now();onLocation()},
+    e=>{done();if(e&&e.code===1){locErr=1;if(S.route==="play")renderPlay();return}
+      // the watcher itself may have died: start it again
+      if(watchId!==null&&bgWatch===null){try{navigator.geolocation.clearWatch(watchId)}catch(x){}watchId=null;webWatch()}
+      if(bgWatch!==null&&bgWatch!=="pending"&&Date.now()-lastFix>120000){const BG=bgGeo(),id=bgWatch;bgWatch=null;if(BG)BG.removeWatcher({id}).catch(()=>{});startWatch()}},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:5000})}
 async function permState(ask){if(S.test)return "granted";
   // In the phone app the web view's permission answer can be stale (still "denied" after you've turned it on in settings,
   // or "prompt" when it's allowed), so when a game is starting, ask for a fix instead: that's the real answer.
-  if(NATIVE&&ask)return await new Promise(r=>{try{navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};lastFix=Date.now();r("granted")},e=>r(e&&e.code===1?"denied":"granted"),{enableHighAccuracy:false,maximumAge:600000,timeout:8000})}catch(e){r("prompt")}});
+  if(NATIVE&&ask)return await new Promise(r=>{try{navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};lastFix=Date.now();r("granted")},e=>r(e&&e.code===1?"denied":"granted"),{enableHighAccuracy:false,maximumAge:600000,timeout:8000})}catch(e){r("prompt")}});
   if(IOSNAT){try{const r=await natGeo().checkPermissions();const st=r.location||r.coarseLocation;return st==="granted"?"granted":st==="denied"?"denied":"prompt"}catch(e){return "prompt"}}
   try{const p=await navigator.permissions.query({name:"geolocation"});return p.state}catch(e){return "prompt"}}
 
@@ -525,10 +550,23 @@ function lWrap(el){
     resize(){m.invalidateSize()},remove(){m.remove()}
   };
 }
-async function makeMap(id,o){const el=$(id);if(!el)return null;try{await gload();if(gBad)throw 0;return gWrap(el,o)}catch(e){return lWrap(el)}}
+// Every live map shows where you are and follows you (finished crawls opt out with noMe: they're a record, not a live view).
+const meMaps=[];
+async function makeMap(id,o){const el=$(id);if(!el)return null;let m;try{await gload();if(gBad)throw 0;m=gWrap(el,o)}catch(e){m=lWrap(el)}
+  if(!(o&&o.noMe)){m._el=el;meMaps.push(m);const y=you();if(y)try{m.me(y)}catch(e){}}
+  return m}
+function meAll(){const y=you();for(let i=meMaps.length-1;i>=0;i--){const m=meMaps[i];if(!document.contains(m._el)){meMaps.splice(i,1);continue}try{m.me(y)}catch(e){}}}
 function setMe(m){if(m)m.me(you())}
 
-const gmapsURL=v=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address)}${v.pid?"&query_place_id="+v.pid:""}`;
+// Directions open in the phone's own maps app: Apple Maps on an iPhone (Google Maps if they pick it in Settings),
+// Google Maps everywhere else.
+const ISIOS=IOSNAT||/iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const appleMaps=()=>ISIOS&&S.maps!=="google";
+const fullAddr=v=>v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW");
+const gmapsURL=v=>appleMaps()?`https://maps.apple.com/?q=${encodeURIComponent(v.name)}&address=${encodeURIComponent(fullAddr(v))}&ll=${v.lat},${v.lng}`
+  :`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+", "+v.address)}${v.pid?"&query_place_id="+v.pid:""}`;
+const dirURL=v=>appleMaps()?`https://maps.apple.com/?daddr=${encodeURIComponent(fullAddr(v))}`
+  :`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddr(v))}${v.pid?"&destination_place_id="+v.pid:""}`;
 /* bar photos: Google Place photo, fetched live, never stored. Capped per phone per day. */
 // Per phone, per day: photos for up to 40 different bars, and at most 120 photo loads in total.
 // Seeing the same bar again (after the app reloads) doesn't use up one of the 40.
@@ -756,7 +794,7 @@ function homeAt(){const b=$("homeAt");if(!b)return;
   if(here)show(pick(here));else b.hidden=true;
   if(Date.now()-atT<120000)return;atT=Date.now();
   permState().then(st=>{if(st!=="granted")return;
-    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="home")show(pick(here))},()=>{},{maximumAge:120000,timeout:10000,enableHighAccuracy:true})})}
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(S.route==="home")show(pick(here))},()=>{},{maximumAge:120000,timeout:10000,enableHighAccuracy:true})})}
 // How many rooftops are open in your city right now, above Play. None open: when the first one opens.
 function homeOpen(){const el=$("homeOpen");if(!el)return;const t=now(),L=VENUES.filter(inCityNow),n=L.filter(v=>openOK(v,t)).length,where=esc(cityIn(S.city));
   const op=n?null:nextOpen(L,t);
@@ -981,7 +1019,7 @@ function renderQuick(){
   const hp=S.test&&S.fake?S.fake:here,away=!!hp&&nearLive(hp)!==S.city;
   // No fix yet this session: get one quietly (without switching the city) so "Near me" isn't offered for the wrong state
   if(!here&&!S.test&&!renderQuick.asked&&navigator.geolocation){renderQuick.asked=1;permState().then(st=>{if(st!=="granted")return;
-    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
+    navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
     b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Rest &amp; Roulette.<br>Where are we spinning?</p></div>
       <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>A spot in ${esc(cityIn(S.city))}</b><small>Choose where you'll start</small>`:`<b>An area</b><small>Starts where you are</small>`}</span></button>
@@ -1039,7 +1077,7 @@ function beenInline(box,onChange){
 async function startCruise(noLoc){
   ac();const q=S.quick;noLoc=noLoc===true;
   if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState(true))==="denied"){noLocSheet(startCruise);return}
-  let pos;if(noLoc)pos=null;else try{pos=await getOnce()}catch(e){if(e&&e.code===1&&q.from&&q.from.type!=="me"){noLocSheet(startCruise);return}S.permNext="cruise";go("perm");return}
+  let pos;if(noLoc)pos=null;else if(!S.test&&here&&here.t&&Date.now()-here.t<10*60000)pos=here;else try{pos=await getOnce()}catch(e){if(e&&e.code===1&&q.from&&q.from.type!=="me"){noLocSheet(startCruise);return}S.permNext="cruise";go("perm");return}
   const f=q.from,c=f.type==="me"||f.type==="spot"||(f.type==="list"&&q.r&&f.lat!=null)?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
   const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
   zoneCity(c);S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"||(f.type==="list"&&q.r)?f.lat:null,lng:f.type==="spot"||(f.type==="list"&&q.r)?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
@@ -1189,10 +1227,19 @@ async function useMe(){
 $("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
-  ac();noLoc=noLoc===true;
-  if(!S.test&&!noLoc){const st=await permState(true);if(st==="denied"){noLocSheet(tryStart);return}if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
-  let pos;if(noLoc)pos={lat:S.wiz.start.lat,lng:S.wiz.start.lng};else try{pos=await getOnce()}catch(e){if(e&&e.code===1){noLocSheet(tryStart);return}S.permNext="start";go("perm");return}
+  ac();noLoc=noLoc===true;if(tryStart.busy)return;
+  const sb=$("wStart");if(sb)sb.classList.add("busy");
+  tryStart.busy=1;try{await tryStart2(noLoc)}finally{tryStart.busy=0;const b=$("wStart");if(b)b.classList.remove("busy")}}
+async function tryStart2(noLoc){
+  // Straight to the spinner. A fix from the last few minutes (setup just found you) is all we need to start:
+  // waiting on a fresh GPS lock here was the pause after tapping Start. The crawl's own watcher takes it from there.
+  const fresh=!!(here&&here.t&&Date.now()-here.t<10*60000);
+  if(!S.test&&!noLoc&&!fresh){const st=await permState(true);if(st==="denied"){noLocSheet(tryStart);return}if(st!=="granted"&&!here){S.permNext="start";go("perm");return}}
   const w=S.wiz;
+  let pos;if(noLoc)pos={lat:w.start.lat,lng:w.start.lng};
+  else if(S.test&&S.fake)pos=S.fake;
+  else if(here)pos=here;
+  else{pos={lat:w.start.lat,lng:w.start.lng};getOnce().catch(()=>{})}   // allowed, no fix yet: the first spin sets the real start point
   S.last={radius:w.radius,len:w.len,newOnly:w.newOnly};
   zoneCity(w.start);S.game={id:"g"+now(),city:S.city,test:!!S.test,started:false,startedAt:null,endsAt:null,len:w.len,radius:w.radius,newOnly:w.newOnly,zoneN:playable(inCircle(w.start,w.radius),!!w.newOnly).filter(v=>!(w.excl||[]).includes(v.id)).length,center:{lat:w.start.lat,lng:w.start.lng},
     startPos:{lat:pos.lat,lng:pos.lng},zoneMoved:w.start.type!=="me"||undefined,areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
@@ -1223,11 +1270,18 @@ function permDone(){
     else if(S.permNext==="start"){S.route="wiz";save();tryStart()}
     else go("wiz");
 }
-async function permTry(fromSettings){const t0=Date.now();
-  try{await getOnce();
+async function permTry(fromSettings){const t0=Date.now(),pb=$("permGo");
+  if(permTry.busy)return;permTry.busy=1;pb.disabled=true;pb.textContent="Finding you…";
+  const reset=()=>{permTry.busy=0;pb.disabled=false;if(S.route==="perm")renderPerm()};
+  try{
+    // iPhone: wait for their answer to the phone's prompt first, then look for them
+    if(IOSNAT&&!fromSettings){const st=await iosAsk();if(st==="denied")throw {code:1}}
+    // allowed but the GPS is slow: carry on anyway. The crawl keeps looking for you in the background.
+    await getOnce().catch(async e=>{if(e&&e.code===1)throw e;if((await permState())==="granted")return null;throw e});
+    reset();
     if(fromSettings){permOk=true;renderPerm();return}
     permDone();
-  }catch(e){
+  }catch(e){reset();
     const w=$("permWarn");w.hidden=false;
     w.innerHTML=e&&e.code===1?(NATIVE?`<b>Location is off for Rooftop Roulette.</b> Turn it on in settings, then come back.<button class="btn line sm" type="button" id="permSet" style="margin-top:10px">Open settings</button>`
         :`<b>Location is blocked.</b> In Chrome, tap the icon left of the web address → <b>Permissions</b> → <b>Location</b> → Allow. Then tap the button again.`)
@@ -1306,7 +1360,7 @@ function spinPool(){
 function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)>=DWELL();
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
 function onLocation(){liveNote();alertSync();if(S.game&&S.game.live)liveSync(false);
-  const g=G();[bMap,zMap].forEach(setMe);
+  const g=G();[bMap,zMap].forEach(setMe);meAll();
   if(!g||g.ended)return;
   const y=you();if(!y)return;
   if(g.started&&(!here||!here.acc||here.acc<60)){const T=g.trail||(g.trail=[]),l=T[T.length-1];if(!l||dist({lat:l[0],lng:l[1]},y)>=25){T.push([+y.lat.toFixed(5),+y.lng.toFixed(5)]);if(T.length>3000)T.splice(0,T.length-3000)}}
@@ -2281,16 +2335,21 @@ let mvMaps=[];
 function openMove(free,keep){
   clearInactiveZoneSetup();
   const g=G(),me=you()||fromPoint(),z=keep||{lat:g.center.lat,lng:g.center.lng,r:g.radius};
-  const range=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
-  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Move your zone"}</h3>
-    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this move is free. Drag the circle somewhere new.":"Once a crawl. Drag to move. Pinch or slide to change the radius."}</p></div>
+  const range0=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
+  // Once the clock's running the zone can move or grow, never shrink: a tighter circle late in a crawl only buys
+  // shorter walks. (The last half hour already sticks to bars you can reach.)
+  const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
+  const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
+  if(z.r<range.lo)z.r=range.lo;
+  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Adjust your zone"}</h3>
+    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this one's free. Drag the circle somewhere new.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move. Pinch or slide to change the radius."}</p></div>
     <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
     <div class="lsfoot"><button class="btn" type="button" id="mvGo">Move here</button><button class="btn dark" type="button" id="mvX" style="margin-top:10px">${free?"Close":"Stay here"}</button></div></div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
     rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{const m=me?dist(me,zz):0,far=m>1500,same=dist(zz,g.center)<300&&Math.abs(zz.r-g.radius)<.025;
-      $("mvNote").textContent=same?"That's where you are now. Drag the map or change the radius.":far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
-      const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Move here";
+      $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
+      const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Use this zone";
       b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
         if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
         g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{...range,pool,reopen:k=>openMove(free,k)});
@@ -2329,7 +2388,7 @@ const HOW={rush:()=>[
     ["Spin","You get a random rooftop in your zone. The clock starts when you reach your first bar."],
     ["Get to the bar","Walk, run or Uber. One drink at each bar."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
-    ["Stuck somewhere quiet?","Move your zone once a crawl. If it's far, the clock waits."],
+    ["Stuck somewhere quiet?","Adjust your zone once a crawl: move it or make it bigger. If it's far, the clock waits."],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, you'll hit the jackpot."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
   ["Spin","You get a random rooftop near you, or one from your Hit list."],
@@ -2350,7 +2409,7 @@ function openMenu(){
   const cr=CR(g);
   sheet(`<h3>Menu</h3><div class="menu">
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
-    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Change of scenery. 1 move per crawl"}</small></span></button>
+    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Adjust zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
@@ -2398,15 +2457,26 @@ function endGame(at){
 
 /* ---------- play render ---------- */
 const SKIP_COST=2;
-let lastFix=Date.now();
+// Manual check-ins only when location is actually off. A weak or quiet signal is ours to fix (locKick), so the player
+// just sees that we're on it.
 function needManual(g){
   if(S.test||g.demo||!g.target)return false;
-  if(g.noLoc||locErr!=null)return true;
-  if(!here)return now()-g.targetAt>60000;
-  if(here.acc>100)return true;
-  if(Date.now()-lastFix>90000)return true;
-  const v=byId(g.target),exp=walkMin(g.targetFrom||here,v);
-  return now()-g.targetAt>(exp*1.5+5)*60000;
+  return !!(g.noLoc||locErr===1);
+}
+function locWeak(g){
+  if(S.test||g.demo||!g.target||needManual(g))return false;
+  const w=!here||locErr!=null||here.acc>250||Date.now()-lastFix>75000;
+  if(w){if(!weakSince)weakSince=Date.now()}else weakSince=0;
+  return w;
+}
+// Last resort, long after we started trying: a small link to check in by hand. Also if they're right by the bar but
+// the GPS hasn't put them inside it (big buildings, bars a few floors up) well after they should've arrived.
+function hereLink(g){
+  if(!g.target||g.demo||S.test||needManual(g)||!g.started)return false;
+  if(locWeak(g)&&Date.now()-weakSince>180000)return true;
+  const y=you(),v=byId(g.target);if(!y||!v)return false;
+  const exp=walkMin(g.targetFrom||y,v);
+  return dist(y,v)<250&&now()-g.targetAt>(exp+6)*60000;
 }
 function logArrival(manual){
   const g=G();if(!g||!g.target)return;track("arrive",{manual:!!manual,leg:g.visits.length+1});const v=byId(g.target);endTripFreeze(g,true);prewarmAudio();
@@ -2495,32 +2565,35 @@ function renderPlay(){
       ${g.demo?"":`<div class="cantrow"><button class="txtbtn" type="button" id="cantBtn">Can't get in?</button></div>`}`;
     if(animateId===("at:"+a.id))animateId=null;
   }else if(g.target){
-    const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g);
+    const v=byId(g.target),y=you()||g.targetFrom,o=openState(v,t),dm=dist(y,v),nw=isNew(v.id),man=needManual(g),weak=locWeak(g),hl=hereLink(g);
     const cp0=cardPhoto(v),fs=g.freeSkips||0,coming=!cp0.cls&&phMem[v.id]===undefined&&phAllowed(v.id,"play")&&!gBad;
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
       st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
-      <div class="camacts"><a class="btn sm dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
+      <div class="camacts"><a class="btn sm dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
     else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
-      <a class="btn dir" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name+", "+v.address+", "+({Brisbane:"QLD",Melbourne:"VIC",Perth:"WA","Gold Coast":"QLD"}[cityOf(v)]||"NSW"))}${v.pid?"&destination_place_id="+v.pid:""}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
+      <a class="btn dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
       ${g.noLoc?`<div class="again"><div class="spinrow"><button class="btn again-btn${now()<hereAt(g)?" locked":""}" type="button" id="hereBtn" aria-disabled="${now()<hereAt(g)}">${hereLbl(g)}</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">Skip this one</button></div>`:""}
       ${g.demo?`<div class="again"><div class="spinrow"><button class="btn again-btn" type="button" id="dWalk">Skip the walk</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div></div>`:""}
       ${g.noLoc||g.demo?"":CR(g)?`<div class="again"><div class="spinrow"><button class="btn line again-btn" type="button" id="skipBtn">${I.redo} Spin again</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><span class="fine">Not feeling it? Spin again, as often as you like</span></div>`
         :`<div class="again"><div class="spinrow"><button class="btn again-btn locked" type="button" id="lockBtn" aria-disabled="true">${I.clock} Next spin unlocks on arrival</button><button class="camfab" type="button" id="camBtn" aria-label="Film this spin">${I.camera}</button></div><button class="txtbtn skiplink" type="button" id="skipBtn">${fs?`Re-spin (free, ${fs} left)`:`Re-spin (−${SKIP_COST} min)`}</button></div>`}
       ${man&&!g.noLoc?`<button class="btn line" type="button" id="hereBtn">I'm here</button>`:""}
+      ${!man&&weak?`<div class="locfind" role="status"><i class="locspin" aria-hidden="true"></i>Finding your location…</div>`:""}
+      ${!man&&hl?`<button class="txtbtn herelink" type="button" id="hereBtn">Already there? Check in</button>`:""}
       ${!g.demo&&!CR(g)&&(g.noLoc||man)?tip("enroute-man","Location's off. Tap “I’m here” when you arrive.",false):""}
       ${CR(g)&&!g.noLoc?tip("enroute","You're checked in when you arrive. Nothing to tap.",false):""}
-      ${man&&!g.noLoc?`<p class="note" style="text-align:center;margin:0">Location's struggling. Tap "I'm here" if you've arrived.</p>`:""}`;}
+`;}
     if(animateId===v.id)animateId=null;
   }else{
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
-      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
+      ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Adjust zone</button>`:""}
+      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Adjust zone</button>`:""}</div>`:""}
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
@@ -2530,11 +2603,12 @@ function renderPlay(){
     if(far){g.farAsked=1;save();const tg=g.target;
       afterReveal(()=>setTimeout(()=>{if(G()!==g||g.target!==tg||g.visits.length||spinning)return;if($("sheet").open){g.farAsked=0;save();return}farBarSheet(g)},700))}}
   if($("poolMove"))$("poolMove").onclick=()=>openMove(basePool().length<2);
+  if($("adjZone"))$("adjZone").onclick=()=>openMove(basePool().length<2);
   st.querySelectorAll("#camBtn").forEach(b=>{if(S.film===false||!b.classList.contains("ontop"))b.remove()});
   if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
   });
-  g._man=g.target?needManual(g):false;
+  g._man=g.target?needManual(g)+"|"+locWeak(g)+"|"+hereLink(g):false;
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph){if(G()===g&&g.target===pv.id)st.querySelector(".bar.loading")?.classList.remove("loading");return}afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
   fitPlay();
@@ -2724,7 +2798,7 @@ async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.
   const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
   const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
   // like Uber or Google Maps: only round icon buttons float on the map; the words live in a card at the bottom
-  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
+  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Adjust zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
   if($("cmMove")&&canMove)$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
@@ -2742,7 +2816,7 @@ async function bigMap(r,st){
   const ov=document.createElement("div");ov.className="mapfull";ov.innerHTML=`<div id="bigMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
-  m=await makeMap("bigMap",{greedy:true});if(!m)return;
+  m=await makeMap("bigMap",{greedy:true,noMe:true});if(!m)return;
   const {stops:pts,trail:tr}=crawlPath(r,st);
   if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
   st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
@@ -2798,19 +2872,19 @@ function renderEnd(){
     <div class="sc">
       <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt&&!v.lastOrders).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
-        const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"]];
-        const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
-          :[[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
+        const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(moving),"Travel time"]];
+        const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time",st.arrived.length&&"time"],[lng?hmm(lng):"—","Longest stay",lng&&"long"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+          :[[hmm(atBars),"Bar time",st.arrived.length&&"time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop",stays.length&&"quick"],[st.longest?mOrKm(st.longest.d):"—","Longest leg",st.longest&&"leg"]];
         const meta=`${cr?`${I.pin} ${esc(placeOf(r))}`:`${I.pin} ${esc(placeOf(r))} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><button class="scname${r.title&&!cr?"":" add"}" type="button" id="scName">${r.title?(cr?`${IC.edit} Rename`:esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`):"+ Name this crawl"}</button><div class="aw-t">${aw[0].plain?esc(aw[0].t):aw[0].t}</div>${aw[0].why?`<div class="aw-w">${aw[0].why}</div>`:""}<div class="scmeta">${meta}</div></div>
-          <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="Photo for your card">${r.photo?`<img src="${r.photo}" alt="">`:`${I.camera}<small>Photo</small>`}</button></div>
+          <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="${r.photo?"Change photo":"Add photo"}">${r.photo?`<img src="${r.photo}" alt=""><span class="scph-chg" data-chg="1">${I.camera}Change</span>`:`${I.camera}<small>Add photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.lastOrders?"Last orders":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
             if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
           const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
-          <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l])=>`<div><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}</small></div>`).join("")}</div></div></div>
+          <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l,k])=>`<div${k?` class="sttap" role="button" tabindex="0" data-st="${k}" data-sl="${l}" data-sv="${esc(String(v))}"`:""}><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}${k?' <span class="chev">›</span>':""}</small></div>`).join("")}</div></div></div>
 `;
           if(SV==="a")return `<div class="scar2" id="scar2"><section class="scp2">${mapblk}</section><section class="scp2 p2"><div class="scph-h">The bars</div><div class="sblist${arr.length>6?" many":""}">${arr.map((v,i)=>row(v,i,"row")).join("")}</div>${pick}</section></div>
             <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
@@ -2824,7 +2898,13 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
   box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
   box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
-  $("scPh").onclick=()=>r.photo?mediaView(r):photoSheet(r,renderEnd);
+  // the stats on the map open what they're about: the leg, the stop, the breakdown
+  box.querySelectorAll("[data-st]").forEach(t=>t.onclick=e=>{e.stopPropagation();const k=t.dataset.st,l=t.dataset.sl,v=t.dataset.sv;
+    const stays=st.arrived.filter(x=>x.leftAt&&!x.lastOrders),by=f=>stays.slice().sort((a,b)=>f*((a.leftAt-a.arrivedAt)-(b.leftAt-b.arrivedAt)))[0];
+    if(k==="leg"){const j=st.arrived.indexOf(st.longest.to);if(j>0)legSheet(r,st.arrived[j-1].id,st.longest.to.id,l,v)}
+    else if(k==="quick")staySheet(r,by(1),l,v);else if(k==="long")staySheet(r,by(-1),l,v);
+    else if(k==="dist"||k==="time")crawlStatSheet(k,r.id,l)});
+  $("scPh").onclick=e=>r.photo&&!e.target.closest("[data-chg]")?mediaView(r):photoSheet(r,renderEnd);
   if(!isShared&&!r.demo)clipList(r.id).then(L=>{const ph=$("scPh");if(L.length&&ph&&document.contains(ph)){ph.insertAdjacentHTML("beforeend",`<i class="phclips">▶ ${L.length}</i>`);if(!r.photo)ph.onclick=()=>mediaView(r)}}).catch(()=>{});
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
@@ -2852,7 +2932,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if(S.rackEnd===r.id){delete S.rackEnd;save();if(n){const nb=box.querySelector(".tri>div b");if(nb)nb.textContent="0";setTimeout(()=>rackUp(box,n),700)}}
   requestAnimationFrame(async()=>{
     if(eMap){eMap.remove();eMap=null}
-    const el=$("endMap"),m=await makeMap("endMap");if(!m||!document.contains(el))return;eMap=m;
+    const el=$("endMap"),m=await makeMap("endMap",{noMe:true});if(!m||!document.contains(el))return;eMap=m;
     const {stops:pts,trail:tr}=crawlPath(r,st);
     if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
@@ -3337,13 +3417,13 @@ function renderBars(){
       ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
     pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
     if(!CR(g)){const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`}
+      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Adjust zone</button>`:`<p class="note" style="margin-top:8px">You've adjusted your zone this crawl.</p>`}
   }else if(f==="other"){
     const zIds=new Set((CR(g)?cruiseSet(g):inCircle(g.center,g.radius)).map(v=>v.id));
     const others=VENUES.filter(v=>!zIds.has(v.id)&&!S.nfu[v.id]).sort(sortD);
     const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-    if(CR(g)){intro=`Every other rooftop in ${S.city}. ${tapHint}`}else intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
-    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move zone</button>`:`<p class="note" style="margin-top:8px">You've used your zone move this crawl.</p>`;
+    if(CR(g)){intro=`Every other rooftop in ${S.city}. ${tapHint}`}else intro=`<b>Fancy a change of scenery?</b> Adjust your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
+    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Adjust zone</button>`:`<p class="note" style="margin-top:8px">You've adjusted your zone this crawl.</p>`;
     rows=groupedRows(others,v=>rowHTML(v,os(v),barStatus(v,c),y));
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
@@ -3507,20 +3587,21 @@ const monthTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{month:"long",year:"n
 const vthumb=(b,txt)=>{const ph=phMem[b.id];return `<span class="vth${ph?" ph":""}"${ph?` style="background-image:url('${ph.url}')"`:""}>${ph?"":esc(txt!=null?String(txt):b.name.replace(/^the\s+/i,"")[0]||"·")}</span>`};
 // Strava-style personal bests. Each one links back to the night it happened.
 function records(){
-  const R=[],best=(lbl,ic,list,val,fmt,sub,lowest)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id})};
+  const R=[],best=(lbl,ic,list,val,fmt,sub,lowest,open)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];
+    R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id,open:open?()=>open(w,lbl,fmt(val(w))):null})};
   const nights=H.map(r=>({r,st:stats(r)})),tn=nights.filter(x=>!x.r.noLoc);
-  [[60,"Most bars · 1 hr"],[120,"Most bars · 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt))));
-  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)));
-  best("Most bar time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r));
-  best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"));
+  [[60,"Most bars · 1 hr"],[120,"Most bars · 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l)));
+  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l));
+  best("Most bar time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r),false,(w,l)=>crawlStatSheet("time",w.r.id,l));
+  best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"),false,(w,l)=>crawlStatSheet("dist",w.r.id,l));
   const vs=allVisits().filter(x=>x.v.leftAt!=null&&!x.r.noLoc);
-  best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t));
-  best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true);
+  best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),false,(w,l,v)=>staySheet(w.r,w.v,l,v));
+  best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true,(w,l,v)=>staySheet(w.r,w.v,l,v));
   {const c={};allVisits().filter(x=>!x.r.noLoc).forEach(x=>{const o=c[x.b.id]||(c[x.b.id]={b:x.b,ms:0,n:0});o.ms+=x.ms;o.n++});const top=Object.values(c).filter(o=>o.n>1).sort((a,b)=>b.n-a.n||b.ms-a.ms)[0];   // 2+ visits, so it's never just the longest stay again
     if(top&&top.ms>0)R.push({lbl:"Your local",ic:"clock",v:hmm(top.ms),sub:esc(top.b.name)+" · "+top.n+" visit"+(top.n===1?"":"s"),bar:top.b.id})}
-  const legs=[],hops=[];tn.forEach(({r,st})=>{if(st.longest&&st.longest.to)legs.push({r,d:st.longest.d,to:st.longest.to.id});if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
-  best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(rt(x.r,x.r.startedAt)));
-  best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true);
+  const legs=[],hops=[];tn.forEach(({r,st})=>{if(st.longest&&st.longest.to){const k=st.arrived.indexOf(st.longest.to);if(k>0)legs.push({r,d:st.longest.d,to:st.longest.to.id,from:st.arrived[k-1].id})}if(st.quick&&st.quick.ms>=30000)hops.push({r,ms:st.quick.ms,from:st.quick.from,to:st.quick.to})});
+  best("Longest walk","walk",legs,x=>x.d,mOrKm,x=>"To "+esc(byId(x.to).name)+" · "+dateTxt(rt(x.r,x.r.startedAt)),false,(w,l,v)=>legSheet(w.r,w.from,w.to,l,v));
+  best("Fastest changeover","bolt",hops,x=>x.ms,hmm,x=>esc(byId(x.from).name)+" → "+esc(byId(x.to).name),true,(w,l,v)=>legSheet(w.r,w.from,w.to,l,v));
   return R}
 function renderHist(){
   const b=$("v-hist");
@@ -3535,8 +3616,8 @@ function renderHist(){
       <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?"Avg "+km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
       <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
     </div>
-    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map(x=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
-  b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{S.lastEnd=x.dataset.id;go("end")});
+    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map((x,ri)=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}" data-ri="${ri}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
+  b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{const rc=recs[+x.dataset.ri];if(rc&&rc.open){rc.open();return}S.lastEnd=x.dataset.id;go("end")});
   b.querySelectorAll(".rec[data-bar]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.bar);if(v)barSheet(v)});
   $("hCrawls").onclick=()=>crawlsSheet();
   $("hVisits").onclick=()=>visitsSheet();
@@ -3595,24 +3676,64 @@ function crawlsSheet(){const N=H.map(stats);let m=null;const yr=String(new Date(
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     $("sheetBody").querySelectorAll(".hrow").forEach(x=>{x.onclick=()=>{closeSheet();S.lastEnd=x.dataset.id;go("end")};longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)})})})}
 // Distance or time, crawl by crawl. Tap a crawl for its legs (distance) or its bars (time).
-function crawlStatSheet(kind,id){
-  const isD=kind==="dist",N=H.filter(r=>!r.noLoc).map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at bars";
+function crawlStatSheet(kind,id,rec){
+  const isD=kind==="dist",isB=kind==="bars",N=H.filter(r=>isB||!r.noLoc).map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at bars";
   const name=r=>r.title?esc(r.title):dateTxt(rt(r,r.startedAt));
   if(id){const x=N.find(o=>o.r.id===id);if(!x){crawlStatSheet(kind);return}const r=x.r,st=x.st;
     let rows;
     if(isD){rows=st.arrived.slice(1).map((v,i)=>{const a=byId(st.arrived[i].id),d=dist(a,byId(v.id))*1.3;
         return `<div class="srow"><span class="t"><small>${esc(a.name)} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")||`<div class="srow"><span class="t"><b>Just the one bar, no walking yet</b></span></div>`}
+    else if(isB)rows=st.arrived.map((v,i)=>{const b_=byId(v.id),ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt);
+        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${r.noLoc?"":hmm(ms)}</span></div>`}).join("");
     else rows=st.arrived.map((v,i)=>{const ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt),b_=byId(v.id);
         return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${hmm(ms)}</span></div>`}).join("");
-    sheet(`<button class="txtbtn bsback" type="button" id="csBack">‹ ${lbl}</button><h3>${name(r)}</h3><p class="note vsum">${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" bar"+(st.counted.length===1?"":"s")}</p>
+    const sub=isB?`${r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${st.counted.length} bar${st.counted.length===1?"":"s"}`:`${rec&&r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" bar"+(st.counted.length===1?"":"s")}`;
+    sheet(`${rec?`<div class="eyebrow">${rec}</div>`:`<button class="txtbtn bsback" type="button" id="csBack">‹ ${lbl}</button>`}<h3>${name(r)}</h3><p class="note vsum">${sub}</p>
       <div class="slist">${rows||'<p class="note">No bars on this one.</p>'}</div><button class="btn line" type="button" id="csOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
-      $("csBack").onclick=()=>crawlStatSheet(kind);$("csOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")}});
+      if($("csBack"))$("csBack").onclick=()=>crawlStatSheet(kind);$("csOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")}});
     return}
   const tot=N.reduce((s,x)=>s+val(x),0);
   sheet(`<h3>${lbl}</h3><p class="note vsum">${fmt(tot)} across ${N.length} crawl${N.length===1?"":"s"} · ${fmt(tot/Math.max(1,N.length))} a crawl</p>
     <div class="vlist2">${N.map(x=>`<button class="vrow" type="button" data-cs="${x.r.id}"><span class="n2">${x.st.counted.length}</span><span class="t"><b>${name(x.r)}</b><small>${modeTxt(x.r)}${x.r.title?" · "+dateTxt(rt(x.r,x.r.startedAt)):""}</small></span><span class="d">${fmt(val(x))}</span></button>`).join("")}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
     $("sheetBody").querySelectorAll("[data-cs]").forEach(b_=>b_.onclick=()=>crawlStatSheet(kind,b_.dataset.cs))});
+}
+
+// One leg of a crawl (longest walk, fastest changeover): the two bars on a map with the route between them,
+// then the crawl it came from.
+function legSheet(r,fromId,toId,lbl,val,back){
+  const a=byId(fromId),b=byId(toId),st=stats(r);if(!a||!b){S.lastEnd=r.id;go("end");return}
+  const ia=st.arrived.findIndex(v=>v.id===fromId),ib=st.arrived.findIndex((v,i)=>i>ia&&v.id===toId);
+  const va=st.arrived[ia],vb=st.arrived[ib],walk=va&&vb&&va.leftAt!=null?Math.max(0,vb.arrivedAt-va.leftAt):null,d=dist(a,b)*1.3;
+  sheet(`${back?`<button class="txtbtn bsback" type="button" id="lgBack">‹ ${back.t}</button>`:""}<div class="eyebrow">${lbl}</div><h3 class="lgv">${val}</h3>
+    <div class="lgmap"><div id="lgMap"></div></div>
+    <div class="lgleg"><div class="lgstop"><i class="num sm">${ia+1}</i><span><small>From</small><b>${esc(a.name)}</b></span></div><div class="lgstop"><i class="num sm">${ib+1}</i><span><small>To</small><b>${esc(b.name)}</b></span></div></div>
+    <p class="note vsum">${mOrKm(d)}${walk!=null?" · "+hmm(walk)+" door to door":""}</p>
+    <p class="note vsum" style="margin-top:2px">${r.title?esc(r.title)+" · ":""}${dateTxt(rt(r,r.startedAt))} · ${modeTxt(r)}</p>
+    <button class="btn line" type="button" id="lgOpen" style="margin-top:14px">See the whole crawl</button>`,async()=>{
+    if($("lgBack"))$("lgBack").onclick=back.fn;
+    $("lgOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")};
+    const m=await makeMap("lgMap",{noMe:true});if(!m||!$("lgMap"))return;
+    // the bit of the recorded trail between the two bars, if there is one
+    let tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),seg=[];
+    if(tr.length>1){const near=(p,from)=>{let bi=-1,bd=1e9;for(let i=from;i<tr.length;i++){const dd=dist(tr[i],p);if(dd<bd){bd=dd;bi=i}}return bd<=200?bi:-1};
+      const i0=near(a,0),i1=i0>=0?near(b,i0):-1;if(i0>=0&&i1>i0)seg=tr.slice(i0,i1+1)}
+    if(!r.noLoc){m.route([a,b],true);if(seg.length>1)m.route(seg);else m.route([a,b])}
+    m.num(a,ia+1,false,a.name);m.num(b,ib+1,false,b.name);
+    setTimeout(()=>m.fitPts([a,b].concat(seg),17,{top:36,left:36,right:36,bottom:36}),80)});
+}
+// One stay (longest, quickest): the bar, how long, which crawl.
+function staySheet(r,v,lbl,val,back){
+  const b=byId(v.id),st=stats(r),i=st.arrived.indexOf(v);if(!b){S.lastEnd=r.id;go("end");return}
+  const cp=cardPhoto(b);
+  sheet(`${back?`<button class="txtbtn bsback" type="button" id="syBack">‹ ${back.t}</button>`:""}<div class="eyebrow">${lbl}</div><h3 class="lgv">${val}</h3>
+    <button type="button" class="systay${cp.cls}" id="syBar"${cp.style}><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b.name)}</b></span><span class="chev">›</span></button>
+    <p class="note vsum" style="margin-top:10px">${r.title?esc(r.title)+" · ":""}${dateTxt(rt(r,r.startedAt))} · ${clock12(sydAt(rt(r,v.arrivedAt)).min)} · ${modeTxt(r)}</p>
+    <button class="btn line" type="button" id="syOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
+    if($("syBack"))$("syBack").onclick=back.fn;
+    $("syBar").onclick=()=>barSheet(b,null,{back:()=>staySheet(r,v,lbl,val,back),backTxt:lbl});
+    $("syOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")};
+    if(!cp.cls&&phMem[b.id]===undefined&&phAllowed(b.id,"play"))barPhoto(b).then(ph=>{const e=$("syBar");if(e&&ph){e.classList.add("photo");e.style.backgroundImage=`url('${ph.url}')`}}).catch(()=>{})});
 }
 
 /* ---------- settings (the gear) ---------- */
@@ -3631,6 +3752,7 @@ function settingsSheet(){
   const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat(),top=pg.querySelector(".spbody")?pg.querySelector(".spbody").scrollTop:0;
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="spBack" aria-label="Back">${I.back}</button><b>Settings</b></div><div class="spbody">
     ${grp("Appearance",[`<div class="strow stseg"><div class="seg" id="stTheme">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-th="${k}" aria-pressed="${(S.theme||"auto")===k}">${l}</button>`).join("")}</div></div>`])}
+    ${ISIOS?grp("Directions",[`<div class="strow stseg"><div class="seg" id="stMaps">${[["apple","Apple Maps"],["google","Google Maps"]].map(([k,l])=>`<button type="button" data-mp="${k}" aria-pressed="${(S.maps==="google"?"google":"apple")===k}">${l}</button>`).join("")}</div></div>`]):""}
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
     ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
     ${grp("Account",accountRows(lk))}
@@ -3645,6 +3767,7 @@ function settingsSheet(){
   $("spBack").onclick=()=>{try{if(history.state&&history.state.setPage)history.back();else closeSettings()}catch(e){closeSettings()}};
   $("stTheme").querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{S.theme=b.dataset.th;save();track("theme",{theme:S.theme});applyTheme(true);settingsSheet()});
   $("stSound").onclick=()=>{S.sound=!S.sound;save();settingsSheet()};
+  if($("stMaps"))$("stMaps").querySelectorAll("[data-mp]").forEach(b=>b.onclick=()=>{S.maps=b.dataset.mp;save();settingsSheet();if(S.route==="play")renderPlay()});
   $("stVib").onclick=()=>{S.vib=S.vib===false;save();if(S.vib)buzz(30);settingsSheet()};
   if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
   $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
@@ -3837,7 +3960,8 @@ function loop(){
     if(a&&!spinning&&(now()-a.arrivedAt)<DWELL_MIN*60000&&$("cantBtn")===null&&false)renderPlay();
     if(!spinning&&g.started&&remaining()<=FINAL*60000&&!g.shownFinal)renderPlay();
     if(g.started&&!spinning){const r=remaining();if(r>0&&r<=10000)tick(1200)}
-    if(!spinning&&g.target&&needManual(g)!==!!g._man)renderPlay();
+    if(!spinning&&g.target&&(needManual(g)+"|"+locWeak(g)+"|"+hereLink(g))!==g._man)renderPlay();
+    if(g.target||atVisit())locKick();
     if(!CR(g)&&g.jp&&!g.jp.claimed&&!spinning&&!$("sheet").open)jackpotSheet();
     if(g.wild&&!g.wild.shown&&!g.wild.dealing&&g.target===g.wild.id&&!spinning&&Date.now()>revealEnd&&!document.querySelector(".jpx"))dealWild(0);
   }
@@ -3846,6 +3970,8 @@ setInterval(loop,1000);setInterval(()=>{if(!document.hidden)markSeen()},15000);a
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){const d_=leaving();if(d_){d_.hid=now();save()}markSeen();return}
   awayGap=S.seenAt?Date.now()-S.seenAt:0;resumedAt=Date.now();
+  if(S.game&&locErr===1&&!S.game.noLoc)permState().then(st=>{if(st==="granted"){locErr=null;startWatch();locKick(true)}});   // turned back on in settings
+  else if(S.game)locKick(true);
   if(!S.game&&(S.test||navigator.geolocation)){const c0=S.city;permState().then(st=>{if(st==="granted"||S.test)getOnce().then(()=>{if(S.city!==c0)render()}).catch(()=>{})})}
   const g=G();
   if(g&&g.celebrate){const a=g.visits.find(v=>v.leftAt==null);
