@@ -11,6 +11,6 @@ console.log('sum1',await p.evaluate(()=>[$('v-end').scrollHeight,$('v-end').clie
 await p.click('.bodbtn');await p.waitForTimeout(500);await p.click('[data-bp="harbour-view-hotel"]');await p.waitForTimeout(1500);
 console.log('sum2',await p.evaluate(()=>[$('v-end').scrollHeight,$('v-end').clientHeight]));await p.screenshot({path:'out/r3.png'});
 await p.click('#shareBtn');await p.waitForTimeout(600);await p.screenshot({path:'out/r4.png'});
-await p.click('#shvSkip');await p.waitForTimeout(8000);await p.screenshot({path:'out/r5.png'});
+await p.waitForTimeout(8000);await p.screenshot({path:'out/r5.png'});
 console.log('car',await p.evaluate(()=>{const c=document.querySelector('.shv-car'),i=c.querySelector('img');return [c.scrollHeight,c.clientHeight,i.getBoundingClientRect().height,document.querySelector('.sharev').scrollHeight,innerHeight]}));
 console.log(e);await b.close()})();
