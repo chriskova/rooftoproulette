@@ -67,7 +67,7 @@ body.sent main{height:var(--h,100svh);min-height:0}
 body.sent main>*:not(.done){display:none}
 body.sent .done{margin:auto 0;padding:0;animation:in .35s ease both}
 @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.done h2{font:800 30px/1.1 var(--head);margin:0}
+.done h2{font:800 30px/1.1 var(--head);margin:0 0 12px}
 .done p{margin:0 0 8px;color:var(--muted)}
 .ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
 footer{display:flex;align-items:center;justify-content:space-between;margin-top:28px;font-size:14px}
@@ -100,7 +100,6 @@ footer a{color:var(--muted);text-decoration:none}
 
   <div class="done" id="done" hidden>
     <h2 id="doneH">You're in.</h2>
-    <p>Watch your inbox.</p>
     <button class="btn" id="share" type="button">Send it to a mate</button>
   </div>
 
