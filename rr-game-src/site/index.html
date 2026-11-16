@@ -95,12 +95,12 @@ footer a{color:var(--muted);text-decoration:none}
       <label><input type="radio" name="phone" value="android"><span>Android</span></label>
     </div>
     <p class="err" id="err" role="alert"></p>
-    <button class="btn" id="go" type="submit">Get early access</button>
+    <button class="btn" id="go" type="submit">Sign up</button>
   </form>
 
   <div class="done" id="done" hidden>
-    <h2 id="doneH">You're on the list.</h2>
-    <p>We'll email you when it's ready.</p>
+    <h2 id="doneH">You're in.</h2>
+    <p>Watch your inbox.</p>
     <button class="btn" id="share" type="button">Send it to a mate</button>
   </div>
 
@@ -130,7 +130,7 @@ var phone=function(){var r=f.querySelector("input[name=phone]:checked");return r
 f.addEventListener("change",function(e){if(e.target.name==="phone")err.textContent=""});
 async function hash(s){try{var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
   catch(e){return s.replace(/[^a-z0-9]/g,"_").slice(0,120)}}
-function done(again){f.hidden=true;$("done").hidden=false;document.body.classList.add("sent");scrollTo(0,0);if(again)$("doneH").textContent="You're already on the list.";
+function done(again){f.hidden=true;$("done").hidden=false;document.body.classList.add("sent");scrollTo(0,0);if(again)$("doneH").textContent="You're already in.";
   try{localStorage.setItem("rr-waitlist","1")}catch(e){}}
 f.addEventListener("submit",async function(e){e.preventDefault();err.textContent="";
   var email=$("email").value.trim().toLowerCase(),ph=phone();
@@ -145,7 +145,7 @@ f.addEventListener("submit",async function(e){e.preventDefault();err.textContent
     if(r.ok)return done(false);
     if(r.status===409)return done(true);
     throw new Error(r.status)}
-  catch(x){err.textContent="Didn't go through. Try again.";go.disabled=false;go.textContent="Get early access"}});
+  catch(x){err.textContent="Didn't go through. Try again.";go.disabled=false;go.textContent="Sign up"}});
 $("share").addEventListener("click",async function(){var d={title:"Rooftop Roulette",text:"Rooftop Roulette early access",url:SHARE};
   try{if(navigator.share){await navigator.share(d);return}}catch(e){if(e&&e.name==="AbortError")return}
   try{await navigator.clipboard.writeText(SHARE);$("share").textContent="Link copied"}catch(e){prompt("Copy the link",SHARE)}});
