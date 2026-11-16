@@ -3,7 +3,7 @@ const VENUES=__VENUES__,VENUES_V=__VENUES_V__;
 let venuesV=VENUES_V;
 (()=>{try{const c=JSON.parse(localStorage.getItem("rr-venues")||"null");if(c&&c.v>VENUES_V&&Array.isArray(c.bars)&&c.bars.length>20){VENUES.splice(0,VENUES.length,...c.bars);venuesV=c.v}}catch(e){}})();
 function refreshVenues(){
-  const url=/github\.io$|rooftoproulette\.com/.test(location.hostname)?"venues.json":"https://chriskova.github.io/rooftoproulette/venues.json";
+  const url=/github\.io$|rooftoproulette\.com/.test(location.hostname)?"venues.json":"https://rooftoproulette.com/venues.json";
   fetch(url+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
     if(!d||!(d.v>venuesV)||!Array.isArray(d.bars)||d.bars.length<20||!d.bars.every(v=>v&&v.id&&v.name&&isFinite(v.lat)&&isFinite(v.lng)))return;
     VENUES.splice(0,VENUES.length,...d.bars);venuesV=d.v;try{localStorage.setItem("rr-venues",JSON.stringify(d))}catch(e){}
@@ -93,7 +93,7 @@ const LAST_ORDERS=10,CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
 const DWELL=()=>{const g_=S.game;return g_&&g_.demo?0:DWELL_MIN*60000};   // the demo counts a bar the moment you arrive
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const AN=window.RR_CONFIG,APPV="__VERSION__";
-const SITE="https://chriskova.github.io/rooftoproulette/",SUPPORT="hello@rooftoproulette.com",IG="https://www.instagram.com/rooftoproulette/",TT="https://www.tiktok.com/@rooftoproulette",PLAY="https://play.google.com/store/apps/details?id=com.rooftoproulette.app";
+const SITE="https://rooftoproulette.com/",SUPPORT="hello@rooftoproulette.com",IG="https://www.instagram.com/rooftoproulette/",TT="https://www.tiktok.com/@rooftoproulette",PLAY="https://play.google.com/store/apps/details?id=com.rooftoproulette.app";
 /* Usage and crash reports, anonymous: a random install ID, the app version and what happened (e.g. "crawl ended, 4 bars").
    Never names, coordinates, photos or clips. Off in test mode, and off entirely until a PostHog key is set in data/config.json. */
 const anId=(()=>{try{let i=localStorage.getItem("rr-anon");if(!i){i=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2));localStorage.setItem("rr-anon",i)}return i}catch(e){return "na"}})();
@@ -456,7 +456,7 @@ const GKEY=window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10
 let gP=null,gBad=false;
 function gload(){
   if(gP)return gP;
-  if(location.hostname!=="chriskova.github.io"||gBad)return Promise.reject("off");
+  if(!/^(www\.)?rooftoproulette\.com$|^chriskova\.github\.io$/.test(location.hostname)||gBad)return Promise.reject("off");
   gP=new Promise((res,rej)=>{
     window.__gmReady=()=>res(window.google);
     window.gm_authFailure=()=>{gBad=true};
@@ -1888,9 +1888,9 @@ function mp4Flat(buf){
   T.forEach(x=>x.t.smp.forEach(s=>{out.set(u.subarray(s.off,s.off+s.sz),k);k+=s.sz}));
   return out.buffer}
 /* ---------- crawl links: the whole crawl packed into the link, so mates can see it and add it to their tab ---------- */
-// Crawl links go to the link site (rooftoproulette.com/crawl/, set as linkBase in data/config.json) once it's live:
-// tapping one there opens the app straight away (Android App Links / iOS Universal Links). Until then, the GitHub Pages site.
-const APP_SITE="https://chriskova.github.io/rooftoproulette/",SHARE_BASE=(window.RR_CONFIG&&RR_CONFIG.linkBase)||APP_SITE;
+// Every link the app hands out lives on rooftoproulette.com. Crawl links sit under /crawl/ and live-crawl invites under /live/,
+// so Android App Links and iOS Universal Links can open them straight in the app (see .well-known/ at the repo root).
+const APP_SITE=SITE,SHARE_BASE=SITE+"crawl/",LIVE_BASE=SITE+"live/";
 const crawlCode=u=>{const m=String(u||"").match(/[#?&]crawl=([A-Za-z0-9_-]+)/);return m?m[1]:null};
 const b64u=bytes=>{let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")};
 const unb64u=str=>{const s=atob(str.replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))};
@@ -1910,7 +1910,7 @@ async function unpackCrawl(str){let raw=unb64u(str.slice(1));
     startPos:o.p?{lat:o.p[0],lng:o.p[1]}:null,center:o.ce?{lat:o.ce[0],lng:o.ce[1]}:null,
     visits:o.v.filter(v=>byId(v[0])).map(v=>({id:v[0],arrivedAt:at(v[1]),leftAt:at(v[2]),counted:v[3]===1?true:v[3]===0?false:null,cant:v[4]?true:undefined})),
     barOfDay:o.b||null,jp:o.j?{k:o.j,claimed:true}:null,title:o.n||undefined,cz:o.cz||undefined,autoEnded:!!o.ae,trail:[],moves:[],bodDone:true,stillAsked:true,shared:true}}
-async function crawlLink(r){try{return SHARE_BASE+"#crawl="+(await packCrawl(r))}catch(e){return SHARE_BASE}}
+async function crawlLink(r){try{return SHARE_BASE+"#crawl="+(await packCrawl(r))}catch(e){return SITE}}
 const crawlLine=r=>{const st=stats(r),n=st.counted.length;return `${r.title?r.title+": ":""}${n} bar${n===1?"":"s"} on Rooftop Roulette.`};
 let SHARED=null;
 let SHARED_CODE=null;
@@ -2053,7 +2053,7 @@ if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App){const A=CAPX.Plugins.App;
 // a crawl link opened in a phone browser (an old link, or inside Instagram's browser): offer to open it in the app
 const ANDROID_WEB=!NATIVE&&/Android/i.test(navigator.userAgent);
 function openInApp(){const c=SHARED_CODE;if(!c)return;track("crawl_link_app");
-  location.href=`intent://chriskova.github.io/rooftoproulette/?crawl=${c}#Intent;scheme=https;package=com.rooftoproulette.app;S.browser_fallback_url=${encodeURIComponent(APP_SITE+"#crawl="+c)};end`}
+  location.href=`intent://rooftoproulette.com/crawl/?crawl=${c}#Intent;scheme=https;package=com.rooftoproulette.app;S.browser_fallback_url=${encodeURIComponent(SHARE_BASE+"#crawl="+c)};end`}
 // Native plugins: the plugin's own object when the bridge made one, otherwise straight calls through the bridge
 const PLG=NATIVE?new Proxy({},{get:(_,pl)=>{const o=CAPX.Plugins&&CAPX.Plugins[pl];if(o)return o;
   return new Proxy({},{get:(_,m)=>opts=>typeof CAPX.nativePromise==="function"?CAPX.nativePromise(pl,m,opts||{}):Promise.reject(new Error("no bridge"))})}}):{};

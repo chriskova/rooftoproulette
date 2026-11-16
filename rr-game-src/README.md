@@ -17,7 +17,7 @@ The live app at the repo root (`index.html`, `manifest.webmanifest`, `sw.js`) is
 
 ## Crawl links
 
-Sharing a card or clip also sends a line and a link. The whole crawl (bars, times, name, jackpot) is packed into the link after `#crawl=`, so no server is involved. Opening it shows the crawl's summary with **Add to My Tab** and **Save card**. Links point at the GitHub Pages site (`SHARE_BASE` in the template). Once rooftoproulette.com points at the site, change `SHARE_BASE` and add app links so they open the native app.
+Sharing a card or clip also sends a line and a link. The whole crawl (bars, times, name, jackpot) is packed into the link after `#crawl=`, so no server is involved. Opening it shows the crawl's summary with **Add to My Tab** and **Save card**. The app lives at https://rooftoproulette.com (GitHub Pages with the custom domain in `CNAME`; the old chriskova.github.io address forwards there). Crawl links are `rooftoproulette.com/crawl/#crawl=...` and live-crawl invites `rooftoproulette.com/live/#live=...`. Both pages just hand over to the app at `/`. With the app installed, Android App Links and iOS Universal Links open them straight in the app, verified by the files in `.well-known/` at the repo root: `assetlinks.json` lists the test build's key and the Play App Signing key, `apple-app-site-association` the Apple Team ID.
 
 ## Analytics and crash reports
 

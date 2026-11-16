@@ -226,7 +226,7 @@ setInterval(()=>{if(CLP&&signedIn())prefsPush()},15000);
 
 // ----- live crawls -----
 const liveId=()=>"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-const liveLink=id=>SHARE_BASE+"#live="+id;
+const liveLink=id=>LIVE_BASE+"#live="+id;
 const liveCode=u=>{const m=String(u||"").match(/[#?&]live=([A-Za-z0-9]+)/);return m?m[1]:null};
 // what followers get: the bars and times, never your GPS trail or where you started from
 const gameForCloud=g=>{const o=Object.assign({},g);["trail","photos","photo","moves","clipN","startPos","here","lastFix"].forEach(k=>delete o[k]);return JSON.stringify(o)};

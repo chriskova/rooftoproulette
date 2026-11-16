@@ -31,7 +31,7 @@ jobs:
         # The test app loads the live site, so changes show up on the next open without reinstalling.
         # (Store builds leave this out and carry the app inside, as the stores expect.)
         run: |
-          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://chriskova.github.io/rooftoproulette/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- android
       - name: Build the APK
         working-directory: app/android

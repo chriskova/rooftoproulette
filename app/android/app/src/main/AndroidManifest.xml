@@ -36,8 +36,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Crawl links (rooftoproulette.com/crawl/...) open straight in the app. Verified by
-                 https://rooftoproulette.com/.well-known/assetlinks.json on the link site. -->
+            <!-- Crawl links (rooftoproulette.com/crawl/...) and live-crawl invites (/live/...) open straight in the app.
+                 Verified by https://rooftoproulette.com/.well-known/assetlinks.json. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -46,6 +46,7 @@
                 <data android:host="rooftoproulette.com" />
                 <data android:host="www.rooftoproulette.com" />
                 <data android:pathPrefix="/crawl" />
+                <data android:pathPrefix="/live" />
             </intent-filter>
 
             <!-- Not verified, so it never takes over the website: only the "Open in the app" button

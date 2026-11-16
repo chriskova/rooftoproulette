@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "TEAMID.com.rooftoproulette.app"
+        ],
+        "components": [
+          {
+            "/": "/crawl*"
+          },
+          {
+            "/": "/live*"
+          }
+        ]
+      }
+    ]
+  }
+}
