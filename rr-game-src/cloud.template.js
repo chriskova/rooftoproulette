@@ -154,7 +154,8 @@ async function tabSyncAll(){if(!signedIn())return;const B=await cloud(),uid=ME.u
 const liveId=()=>"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const liveLink=id=>SHARE_BASE+"#live="+id;
 const liveCode=u=>{const m=String(u||"").match(/[#?&]live=([A-Za-z0-9]+)/);return m?m[1]:null};
-const gameForCloud=g=>{const o=Object.assign({},g);["trail","photos","photo","moves","clipN"].forEach(k=>delete o[k]);return JSON.stringify(o)};
+// what followers get: the bars and times, never your GPS trail or where you started from
+const gameForCloud=g=>{const o=Object.assign({},g);["trail","photos","photo","moves","clipN","startPos","here","lastFix"].forEach(k=>delete o[k]);return JSON.stringify(o)};
 const liveSig=g=>JSON.stringify([g.started,g.startedAt,g.endsAt,g.target,g.jp,g.wild,g.title,(g.visits||[]).map(v=>[v.id,v.arrivedAt,v.leftAt,v.counted])]);
 let liveLastSig=null,liveLastPut=0,liveBusy=false;
 const isHost=()=>!!(liveDoc&&ME&&liveDoc.host===ME.uid);
@@ -254,7 +255,7 @@ function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
       try{await B.set(`live/${g.live}`,{host:u,hostName:m.n||"",members,beat:Date.now()},true);closeSheet();track("live_handover")}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}})})}
 // the end: the host's final crawl goes to the doc; followers copy it to their tab from the bar they joined
 async function liveEnded(rec){if(!rec.live||!CLP)return;rec.liveId=rec.live;delete rec.live;
-  try{const B=await cloud();const j=recForCloud(rec);await B.set(`live/${rec.liveId}`,{ended:true,rec:j,beat:Date.now(),g:gameForCloud(Object.assign({},rec,{ended:true}))},true);saveH();
+  try{const B=await cloud();const j=JSON.stringify(Object.assign(JSON.parse(recForCloud(rec)),{trail:[],startPos:null}));await B.set(`live/${rec.liveId}`,{ended:true,rec:j,beat:Date.now(),g:gameForCloud(Object.assign({},rec,{ended:true}))},true);saveH();
     matesFrom(liveDoc)}catch(e){console.warn("live end",e)}
   liveDetach()}
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
