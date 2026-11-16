@@ -3695,6 +3695,7 @@ function closeSettings(now_){const pg=$("setPage");if(!pg)return;pg.classList.re
    Order: a page over the app, then a panel, then the screen's own back button, then home. At home it leaves. */
 function appBack(){
   if($("docPage")){closeDoc();return true}
+  if($("acctPage")){closeAcct();return true}
   if($("setPage")){closeSettings();return true}
   if(document.querySelector(".jpx")||spinning)return true;   // a spin or the jackpot plays out
   const d=$("sheet");if(d&&d.open){closeSheet();return true}
@@ -3709,7 +3710,7 @@ function appBack(){
 // In a browser there's nothing to catch the back gesture with, so the app keeps one spare history entry while you're away from home
 function backArm(){const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform())return;try{if(!(history.state&&history.state.rrBack))history.pushState({rrBack:1},"")}catch(e){}}
 function backNeeded(){return S.route!=="home"||!!($("sheet")&&$("sheet").open)}
-addEventListener("popstate",()=>{if($("docPage")){closeDoc();return}if($("setPage")){closeSettings();return}
+addEventListener("popstate",()=>{if($("docPage")){closeDoc();return}if($("acctPage")){closeAcct();return}if($("setPage")){closeSettings();return}
   if(NATIVE)return;if(appBack()&&backNeeded())backArm()});
 if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.addListener)
   CAPX.Plugins.App.addListener("backButton",()=>{if(!appBack())CAPX.Plugins.App.minimizeApp()});
