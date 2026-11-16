@@ -2266,7 +2266,7 @@ function nightSheet(){
     <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
     <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
     ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
-    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it. Swipe left to remove one.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
+    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
     $("ngX").onclick=closeSheet;
     const open=id=>{const v=byId(id),vi=g.visits.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
