@@ -1022,8 +1022,8 @@ function renderQuick(){
   if(!here&&!S.test&&!renderQuick.asked&&navigator.geolocation){renderQuick.asked=1;permState().then(st=>{if(st!=="granted")return;
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
-    b.innerHTML=top+`<div><h1 class="q modename">R<i>&amp;</i>R</h1><p class="sub" style="margin:6px 0 0">Rest &amp; Roulette.<br>Where are we spinning?</p></div>
-      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>A spot in ${esc(cityIn(S.city))}</b><small>Choose where you'll start</small>`:`<b>An area</b><small>Starts where you are</small>`}</span></button>
+    b.innerHTML=top+`<div><h1 class="q modename modefull">Rest <i>&amp;</i> Roulette</h1><p class="sub" style="margin:6px 0 0">No timer, no wildcards, no jackpot</p></div>
+      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t">${away?`<b>All rooftops</b><small>Bars in ${esc(S.city)}</small>`:`<b>All rooftops</b><small>Bars near you</small>`}</span></button>
       ${apWrap("__want",listOpt(t,q.sel==="__want"))}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
     apBind(b,async k=>wantList(),()=>null);
