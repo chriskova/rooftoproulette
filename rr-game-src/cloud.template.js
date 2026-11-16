@@ -172,7 +172,9 @@ async function signOutNow(){const B=await cloud();await B.signOut();closeAcct();
 function deleteAccountSheet(){
   sheet(`<h3>Delete your account?</h3><p class="note">Removes your account and your tab's backup. Crawls on this phone stay here.</p><div class="acts"><button class="btn" type="button" id="daY" style="background:var(--red);color:#fff">Delete account</button><button class="btn dark" type="button" id="daN">Keep it</button></div>`,()=>{
     $("daN").onclick=closeSheet;$("daY").onclick=async()=>{const B=await cloud(),uid=ME.uid;
-      try{const L=await B.list(`users/${uid}/crawls`);for(const x of L)await B.del(`users/${uid}/crawls/${x._id}`);await B.del(`users/${uid}`);await B.deleteMe();localStorage.removeItem("rr-synced");closeSheet();closeAcct();toast("Account deleted.",3000);track("account_deleted")}
+      try{const L=await B.list(`users/${uid}/crawls`);for(const x of L)await B.del(`users/${uid}/crawls/${x._id}`);
+        try{for(const x of await B.list(`users/${uid}/invites`))await B.del(`users/${uid}/invites/${x._id}`)}catch(e){}
+        await B.del(`users/${uid}`);await B.deleteMe();localStorage.removeItem("rr-synced");closeSheet();closeAcct();toast("Account deleted.",3000);track("account_deleted")}
       catch(e){console.warn(e);if(/recent-login/.test(e.code||"")){closeSheet();toast("Sign in again, then delete.",3500);await signIn("delete")}else toast("Couldn't delete it. Try again.",3000)}}})}
 
 // ----- My Tab backup (signed in) -----
