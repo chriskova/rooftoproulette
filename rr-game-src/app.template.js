@@ -1121,7 +1121,7 @@ function renderWiz(){
       </div>
       ${(()=>{try{return cloudOn()}catch(e){return false}})()?`<button class="joinrow" type="button" id="lenJoin">${PEOPLEI_()}<span>Join a friend's crawl</span><i class="chev">›</i></button>`:""}
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
-    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});if($("lenJoin"))$("lenJoin").onclick=joinSheet;
+    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});if($("lenJoin"))$("lenJoin").onclick=joinScan;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
@@ -1186,7 +1186,8 @@ function renderWiz(){
     draw();wizRepaint=draw;
     body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
     $("wSee").onclick=wizSpoiler;
-    cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>$("wStart").onclick=()=>{sawHow("rush");tryStart()});
+    const canInv=(()=>{try{return cloudOn()}catch(e){return false}})();
+    cta(canInv?`<div class="ctarow"><button class="btn dark" id="wInv" type="button">${PEOPLEI_()} Invite</button><button class="btn" id="wStart" type="button">Start the crawl</button></div>`:`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()};if($("wInv"))$("wInv").onclick=()=>liveInvite()});
   }
 }
 let wizRepaint=null,wMapRef=null;
@@ -1247,6 +1248,7 @@ async function tryStart2(noLoc){
     startPos:{lat:pos.lat,lng:pos.lng},zoneMoved:w.start.type!=="me"||undefined,areas:[w.start.type==="area"?w.start.name:nearestSuburb(w.start)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:(w.excl||[]).slice(),zone:{lat:w.start.lat,lng:w.start.lng,name:w.start.type==="area"?w.start.name:nearestArea(w.start)},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   if(noLoc)S.game.noLoc=true;
+  if(w.live){S.game.live=w.live;try{liveAttach()}catch(e){}}   // friends invited from setup keep following
   spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 
@@ -2437,7 +2439,7 @@ function openMenu(){
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
-$("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();$("pPeople").onclick=()=>liveInvite();
+$("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>

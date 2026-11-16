@@ -234,19 +234,25 @@ const liveSig=g=>JSON.stringify([g.started,g.startedAt,g.endsAt,g.target,g.jp,g.
 let liveLastSig=null,liveLastPut=0,liveBusy=false;
 const isHost=()=>!!(liveDoc&&ME&&liveDoc.host===ME.uid);
 
-async function startLive(){const g=G();if(!g||g.live)return g&&g.live;const B=await cloud();
+async function startLive(){const g=G();if(!g)return startLivePre();if(g.live)return g.live;const B=await cloud();
   const id=liveId(),me=ME.uid;g.live=id;save();
   await B.set(`live/${id}`,{host:me,hostName:myName(),g:gameForCloud(g),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
   liveLastSig=liveSig(g);liveLastPut=Date.now();track("live_start");liveAttach();return id}
+// invited before the crawl starts: the follow link works straight away and shows "Not started" until the first spin
+async function startLivePre(){const w=S.wiz;if(!w||!w.z)return null;if(w.live)return w.live;const B=await cloud();
+  const id=liveId();w.live=id;save();
+  const pre={mode:"rush",len:w.len,started:false,visits:[],center:{lat:w.z.lat,lng:w.z.lng},radius:w.radius,city:S.city};
+  await B.set(`live/${id}`,{host:ME.uid,hostName:myName(),g:JSON.stringify(pre),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
+  track("live_start",{pre:true});return id}
 async function liveInvite(){
   if(!signedIn()){track("live_invite_gate");signInSheet("Friends don't need an account to follow.","live","Sign in to share live");return}
   if(!myName()){nameSheet(()=>liveInvite());return}
-  let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}
+  let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
   const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;track("live_invite");
   const [mates,svg]=await Promise.all([matesList(),qrSVG(link)]);
   const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
   sheet(`<h3>Invite friends</h3><p class="note">${n?`${n} following. `:""}They follow every spin and the timer from their own phones. You keep the spin.</p>
-    ${svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan with a phone camera</p>`:""}
+    ${svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:""}
     <div class="acts row2"><button class="btn" type="button" id="liSend">${I.share} Send link</button><button class="btn dark" type="button" id="liCopy">${I.link} Copy link</button></div>
     ${mates.length?`<div class="eyebrow hsec">Friends</div><div class="mates">${mates.map(m=>`<button type="button" class="mate" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Invite</span></button>`).join("")}</div>`:""}`,()=>{
 
@@ -364,26 +370,48 @@ async function matesList(all){try{const B=await cloud(),u=await B.get(`users/${M
 // invites from mates (while the app's open)
 async function watchInvites(){if(!signedIn()||inviteUnsub)return;const B=await cloud(),seen=new Set(JSON.parse(localStorage.getItem("rr-inv-seen")||"[]"));
   inviteUnsub=B.watchList(`users/${ME.uid}/invites`,L=>{L.filter(x=>!seen.has(x._id)&&Date.now()-x.at<6*3600000).forEach(x=>{seen.add(x._id);localStorage.setItem("rr-inv-seen",JSON.stringify([...seen].slice(-50)));
-    S.liveInv={id:x._id,from:x.from||"",at:x.at};save();homeLive();
-    if(S.route!=="home")toast(`<b>${esc(x.from||"A friend")}</b> invited you to a live crawl <button class="txtbtn amber" type="button" id="invGo">Join</button>`,10000,()=>{const b=$("invGo");if(b)b.onclick=()=>{followLive(x._id)}});B.del(`users/${ME.uid}/invites/${x._id}`).catch(()=>{})})})}
+    S.liveInv={id:x._id,from:x.from||"",at:x.at};save();homeLive();inviteCard();B.del(`users/${ME.uid}/invites/${x._id}`).catch(()=>{})})})}
+// the invite as a card you answer (like an incoming request). Not over another open panel or your own crawl: the home banner keeps it.
+function inviteCard(){const v=S.liveInv;if(!v||$("sheet").open||(S.game&&S.game.started&&!S.game.ended)||S.follow)return;
+  const nm=String(v.from||"").trim(),first=nm.split(" ")[0];track("invite_card");
+  sheet(`<div class="invcard"><span class="mav">${esc((first||"?")[0].toUpperCase())}</span>
+    <h3>${first?esc(first):"A friend"} invited you to a live crawl</h3><p class="note">Follow every spin and the timer from your phone.</p></div>
+    <div class="acts"><button class="btn" type="button" id="icJoin">Join</button><button class="btn dark" type="button" id="icNo">Not now</button></div>`,()=>{
+    $("icJoin").onclick=()=>{const id=v.id;S.liveInv=null;save();closeSheet();homeLive();followLive(id)};
+    $("icNo").onclick=()=>{closeSheet();homeLive()}})}
 // home: a friend's crawl you've been invited to, while it's live (invites last 6 hours)
 function homeLive(){const b=$("homeLive");if(!b)return;const v=S.liveInv,ok=v&&Date.now()-v.at<6*3600000&&!S.game&&!S.follow&&cloudOn();
   if(!ok){if(v&&Date.now()-v.at>=6*3600000){S.liveInv=null;save()}b.hidden=true;return}
   const first=String(v.from||"").trim().split(" ")[0];
-  b.innerHTML=`${PEOPLEI_()}<span><b>${first?esc(first):"A friend"}</b> invited you to a live crawl</span><span class="amber">Join</span><button class="x" type="button" aria-label="Not now">×</button>`;b.hidden=false;
+  b.innerHTML=`${PEOPLEI_()}<span><b>${first?esc(first):"A friend"}</b> invited you</span><span class="hjoin">Join</span><button class="x" type="button" aria-label="Not now">×</button>`;b.hidden=false;
   b.onclick=e=>{if(e.target.closest(".x")){e.stopPropagation();S.liveInv=null;save();b.hidden=true;if(typeof fitHome==="function")requestAnimationFrame(fitHome);return}
     const id=v.id;S.liveInv=null;save();b.hidden=true;track("home_live_join");followLive(id)};
   if(typeof fitHome==="function")requestAnimationFrame(fitHome)}
-// setup: join a friend's crawl. The phone camera opens their QR straight in the app; this is for a link they sent.
-function joinSheet(){track("join_open");
-  sheet(`<h3>Join a friend's crawl</h3><p class="note">Point your phone camera at their QR code, or paste the link they sent.</p>
-    <input class="cnin" id="jnIn" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste the link">
-    <p class="aerr" id="jnErr"></p>
-    <div class="acts"><button class="btn" type="button" id="jnGo">Join</button></div>`,()=>{
-    const go=()=>{const c=liveCode($("jnIn").value.trim());if(!c){$("jnErr").textContent="That's not a live crawl link.";return}
-      closeSheet();S.wiz=null;save();cloud().then(()=>followLive(c)).catch(()=>toast("No connection. Check your signal.",3000))};
-    $("jnGo").onclick=go;$("jnIn").onkeydown=e=>{if(e.key==="Enter")go()};
-    if(navigator.clipboard&&navigator.clipboard.readText&&!NATIVE)navigator.clipboard.readText().then(t=>{if(liveCode(t)&&!$("jnIn").value)$("jnIn").value=t}).catch(()=>{})})}
+// setup: join a friend's crawl by scanning their QR code in the app (like unlocking a scooter)
+let scanSt=null,jqP=null;
+const jsqrLib=()=>jqP||(jqP=new Promise((res,rej)=>{if(window.jsQR)return res(window.jsQR);const sc=document.createElement("script");sc.src=(window.RR_ROOT||"")+"vendor/qr/jsQR.js";sc.onload=()=>res(window.jsQR);sc.onerror=()=>{jqP=null;rej(new Error("jsqr didn't load"))};document.head.appendChild(sc)}));
+async function joinScan(){track("join_scan_open");
+  const ov=document.createElement("div");ov.className="scanv";
+  ov.innerHTML=`<video playsinline muted autoplay></video><div class="scan-frame" aria-hidden="true"></div>
+    <div class="scan-top"><b>Scan a friend's QR code</b><button type="button" class="shv-x" id="scX" aria-label="Close">${I.x}</button></div>
+    <p class="scan-msg" id="scMsg">It's on their screen under Invite friends</p>`;
+  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
+  const msg=t=>{const m=ov.querySelector("#scMsg");if(m)m.textContent=t};
+  const close=()=>{if(scanSt){scanSt.getTracks().forEach(t=>t.stop());scanSt=null}ov.remove()};
+  ov.querySelector("#scX").onclick=close;
+  try{scanSt=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false})}catch(e){msg("Allow camera access to scan");return}
+  if(!ov.isConnected){close();return}
+  const v=ov.querySelector("video");v.srcObject=scanSt;v.play().catch(()=>{});
+  let det=null;try{if("BarcodeDetector" in window&&(await BarcodeDetector.getSupportedFormats()).includes("qr_code"))det=new BarcodeDetector({formats:["qr_code"]})}catch(e){}
+  let J=null;if(!det){try{J=await jsqrLib()}catch(e){msg("Couldn't start the scanner. Check your signal.");return}}
+  const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
+  const found=t=>{const c=liveCode(t);if(!c){msg("That's not a Rooftop Roulette code");return false}
+    close();buzz(25);track("join_scanned");S.wiz=null;save();cloud().then(()=>followLive(c)).catch(()=>toast("No connection. Check your signal.",3000));return true};
+  const tick=async()=>{if(!scanSt||!ov.isConnected)return;
+    try{if(v.readyState>=2&&v.videoWidth){if(det){const r=await det.detect(v);if(r&&r[0]&&found(r[0].rawValue))return}
+      else{const w=Math.min(640,v.videoWidth),h=Math.round(v.videoHeight*w/v.videoWidth);cv.width=w;cv.height=h;cx.drawImage(v,0,0,w,h);const r=J(cx.getImageData(0,0,w,h).data,w,h,{inversionAttempts:"dontInvert"});if(r&&found(r.data))return}}}catch(e){}
+    setTimeout(tick,200)};
+  tick()}
 
 // low battery: offer to hand the spin over before the phone dies
 let batAsked=false;
@@ -393,9 +421,9 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
   b.addEventListener("levelchange",chk);chk()}).catch(()=>{})}
 
 // menu rows during a crawl
-function liveMenuRows(g){if(!cloudOn())return "";const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
-  return (g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
-function liveMenuBind(){if($("mGive"))$("mGive").onclick=giveSpinSheet}
+function liveMenuRows(g){if(!cloudOn()||g.demo)return "";const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
+  return `<button type="button" id="mInvite">${PEOPLEI_()}<span>Invite friends<small>${n?`${n} following live`:"They follow every spin and the timer"}</small></span></button>`+(g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
+function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows
 function accountRows(){if(!(FB_CFG||FAKE_CLOUD))return [];
