@@ -212,12 +212,22 @@ async function liveInvite(){if(!myName()&&!signedIn()){nameSheet(()=>liveInvite(
   const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;track("live_invite");
   const mates=signedIn()?await matesList():[];
   sheet(`<h3>Invite to follow</h3><p class="note">They see the clock, the bar you're at and where's next. You keep the spin.</p>
-    <div class="acts"><button class="btn" type="button" id="liSend">${I.share} Send invite link</button><button class="btn dark" type="button" id="liCopy">${I.link} Copy link</button></div>
+    <div class="acts"><button class="btn" type="button" id="liSend">${I.share} Send invite link</button><button class="btn dark" type="button" id="liCopy">${I.link} Copy link</button><button class="txtbtn qrbtn" type="button" id="liQR">${QRI} Show QR code</button></div>
     ${mates.length?`<div class="eyebrow hsec">Crawled with before</div><div class="mates">${mates.map(m=>`<button type="button" class="mate" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Mate")}</span><span class="mst">Invite</span></button>`).join("")}</div>`:""}`,()=>{
     $("liSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
+    $("liQR").onclick=()=>qrSheet(link,()=>liveInvite());
     $("liCopy").onclick=async()=>{try{await navigator.clipboard.writeText(link);toast("Link copied.",2000)}catch(e){toast("Couldn't copy the link.",2500)}};
     document.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const B=await cloud();
       try{await B.set(`users/${b.dataset.mu}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});b.querySelector(".mst").textContent="Invited";b.disabled=true;track("live_invite_mate")}catch(e){toast("Couldn't send that one.",2500)}})})}
+// QR code of the follow link: for when everyone's standing together. Always black on white so cameras read it.
+const QRI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h2.5v2.5H14zM18.5 18.5h2M14 20.5h2.5M20.5 14v2.5"/></svg>';
+let qrP=null;
+const qrLib=()=>qrP||(qrP=new Promise((res,rej)=>{if(window.qrcode)return res(window.qrcode);const sc=document.createElement("script");sc.src="vendor/qr/qrcode.js";sc.onload=()=>res(window.qrcode);sc.onerror=()=>{qrP=null;rej(new Error("qr didn't load"))};document.head.appendChild(sc)}));
+async function qrSheet(link,back){let svg="";
+  try{const Q=await qrLib(),q=Q(0,"M");q.addData(link);q.make();svg=q.createSvgTag({cellSize:6,margin:3,scalable:true})}catch(e){console.warn(e);toast("Couldn't make the code. Send the link instead.",3000);return}
+  track("live_qr");
+  sheet(`<h3>Scan to follow</h3><p class="note">Open the phone camera and point it here.</p><div class="qrbox">${svg}</div>
+    <div class="acts"><button class="btn dark" type="button" id="qrBack">Back</button></div>`,()=>{$("qrBack").onclick=()=>back?back():closeSheet()})}
 function nameSheet(after){
   sheet(`<h3>What's your name?</h3><p class="note">So your mates know whose crawl it is.</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
     <div class="acts"><button class="btn" type="button" id="nmOk">Done</button><button class="btn dark" type="button" id="nmG">Sign in instead</button></div>`,()=>{
