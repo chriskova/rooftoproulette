@@ -1,11 +1,14 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.rooftoproulette.app",
       "sha256_cert_fingerprints": [
-        "46:97:37:40:23:97:14:06:F0:6F:F5:D6:FE:AB:DE:AF:FF:9C:F8:AD:A5:0B:CD:10:BE:1F:AA:F5:F1:92:6B:4B"
+        "46:97:37:40:23:97:14:06:F0:6F:F5:D6:FE:AB:DE:AF:FF:9C:F8:AD:A5:0B:CD:10:BE:1F:AA:F5:F1:92:6B:4B",
+        "28:55:F6:BE:43:52:72:3A:67:D9:AA:A5:DD:A6:B4:D9:0E:04:3A:69:E2:D2:81:4E:90:F9:03:0B:F7:D6:4C:27"
       ]
     }
   }
