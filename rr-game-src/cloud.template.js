@@ -277,7 +277,7 @@ function nameSheet(after){
   sheet(`<h3>What's your name?</h3><p class="note">So friends know whose crawl it is.</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
     <div class="acts"><button class="btn" type="button" id="nmOk">Done</button><button class="btn dark" type="button" id="nmG">Sign in instead</button></div>`,()=>{
     const ok=()=>{const v=$("nmIn").value.trim();if(!v)return;S.myName=v;save();closeSheet();after&&after()};
-    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So friends see your name.");setTimeout(()=>$("nmIn").focus(),50)})}
+    $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So friends see your name.","live");setTimeout(()=>$("nmIn").focus(),50)})}
 
 // host: push the crawl when something happened, plus a "still here" every 2 minutes
 async function liveSync(force){const g=G();if(!g||!g.live||!CLP||liveBusy||!isHost())return;
