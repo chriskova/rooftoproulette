@@ -106,9 +106,12 @@ function emailSheet(mode,from,em){const up=mode==="up";
         track("signed_in",{from,via:"email",created:up});signedInSheet()}
       catch(e){console.warn(e);err(authErr(e));b.disabled=false}};
     $("aeGo").onclick=go;$("aePw").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>(up?$("aeName"):$("aeMail")).focus(),60)})}
+// your Google photo when there is one, otherwise your initial (also if the photo fails to load)
+const meInitial=()=>esc(((ME&&(ME.name||ME.email))||"?")[0].toUpperCase());
+const avatarHTML=big=>`<span class="aav${big?" big":""}">${ME&&ME.photo?`<img src="${esc(ME.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.i))">`:meInitial()}</span>`.replace('<span class="aav','<span data-i="'+meInitial()+'" class="aav');
 // what you see once you're in, and from the account button on My Tab
 function signedInSheet(){const n=readH(HKEY).filter(r=>!r.demo).length,first=((ME&&ME.name)||"").split(" ")[0];
-  sheet(`<div class="acct"><span class="aav big">${esc(((ME&&ME.name)||(ME&&ME.email)||"?")[0].toUpperCase())}</span>
+  sheet(`<div class="acct">${avatarHTML(true)}
     <h3>${first?`You're in, ${esc(first)}`:"You're signed in"}</h3><p class="note">${esc((ME&&ME.email)||"")}</p></div>
     <div class="aperks"><div>${I.check}<span><b>My Tab is backed up</b><small>${n?`${n} crawl${n===1?"":"s"} saved to your account. `:""}Delete the app or change phones and it comes back when you sign in.</small></span></div>
     <div>${I.check}<span><b>Crawls you follow land on your tab</b><small>Follow a mate's live crawl and it's yours too when it ends.</small></span></div>
@@ -118,7 +121,7 @@ function accountSheet(){if(signedIn()){signedInSheet();const a=document.querySel
   else signInSheet("Back up My Tab and get crawls from your mates.","mytab")}
 // the account button on My Tab: your initial when signed in, an outline when not
 function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
-  return signedIn()?`<button class="achip on" type="button" id="acctChip" aria-label="Your account"><span class="aav">${esc(((ME.name||ME.email||"?")[0]).toUpperCase())}</span></button>`
+  return signedIn()?`<button class="achip on" type="button" id="acctChip" aria-label="Your account">${avatarHTML()}</button>`
     :`<button class="achip" type="button" id="acctChip" aria-label="Sign in"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span>Sign in</span></button>`}
 function acctChipBind(){const b=$("acctChip");if(b)b.onclick=accountSheet}
 const GIC='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.2-4.7 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1-3.7 1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.6l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>';
