@@ -773,6 +773,7 @@ function renderHome(){
   $("homeHow").onclick=()=>{S.intro=0;S.introReplay=true;save();go("intro")};
   homeOpen();
   homeAt();
+  try{homeLive()}catch(e){}
   requestAnimationFrame(fitHome);
 }
 // Standing at a rooftop with the app open and no game on: offer to start one from here.
@@ -818,7 +819,7 @@ function safetySheet(next){sheet(`<h3>Before you head out</h3><div class="safe">
   <p><b>Walk, don't run.</b> The clock never needs you to rush. If time's up on the way, the bar still counts.</p>
   <p><b>Drinking is optional.</b> Water, soft drinks or nothing all count. Know your limit.</p>
   <p><b>Eyes up at roads.</b> Check the app when you've stopped, not while you're crossing.</p>
-  <p><b>Never drive after drinking.</b> Look after your mates and get everyone home.</p></div>
+  <p><b>Never drive after drinking.</b> Look after each other and get everyone home.</p></div>
   <p class="note">You're 18+ and you agree to the <a href="terms.html" target="_blank" rel="noopener">terms of use</a>. You're responsible for your own safety on a crawl.</p>
   <div class="acts"><button class="btn" type="button" id="sfOk">I'm 18+ and I agree</button></div>`,()=>{$("sfOk").onclick=()=>{S.safeOK=Date.now();save();track("safety_ok");closeSheet();next()}})}
 // Before anyone's played anything: ask straight up whether they're heading out or trying it first.
@@ -1118,8 +1119,9 @@ function renderWiz(){
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
         <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><b class="rrwm">R<i>&amp;</i>R</b><small>No timer, no wildcards, no jackpot</small></button>
       </div>
+      ${(()=>{try{return cloudOn()}catch(e){return false}})()?`<button class="joinrow" type="button" id="lenJoin">${PEOPLEI_()}<span>Join a friend's crawl</span><i class="chev">›</i></button>`:""}
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
-    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
+    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});if($("lenJoin"))$("lenJoin").onclick=joinSheet;
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
@@ -2435,7 +2437,7 @@ function openMenu(){
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
-$("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();
+$("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();$("pPeople").onclick=()=>liveInvite();
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>
@@ -2534,7 +2536,7 @@ function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".c
 function renderPlay(){
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
-  $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;$("pMap").classList.toggle("hasdot",mapHintDue(g));
+  $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;try{paintPeople()}catch(e){}$("pMap").classList.toggle("hasdot",mapHintDue(g));
   const counted=countShown(g);
   if(g.visits.length&&!S.tips.night){if(!S.tips.nightAt){S.tips.nightAt=Date.now();save();setTimeout(()=>{S.tips.night=1;save();if(S.route==="play")renderPlay()},8000)}else if(Date.now()-S.tips.nightAt>8000){S.tips.night=1;save()}}
   $("pCount").innerHTML=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${counted}</b><i class="cv">${I.chev||"›"}</i>${g.visits.some(v=>v._inCount||v.counted===true)&&!S.tips.night?`<span class="cnudge">Your crawl</span>`:""}`;
