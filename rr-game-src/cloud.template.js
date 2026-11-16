@@ -82,10 +82,13 @@ async function signIn(from){track("sign_in_tap",{from,via:"google"});
   try{const B=await cloud();await B.google();track("signed_in",{from,via:"google"});afterSignIn(from);return true}
   catch(e){console.warn("sign in",e);if(!isCancel(e))toast(esc(authErr(e)),3500);return false}}
 // one sign-in sheet everywhere: Google or email
+// Signing in from Settings or the account button lists every perk; from an action, only the one that action needs.
+const PERK_TAB=()=>`<div>${I.check}<span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></div>`;
+const PERK_LIVE=()=>`<div>${I.check}<span><b>Share your crawl live</b><small>Let friends follow every spin and the timer from their own phones</small></span></div>`;
 function signInSheet(why,from,title){from=from||"sheet";
+  const perks=from==="live"?PERK_LIVE():(from==="follow_end"||from==="scorecard")?PERK_TAB():PERK_TAB()+PERK_LIVE();
   sheet(`<h3>${title||"Sign in"}</h3>${why?`<p class="note">${why}</p>`:""}
-    <div class="aperks"><div>${I.check}<span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></div>
-    <div>${I.check}<span><b>Share your crawl live</b><small>Let friends follow every spin and the timer from their own phones</small></span></div></div>
+    <div class="aperks">${perks}</div>
     <div class="acts">
     ${canGoogle()?`<button class="btn" type="button" id="siG">${GIC} Continue with Google</button>`:""}
     <button class="btn dark" type="button" id="siE">${I.mail||MAILI} Continue with email</button></div>`,()=>{
@@ -433,7 +436,7 @@ function accountBind(){if($("stIn"))$("stIn").onclick=()=>signInSheet(null,"sett
 // scorecard nudge, once, after your first real crawl
 function endSignInNudge(r){if(!cloudOn()||signedIn()||S.siNudged||r.demo||r.shared||!H.length)return "";
   return `<button class="sinudge" type="button" id="siNudge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></button>`}
-function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet(null,"scorecard")}}
+function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet(null,"scorecard","Save your tab")}}
 
 // start up
 function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
