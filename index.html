@@ -2334,6 +2334,22 @@ html,body{overflow-x:hidden;max-width:100%}
   html:not(.dark) body:not(.camon) .bar.phd .wild{background:rgba(255,255,255,.14);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
   html:not(.dark) body:not(.camon) .wfly.wfly-dk{background:rgba(28,21,8,.92)!important;color:#fff!important;border-color:rgba(245,184,61,.75)!important;box-shadow:0 18px 40px rgba(0,0,0,.45)}
   html:not(.dark) body:not(.camon) .wfly.wfly-dk svg,html:not(.dark) body:not(.camon) .wfly.wfly-dk b{color:#F5B83D!important}
+
+/* live crawls: following along */
+.followv{position:fixed;inset:0;z-index:2500;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 16px);opacity:0;transition:opacity .2s;overflow:hidden}
+.followv.on{opacity:1}
+.fv-top{display:flex;align-items:center;justify-content:space-between;min-height:40px}
+.fv-clock{font-family:var(--display);font-weight:800;font-size:72px;line-height:.9;letter-spacing:.01em;color:var(--amber-display)}
+.fv-sub{color:var(--muted);font-weight:600;font-size:14px;margin-top:-4px}
+.fv-map{flex:1;min-height:160px;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+.fv-now{display:flex;flex-direction:column;gap:2px}.fv-now:empty{display:none}.fv-now small{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.fv-now b{font-size:22px;font-weight:800}.fv-now span{font-size:14px;color:var(--muted)}
+.fv-list{display:flex;flex-direction:column;max-height:24vh;overflow:auto}.fv-list:empty{display:none}
+.fv-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-weight:600}.fv-row i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--amber);color:#241803;display:grid;place-items:center;font-size:12px;font-weight:800}.fv-row span{flex:1}.fv-row small{color:var(--muted)}.fv-row.x{opacity:.5}
+.fv-act{display:flex;flex-direction:column;align-items:center;gap:8px}.fv-act p{margin:0;font-weight:600}.fv-act .btn{width:100%}
+.mates{display:flex;flex-direction:column;margin-top:6px}
+.mate{appearance:none;background:none;border:0;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:11px 2px;font-size:16px;font-weight:600;color:var(--text);text-align:left}
+.mate .mav{width:34px;height:34px;border-radius:50%;background:var(--amber);color:#241803;display:grid;place-items:center;font-weight:800}.mate .mn{flex:1}.mate .mst{color:var(--amber-text);font-size:14px;font-weight:700}.mate:disabled .mst{color:var(--muted)}
+.sinudge{appearance:none;width:100%;margin-top:10px;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:none;color:var(--text);text-align:left}.sinudge svg{width:22px;height:22px;flex:none}.sinudge b{display:block;font-size:15px}.sinudge small{color:var(--muted);font-size:13px}
 </style>
 <script>/* hold the first paint until the brand fonts are ready, so nothing flashes in a fallback font */
 (function(){var d=document.documentElement;d.classList.add("fl");var done=function(){d.classList.remove("fl")};

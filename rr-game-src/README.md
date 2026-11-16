@@ -61,3 +61,13 @@ The app is light (warm cream) by default and switches to the dark look when the 
 ## Site pages (site/)
 
 `site/privacy.html`, `site/terms.html` and `site/support.html` are the pages Settings links to. `build.py` copies them to the repo root next to the app. The app finds them through the `SITE` constant in `index.template.html`: change that one line when the pages move to rooftoproulette.com.
+
+## Accounts and live crawls (cloud.template.js)
+
+Optional Google sign-in backs up My Tab and records who you crawl with. Live crawls: Invite to follow (crawl menu) sends a link; followers see the clock, the bar and where's next live; one spinner, who can give the spin away; a follower can take over if the spinner's phone can't be reached for 5 minutes; when it ends the crawl lands on every follower's tab.
+
+- Backend: Firebase on the free Spark plan (no card, so it can't bill). Hidden until `firebase` (the web app config) and `googleWebClientId` are set in `data/config.json`.
+- `firebase/firestore.rules`: paste into Firestore > Rules.
+- `vendor/firebase/rr-firebase.js` is a bundle of the Firebase SDK (rebuild from `vendor/firebase/entry.js` with esbuild). Loaded only when needed.
+- Android sign-in uses `GoogleAuthPlugin` (Credential Manager); register the app's SHA-1s in the Firebase project.
+- Tests: `node fakecloud-server.js 8787 &` then `node live-crawl.js $(realpath ../../index.html)` (uses `?fakecloud=`).

@@ -191,7 +191,7 @@ const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const saveH=()=>writeH(hTest?TKEY:HKEY,H);
+const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon()};
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
 // Time travel only ever applies in test mode, so a real game always runs on the phone's clock.
@@ -1297,7 +1297,7 @@ function spinPool(){
 }
 function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v.arrivedAt,t);const ok=(v.leftAt-v.arrivedAt)>=DWELL();
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else v.counted=ok?true:v._ans!==undefined?v._ans:null;delete v._ans}
-function onLocation(){liveNote();alertSync();
+function onLocation(){liveNote();alertSync();if(S.game&&S.game.live)liveSync(false);
   const g=G();[bMap,zMap].forEach(setMe);
   if(!g||g.ended)return;
   const y=you();if(!y)return;
@@ -1913,6 +1913,7 @@ async function openSharedFromHash(){const code=crawlCode(location.hash)||crawlCo
   await openCrawlCode(code);history.replaceState(null,"",location.pathname+location.search.replace(/[?&]crawl=[A-Za-z0-9_-]+/,"").replace(/^&/,"?"))}
 function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.some(x=>x.id===r.id)){L.push(r);L.sort((x,y)=>y.startedAt-x.startedAt);writeH(HKEY,L)}
   if(!hTest)H=readH(HKEY);track("crawl_link_add");SHARED=null;toast("Added to your tab.",2500);
+  if(cloudOn()&&!signedIn()&&canGoogle())setTimeout(()=>signInSheet("Sign in and the next crawl you're on lands on your tab without a link.","link_add"),1500);
   if(hTest){go("home")}else{S.lastEnd=r.id;save();renderEnd()}}
 let camPopT=null;
 function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
@@ -2347,6 +2348,7 @@ function openMenu(){
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     ${S.film!==false?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>`:""}
     ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
+    ${liveMenuRows(g)}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>End crawl<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"Nothing's been played yet"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
@@ -2354,7 +2356,7 @@ function openMenu(){
     $("mHow").onclick=cr?cruiseHow:howSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
-    if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);
+    if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);liveMenuBind();
     $("mEnd").onclick=()=>sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your crawl card is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
@@ -2380,7 +2382,7 @@ function endGame(at){
   const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
   rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
   if(g.demo){DEMO_REC=rec;track("demo_end",{bars:rec.visits.filter(v=>v.counted===true).length});S.lastEnd=g.id;S.rackEnd=g.id;S.bodDue=g.id;S.game=null;save();closeSheet();ding();go("end");confetti();return}
-  rec.test=!!(g.test||S.test);pushH(rec);syncH();afterNote(rec);
+  rec.test=!!(g.test||S.test);pushH(rec);syncH();afterNote(rec);if(rec.live)liveEnded(rec);
   S.lastEnd=g.id;S.rackEnd=g.id;S.bodDue=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");confetti();
 }
 
@@ -2802,7 +2804,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>${ANDROID_WEB&&SHARED_CODE?`<button class="txtbtn amber openapp" type="button" id="openApp">Open in the app</button>`:""}`
-      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share crawl</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
+      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share crawl</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>${endSignInNudge(r)}`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -2824,7 +2826,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   $("doneBtn").onclick=()=>{SHARED=null;const to=["hist","bars"].includes(S.endBack)?S.endBack:"home";go(to)};
   fitLine(box.querySelector(".scttl"),9);
   // an old crawl: no "Play again", Share takes the row
-  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;if($("openApp"))$("openApp").onclick=openInApp;
+  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;endSignInBind();if($("openApp"))$("openApp").onclick=openInApp;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card
@@ -3638,6 +3640,7 @@ function settingsSheet(){
     ${grp("Appearance",[`<div class="strow stseg"><div class="seg" id="stTheme">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-th="${k}" aria-pressed="${(S.theme||"auto")===k}">${l}</button>`).join("")}</div></div>`])}
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
     ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
+    ${grp("Account",accountRows(lk))}
     ${grp("Your tab",[lk("stBk","Back up My Tab"),lk("stRs","Restore My Tab")])}
     ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous. Never names, locations, photos or clips"),lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
@@ -3654,7 +3657,7 @@ function settingsSheet(){
   if($("stGal"))$("stGal").onclick=()=>{S.clipAuto=S.clipAuto===false;save();settingsSheet()};
   $("stAn").onclick=()=>{if(!S.anOff){track("analytics_off");S.anOff=true}else{S.anOff=false;save();track("analytics_on")}save();settingsSheet()};
   $("stFilm").onclick=()=>{S.film=S.film===false;save();track("film_toggle",{on:S.film!==false,where:"settings"});settingsSheet();if(S.route==="play")renderPlay()};
-  $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();
+  $("stBk").onclick=()=>backupTab();$("stRs").onclick=()=>restoreTab();accountBind();
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
     el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
   $("stPerm").onclick=permSheet;
