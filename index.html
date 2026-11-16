@@ -1214,6 +1214,15 @@ body.recspun .camfab.ontop{visibility:hidden}
 .shv-snd{position:absolute;right:30px;bottom:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(11,13,18,.7);color:var(--muted);display:grid;place-items:center;opacity:.9}.shv-snd svg{width:20px;height:20px}.shv-snd.on{color:var(--amber-text)}
 .shv-go{display:flex;gap:10px}.shv-go .btn{flex:1}.shv-go .shv-link{flex:0 0 56px;padding:0;display:grid;place-items:center}.shv-link svg{width:22px;height:22px}.shv-go .btn[hidden]{display:none}
 .shv-dots .cdot{border-radius:2px}
+.shv-ph{height:100%;aspect-ratio:9/16;max-width:100%;border-radius:16px;background:linear-gradient(100deg,#12161E 30%,#1B212C 50%,#12161E 70%);background-size:300% 100%;animation:shvph 1.3s linear infinite}
+.shv-ph.none{animation:none;background:#12161E;display:grid;place-items:center;color:var(--muted,#9AA1AD);font:600 14px var(--ui)}
+@keyframes shvph{from{background-position:100% 0}to{background-position:-200% 0}}
+.shv-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:4px 16px 0;justify-content:space-between}.shv-row::-webkit-scrollbar{display:none}
+.shv-a{appearance:none;border:0;background:none;color:#F4F1EA;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:58px;flex:1 0 58px;padding:0;font:600 12px var(--ui)}
+.shv-a span{width:54px;height:54px;border-radius:50%;background:#1B212C;display:grid;place-items:center}.shv-a span svg{width:24px;height:24px}
+.shv-a small{font-size:12px;color:#C9CDD4;white-space:nowrap}
+.sa-whatsapp span{background:#25D366;color:#fff}.sa-stories span{background:radial-gradient(circle at 30% 107%,#FDCB52 0%,#FD5949 40%,#D6249F 65%,#285AEB 100%);color:#fff}
+
 .reportbtn{display:block;margin:14px auto 0;color:var(--muted);font-size:13.5px}
 .campop{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:2700;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(11,13,18,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:translateY(130%);transition:transform .25s cubic-bezier(.3,.75,.2,1);touch-action:pan-y}
 .campop.on{transform:none}

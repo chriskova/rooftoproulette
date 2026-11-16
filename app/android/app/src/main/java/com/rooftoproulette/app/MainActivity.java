@@ -28,6 +28,7 @@ public class MainActivity extends BridgeActivity {
         });
 
         registerPlugin(CrawlNotifyPlugin.class);   // our own: the live crawl notification
+        registerPlugin(ShareToPlugin.class);       // our own: the crawl card share row (Stories, WhatsApp, Messages)
         super.onCreate(savedInstanceState);
 
         // The app's own background behind everything from the first frame: window, status bar, navigation bar

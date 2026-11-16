@@ -2802,7 +2802,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>${ANDROID_WEB&&SHARED_CODE?`<button class="txtbtn amber openapp" type="button" id="openApp">Open in the app</button>`:""}`
-      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share card</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
+      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share crawl</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -2820,6 +2820,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if((S.test&&r.simDone!==3||thin)&&!(window._simRan||(window._simRan={}))[r.id]&&st.arrived.length){window._simRan[r.id]=1;const fb=byId(st.arrived[0].id);if(S.test&&fb)r.startPos={lat:fb.lat,lng:fb.lng};simTrail(r,S.test?null:r.startPos).then(t=>{if(t.length>1){r.trail=t;r.simDone=3;saveH();if(S.route==="end"&&S.lastEnd===r.id)renderEnd()}})}
   box.querySelector(".scmap").onclick=e=>{if(!e.target.closest("a"))bigMap(r,st)};
 
+  if(!isShared&&!pending.length)prefetchCards(r);
   $("doneBtn").onclick=()=>{SHARED=null;const to=["hist","bars"].includes(S.endBack)?S.endBack:"home";go(to)};
   fitLine(box.querySelector(".scttl"),9);
   // an old crawl: no "Play again", Share takes the row
@@ -3079,55 +3080,87 @@ async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:
   x.fillStyle=DAY?"rgba(11,13,18,.1)":"rgba(11,13,18,.25)";x.fillRect(0,0,W,HH);x.restore();
   return P;
 }
+// Crawl cards are made once per crawl and kept, and the scorecard starts making them in the background,
+// so Share opens straight onto the cards and the share row (like Spotify's share screen).
+const CARDS=new Map();
+const cardLooks=r=>r.photo?["full","map","map2","rund"]:["map","map2","rund"];
+const cardSig=r=>[r.id,r.photo?r.photo.length+r.photo.slice(-24):"",r.title||"",r.barOfDay||"",r.jp&&r.jp.k||"",(r.visits||[]).map(v=>v.id+(v.counted===true?1:v.counted===false?0:2)).join(","),r.endedAt||"",window.RUND_VAR||""].join("|");
+function cardBlob(r,look){const k=cardSig(r)+"|"+look;let p=CARDS.get(k);
+  if(!p){p=Promise.race([storyCard(r,look),new Promise(z=>setTimeout(()=>z(null),20000))]).catch(e=>{console.warn(e);return null}).then(b=>{if(!b)CARDS.delete(k);return b});CARDS.set(k,p)}
+  return p}
+let prefetchT=null;
+function prefetchCards(r){clearTimeout(prefetchT);if(!r||r.demo)return;
+  prefetchT=setTimeout(async()=>{for(const l of cardLooks(r)){if(S.route!=="end"||S.lastEnd!==r.id)return;await cardBlob(r,l)}},1200)}
+// which apps the share row can send to directly (Android app); the phone's own share sheet covers the rest
+let shareTargets=null;
+function shareTargetsP(){if(shareTargets)return shareTargets;
+  shareTargets=NATIVE&&CAPX.getPlatform()==="android"?Promise.resolve().then(()=>PLG.ShareTo.available()).then(o=>o||{}).catch(()=>({}))
+    :Promise.resolve(ANDROID_WEB?{whatsapp:true,messages:true}:{});
+  return shareTargets}
+const SI={
+  copy:I.link,
+  whatsapp:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2A9.8 9.8 0 0 0 3.6 17l-1.4 4.9 5-1.3A9.8 9.8 0 1 0 12 2.2zm0 17.8a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8 1c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1 4.9 4.9 0 0 0 1 2.6 11.2 11.2 0 0 0 4.3 3.8c1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.2.2-.6.2-1 .1-1.2l-.5-.2z"/></svg>',
+  stories:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
+  messages:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><circle cx="8.5" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="15.5" cy="12" r=".6" fill="currentColor"/></svg>',
+  save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5.5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18.5" cy="12" r="1.8"/></svg>'};
 async function shareStory(r){track("share_open",{has_photo:!!r.photo});
   const ov=document.createElement("div");ov.className="sharev";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
-  let urls=[],blobs=[],looks=[],cur=0;
-  const close=()=>{ov.classList.remove("on");setTimeout(()=>{ov.remove();urls.forEach(u=>URL.revokeObjectURL(u))},250)};
-  const top=`<div class="shv-top"><b>Your crawl card</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>`;
-  const bindX=()=>ov.querySelector(".shv-x").onclick=close;
-  const addPhoto=cam=>pickPhoto(f=>shrink(f,1000).then(d=>{(r.photos=r.photos||[]).push(d);if(r.photos.length>3)r.photos.shift();r.photo=d;delete r.noPhoto;try{saveH()}catch(e){}cards(0)}),cam);
-  // no photo yet: offer one first, the map card is the fallback
-  const ask=()=>{ov.innerHTML=top+`<div class="shv-ask">${I.camera}<h2>Add a photo?</h2><p>The group, the view, whatever's in your glass. It sets the background of your card.</p>
-      <button class="btn" type="button" id="shvAdd">${I.camera} Take a photo</button><button class="btn dark" type="button" id="shvGal">${GAL} Choose from gallery</button><button class="txtbtn" type="button" id="shvSkip">Skip, use the map</button></div>`;
-    bindX();$("shvAdd").onclick=()=>addPhoto(true);$("shvGal").onclick=()=>addPhoto(false);$("shvSkip").onclick=()=>cards(0)};
-  async function cards(start){
-    ov.innerHTML=top+`<div class="shv-wait">Making your card…</div>`;bindX();
-    looks=r.photo?["full","map","map2","rund"]:["map","map2","rund"];   // map2: the same map card with the other map (day vs night)
-    const inTime=(p,ms,fb)=>Promise.race([Promise.resolve(p).catch(e=>{console.warn(e);return fb}),new Promise(z=>setTimeout(()=>z(fb),ms))]);
-    window._mapErrs=[];blobs=await Promise.all(looks.map(l=>inTime(storyCard(r,l),20000,null)));
-    {const keep=blobs.map((b,i)=>b?i:-1).filter(i=>i>=0);looks=keep.map(i=>looks[i]);blobs=keep.map(i=>blobs[i])}
-    const clips=await inTime(clipList(r.id),8000,[]);clips.forEach(c=>{looks.push("clip");blobs.push(c.blob)});
-    const mapDiag=S.test&&window._mapErrs.length?`<div class="shv-diag">Map didn't load: ${esc([...new Set(window._mapErrs)].slice(0,4).join(" · "))}</div>`:"";
-    if(!blobs.length||!blobs[0]){ov.querySelector(".shv-wait").textContent="Couldn't make the card. Try again.";return}
-    urls.forEach(u=>URL.revokeObjectURL(u));urls=blobs.map(b=>URL.createObjectURL(b));cur=Math.min(start||0,looks.length-1);
+  let urls=[],looks=[],blobs=[],cur=0,clips=[],gen=0;
+  const close=()=>{gen++;ov.classList.remove("on");ov.querySelectorAll("video").forEach(v=>v.pause());setTimeout(()=>{ov.remove();urls.forEach(u=>u&&URL.revokeObjectURL(u))},250)};
+  const linkP=r.shared?Promise.resolve(null):crawlLink(r);
+  const addPhoto=()=>photoSheet(r,()=>build(0));
+  const copyText=async t=>{const ok=await (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t).then(()=>true,()=>false):Promise.resolve(false));if(ok)return true;
+    try{const ta=document.createElement("textarea");ta.value=t;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();const k=document.execCommand("copy");ta.remove();return k}catch(e){return false}};
+  async function build(start){const g=++gen;
+    looks=cardLooks(r);blobs=looks.map(()=>null);urls.forEach(u=>u&&URL.revokeObjectURL(u));urls=looks.map(()=>null);cur=Math.min(start||0,looks.length-1);
+    const T=await shareTargetsP();if(g!==gen)return;
+    const acts=[["copy","Copy link",!r.shared],["whatsapp","WhatsApp",!!T.whatsapp],["stories","Stories",!!T.stories],["messages","Messages",!!T.messages],["save","Save",true],["more","More",true]].filter(a=>a[2]);
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
-    ov.innerHTML=top+`<div class="shv-car">${urls.map((u,i)=>looks[i]==="clip"?`<div class="shv-s clip"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`:`<div class="shv-s"><img src="${u}" alt="Story card"></div>`).join("")}</div>
-      <div class="shv-ctl">${looks.length>1?`<div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}" aria-label="${l==="full"?"Photo":l==="map"||l==="map2"?"Map":l==="clip"?"Clip":"Rundown"}"${l==="clip"?' class="cdot"':""}></button>`).join("")}</div>`:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}${thumbs}</div>
-      ${mapDiag}<div class="shv-go"><button class="btn dark" type="button" id="shvSave" hidden>Save</button>${r.shared?"":`<button class="btn dark shv-link" type="button" id="shvLink" aria-label="Copy link">${I.link}</button>`}<button class="btn" type="button" id="shvGo">${I.share} Share</button></div>`;
-    bindX();const car=ov.querySelector(".shv-car"),dots=[...ov.querySelectorAll("[data-k]")],th=ov.querySelector(".shv-th");
-    const vids=[...ov.querySelectorAll(".shv-s")].map(sl=>sl.querySelector("video"));
-    const mark=()=>{dots.forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));if(th)th.style.visibility=looks[cur]==="map"||looks[cur]==="map2"||looks[cur]==="clip"?"hidden":"visible";
-      $("shvSave").hidden=false;vids.forEach((v,i)=>{if(!v)return;if(i===cur)v.play().catch(()=>{});else v.pause()})};
-    ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});
+    ov.innerHTML=`<div class="shv-top"><b>Share crawl</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>
+      <div class="shv-car">${looks.map((l,i)=>`<div class="shv-s" data-s="${i}"><div class="shv-ph"></div></div>`).join("")}</div>
+      <div class="shv-ctl"><div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}"></button>`).join("")}</div>${r.photo?thumbs:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}</div>
+      <div class="shv-row">${acts.map(([k,l])=>`<button type="button" class="shv-a sa-${k}" data-a="${k}"><span>${SI[k]}</span><small>${l}</small></button>`).join("")}</div>`;
+    ov.querySelector(".shv-x").onclick=close;
+    const car=ov.querySelector(".shv-car"),slides=()=>[...ov.querySelectorAll(".shv-s")],dots=()=>[...ov.querySelectorAll("[data-k]")];
+    const mark=()=>{dots().forEach((d,i)=>d.setAttribute("aria-pressed",i===cur));const th=ov.querySelector(".shv-th");if(th)th.style.visibility=looks[cur]==="full"||looks[cur]==="rund"?"visible":"hidden";
+      slides().forEach((sl,i)=>{const v=sl.querySelector("video");if(v){if(i===cur)v.play().catch(()=>{});else v.pause()}})};
+    const bindDots=()=>dots().forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));bindDots();
+    car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur&&i<looks.length){cur=i;mark()}},{passive:true});
     requestAnimationFrame(()=>{car.scrollLeft=cur*car.clientWidth;mark()});
-    car.addEventListener("scroll",()=>{const i=Math.round(car.scrollLeft/car.clientWidth);if(i!==cur){cur=i;mark()}},{passive:true});
-    dots.forEach((d,i)=>d.onclick=()=>car.scrollTo({left:i*car.clientWidth,behavior:"smooth"}));
-    ov.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.ph];saveH();cards(0)});
-    if($("shvAdd2"))$("shvAdd2").onclick=()=>photoSheet(r,()=>cards(0));
-    $("shvSave").onclick=()=>{track("card_saved",{kind:looks[cur]});if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipSave(c.blob,c.type,c.at);return}
-      const name=`rooftop-roulette-${looks[cur]}.png`;if(NATIVE){nativeSavePhoto(blobs[cur],name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)});return}
-      const a=document.createElement("a");a.href=urls[cur];a.download=name;document.body.appendChild(a);a.click();a.remove()};
-    const linkP=r.shared?Promise.resolve(null):crawlLink(r);
-    if($("shvLink"))$("shvLink").onclick=async()=>{const link=await linkP;if(!link)return;track("link_copied");
-      const ok=await (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(link).then(()=>true,()=>false):Promise.resolve(false))||(()=>{try{const t=document.createElement("textarea");t.value=link;t.style.cssText="position:fixed;opacity:0";document.body.appendChild(t);t.select();const r_=document.execCommand("copy");t.remove();return r_}catch(e){return false}})();
-      buzz(10);toast(ok?"Link copied.":"Couldn't copy the link.",2200)};
-    $("shvGo").onclick=async()=>{track("share_sent",{kind:looks[cur]});const link=await linkP,text=link?`${crawlLine(r)}\n${link}`:"";
-      if(looks[cur]==="clip"){const c=clips[cur-(looks.length-clips.length)];if(c)clipShare(c.blob,c.type,c.at,text);return}const file=new File([blobs[cur]],`rooftop-roulette-${looks[cur]}.png`,{type:"image/png"});
-      if(NATIVE){nativeShare(blobs[cur],file.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}
-      if(navigator.canShare&&navigator.canShare(text?{files:[file],text}:{files:[file]})){await navigator.share(text?{files:[file],text}:{files:[file]}).catch(()=>{})}
-      else{const a=document.createElement("a");a.href=urls[cur];a.download=file.name;a.click()}};
+    ov.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{r.photo=r.photos[+b.dataset.ph];saveH();build(cur)});
+    if($("shvAdd2"))$("shvAdd2").onclick=addPhoto;
+    // cards fill in as they're ready (straight away when the scorecard already made them)
+    const ready=looks.map((l,i)=>cardBlob(r,l).then(b=>{if(g!==gen)return null;const sl=slides()[i];
+      if(!b){if(sl)sl.innerHTML=`<div class="shv-ph none">Couldn't make this one</div>`;return null}
+      blobs[i]=b;urls[i]=URL.createObjectURL(b);if(sl)sl.innerHTML=`<img src="${urls[i]}" alt="Crawl card">`;return b}));
+    clipList(r.id).then(L=>{if(g!==gen||!L||!L.length)return;clips=L;
+      L.forEach(c=>{const i=looks.length;looks.push("clip");const u=URL.createObjectURL(c.blob);urls.push(u);blobs.push(c.blob);ready.push(Promise.resolve(c.blob));
+        car.insertAdjacentHTML("beforeend",`<div class="shv-s clip" data-s="${i}"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`);
+        ov.querySelector(".shv-dots").insertAdjacentHTML("beforeend",`<button type="button" data-k="${i}" aria-pressed="false" class="cdot"></button>`)});
+      ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});bindDots()}).catch(()=>{});
+    const item=async()=>{const i=cur,b=blobs[i]||await ready[i];if(!b){toast("That card didn't load. Swipe to another.",2500);return null}
+      const clip=looks[i]==="clip",c=clip?clips[i-(looks.length-clips.length)]:null,name=clip?clipFile(c.blob,c.type,c.at).name:`rooftop-roulette-${looks[i]}.png`;
+      return {b,clip,c,name,type:clip?c.type.split(";")[0]:"image/png",look:looks[i]}};
+    ov.querySelectorAll("[data-a]").forEach(btn=>btn.onclick=async()=>{const a=btn.dataset.a;buzz(10);
+      if(a==="copy"){const link=await linkP;if(!link)return;track("link_copied");toast((await copyText(link))?"Link copied.":"Couldn't copy the link.",2200);return}
+      const link=await linkP,text=link?`${crawlLine(r)}\n${link}`:"";
+      if(a==="whatsapp"&&!NATIVE){track("share_sent",{to:"whatsapp"});location.href="https://wa.me/?text="+encodeURIComponent(text||crawlLine(r));return}
+      if(a==="messages"&&!NATIVE){track("share_sent",{to:"messages"});location.href="sms:?&body="+encodeURIComponent(text||crawlLine(r));return}
+      const it=await item();if(!it)return;
+      if(a==="save"){track("card_saved",{kind:it.look});if(it.clip){clipSave(it.c.blob,it.c.type,it.c.at);return}
+        if(NATIVE){nativeSavePhoto(it.b,it.name).then(()=>toast("Saved to your gallery.",2500)).catch(e=>{console.warn(e);toast("Couldn't save to your gallery.",3500)});return}
+        const u=URL.createObjectURL(it.b),el=document.createElement("a");el.href=u;el.download=it.name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return}
+      track("share_sent",{kind:it.look,to:a});
+      if(a==="more"){if(it.clip){clipShare(it.c.blob,it.c.type,it.c.at,text);return}
+        if(NATIVE){nativeShare(it.b,it.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}
+        const file=new File([it.b],it.name,{type:"image/png"}),o=text?{files:[file],text}:{files:[file]};
+        if(navigator.canShare&&navigator.canShare(o))await navigator.share(o).catch(()=>{});else{const u=URL.createObjectURL(it.b),el=document.createElement("a");el.href=u;el.download=it.name;el.click();setTimeout(()=>URL.revokeObjectURL(u),4000)}return}
+      // Stories, WhatsApp, Messages: straight into that app
+      try{const path=await nativeFile(it.b,it.name);await PLG.ShareTo.share({to:a,path,type:it.type,text:a==="stories"?undefined:text})}
+      catch(e){console.warn(e);nativeShare(it.b,it.name,"Rooftop Roulette",a==="stories"?"":text).catch(()=>{})}});
   }
-  if(r.photo)cards(0);else ask();
+  build(0);
 }
 function roundRect(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath()}
 const loadImg=src=>new Promise((res,rej)=>{const i=new Image();const t=setTimeout(()=>rej("timeout"),12000);i.onload=()=>{clearTimeout(t);res(i)};i.onerror=e=>{clearTimeout(t);rej(e)};i.src=src});
