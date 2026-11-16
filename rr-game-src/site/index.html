@@ -57,7 +57,11 @@ input[type=email]:focus{border-color:var(--amber)}
 .fine{font-size:13px;color:var(--dim);text-align:center;margin:2px 0 0}
 .err{font-size:14px;color:var(--red);text-align:center;margin:0;min-height:0}
 .err:empty{display:none}
-.done[hidden]{display:none}
+.done[hidden],form[hidden]{display:none}
+/* signed up: everything goes except the faded pin, and the confirmation sits in the middle */
+body.sent main>*:not(.done){display:none}
+body.sent .done{margin:auto 0;padding:0;animation:in .35s ease both}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .done h2{font:800 30px/1.1 var(--head);margin:0}
 .done p{margin:0 0 8px;color:var(--muted)}
 .ghost{background:transparent;color:var(--text);border:1.5px solid var(--line)}
@@ -120,7 +124,7 @@ var phone=function(){var r=f.querySelector("input[name=phone]:checked");return r
 f.addEventListener("change",function(e){if(e.target.name==="phone")err.textContent=""});
 async function hash(s){try{var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,"0")}).join("")}
   catch(e){return s.replace(/[^a-z0-9]/g,"_").slice(0,120)}}
-function done(again){f.hidden=true;$("done").hidden=false;if(again)$("doneH").textContent="You're already on the list.";
+function done(again){f.hidden=true;$("done").hidden=false;document.body.classList.add("sent");scrollTo(0,0);if(again)$("doneH").textContent="You're already on the list.";
   try{localStorage.setItem("rr-waitlist","1")}catch(e){}}
 f.addEventListener("submit",async function(e){e.preventDefault();err.textContent="";
   var email=$("email").value.trim().toLowerCase(),ph=phone();
