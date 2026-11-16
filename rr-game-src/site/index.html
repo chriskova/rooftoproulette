@@ -36,7 +36,7 @@ body{position:relative}
 .bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
 .pin{position:absolute;right:-90px;top:calc(60px + 6vh);height:min(440px,58vh);width:auto;opacity:var(--pin);pointer-events:none;user-select:none;z-index:0}
 main{position:relative;z-index:1;max-width:440px;margin:0 auto;min-height:100vh;min-height:100svh;min-height:var(--h,100svh);display:flex;flex-direction:column;
-  padding:calc(env(safe-area-inset-top) + 12vh) 22px calc(env(safe-area-inset-bottom) + 22px)}
+  padding:calc(env(safe-area-inset-top) + 32px) 22px calc(env(safe-area-inset-bottom) + 22px)}
 .kick{font:700 12px/1 var(--head);letter-spacing:.16em;text-transform:uppercase;color:var(--amber-text);margin:0 0 14px}
 .brand{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:.92;font-size:clamp(58px,17vw,84px);margin:0}
 .brand span{color:var(--amber-text)}
@@ -76,8 +76,8 @@ footer a{color:var(--muted);text-decoration:none}
 .soc{display:flex;gap:6px}
 .soc a{display:flex;width:40px;height:40px;align-items:center;justify-content:center;color:var(--muted)}
 .soc svg{width:22px;height:22px}
-@media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:10vh}}
-@media (max-height:700px){main{padding-top:calc(env(safe-area-inset-top) + 6vh)}form{padding-top:24px}.pin{top:40px}}
+@media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:56px}}
+@media (max-height:700px){main{padding-top:calc(env(safe-area-inset-top) + 24px)}form{padding-top:24px}.pin{top:40px}}
 </style>
 </head>
 <body>
@@ -96,7 +96,6 @@ footer a{color:var(--muted);text-decoration:none}
     </div>
     <p class="err" id="err" role="alert"></p>
     <button class="btn" id="go" type="submit">Get early access</button>
-    <p class="fine">Launch emails only. Unsubscribe anytime.</p>
   </form>
 
   <div class="done" id="done" hidden>
