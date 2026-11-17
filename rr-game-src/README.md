@@ -57,7 +57,8 @@ The app is light (warm cream) by default and switches to the dark look when the 
 
 - `node app/sync-web.js` copies the built game into `app/www` (same layout as the site: the game at `play/`, shared files beside it); `npm run sync` (in `app/`) also runs `cap sync`.
 - Inside the app, `BUNDLED` (top of `app.template.js`) is true: bar lists still update from `https://rooftoproulette.com/venues.json`, the Settings pages load from the site, there's no service worker, and Google Maps uses `googleMapsAppKey`.
-- Game changes reach phones through a new store build: the test APK (`android-test` release) and TestFlight build on every push that changes the game or `app/`; the Play Store build is the "Android Play Store build" workflow, uploaded to closed testing. Bar list changes still need no build (see above).
+- **RR Dev** (`android.yml`, `android-test` release, `rr-dev.apk`) is the one exception: Chris's own test app, a separate app (`com.rooftoproulette.app.dev`, teal icon) that sits next to the store app and loads the live game at `rooftoproulette.com/play/`, so game changes show up on the next open with no reinstall. It's rebuilt only when `app/` changes. Its Google sign-in needs the dev package and the debug key's SHA-1 registered in Firebase.
+- Testers get game changes through store builds: TestFlight builds on every push that changes the game or `app/`; the Play Store build is the "Android Play Store build" workflow, uploaded to closed testing. Bar list changes need no build (see above).
 - `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`.
 
 ## Website and early access (site/index.html)

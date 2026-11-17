@@ -4,7 +4,8 @@ android {
     namespace = "com.rooftoproulette.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.rooftoproulette.app"
+        // The RR Dev build (android.yml) sets its own ID so it installs next to the store app
+        applicationId(System.getenv("RR_APP_ID") ?: "com.rooftoproulette.app")
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // store builds set these from CI (each Play upload needs a higher versionCode)

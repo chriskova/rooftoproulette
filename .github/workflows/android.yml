@@ -1,10 +1,12 @@
-# Builds the Android test app on every push to main that touches the app or the built web app,
-# and puts the APK on the "android-test" release so it can be downloaded straight to a phone.
-name: Android test build
+# Builds "RR Dev", Chris's own test app, and puts the APK on the "android-test" release.
+# RR Dev is a separate app (com.rooftoproulette.app.dev, teal icon) that sits next to the store app and
+# loads the live game at rooftoproulette.com/play/, so game changes show up on the next open with no reinstall.
+# It only needs rebuilding when the native shell changes (app/**). Store builds never load the website.
+name: Android dev build (RR Dev)
 on:
   push:
     branches: [main]
-    paths: ["play/**", "rooftop-app.js", "browser-config.js", "vendor/**", "icons/**", "fonts/**", "app/**", ".github/workflows/android.yml"]
+    paths: ["app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -28,24 +30,34 @@ jobs:
           cache: gradle
       - name: Copy the web app into the native project
         working-directory: app
+        env:
+          RR_DEV: "1"
         run: |
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.appName='RR Dev';c.server={url:'https://rooftoproulette.com/play/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- android
+      - name: Make it RR Dev (own name and teal icon)
+        working-directory: app/android/app/src/main/res
+        run: |
+          sed -i 's#<string name="app_name">[^<]*</string>#<string name="app_name">RR Dev</string>#; s#<string name="title_activity_main">[^<]*</string>#<string name="title_activity_main">RR Dev</string>#' values/strings.xml
+          pip install --quiet pillow && python3 ../../../../../dev-icon.py .
       - name: Build the APK
+        env:
+          RR_APP_ID: com.rooftoproulette.app.dev
         working-directory: app/android
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - name: Name it
         run: |
           N=$(git rev-list --count HEAD)
-          cp app/android/app/build/outputs/apk/debug/app-debug.apk "rooftop-roulette-test.apk"
+          cp app/android/app/build/outputs/apk/debug/app-debug.apk "rr-dev.apk"
           echo "N=$N" >> $GITHUB_ENV
       - name: Publish to the android-test release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTE="Test build $N · $(git log -1 --format=%s | head -c 120)"
+          NOTE="RR Dev build $N · $(git log -1 --format=%s | head -c 120)"
           if gh release view android-test >/dev/null 2>&1; then
-            gh release upload android-test rooftop-roulette-test.apk --clobber
+            gh release upload android-test rr-dev.apk --clobber
             gh release edit android-test --notes "$NOTE"
           else
-            gh release create android-test rooftop-roulette-test.apk --prerelease --title "Android test build" --notes "$NOTE"
+            gh release create android-test rr-dev.apk --prerelease --title "RR Dev (Android)" --notes "$NOTE"
           fi
