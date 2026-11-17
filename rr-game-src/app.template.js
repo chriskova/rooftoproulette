@@ -2996,9 +2996,10 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,mapc?{cx:W/2,cy:780,bw:860,bh:900}:null).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
   const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");if(x._day){[[T4-520,0],[T4-380,.14],[T4-240,.38],[T4-100,.66],[T4+20,.84]].forEach(([y,a])=>gr.addColorStop(q(y),`rgba(11,13,18,${a})`));gr.addColorStop(q(LT-50),"rgba(11,13,18,.94)")}
     else{gr.addColorStop(q(T4-330),"rgba(11,13,18,0)");gr.addColorStop(q(T4-180),"rgba(11,13,18,.35)");gr.addColorStop(q(T4-40),"rgba(11,13,18,.74)");gr.addColorStop(q(LT-50),"rgba(11,13,18,.9)")}gr.addColorStop(1,BG)}else if(mapc){const q=v=>Math.max(0,Math.min(1,v/HH));
-    // Daytime: the light map with a warm fade (the light-mode bar card's brown), eased in so there's no visible edge: a soft one at the top for Instagram's header, and a longer one at the bottom that never goes to black (82% at the very bottom, enough to read the stats).
-    if(x._day){const WM="34,22,6";for(let i=0;i<=8;i++){const t=i/8;gr.addColorStop(q(t*380),`rgba(${WM},${(.28*(1-t)*(1-t)).toFixed(3)})`)}
-      for(let i=1;i<=12;i++){const t=i/12;gr.addColorStop(q(860+t*(HH-860)),`rgba(${WM},${(.82*Math.pow(t,1.2)).toFixed(3)})`)}}
+    // Daytime: the light map with the same cool near-black as night (keeps the map's colours), eased in so there's no visible edge:
+    // a soft fade at the top for Instagram's header, and a long one at the bottom that builds to 90% so the stats read.
+    if(x._day){const WM="11,13,18";for(let i=0;i<=8;i++){const t=i/8;gr.addColorStop(q(t*380),`rgba(${WM},${(.3*(1-t)*(1-t)).toFixed(3)})`)}
+      for(let i=1;i<=12;i++){const t=i/12;gr.addColorStop(q(860+t*(HH-860)),`rgba(${WM},${(.9*Math.pow(t,1.3)).toFixed(3)})`)}}
     else{gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");gr.addColorStop(q(1230),"rgba(11,13,18,0)");gr.addColorStop(q(1380),"rgba(11,13,18,.35)");gr.addColorStop(q(1520),"rgba(11,13,18,.74)");gr.addColorStop(q(1660),"rgba(11,13,18,.9)");gr.addColorStop(1,BG)}}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
@@ -3034,7 +3035,11 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
         const rt0=X<W-330,pos=[[rt0,0],[!rt0,0],[rt0,56],[!rt0,56],[rt0,-56],[!rt0,-56],[rt0,112],[!rt0,112],[rt0,-112],[!rt0,-112]].map(([a,b])=>tryAt(a,b)).find(Boolean);if(!pos)return;
         placed.push(pos.box);placed.push([X-r*1.3,Y-r*2.6,X+r*1.3,Y+r*1.3]);
         const right=pos.rt,lx=pos.lx;x.save();x.shadowColor="rgba(0,0,0,.85)";x.shadowBlur=10;x.textAlign=right?"left":"right";
-        x.fillStyle=INK;x.fillText(nn,lx,Y-r*1.5+pos.dy);x.font=`600 21px ${U}`;x.fillStyle="rgba(244,241,234,.75)";x.fillText(stay?hmm(stay):"",lx,Y-r*1.5+26+pos.dy);x.restore()}});
+        if(x._day){   // light map: dark names with a white glow, like map labels (no box)
+          const glow=()=>{x.lineJoin="round";x.strokeStyle="rgba(255,255,255,.92)";x.lineWidth=7;x.shadowColor="rgba(255,255,255,.9)";x.shadowBlur=10},tm_=stay?hmm(stay):"";
+          x.font=`800 28px ${U}`;glow();x.strokeText(nn,lx,Y-r*1.5+pos.dy);x.shadowColor="transparent";x.fillStyle="#1A1612";x.fillText(nn,lx,Y-r*1.5+pos.dy);
+          x.font=`700 21px ${U}`;glow();x.strokeText(tm_,lx,Y-r*1.5+27+pos.dy);x.shadowColor="transparent";x.fillStyle="rgba(26,22,18,.62)";x.fillText(tm_,lx,Y-r*1.5+27+pos.dy)}
+        else{x.fillStyle=INK;x.fillText(nn,lx,Y-r*1.5+pos.dy);x.font=`600 21px ${U}`;x.fillStyle="rgba(244,241,234,.75)";x.fillText(stay?hmm(stay):"",lx,Y-r*1.5+26+pos.dy)}x.restore()}});
     x.restore()}
   if(mapP&&(!photo||sideMap)){x.font=`500 16px ${U}`;x.fillStyle="rgba(154,161,173,.6)";x.textAlign="right";x.fillText(x._mapSrc==="google"?"Map data © Google":x._mapSrc==="carto"?"© OpenStreetMap © CARTO":"Esri, HERE, Garmin, © OpenStreetMap",W-64,mapc?1290:rund?T4-260:1140);x.textAlign="left"}
   const ICP={roof:"M4 4h16l1.5 5h-19z M2.5 9a2.4 2.4 0 0 0 4.8 0 2.4 2.4 0 0 0 4.7 0 2.4 2.4 0 0 0 4.7 0 2.4 2.4 0 0 0 4.8 0 M4 11.5V20h16v-8.5 M9.5 20v-5h5v5",route:"M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M18 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M8 19h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16",
@@ -3196,8 +3201,22 @@ async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:
   const GSTL=["element:geometry|color:0xf3efe8","element:labels.text.fill|color:0x7a7064","element:labels.text.stroke|color:0xffffff","element:labels.icon|visibility:off","feature:poi|visibility:off","feature:transit|visibility:off",
     "feature:road|element:geometry|color:0xffffff","feature:road.arterial|element:geometry|color:0xfbf7f0","feature:road.highway|element:geometry|color:0xe8dccb","feature:water|element:geometry|color:0xc9dbe3","feature:landscape.natural|element:geometry|color:0xe3ead9","feature:poi.park|element:geometry|color:0xdde7d2","feature:administrative|element:geometry|visibility:off"].map(v=>"&style="+encodeURIComponent(v)).join("");
   {const MAXH=Math.floor(600*SC),EX=Math.ceil(70*SC/2),parts=[];for(let y=0;y<HH;y+=MAXH)parts.push([y,Math.min(MAXH,HH-y)]);
-    const gi=await Promise.all(parts.map(([py,ph],i)=>{const last=i===parts.length-1,rh=last?ph:ph+EX,ccx=x0+W/2/SC,ccy=y0+(py+rh/2)/SC;return load(`https://maps.googleapis.com/maps/api/staticmap?center=${ll(ccx,ccy)}&zoom=${z}&size=${Math.ceil(W/SC)}x${Math.ceil(rh/SC)}&scale=2&key=${GKEY}${DAY?GSTL:GST}`).then(im=>im&&{im,rh})}));
-    if(gi.every(Boolean)){x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();gi.forEach((g,i)=>{const[py,ph]=parts[i],sh=g.im.height*ph/g.rh;x.drawImage(g.im,0,0,g.im.width,sh,0,py,W,ph)});x.fillStyle=DAY?"rgba(11,13,18,.08)":"rgba(11,13,18,.18)";x.fillRect(0,0,W,HH);x.restore();x._mapSrc="google";return P}
+    // Street names stay, but not around the bars: small-street names are cleared near each bar, and every name right behind the bar's label,
+    // so bar names never sit on a street name. Three versions of the same map, blended with soft masks.
+    const gurl=(py,rh,extra)=>{const ccx=x0+W/2/SC,ccy=y0+(py+rh/2)/SC;return `https://maps.googleapis.com/maps/api/staticmap?center=${ll(ccx,ccy)}&zoom=${z}&size=${Math.ceil(W/SC)}x${Math.ceil(rh/SC)}&scale=2&key=${GKEY}${DAY?GSTL:GST}${extra}`};
+    const fetchSet=extra=>Promise.all(parts.map(([py,ph],i)=>{const last=i===parts.length-1,rh=last?ph:ph+EX;return load(gurl(py,rh,extra)).then(im=>im&&{im,rh})}));
+    const S_=v=>"&style="+encodeURIComponent(v);
+    const [gi,gl,gn]=await Promise.all([fetchSet(""),fetchSet(S_("feature:road.local|element:labels|visibility:off")),fetchSet(S_("element:labels|visibility:off"))]);
+    if(gi.every(Boolean)){const paint=(c,set)=>set.forEach((g,i)=>{const[py,ph]=parts[i],sh=g.im.height*ph/g.rh;c.drawImage(g.im,0,0,g.im.width,sh,0,py,W,ph)});
+      x.save();x.beginPath();x.rect(0,0,W,HH);x.clip();paint(x,gi);
+      const side=X=>X<W-330?1:-1;
+      const patch=(set,zone)=>{if(!set.every(Boolean))return;const o=document.createElement("canvas");o.width=W;o.height=HH;const oc=o.getContext("2d");paint(oc,set);
+        const m=document.createElement("canvas");m.width=W;m.height=HH;const mc=m.getContext("2d");stops.forEach(s=>{const[X,Y]=P(s);zone(mc,X,Y,side(X))});
+        oc.globalCompositeOperation="destination-in";oc.drawImage(m,0,0);x.drawImage(o,0,0)};
+      const ell=(mc,cx,cy,rx,ry,hard)=>{mc.save();mc.translate(cx,cy);mc.scale(rx/100,ry/100);const rg=mc.createRadialGradient(0,0,0,0,0,100);rg.addColorStop(0,"#000");rg.addColorStop(hard,"#000");rg.addColorStop(1,"rgba(0,0,0,0)");mc.fillStyle=rg;mc.fillRect(-100,-100,200,200);mc.restore()};
+      patch(gl,(mc,X,Y,sd)=>ell(mc,X+sd*150,Y-40,410,170,.85));
+      patch(gn,(mc,X,Y,sd)=>ell(mc,X+sd*170,Y-50,230,62,.7));
+      x.fillStyle=DAY?"rgba(11,13,18,.08)":"rgba(11,13,18,.18)";x.fillRect(0,0,W,HH);x.restore();x._mapSrc="google";return P}
     console.warn("story map: Google static map didn't load")}
   const imgs=await Promise.all(T.map(([tx,ty])=>Promise.all([load(url(DAY?ESRI_T("Base",false):ESRI,tx,ty)),load(url(DAY?ESRI_T("Reference",false):ESRI_LBL,tx,ty))])));const src="esri";
   if(imgs.filter(q=>q[0]).length<T.length*.6){console.warn("story map: tiles didn't load");return null}
