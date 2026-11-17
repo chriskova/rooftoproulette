@@ -154,7 +154,7 @@ const canApple=()=>!!(FB_CFG&&IOSNAT);
 function onUserChange(was,u){
   if(u&&!u.anon&&(!was||was.anon||was.uid!==u.uid)){tabSyncAll();watchInvites()}
   if(u&&u.anon&&was&&!was.anon){if(inviteUnsub){inviteUnsub();inviteUnsub=null}}
-  if($("setPage"))settingsSheet();if($("acctPage")){if(u&&!u.anon)accountPage();else closeAcct()}if(S.route==="hist")renderHist();if(u&&!u.anon&&$("siNudge"))$("siNudge").remove();
+  if($("setPage"))settingsSheet();if($("acctPage")){if(u&&!u.anon)accountPage();else closeAcct()}if(S.route==="hist")renderHist();if(u&&!u.anon){if($("siNudge"))$("siNudge").remove();if($("rcIn"))$("rcIn").remove()}
   if(S.follow||(S.game&&S.game.live))liveAttach();
 }
 
@@ -404,7 +404,7 @@ async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest 
   liveAttach()}
 let fv=null,fvMap=null,fvLayer=null,fvT=null,fvPrev=false;
 const CHEVD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv.classList.add("on"));
+function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-top"><span class="eyebrow" id="fvWho">Live crawl</span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}<button type="button" class="fv-ic" id="fvMapB" aria-label="Map">${I.map}</button><button type="button" class="fv-ic" id="fvMin" aria-label="Minimise">${CHEVD}</button></div>
     <div class="fv-head"><div><div class="fv-clock" id="fvClock">--:--</div><div class="fv-sub" id="fvSub"></div></div><button type="button" class="fv-count" id="fvCount" hidden></button></div>
     <div class="fv-now" id="fvNow"></div><div class="fv-act" id="fvAct"></div>`;
@@ -506,8 +506,12 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
-  delete r.newIds;r.bodDone=true;r.test=!!S.test;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});
-  toast("The crawl's on your tab.",3000);if(!signedIn())setTimeout(()=>signInSheet("Keep your crawls, photos and saved lists across devices.","follow_end","Save your tab"),1800)}
+  delete r.newIds;r.bodDone=true;r.test=!!S.test;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
+  // followers get the same ending as the host: straight onto the summary, with the stats racking up. No sign-in ask here
+  // (they're out, a few drinks in); the day-after card and My Tab ask instead.
+  if(fvPrev)return;leaveFollow();closeSheet();S.lastEnd=r.id;S.rackEnd=r.id;SHARED=null;
+  if(!["home","bars","hist"].includes(S.route))go("home");S.route="play";go("end");   // as if from the crawl screen, so "Play again" shows like it does for the host
+  ding();buzz([100,60,100,60,200]);confetti()}
 async function matesFrom(d){if(!d||!signedIn())return;const B=await cloud(),me=ME.uid,add={};
   const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me)add[u]={n:m.n||"",t:Date.now()}});
   if(Object.keys(add).length)try{const cur=(await B.get(`users/${me}`))||{};await B.set(`users/${me}`,{mates:Object.assign({},cur.mates||{},add)},true)}catch(e){console.warn(e)}}
@@ -578,6 +582,13 @@ function accountBind(){if($("stIn"))$("stIn").onclick=()=>signInSheet(null,"sett
 // scorecard nudge, once, after your first real crawl
 function endSignInNudge(r){if(!cloudOn()||signedIn()||S.siNudged||r.demo||r.shared||!H.length)return "";
   return `<button class="sinudge" type="button" id="siNudge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg><span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></button>`}
+// the day after, opened from the recap notification: one quiet line under the card, once per crawl, signed out only
+const SAVEI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg>';
+function recapSignIn(r){if(!cloudOn()||signedIn()||r.demo||r.recapAsked)return "";
+  return `<button class="sinudge" type="button" id="rcIn">${SAVEI}<span><b>Save your crawls</b><small>Keep your crawls and saved lists across devices</small></span></button>`}
+// top of My Tab, signed out, once there's more than one crawl to lose
+function tabSignIn(){if(!cloudOn()||signedIn()||H.length<2)return "";
+  return `<button class="sinudge tabsi" type="button" id="tabIn">${SAVEI}<span><b>Save your crawls</b><small>Keep your crawls and saved lists across devices</small></span></button>`}
 function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=true;save();signInSheet("Keep your crawls, photos and saved lists across devices.","scorecard","Save your tab")}}
 
 // start up

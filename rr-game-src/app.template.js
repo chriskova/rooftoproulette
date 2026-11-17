@@ -2919,7 +2919,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>${ANDROID_WEB&&SHARED_CODE?`<button class="txtbtn amber openapp" type="button" id="openApp">Open in the app</button>`:""}`
-      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share crawl</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>${endSignInNudge(r)}`}
+      :`<div class="row2"><button class="btn" type="button" id="shareBtn">${I.share} Share crawl</button><button class="btn dark" type="button" id="runBack">${I.redo} Play again</button></div>${S.recapOpen===r.id?recapSignIn(r):r.followed?"":endSignInNudge(r)}`}
     `;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
@@ -2933,7 +2933,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     if(k==="leg"){const j=st.arrived.indexOf(st.longest.to);if(j>0)legSheet(r,st.arrived[j-1].id,st.longest.to.id,l,v)}
     else if(k==="quick")staySheet(r,by(1),l,v);else if(k==="long")staySheet(r,by(-1),l,v);
     else if(k==="dist"||k==="time")crawlStatSheet(k,r.id,l)});
-  $("scPh").onclick=e=>r.photo&&!e.target.closest("[data-chg]")?mediaView(r):photoSheet(r,renderEnd);
+  if(r.followed&&!r.photo){$("scPh").remove()}   // a friend's crawl: their photos stay on their phone, and the photo's theirs to pick
+  else $("scPh").onclick=e=>r.photo&&!e.target.closest("[data-chg]")?mediaView(r):r.followed?null:photoSheet(r,renderEnd);
   if(!isShared&&!r.demo)clipList(r.id).then(L=>{const ph=$("scPh");if(L.length&&ph&&document.contains(ph)){ph.insertAdjacentHTML("beforeend",`<i class="phclips">▶ ${L.length}</i>`);if(!r.photo)ph.onclick=()=>mediaView(r)}}).catch(()=>{});
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
@@ -2948,7 +2949,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   $("doneBtn").onclick=()=>{SHARED=null;const to=["hist","bars"].includes(S.endBack)?S.endBack:"home";go(to)};
   fitLine(box.querySelector(".scttl"),9);
   // an old crawl: no "Play again", Share takes the row
-  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;endSignInBind();if($("openApp"))$("openApp").onclick=openInApp;
+  if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;endSignInBind();if($("rcIn"))$("rcIn").onclick=()=>{r.recapAsked=true;saveH();signInSheet("Keep your crawls and saved lists across devices.","recap","Save your crawls")};if(S.recapOpen===r.id&&$("rcIn")){r.recapAsked=true;saveH()}delete S.recapOpen;if($("openApp"))$("openApp").onclick=openInApp;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card
@@ -3270,7 +3271,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
     const thumbs=(r.photos||[]).length>1?`<div class="shv-th">${r.photos.map((p,i)=>`<button type="button" data-ph="${i}" aria-pressed="${r.photo===p}"><img src="${p}" alt=""></button>`).join("")}</div>`:"";
     ov.innerHTML=`<div class="shv-top"><b>Share crawl</b><button type="button" class="shv-x" aria-label="Close">${I.x}</button></div>
       <div class="shv-car">${looks.map((l,i)=>`<div class="shv-s" data-s="${i}"><div class="shv-ph"></div></div>`).join("")}</div>
-      <div class="shv-ctl"><div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}"></button>`).join("")}</div>${r.photo?thumbs:`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}</div>
+      <div class="shv-ctl"><div class="shv-dots dots">${looks.map((l,i)=>`<button type="button" data-k="${i}" aria-pressed="${i===cur}"></button>`).join("")}</div>${r.photo?thumbs:r.followed?"":`<button class="txtbtn" type="button" id="shvAdd2">${I.camera} Add a photo</button>`}</div>
       <div class="shv-row">${acts.map(([k,l])=>`<button type="button" class="shv-a sa-${k}" data-a="${k}"><span>${SI[k]}</span><small>${l}</small></button>`).join("")}</div>`;
     ov.querySelector(".shv-x").onclick=close;
     const car=ov.querySelector(".shv-car"),slides=()=>[...ov.querySelectorAll(".shv-s")],dots=()=>[...ov.querySelectorAll("[data-k]")];
@@ -3667,6 +3668,7 @@ function renderHist(){
   const tracked=TI.filter(Boolean).length||1,dist_=N.reduce((s,x,i)=>s+(TI[i]?x.total:0),0),tv=vs.filter(x=>!x.r.noLoc),atBars=tv.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records();
   b.innerHTML=`<div class="cityrow"><h1 class="q">My Tab</h1>${acctChip()}<button class="gear tabgear" type="button" data-gear aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
+    ${typeof tabSignIn==="function"?tabSignIn():""}
     <div class="grid2 hstats">
       <button class="stat tap" type="button" id="hCrawls"><small>Crawls <span class="chev">›</span></small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
       <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
@@ -3676,6 +3678,7 @@ function renderHist(){
     ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map((x,ri)=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}" data-ri="${ri}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
   b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{const rc=recs[+x.dataset.ri];if(rc&&rc.open){rc.open();return}S.lastEnd=x.dataset.id;go("end")});
   b.querySelectorAll(".rec[data-bar]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.bar);if(v)barSheet(v)});
+  if($("tabIn"))$("tabIn").onclick=()=>signInSheet("Keep your crawls and saved lists across devices.","my_tab","Save your crawls");
   $("hCrawls").onclick=()=>crawlsSheet();
   $("hVisits").onclick=()=>visitsSheet();
   $("hDist").onclick=()=>crawlStatSheet("dist");$("hTime").onclick=()=>crawlStatSheet("time");
@@ -4010,7 +4013,7 @@ function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
   natCall("LocalNotifications","createChannel",{id:"crawl_after",name:"After a crawl",description:"A look back the day after",importance:3,visibility:1}).catch(()=>{});
   try{const LN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;
     if(LN&&LN.addListener)LN.addListener("localNotificationActionPerformed",e=>{const id=e&&e.notification&&e.notification.extra&&e.notification.extra.crawl;
-      if(id&&!S.game&&(H.some(r=>r.id===id)||readH(TKEY).some(r=>r.id===id))){S.lastEnd=id;save();closeSheet();go("end")}})}catch(e){}}
+      if(id&&!S.game&&(H.some(r=>r.id===id)||readH(TKEY).some(r=>r.id===id))){S.lastEnd=id;S.recapOpen=id;save();closeSheet();go("end")}})}catch(e){}}
 // "End crawl" on the notification opens the app on the end-the-crawl question (so a stray tap can't end it)
 {const CN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.CrawlNotify;
   if(NATIVE&&CN&&CN.addListener)CN.addListener("crawlAction",e=>{if(!S.game&&S.follow&&e){closeSheet();openFollow();return}if(!S.game||!e)return;closeSheet();go("play");
