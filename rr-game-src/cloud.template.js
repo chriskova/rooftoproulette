@@ -79,7 +79,7 @@ function fakeBackend(){
 
 // ----- backend: test mode. Nothing leaves the phone. You're signed in as "You", and two simulated friends,
 // Sam and Jess, answer invites, follow your crawl, invite you to theirs and play their crawls out (a step every ~25 s).
-const SIM={docs:{},w:{},wl:{},quiet:{},B:null,t:null};
+const SIM={docs:{},w:{},wl:{},quiet:{},manual:{},B:null,t:null};
 const SIMF=[{uid:"sim-sam",n:"Sam"},{uid:"sim-jess",n:"Jess"}],SIMSTEP=25000;
 function simBackend(){
   const me={uid:"sim-me",anon:false,name:S.myName||"You",photo:"",email:"you@test",via:"google"};
@@ -102,7 +102,7 @@ const simFriend=uid=>SIMF.find(f=>f.uid===uid);
 function simTick(){const B=SIM.B;if(!B)return;
   // an invite to Sam or Jess: they join that crawl a couple of seconds later
   SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
-  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k])simDrive(k,false)})}
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&!SIM.manual[k])simDrive(k,false)})}
 function simJoin(id,f){return SIM.B.tx(`live/${id}`,d=>{if(!d||d.ended)return undefined;const m=Object.assign({},d.members||{});if(m[f.uid])return undefined;
   let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[f.uid]={n:f.n,j:Date.now(),b:(gg.visits||[]).length};return Object.assign({},d,{members:m})})}
 function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set((g.visits||[]).map(v=>v.id));
@@ -469,7 +469,8 @@ function closeFollow(){clearInterval(fvT);fvPrev=false;if(fv){const el=fv;el.cla
 function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}}
 let fvSig="",fvCardSig="";
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
-function fvCard(d,g,t){const el=$("fvNow");
+function fvCard(d,g,t){const pv=cardSnap($("fvNow"));fvCard0(d,g,t);try{cardMorph($("fvNow"),pv)}catch(e){}}
+function fvCard0(d,g,t){const el=$("fvNow");
   if(d.ended||!g.started){el.innerHTML="";fvCardSig="";return}
   const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),v=at?byId(at.id):g.target?byId(g.target):null;
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";

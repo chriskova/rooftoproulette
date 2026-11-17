@@ -2545,7 +2545,28 @@ function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".c
   requestAnimationFrame(()=>{const r=cb.getBoundingClientRect();if(!r.width){tip.hidden=true;return}tip.hidden=false;const below=r.top<innerHeight/2;
     tip.style.right=Math.max(8,innerWidth-r.right)+"px";tip.style.top=below?r.bottom+12+"px":"auto";tip.style.bottom=below?"auto":innerHeight-r.top+12+"px";
     tip.classList.toggle("below",below);tip.style.setProperty("--ax",Math.max(10,(innerWidth-r.right)+r.width/2-Math.max(8,innerWidth-r.right)-8)+"px")})}
-function renderPlay(){
+/* Smooth changes on the bar card. Same bar, new state (heading there -> you're here, or the "on the board" line turning up):
+   the green border fades in, the card's insides fade across, and anything new below it opens out instead of jumping in,
+   so the card eases to its new size. */
+const cardKey=c=>{const h=c&&c.querySelector("h2");return h?h.textContent:null};
+function cardSnap(box){if(!box)return null;const c=box.querySelector(":scope>.bar");if(!c)return null;
+  return {name:cardKey(c),at:c.classList.contains("at"),kids:new Set([...box.children].filter(x=>x!==c).map(x=>x.className+"|"+(x.textContent||"").slice(0,40)))}}
+function cardMorph(box,prev){if(!prev||!box||matchMedia("(prefers-reduced-motion: reduce)").matches)return;const c=box.querySelector(":scope>.bar");if(!c||cardKey(c)!==prev.name)return;
+  const E="cubic-bezier(.2,.8,.2,1)";
+  if(c.classList.contains("at")&&!prev.at){
+    const cs=getComputedStyle(c),photo=c.classList.contains("photo");
+    if(photo){try{c.animate([{boxShadow:"inset 0 0 0 2px rgba(0,0,0,0)"},{boxShadow:cs.boxShadow}],{duration:520,easing:E})}catch(e){}
+      try{c.animate([{opacity:0},{opacity:1}],{duration:520,easing:E,pseudoElement:"::after"})}catch(e){}}
+    else try{c.animate([{borderColor:"rgba(0,0,0,0)",backgroundColor:cs.backgroundColor},{borderColor:cs.borderColor,backgroundColor:cs.backgroundColor}],{duration:520,easing:E})}catch(e){}
+    [...c.children].forEach((k,i)=>{if(k.tagName==="H2"||k.classList.contains("bph")||k.classList.contains("cr"))return;
+      k.animate([{opacity:0,transform:"translateY(8px)"},{opacity:1,transform:"none"}],{duration:380,delay:80+i*30,easing:E,fill:"backwards"})})}
+  // new things under the card open out from nothing, and the card (flex) shrinks with them frame by frame
+  [...box.children].forEach(k=>{if(k===c||prev.kids.has(k.className+"|"+(k.textContent||"").slice(0,40)))return;const h=k.offsetHeight;if(!h)return;
+    const st=getComputedStyle(k),mt=st.marginTop,mb=st.marginBottom;k.style.overflow="hidden";
+    const an=k.animate([{height:"0px",opacity:0,marginTop:"0px",marginBottom:"0px",paddingTop:"0px",paddingBottom:"0px"},{height:h+"px",opacity:1,marginTop:mt,marginBottom:mb,paddingTop:st.paddingTop,paddingBottom:st.paddingBottom}],{duration:420,easing:E});
+    an.onfinish=an.oncancel=()=>{k.style.overflow=""}})}
+function renderPlay(){const pv=cardSnap($("stage"));renderPlay0();try{cardMorph($("stage"),pv)}catch(e){}}
+function renderPlay0(){
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
   $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;try{paintPeople()}catch(e){}$("pMap").classList.toggle("hasdot",mapHintDue(g));
@@ -4007,14 +4028,47 @@ $("testFab").onclick=()=>{
 // Test mode: Sam and Jess, simulated friends (cloud.template.js, simBackend) for trying invites and live crawls on one phone
 function simHTML(){const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;let r="";
-  if(fh)r=b("sNx",`${fh.n}: next step`)+b("sQt",`${fh.n} goes quiet`)+b("sEn",`${fh.n} ends the crawl`);
+  if(fh)return simHostHTML(k,d,fh);
   else if(mine)r=b("sPv","See what friends see")+SIMF.filter(f=>!(d&&d.members&&d.members[f.uid])).map(f=>b("sF-"+f.uid,`${f.n} follows you`)).join("");
   else if(!S.follow||(d&&d.ended)||!d)r=SIMF.map(f=>b("sI-"+f.uid,`${f.n} invites you`)).join("");
   return `<div class="eyebrow" style="margin:14px 0 8px">Friends (simulated)</div><p class="note" style="margin:0 0 8px">Sam and Jess are on this phone only. Nothing gets sent.</p>${r?`<div class="trow">${r}</div>`:""}${NATIVE?`<p class="note" id="sNote" style="margin:8px 0 0">Notifications: checking…</p>`:""}`}
+// Following Sam's or Jess's crawl: drive it yourself, one step at a time, instead of waiting on their 25-second steps
+function simHostHTML(k,d,fh){let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=g.visits||[],at=vs.find(v=>v.arrivedAt!=null&&!v.leftAt),tg=g.target&&byId(g.target),cr=g.mode==="cruise",auto=!SIM.manual[k];
+  const b=(id,t,on)=>`<button class="btn sm ${on?"":"dark"}" type="button" id="${id}">${t}</button>`;
+  const now_=at?`At ${esc(byId(at.id).name)}${at._inCount?" · on the board":""}`:tg?`Heading to ${esc(tg.name)}${g.wild&&g.wild.id===tg.id?" · wildcard":""}`:"Between bars";
+  const step=at?(at._inCount?"":b("hC","Drink counts"))+b("hL","Leave · counted")+b("hLx","Leave · didn't count")
+    :tg?b("hA","Arrive")+b("hR","Spin again")+b("hW",g.wild&&g.wild.id===tg.id?"Drop the wildcard":"Add a wildcard")
+    :b("hS","Spin")+b("hSW","Spin with a wildcard");
+  return `<div class="eyebrow" style="margin:14px 0 8px">${esc(fh.n)}'s crawl (you drive it)</div><p class="note" style="margin:0 0 8px">${now_}. ${plural(vs.filter(v=>v.arrivedAt!=null).length,"bar")} so far.</p>
+    <div class="trow">${step}</div>
+    <div class="trow" style="margin-top:8px">${cr?"":b("h5","Their clock +5 min")+b("h15","+15 min")}${!cr&&g.started&&!(g.frz&&Date.now()+(d.off||0)<g.frz.until)?b("hF","Free trip (10 min)"):""}</div>
+    <div class="trow" style="margin-top:8px">${cr?"":b("hZ","Move their zone")}${b("hN",g.title?"Clear the crawl name":"Name the crawl")}${b("hG","Give me the spin")}</div>
+    <div class="trow" style="margin-top:8px">${b("hAu",auto?"Auto steps: on":"Auto steps: off",auto)}${b("sNx","Next auto step")}${b("sQt",`${esc(fh.n)} goes quiet`)}${b("sEn",`${esc(fh.n)} ends the crawl`)}</div>`}
+function simHostBind(k){if(!k||!SIM.docs[k]||!$("hAu"))return;
+  const act=(id,fn,keep)=>{const el=$(id);if(!el)return;el.onclick=()=>{const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.parse(d.g)}catch(e){return}g.visits=g.visits||[];
+    SIM.manual[k]=1;const o={off:d.off||0};o.t=Date.now()+o.off;const r=fn(g,o,d);if(r===false)return;
+    const real=Date.now(),cr=g.mode==="cruise";
+    SIM.B.set(k,Object.assign({beat:real,simAt:real,off:o.off,g:JSON.stringify(g)},r&&r.patch||{}),true).then(()=>{if(!cr&&g.started&&real+o.off>=g.endsAt)simEnd(k)});
+    if(keep)setTimeout(()=>$("testFab").onclick(),120);else closeSheet()}};
+  const at=g=>g.visits.find(v=>v.arrivedAt!=null&&!v.leftAt),pickWild=()=>WILDS[Math.floor(Math.random()*WILDS.length)];
+  act("hC",g=>{const a=at(g);if(!a)return false;a._inCount=true});
+  act("hL",(g,o)=>{const a=at(g);if(!a)return false;a.leftAt=o.t;a.counted=true;delete a._inCount});
+  act("hLx",(g,o)=>{const a=at(g);if(!a)return false;a.leftAt=o.t;a.counted=false;delete a._inCount});
+  act("hA",(g,o)=>{if(!g.target)return false;g.visits.push({id:g.target,arrivedAt:o.t,counted:null});if(g.frz&&o.t<g.frz.until){g.endsAt-=g.frz.until-o.t;g.frz.until=o.t}if(g.wild&&g.wild.id!==g.target)g.wild=null;g.target=null});
+  act("hR",(g,o)=>{const was=g.target;g.target=null;for(let i=0;i<6&&(!g.target||g.target===was);i++)simSpin(g,o.t);g.wild=null});
+  act("hW",(g,o)=>{if(!g.target)return false;g.wild=g.wild&&g.wild.id===g.target?null:{id:g.target,text:pickWild(),shown:1}},true);
+  act("hS",(g,o)=>{simSpin(g,o.t);g.wild=null});
+  act("hSW",(g,o)=>{simSpin(g,o.t);if(g.target)g.wild={id:g.target,text:pickWild(),shown:1}});
+  act("h5",(g,o)=>{o.off+=5*60000},true);act("h15",(g,o)=>{o.off+=15*60000},true);
+  act("hF",(g,o)=>{g.endsAt+=10*60000;g.frz={from:o.t,until:o.t+10*60000,trip:true}});
+  act("hZ",g=>{const c=g.center||{lat:-33.8688,lng:151.2093},nc={lat:c.lat+.009,lng:c.lng+.004};g.center=nc;g.radius=Math.min(2,(g.radius||1)+.5);g.areas=(g.areas||[]).concat([nearestSuburb(nc)]);g.voluntaryUsed=true;g.target=null;g.wild=null});
+  act("hN",g=>{g.title=g.title?"":"Birthday crawl"},true);
+  act("hG",(g,o,d)=>({patch:{host:ME.uid,hostName:myName()||"You"}}));
+  $("hAu").onclick=()=>{if(SIM.manual[k])delete SIM.manual[k];else SIM.manual[k]=1;$("testFab").onclick()}}
 function simBind(){const k=simLiveKey(),on=(id,f)=>{const el=$(id);if(el)el.onclick=()=>{closeSheet();f()}};
   if($("sNote"))natCall("CrawlNotify","status").then(r=>{const el=$("sNote");if(!el)return;el.innerHTML=r&&r.enabled?"Notifications: on":`Notifications: off. <button class="txtbtn" type="button" id="sNoteOn">Turn on</button>`;
     if($("sNoteOn"))$("sNoteOn").onclick=()=>natCall("CrawlNotify","openSettings").catch(()=>{})}).catch(()=>{const el=$("sNote");if(el)el.textContent="Notifications: this app version can't tell"});
-  on("sPv",previewFollow);on("sNx",()=>simDrive(k,true));on("sQt",()=>{simQuiet();toast("Sam's phone has gone quiet. Take over shows up on the follow screen.",3500)});on("sEn",()=>simEnd(k));
+  simHostBind(k);  on("sPv",previewFollow);on("sNx",()=>simDrive(k,true));on("sQt",()=>{simQuiet();toast("Sam's phone has gone quiet. Take over shows up on the follow screen.",3500)});on("sEn",()=>simEnd(k));
   SIMF.forEach(f=>{on("sF-"+f.uid,async()=>{await simFollowMe(f);toast(`${f.n} is following.`,2200);try{paintPeople()}catch(e){}});
     on("sI-"+f.uid,async()=>{await cloud();watchInvites();await simInvite(f)})})}
 
