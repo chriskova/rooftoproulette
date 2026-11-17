@@ -2293,7 +2293,7 @@ function nightSheet(fo){
   const been=arr.map(v=>v.id),left=fo?(cr||!g.center?null:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been.includes(v.id)&&openOK(v,t)).length):basePool().length;
   const who=fo?(fo.who||"Their"):null,area=(g.areas&&g.areas[g.areas.length-1])||(g.center?nearestSuburb(g.center):"");
   const back=fo?()=>nightSheet(fo.fresh?fo.fresh():fo):()=>nightSheet(),title=fo?(fo.prev?"Your crawl":`${who}'s crawl`):"Your crawl";
-  const rows=arr.map((v,i)=>{const b=byId(v.id);if(!b)return "";const here=v.leftAt==null,ms=(v.leftAt||t)-v.arrivedAt,ok=v.counted===true||(here&&v._inCount);
+  const rows=arr.map((v,i)=>{const b=byId(v.id);if(!b)return "";const here=v.leftAt==null,ms=(v.leftAt||t)-v.arrivedAt,ok=!here&&v.counted===true;
     // the tick says it counted, so the time it was logged sits beside it. Where you are now, the time on the right is still ticking: no arrival time.
     const st=here?(fo&&!fo.prev?"There now":"You're here"):v.counted===false?`${arrTime(v.arrivedAt,g.city)} · Didn't count`:v.counted===true?arrTime(v.arrivedAt,g.city):fo&&!fo.prev?`${arrTime(v.arrivedAt,g.city)} · Not counted yet`:"Waiting on you";
     return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${ok?"ok":""}">${st}${ok?" ✓":""}</small></span><span class="d">${hmm(ms)}</span></button>`}).join("");
