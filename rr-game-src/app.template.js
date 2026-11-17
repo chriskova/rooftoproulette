@@ -3959,11 +3959,28 @@ function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
 {const CN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.CrawlNotify;
   if(NATIVE&&CN&&CN.addListener)CN.addListener("crawlAction",e=>{if(!S.game||!e)return;closeSheet();go("play");
     if(e.action==="end")setTimeout(()=>{openMenu();setTimeout(()=>{const b=$("mEnd");if(b)b.click()},60)},250)})}
+// The live notification needs notification permission (Android 13+). Check once per crawl, after the location prompt is out of
+// the way: Android drops a second permission prompt that arrives while one is open, which is how it went missing before.
+let notifKey=null;
+async function notifEnsure(key){if(!NATIVE||IOSNAT||notifKey===key)return;notifKey=key;
+  const st=async()=>{try{const r=await natCall("CrawlNotify","status");return r||{}}catch(e){return {}}};
+  let r=await st();if(r.enabled){track("notif_state",{on:true});return}
+  for(let i=0;i<40&&(document.visibilityState!=="visible"||!(here||locErr));i++)await new Promise(f=>setTimeout(f,1500));   // location sorted first
+  await new Promise(f=>setTimeout(f,1200));
+  if(r.app===false){try{await natCall("LocalNotifications","requestPermissions")}catch(e){}r=await st()}
+  track("notif_state",{on:!!r.enabled,app:!!r.app,channel:r.channel!==false});
+  if(r.enabled||(S.notifNo||0)>=2)return;
+  if($("sheet").open){notifKey=null;return}   // try again on the next update
+  sheet(`<h3>Turn on notifications?</h3><p class="note">Shows the time left and the next bar on your lock screen.</p>
+    <div class="acts"><button class="btn" type="button" id="nfOn">Turn on</button><button class="btn dark" type="button" id="nfNo">Not now</button></div>`,()=>{
+    $("nfOn").onclick=()=>{closeSheet();track("notif_settings");natCall("CrawlNotify","openSettings").catch(()=>{});
+      const back=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",back);NOTE.live="";fvNote="";notifKey=null};document.addEventListener("visibilitychange",back)};
+    $("nfNo").onclick=()=>{S.notifNo=(S.notifNo||0)+1;save();closeSheet()}})}
 function liveNote(){
   if(!NATIVE)return;const g=G();
   if(!g||g.demo||!g.started||g.ended){if(NOTE.live){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}return}
   noteSetup();
-  if(!S.notifAsked){S.notifAsked=1;save();natCall("LocalNotifications","requestPermissions").catch(()=>{})}   // the phone's own prompt, first crawl only
+  notifEnsure(g.id);
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
   if(a){title=`At ${byId(a.id).name}`;text=cr?mode:`${mode} · here ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`}
   else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode+(y?` · ${kmTxt(dist(y,v)/1000)} away`:"")}

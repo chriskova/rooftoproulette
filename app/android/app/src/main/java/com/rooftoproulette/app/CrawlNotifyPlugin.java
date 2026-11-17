@@ -128,6 +128,49 @@ public class CrawlNotifyPlugin extends Plugin {
         deliver(intent);
     }
 
+    /** Can the live notification actually show? App notifications on, and the crawl channel not switched off. */
+    @PluginMethod
+    public void status(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean on = false, channel = true;
+        try {
+            on = NotificationManagerCompat.from(getContext()).areNotificationsEnabled();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationManager m = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+                NotificationChannel c = m.getNotificationChannel(CHANNEL);
+                channel = c == null || c.getImportance() != NotificationManager.IMPORTANCE_NONE;
+            }
+        } catch (Exception ignore) {}
+        r.put("enabled", on && channel);
+        r.put("app", on);
+        r.put("channel", channel);
+        call.resolve(r);
+    }
+
+    /** The phone's notification settings for this app (or just the crawl channel if that's the one switched off). */
+    @PluginMethod
+    public void openSettings(PluginCall call) {
+        try {
+            Context ctx = getContext();
+            Intent i;
+            boolean appOn = NotificationManagerCompat.from(ctx).areNotificationsEnabled();
+            if (appOn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ensureChannel();
+                i = new Intent(android.provider.Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.getPackageName())
+                    .putExtra(android.provider.Settings.EXTRA_CHANNEL_ID, CHANNEL);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                i = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.getPackageName());
+            } else {
+                i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + ctx.getPackageName()));
+            }
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(i);
+        } catch (Exception ignore) {}
+        call.resolve();
+    }
+
     @PluginMethod
     public void clear(PluginCall call) {
         try { NotificationManagerCompat.from(getContext()).cancel(ID); } catch (Exception ignore) {}
