@@ -2608,7 +2608,7 @@ function renderPlay(){
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Adjust zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Adjust zone</button>`:""}</div>`:""}
-      ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts when you spin."}</p>`}
+      ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts at your first bar."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
