@@ -681,6 +681,12 @@ function render(){
   renderMini();
 }
 function renderMini(){const g=G(),m=$("mini");if(!m)return;
+  if(!g&&S.follow&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended&&!fv&&["home","bars","hist","end"].includes(S.route)){   // following a friend's crawl
+    const d=liveDoc,fg=fvGame(d),t=Date.now()+(d.off||0),c=fvClockTxt(d,fg,t),vs=(fg.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tg=fg.target&&byId(fg.target);
+    const line=at?"At "+byId(at.id).name:tg?"Heading to "+tg.name:"Spinning…",who=(d.hostName||"Friend").split(" ")[0]+"'s crawl";
+    const h=`<span class="mt${fg.started?"":" sm"}">${esc(c.clock)}</span><span class="ml"><b>${esc(line)}</b><small>${esc(who)} · live</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
+    if(m._h!==h){m._h=h;m.innerHTML=h}if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini")}
+    m.onclick=()=>openFollow();return}
   const show=!!g&&!g.ended&&["home","bars","hist","end"].includes(S.route);
   if(!show){m.hidden=true;m._on=false;$("app").classList.remove("has-mini");return}
   const cr=CR(g),a=atVisit(),y=you();let left,sm=false,line;
@@ -3940,9 +3946,11 @@ function simHTML(){const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&S
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;let r="";
   if(fh)r=b("sNx",`${fh.n}: next step`)+b("sQt",`${fh.n} goes quiet`)+b("sEn",`${fh.n} ends the crawl`);
   else if(mine)r=b("sPv","See what friends see")+SIMF.filter(f=>!(d&&d.members&&d.members[f.uid])).map(f=>b("sF-"+f.uid,`${f.n} follows you`)).join("");
-  else if(!S.follow)r=SIMF.map(f=>b("sI-"+f.uid,`${f.n} invites you`)).join("");
-  return r?`<div class="eyebrow" style="margin:14px 0 8px">Friends (simulated)</div><p class="note" style="margin:0 0 8px">Sam and Jess are on this phone only. Nothing gets sent.</p><div class="trow">${r}</div>`:""}
+  else if(!S.follow||(d&&d.ended)||!d)r=SIMF.map(f=>b("sI-"+f.uid,`${f.n} invites you`)).join("");
+  return `<div class="eyebrow" style="margin:14px 0 8px">Friends (simulated)</div><p class="note" style="margin:0 0 8px">Sam and Jess are on this phone only. Nothing gets sent.</p>${r?`<div class="trow">${r}</div>`:""}${NATIVE?`<p class="note" id="sNote" style="margin:8px 0 0">Notifications: checking…</p>`:""}`}
 function simBind(){const k=simLiveKey(),on=(id,f)=>{const el=$(id);if(el)el.onclick=()=>{closeSheet();f()}};
+  if($("sNote"))natCall("CrawlNotify","status").then(r=>{const el=$("sNote");if(!el)return;el.innerHTML=r&&r.enabled?"Notifications: on":`Notifications: off. <button class="txtbtn" type="button" id="sNoteOn">Turn on</button>`;
+    if($("sNoteOn"))$("sNoteOn").onclick=()=>natCall("CrawlNotify","openSettings").catch(()=>{})}).catch(()=>{const el=$("sNote");if(el)el.textContent="Notifications: this app version can't tell"});
   on("sPv",previewFollow);on("sNx",()=>simDrive(k,true));on("sQt",()=>{simQuiet();toast("Sam's phone has gone quiet. Take over shows up on the follow screen.",3500)});on("sEn",()=>simEnd(k));
   SIMF.forEach(f=>{on("sF-"+f.uid,async()=>{await simFollowMe(f);toast(`${f.n} is following.`,2200);try{paintPeople()}catch(e){}});
     on("sI-"+f.uid,async()=>{await cloud();watchInvites();await simInvite(f)})})}
@@ -3971,15 +3979,15 @@ function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
       if(id&&!S.game&&(H.some(r=>r.id===id)||readH(TKEY).some(r=>r.id===id))){S.lastEnd=id;save();closeSheet();go("end")}})}catch(e){}}
 // "End crawl" on the notification opens the app on the end-the-crawl question (so a stray tap can't end it)
 {const CN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.CrawlNotify;
-  if(NATIVE&&CN&&CN.addListener)CN.addListener("crawlAction",e=>{if(!S.game||!e)return;closeSheet();go("play");
+  if(NATIVE&&CN&&CN.addListener)CN.addListener("crawlAction",e=>{if(!S.game&&S.follow&&e){closeSheet();openFollow();return}if(!S.game||!e)return;closeSheet();go("play");
     if(e.action==="end")setTimeout(()=>{openMenu();setTimeout(()=>{const b=$("mEnd");if(b)b.click()},60)},250)})}
 // The live notification needs notification permission (Android 13+). Check once per crawl, after the location prompt is out of
 // the way: Android drops a second permission prompt that arrives while one is open, which is how it went missing before.
 let notifKey=null;
-async function notifEnsure(key){if(!NATIVE||notifKey===key)return;notifKey=key;
+async function notifEnsure(key,noWait){if(!NATIVE||notifKey===key)return;notifKey=key;
   const st=async()=>{try{const r=await natCall("CrawlNotify","status");return r||{}}catch(e){return {}}};
   let r=await st();if(r.enabled){track("notif_state",{on:true,ios:IOSNAT});return}if(IOSNAT&&r.supported===false)return;   // Live Activities need iOS 16.2
-  for(let i=0;i<40&&(document.visibilityState!=="visible"||!(here||locErr));i++)await new Promise(f=>setTimeout(f,1500));   // location sorted first
+  for(let i=0;i<40&&(document.visibilityState!=="visible"||(!noWait&&i<14&&!(here||locErr)));i++)await new Promise(f=>setTimeout(f,1500));   // location sorted first
   await new Promise(f=>setTimeout(f,1200));
   if(r.app===false&&!IOSNAT){try{await natCall("LocalNotifications","requestPermissions")}catch(e){}r=await st()}   // iPhone: Live Activities are on unless switched off in Settings
   track("notif_state",{on:!!r.enabled,app:!!r.app,channel:r.channel!==false,ios:IOSNAT});
