@@ -8,7 +8,11 @@ fs.copyFileSync(path.join(ROOT,"play","index.html"),path.join(OUT,"play","index.
 for(const f of ["browser-config.js","rooftop-app.js","manifest.webmanifest","venues.json"])fs.copyFileSync(path.join(ROOT,f),path.join(OUT,f));
 for(const d of ["icons","fonts","vendor"])fs.cpSync(path.join(ROOT,d),path.join(OUT,d),{recursive:true});
 // The app opens www/index.html: hand straight over to the game, keeping any link details.
-fs.writeFileSync(path.join(OUT,"index.html"),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html{background:#FBF7F0}@media(prefers-color-scheme:dark){html{background:#000}}</style><script>location.replace("play/"+location.search+location.hash)</script></head><body></body></html>\n');
+// The target must name the file. Inside the app, Capacitor answers any address without a file extension
+// (like "play/") with the root index.html, so "play/" would loop back here forever and the app never opens.
+const GAME="play/index.html";
+fs.writeFileSync(path.join(OUT,"index.html"),'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>html{background:#FBF7F0}@media(prefers-color-scheme:dark){html{background:#000}}</style><script>location.replace("'+GAME+'"+location.search+location.hash)</script></head><body></body></html>\n');
+if(!/\.html$/.test(GAME)||!fs.existsSync(path.join(OUT,GAME))){console.error("The start page must point at an existing .html file inside the app.");process.exit(1)}
 // Store builds must never point at the website. Only the RR Dev build (RR_DEV=1) loads the live game.
 const cfg=JSON.parse(fs.readFileSync(path.join(__dirname,"capacitor.config.json"),"utf8"));
 if(cfg.server&&cfg.server.url&&process.env.RR_DEV!=="1"){console.error("capacitor.config.json has server.url set: store and test builds must carry the game inside.");process.exit(1)}

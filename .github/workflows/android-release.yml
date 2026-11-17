@@ -39,6 +39,10 @@ jobs:
         working-directory: app
         run: |
           npm ci && npm run sync -- android
+      - name: Check the app actually starts
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw" && npm init -y >/dev/null && npm i --silent playwright@1 && npx playwright install --with-deps chromium >/dev/null
+          NODE_PATH="$RUNNER_TEMP/pw/node_modules" node "$GITHUB_WORKSPACE/rr-game-src/tests/bundled-start.js" "$GITHUB_WORKSPACE/app/www"
       - name: Build the signed bundle
         working-directory: app/android
         env:
