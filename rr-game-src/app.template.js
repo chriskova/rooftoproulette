@@ -788,6 +788,8 @@ function colCardHTML(){
 }
 function renderHome(){
   $("homeHow").onclick=()=>{S.intro=0;S.introReplay=true;save();go("intro")};
+  // home has one small link under Play: joining a friend's crawl when accounts are on (How to play lives in Settings), else How it works
+  {const j=(()=>{try{return cloudOn()}catch(e){return false}})();$("homeJoin").hidden=!j;$("homeHow").hidden=j;$("homeJoin").onclick=()=>joinScan()}
   homeOpen();
   homeAt();
   try{homeLive()}catch(e){}
@@ -1140,9 +1142,8 @@ function renderWiz(){
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
         <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><b class="rrwm">R<i>&amp;</i>R</b><small>No timer, no wildcards, no jackpot</small></button>
       </div>
-      ${(()=>{try{return cloudOn()}catch(e){return false}})()?`<button class="joinrow" type="button" id="lenJoin">${PEOPLEI_()}<span>Join a friend's crawl</span><i class="chev">›</i></button>`:""}
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
-    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});if($("lenJoin"))$("lenJoin").onclick=joinScan;
+    $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
