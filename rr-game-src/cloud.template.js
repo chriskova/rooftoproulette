@@ -500,12 +500,24 @@ async function liveEnded(rec){if(!rec.live||!CLP)return;rec.liveId=rec.live;dele
   try{const B=await cloud();const j=JSON.stringify(Object.assign(JSON.parse(recForCloud(rec)),{trail:[],startPos:null}));await B.set(`live/${rec.liveId}`,{ended:true,rec:j,beat:Date.now(),g:gameForCloud(Object.assign({},rec,{ended:true}))},true);saveH();
     matesFrom(liveDoc)}catch(e){console.warn("live end",e)}
   liveDetach()}
+// after the crawl: the host's name and bar of the day reach everyone who followed (only the host sets them)
+async function liveMeta(r){if(!r||!r.liveId||r.followed||!cloudOn()||!signedIn())return;
+  try{const B=await cloud();await B.set(`live/${r.liveId}`,{title:r.title||"",bod:r.barOfDay||""},true)}catch(e){console.warn("live meta",e)}}
+// followers pick those up when the app opens or comes back, for crawls from the last week
+let metaAt=0;
+async function followMetaPull(){if(!cloudOn()||Date.now()-metaAt<5*60000)return;
+  const L=H.filter(r=>r.followed&&r.liveId&&now()-(r.endedAt||0)<7*864e5);if(!L.length)return;metaAt=Date.now();
+  let ch=false;try{const B=await cloud();for(const r of L){const d=await B.get(`live/${r.liveId}`).catch(()=>null);if(!d)continue;
+    if(d.title!==undefined&&(d.title||"")!==(r.title||"")){if(d.title)r.title=d.title;else delete r.title;ch=true}
+    if(d.bod!==undefined){const b=d.bod&&r.visits.some(v=>v.id===d.bod&&v.counted===true)?d.bod:"";if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}}}catch(e){console.warn("meta pull",e)}
+  if(ch){saveH();if(S.route==="end"||S.route==="hist")render()}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)followMetaPull()});
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
   let r;try{r=JSON.parse(d.rec)}catch(e){return}
   // fill in anything an older host version left out, so the crawl card and tab can always draw it
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
-  r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
+  r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
   delete r.newIds;r.bodDone=true;r.test=!!S.test;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
   // followers get the same ending as the host: straight onto the summary, with the stats racking up. No sign-in ask here
   // (they're out, a few drinks in); the day-after card and My Tab ask instead.
@@ -598,7 +610,7 @@ function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
   if(lc||S.follow||(S.game&&S.game.live)||localStorage.getItem("rr-synced")||ME){cloud().then(()=>{if(lc)followLive(lc);else if(S.follow)openFollow()}).catch(()=>{})}
   else setTimeout(()=>cloud().catch(()=>{}),4000);
   if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.getLaunchUrl)CAPX.Plugins.App.getLaunchUrl().then(o=>{const c=liveCode(o&&o.url);if(c)cloud().then(()=>followLive(c))}).catch(()=>{});
-  setInterval(()=>liveSync(false),5000);batteryWatch();paintPeople();homeLive()}
+  setInterval(()=>liveSync(false),5000);batteryWatch();paintPeople();homeLive();setTimeout(followMetaPull,3000)}
 if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App)try{CAPX.Plugins.App.addListener("appUrlOpen",e=>{const c=liveCode(e&&e.url);if(c)cloud().then(()=>followLive(c))})}catch(e){}
 addEventListener("hashchange",()=>{const c=liveCode(location.hash);if(c){history.replaceState(null,"",location.pathname+location.search);cloud().then(()=>followLive(c))}});
 cloudBoot();

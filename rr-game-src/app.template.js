@@ -2885,12 +2885,12 @@ function renderEnd(){
   const still=cr&&r.autoEnded&&!r.stillAsked&&!S.game&&now()-r.endedAt<12*3600000;
   if(!r.photo&&!r.noPhoto&&r.photos&&r.photos.length){r.photo=r.photos[r.photos.length-1];saveH()}
   // just finished, 2+ bars, no pick yet: ask for bar of the day before the scorecard rolls in
-  const reopen=S.bodOpen===r.id;
+  const reopen=S.bodOpen===r.id&&!r.followed;
   if(reopen||((S.rackEnd===r.id||S.bodDue===r.id)&&n>=2&&!r.barOfDay&&!r.bodDone)){
     box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} bar${n===1?"":"s"} ${dayWord(r.startedAt)}</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
       <div class="bodgrid" style="--rows:${Math.ceil(st.counted.length/2)}">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
     box.scrollTop=0;
-    box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();buzz(15);renderEnd()});
+    box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();if(typeof liveMeta==="function")liveMeta(r);buzz(15);renderEnd()});
     $("bodSkip").onclick=()=>{r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();renderEnd()};
     st.counted.forEach(v=>{const b=byId(v.id);if(phMem[b.id]===undefined&&phAllowed(b.id,"play"))barPhoto(b).then(ph=>{const t=box.querySelector(`[data-bp="${b.id}"]`);if(t&&ph){t.classList.add("photo");t.style.backgroundImage=`url('${ph.url}')`}})});
     return}
@@ -2910,7 +2910,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.lastOrders?"Last orders":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
             if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
-          const pick=n>=2&&!r.barOfDay?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
+          const pick=n>=2&&!r.barOfDay&&!r.followed?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
           <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l,k])=>`<div${k?` class="sttap" role="button" tabindex="0" data-st="${k}" data-sl="${l}" data-sv="${esc(String(v))}"`:""}><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}${k?' <span class="chev">›</span>':""}</small></div>`).join("")}</div></div></div>
 `;
@@ -2924,7 +2924,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   box.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{const v=r.visits[+b.dataset.q];v.counted=b.dataset.a==="1";
     const prev={};H.forEach(x=>{if(x.id!==r.id)x.visits.forEach(y=>{if(y.counted===true&&x.startedAt<r.startedAt)prev[y.id]=1})});
     r.newIds=r.visits.filter(y=>y.counted===true&&!prev[y.id]).map(y=>y.id);saveH();renderEnd()});
-  box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();S.bodOpen=r.id;renderEnd()});
+  box.querySelectorAll("[data-bodopen]").forEach(b=>b.onclick=e=>{e.stopPropagation();if(r.followed){const t=b.querySelector("[data-ph]"),v=t&&byId(t.dataset.ph);if(v)barSheet(v,r);return}S.bodOpen=r.id;renderEnd()});
   box.querySelectorAll("[data-bar]").forEach(c=>c.onclick=()=>{const v=byId(c.dataset.bar);if(v)barSheet(v,r)});
   if(!isShared&&!r.demo)box.querySelectorAll(".bcard,.brow").forEach((c,i)=>{const vis=st.arrived[i];if(vis)longPress(c,()=>removeAsk(r,vis,false))});
   // the stats on the map open what they're about: the leg, the stop, the breakdown
@@ -2952,8 +2952,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;endSignInBind();if($("rcIn"))$("rcIn").onclick=()=>{r.recapAsked=true;saveH();signInSheet("Keep your crawls and saved lists across devices.","recap","Save your crawls")};if(S.recapOpen===r.id&&$("rcIn")){r.recapAsked=true;saveH()}delete S.recapOpen;if($("openApp"))$("openApp").onclick=openInApp;
   if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
-  if(isShared){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo)mo.remove()}   // someone else's crawl: look, add, save the card
-  if($("scMore"))$("scMore").onclick=()=>crawlMenu(r);if($("scName")&&!isShared&&!r.demo)$("scName").onclick=()=>nameCrawl(r);
+  if(isShared||r.followed){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo&&isShared)mo.remove()}   // someone else's crawl: look, add, save the card
+  if($("scMore"))$("scMore").onclick=()=>crawlMenu(r);if($("scName")&&!isShared&&!r.followed&&!r.demo)$("scName").onclick=()=>nameCrawl(r);
   if($("stY"))$("stY").onclick=()=>resumeNight(r);
   if($("stN"))$("stN").onclick=()=>{r.stillAsked=true;saveH();renderEnd()};
   if($("runBack"))$("runBack").onclick=cr?()=>{S.quick={step:0,from:null};go("quick")}:()=>{const c=r.zone||{lat:r.center.lat,lng:r.center.lng,name:r.areas[0]};S.wiz={step:2,start:{type:"area",name:c.name||r.areas[0],lat:c.lat,lng:c.lng},radius:r.radius,len:r.len,newOnly:!!r.newOnly};go("wiz")};
@@ -3546,14 +3546,14 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     ${v.fact&&!opt.lite?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
-      ${night&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
+      ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
       ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Save for next time</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
     $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
-    if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();buzz(15);closeSheet();if(S.route==="end")renderEnd()};
+    if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();if(typeof liveMeta==="function")liveMeta(night);buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
     if($("bsBack"))$("bsBack").onclick=opt.back;
     if($("bsFav"))$("bsFav").onclick=e=>{e.stopPropagation();toggleFav(v.id);const b=$("bsFav"),on=!!S.fav[v.id];b.setAttribute("aria-pressed",String(on));
@@ -3691,7 +3691,7 @@ function crawlMenu(r){const n=stats(r).counted.length,isT=!!r.test;
   sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} bar${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
     <div class="menu">
       <button type="button" id="cmMedia" hidden>${I.camera}<span>Photos &amp; clips<small id="cmMediaS"></small></span></button>
-      <button type="button" id="cmName">${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows on your tab instead of the date</small></span></button>
+      <button type="button" id="cmName"${r.followed?" hidden":""}>${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows on your tab instead of the date</small></span></button>
       <button type="button" id="cmMove">${IC.swap}<span>${isT?"Move to real crawls":"Move to test crawls"}<small>${isT?"Goes on your tab and counts in your stats":"Takes it off your tab and out of your stats"}</small></span></button>
       <button type="button" id="cmDel" class="danger">${IC.bin}<span>Delete crawl<small>You can undo for a few seconds</small></span></button>
     </div>`,()=>{
@@ -3705,7 +3705,7 @@ function nameCrawl(r){
   sheet(`<h3>Name this crawl</h3><input id="cnIn" class="cnin" type="text" maxlength="40" placeholder="${esc(dateTxt(rt(r,r.startedAt)))}" value="${esc(r.title||"")}" enterkeyhint="done" autocomplete="off">
     <div class="acts"><button class="btn" type="button" id="cnSave">Save</button>${r.title?`<button class="btn line" type="button" id="cnClr">Remove name</button>`:""}</div>`,()=>{
     const q=$("cnIn");setTimeout(()=>{q.focus();q.select()},120);
-    const done=v=>{v=(v||"").trim();if(v)r.title=v;else delete r.title;saveH();closeSheet();render()};
+    const done=v=>{v=(v||"").trim();if(v)r.title=v;else delete r.title;saveH();closeSheet();render();if(typeof liveMeta==="function")liveMeta(r)};
     $("cnSave").onclick=()=>done(q.value);q.onkeydown=e=>{if(e.key==="Enter")done(q.value)};
     if($("cnClr"))$("cnClr").onclick=()=>done("");
   })}
