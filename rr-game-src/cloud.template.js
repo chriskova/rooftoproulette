@@ -103,7 +103,10 @@ function simTick(){const B=SIM.B;if(!B)return;
   // an invite to Sam or Jess: they join that crawl a couple of seconds later
   SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
   // their crawl moves only when you move it from the test panel; their phone still checks in so it doesn't look gone
-  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()+(d.off||0)-(d.beat||0)>60000)B.set(k,{beat:Date.now()+(d.off||0)},true)})}
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()+(d.off||0)-(d.beat||0)>60000)B.set(k,{beat:Date.now()+(d.off||0)},true)});
+  // and their bar counts once they've been there 3 minutes, the way it does on a real phone
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host))return;let g;try{g=JSON.parse(d.g)}catch(e){return}const a=(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
+    if(a&&!a._inCount&&Date.now()+(d.off||0)-a.arrivedAt>=DWELL_MIN*60000)simAct(k,()=>{})})}
 function simJoin(id,f){return SIM.B.tx(`live/${id}`,d=>{if(!d||d.ended)return undefined;const m=Object.assign({},d.members||{});if(m[f.uid])return undefined;
   let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[f.uid]={n:f.n,j:Date.now(),b:(gg.visits||[]).length};return Object.assign({},d,{members:m})})}
 function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set((g.visits||[]).map(v=>v.id));
@@ -413,13 +416,16 @@ const CHEVD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 // The same layout as the person spinning (count, clock, map up top, the bar card below), under a banner that says
 // whose crawl it is and that they have the spin, so nobody (or nobody looking over a shoulder) takes it for theirs.
 const EYEI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
+function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt=null;
+  // the tabs stay under the follow screen, like they do under your own crawl
+  if(!fvPrev&&!["home","bars","hist","end"].includes(S.route)){S.route="home";save();render()}document.body.classList.add("fvon");paintTabsFv();
+  fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-live" role="status"><span class="fv-eye">${EYEI}</span><span class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Bars so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
       <div class="pbtns"><button type="button" class="iconbtn" id="fvMapB" aria-label="Crawl map">${I.map}</button><button type="button" class="iconbtn" id="fvMin" aria-label="Minimise">${CHEVD}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-now" id="fvNow"></div><div class="fv-act" id="fvAct"></div>`;
-  $("fvMin").onclick=()=>{const p=fvPrev;closeFollow();go(p?"play":"home")};
+  $("fvMin").onclick=()=>minFollow();
   $("fvMapB").onclick=followMap;$("fvCount").onclick=followBars;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{fvCardSig="";paintFollow()}).catch(()=>{})}).catch(()=>{});
@@ -466,14 +472,18 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
-function closeFollow(){clearInterval(fvT);fvPrev=false;if(fv){const el=fv;el.classList.remove("on");setTimeout(()=>el.remove(),220)}fv=null;fvMap=null;if(S.follow&&!(liveDoc&&!liveDoc.ended)){S.follow=null;save();liveDetach()}}
+function paintTabsFv(){document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(fv?b.dataset.tab==="play":b.dataset.tab===(S.route==="bars"?"bars":S.route==="hist"?"hist":"play"))))}
+// minimise: the follow screen drops into the bar above the tabs, the same as leaving your own crawl
+function minFollow(to){const p=fvPrev;fvMinDrop=!p;closeFollow();go(p?"play":to||"home")}
+let fvMinDrop=false;
+function closeFollow(){clearInterval(fvT);fvPrev=false;document.body.classList.remove("fvon");setTimeout(paintTabsFv,0);if(fv){const el=fv;el.classList.remove("on");setTimeout(()=>el.remove(),220)}fv=null;fvMap=null;if(S.follow&&!(liveDoc&&!liveDoc.ended)){S.follow=null;save();liveDetach()}}
 function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}}
-let fvSig="",fvCardSig="";
+let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
 function fvCard(d,g,t){const pv=cardSnap($("fvNow"));fvCard0(d,g,t);try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
   if(d.ended||!g.started){el.innerHTML="";fvCardSig="";return}
-  const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),v=at?byId(at.id):g.target?byId(g.target):null;
+  const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target?null:at0,v=g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
   const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:null,wd,v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
@@ -498,7 +508,13 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const c=fvClockTxt(d,g,t),L=fvLabel(d,g,t);$("fvClock").textContent=!d.ended&&!g.started&&!cr?mmss((g.len||60)*60000):c.clock;$("fvSub").textContent=L.lbl;$("fvClockW").className="clock"+L.cls;
   const tb=$("fvBar");tb.hidden=cr||!g.started||d.ended;tb.className="tbar"+L.cls;$("fvBarI").style.width=L.pct+"%";
   fvCard(d,g,t);
-  const fc=$("fvCount"),fch=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${vs.filter(v=>v.counted===true||(!v.leftAt&&v._inCount)).length}</b><i class="cv">${I.chev||"›"}</i>`;if(fc._h!==fch){fc._h=fch;fc.innerHTML=fch}
+  // the bar they're at counts: the same "it counts" animation as the host's phone, into this counter
+  const atv=vs.find(v=>!v.leftAt),ak=atv?atv.id+"@"+atv.arrivedAt:null;let nb=vs.filter(v=>v.counted===true||(!v.leftAt&&v._inCount)).length;
+  if(ak&&atv._inCount&&fvCnt&&fvCnt.k===ak&&!fvCnt.c&&!fvFly&&!document.hidden&&$("fvNow").querySelector(".bar.at h2")){fvFly=true;
+    const fc0=$("fvCount");countFly({pc:fc0,lead:250,z:1700,bump:true,getH:()=>$("fvNow")&&$("fvNow").querySelector(".bar.at h2"),done:()=>{fvFly=false;fc0._h="";paintFollow()}})}
+  fvCnt=ak?{k:ak,c:!!atv._inCount}:null;
+  if(fvFly)nb--;
+  const fc=$("fvCount"),fch=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${nb}</b><i class="cv">${I.chev||"›"}</i>`;if(!fvFly&&fc._h!==fch){fc._h=fch;fc.innerHTML=fch}
   const stale=!d.ended&&g.started&&t-(d.beat||0)>STALE_MS,act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`

@@ -1507,7 +1507,7 @@ body.camon #v-play .adjz{display:none}
 .codo{display:inline-block;height:1.2em;line-height:1.2em;overflow:hidden;vertical-align:middle}
 .codo>span{display:block;transition:transform .32s cubic-bezier(.3,1.5,.5,1)}
 .codo.go>span{transform:translateY(-100%)}
-#pCount.opening{visibility:hidden}
+#pCount.opening,#fvCount.opening{visibility:hidden}
 /* setup: one tappable row for the bars in the circle, the not-enough-open warning, the Ready summary */
 .zbars,.zready{appearance:none;display:flex;align-items:center;gap:12px;width:100%;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);padding:11px 14px;color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .zbars .t,.zready .t{flex:1;min-width:0}
@@ -1712,6 +1712,7 @@ html,body{overflow-x:hidden;max-width:100%}
 /* live crawls: following along */
 .followv{position:fixed;inset:0;z-index:2500;background:var(--bg);display:flex;flex-direction:column;gap:10px;padding:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px) 16px calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 16px);opacity:0;transition:opacity .2s;overflow:hidden}.followv>*{flex-shrink:0}
 .followv.on{opacity:1}
+body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));padding-bottom:12px}body.fvon .tabs{z-index:2550}
 /* following someone else's crawl: an unmistakable banner on top, then the same layout as the person spinning */
 .fv-live{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;background:var(--green-soft);border:1.5px solid var(--green);color:var(--text)}
 .fv-live .t{flex:1;min-width:0}.fv-live b{display:block;font-size:15px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fv-live small{display:block;font-size:12.5px;color:var(--muted);margin-top:1px}

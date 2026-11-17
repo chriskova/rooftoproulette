@@ -692,7 +692,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
     const d=fl,fg=fvGame(d),t=Date.now()+(d.off||0),c=fvClockTxt(d,fg,t),vs=(fg.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tg=fg.target&&byId(fg.target);
     const line=at?"At "+byId(at.id).name:tg?"Heading to "+tg.name:"Spinning…",who=(d.hostName||"Friend").split(" ")[0]+"'s crawl";
     const h=`<span class="mt${fg.started?"":" sm"}">${esc(c.clock)}</span><span class="ml"><b>${esc(line)}</b><small>${esc(who)} · live</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
-    if(m._h!==h){m._h=h;m.innerHTML=h}if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini")}
+    if(m._h!==h){m._h=h;m.innerHTML=h}if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(fvMinDrop){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}fvMinDrop=false;
     m.onclick=()=>openFollow();return}
   const show=!!g&&!g.ended&&["home","bars","hist","end"].includes(S.route);
   if(!show){m.hidden=true;m._on=false;$("app").classList.remove("has-mini");return}
@@ -705,7 +705,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
 [["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","My Tab"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`;$(id).dataset.tab=k});
-$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(k==="bars"&&S.route!=="bars"&&S.barsView==="map"){S.barsView="list";save()}go(k==="play"?"home":k)};   // Rooftops always opens on the list
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(typeof fv!=="undefined"&&fv){if(k!=="play")minFollow(k);return}if(k==="bars"&&S.route!=="bars"&&S.barsView==="map"){S.barsView="list";save()}go(k==="play"?"home":k)};   // Rooftops always opens on the list
 
 /* ---------- shared copy ---------- */
 
@@ -2188,32 +2188,37 @@ function flyToCounter(force,lead){
   const g=G(),a=g&&g.visits.find(v=>v.leftAt==null);if(!a||(a._flew&&!force)||document.hidden||S.route!=="play")return;
   const pc=$("pCount");if(!pc)return;
   a._flew=true;save();
+  countFly({pc,lead,getH:()=>$("stage")&&$("stage").querySelector(".bar.at h2"),bump:!a._inCount,done:()=>{
+    a._inCount=true;save();const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g);
+    S.tips=S.tips||{};if(!S.tips.night&&!pc.querySelector(".cnudge"))pc.insertAdjacentHTML("beforeend",`<span class="cnudge">Your crawl</span>`)}});   // the nudge lands right after the first bar counts
+}
+// the "it counts" animation itself: the host's crawl screen and a follower's both use it. z lifts it over the follow screen.
+function countFly(o){const pc=o.pc,lead=o.lead,Z=o.z||0;
   const tm=[],fx=[];let h=null,over=false;
   const at=(ms,f)=>tm.push(setTimeout(()=>{if(!over)f()},ms));
   const finish=()=>{if(over)return;over=true;tm.forEach(clearTimeout);fx.forEach(e=>e.remove());pc.classList.remove("opening");
     if(h)h.style.visibility="";document.removeEventListener("pointerdown",finish,true);
-    a._inCount=true;save();const b2=pc.querySelector("b");if(b2)b2.textContent=countShown(g);
-    S.tips=S.tips||{};if(!S.tips.night&&!pc.querySelector(".cnudge"))pc.insertAdjacentHTML("beforeend",`<span class="cnudge">Your crawl</span>`)};   // the nudge lands right after the first bar counts
+    if(o.done)o.done()};
   document.addEventListener("pointerdown",finish,true);
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){finish();return}
   at(lead==null?350:lead,()=>{
-    h=$("stage")&&$("stage").querySelector(".bar.at h2");if(!h||!h.isConnected){finish();return}
+    h=o.getH();if(!h||!h.isConnected){finish();return}
     const hr=h.getBoundingClientRect(),pr=pc.getBoundingClientRect(),cs=getComputedStyle(h),INK=themeAmberText(h);
-    const old=+(pc.querySelector("b")||{}).textContent||0,nw=a._inCount?old:old+1;
+    const old=+(pc.querySelector("b")||{}).textContent||0,nw=o.bump?old+1:old;
     const cx=hr.left+hr.width/2,cy=hr.top+hr.height/2;
     // 1. pop off the card (same punch as the wheel landing, quicker)
-    const bloom=document.createElement("div");bloom.className="jbloom";Object.assign(bloom.style,{left:cx+"px",top:cy+"px",zIndex:904});document.body.appendChild(bloom);fx.push(bloom);
+    const bloom=document.createElement("div");bloom.className="jbloom";Object.assign(bloom.style,{left:cx+"px",top:cy+"px",zIndex:904+Z});document.body.appendChild(bloom);fx.push(bloom);
     bloom.animate([{transform:"translate(-50%,-50%) scale(.3)",opacity:0},{transform:"translate(-50%,-50%) scale(1.05)",opacity:.9,offset:.35},{transform:"translate(-50%,-50%) scale(1.2)",opacity:0}],{duration:600,easing:"ease-out",fill:"forwards"});
     const f=document.createElement("div");f.className="cpop";f.textContent=h.textContent;
     Object.assign(f.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,textTransform:cs.textTransform,letterSpacing:cs.letterSpacing,color:INK});
-    document.body.appendChild(f);h.style.visibility="hidden";fx.push(f);
+    if(Z)f.style.zIndex=906+Z;document.body.appendChild(f);h.style.visibility="hidden";fx.push(f);
     const big=Math.min(1.5,innerWidth*.9/(f.offsetWidth||hr.width));
     const T=(x,y,sx,sy=sx,r=0)=>`translate(calc(-50% + ${x}px),calc(-50% + ${y}px)) rotate(${r}deg) scale(${sx},${sy})`;
     f.animate([{transform:T(0,0,1),textShadow:"0 0 0 rgba(245,184,61,0)"},{transform:T(0,-14,big*1.08),textShadow:"0 0 24px rgba(245,184,61,.9)",offset:.6},{transform:T(0,-12,big),textShadow:"0 0 16px rgba(245,184,61,.7)"}],{duration:170,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"});
     sfx("deal");buzz(15);
     // 2. the pill grows and swings open
     const GROW=1.7,box=document.createElement("div");box.className="cbox";
-    Object.assign(box.style,{left:pr.left+"px",top:pr.top+"px",width:pr.width+"px",height:pr.height+"px",perspective:"150px"});
+    Object.assign(box.style,{left:pr.left+"px",top:pr.top+"px",width:pr.width+"px",height:pr.height+"px",perspective:"150px"});if(Z)box.style.zIndex=905+Z;
     box.innerHTML=`<div class="chole"></div><div class="cleaf">${pc.innerHTML}</div>`;box.querySelectorAll(".cnudge").forEach(e=>e.remove());
     document.body.appendChild(box);fx.push(box);pc.classList.add("opening");
     const leaf=box.querySelector(".cleaf"),hole=box.querySelector(".chole");
@@ -2295,7 +2300,7 @@ function nightSheet(fo){
   const back=fo?()=>nightSheet(fo.fresh?fo.fresh():fo):()=>nightSheet(),title=fo?(fo.prev?"Your crawl":`${who}'s crawl`):"Your crawl";
   const rows=arr.map((v,i)=>{const b=byId(v.id);if(!b)return "";const here=v.leftAt==null,ms=(v.leftAt||t)-v.arrivedAt,ok=!here&&v.counted===true;
     // the tick says it counted, so the time it was logged sits beside it. Where you are now, the time on the right is still ticking: no arrival time.
-    const st=here?(fo&&!fo.prev?"There now":"You're here"):v.counted===false?`${arrTime(v.arrivedAt,g.city)} · Didn't count`:v.counted===true?arrTime(v.arrivedAt,g.city):fo&&!fo.prev?`${arrTime(v.arrivedAt,g.city)} · Not counted yet`:"Waiting on you";
+    const st=here?"You're here":v.counted===false?`${arrTime(v.arrivedAt,g.city)} · Didn't count`:v.counted===true?arrTime(v.arrivedAt,g.city):fo&&!fo.prev?`${arrTime(v.arrivedAt,g.city)} · Not counted yet`:"Waiting on you";
     return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${ok?"ok":""}">${st}${ok?" ✓":""}</small></span><span class="d">${hmm(ms)}</span></button>`}).join("");
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">${esc(title)}</h3>
     <div class="nightzone">${area||cr?`<span>${I.pin} ${cr&&!fo?zoneTxt(g):esc(area)}</span>`:""}${cr?`<span>R&amp;R</span>`:`<span>${ZONEI}${rLabel(g.radius)}</span><span>${I.clock}${g.len===60?"1 hour":"2 hours"}</span>`}</div>
@@ -4040,6 +4045,7 @@ function simHTML(){const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&S
 function followSim(){if(typeof SIM==="undefined"||G())return null;const k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);return fh?{k,d,fh}:null}
 function simAct(k,fn){const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.parse(d.g)}catch(e){return}g.visits=g.visits||[];
   const o={off:d.off||0};o.t=Date.now()+o.off;const r=fn(g,o,d);if(r===false)return;const real=Date.now();
+  {const a=simAt(g);if(a&&!a._inCount&&real+o.off-a.arrivedAt>=DWELL_MIN*60000)a._inCount=true}
   SIM.B.set(k,Object.assign({beat:real+o.off,simAt:real,off:o.off,g:JSON.stringify(g)},r&&r.patch||{}),true).then(()=>{if(g.mode!=="cruise"&&g.started&&real+o.off>=g.endsAt)simEnd(k)})}
 const simAt=g=>(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
 // their spin: a bar in their zone, with a wildcard if one was asked for
@@ -4051,14 +4057,14 @@ function followSimHTML(F){let g={};try{g=JSON.parse(F.d.g)}catch(e){}const a=sim
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;
   const where=a?`At ${esc(byId(a.id).name)}${a._inCount?", on the board":""}`:tg?`Heading to ${esc(tg.name)}`:"Waiting to spin";
   return `<div class="eyebrow" style="margin:14px 0 8px">${n}'s crawl</div><p class="note" style="margin:0 0 8px">${where}.</p>
-    <div class="trow">${a?b("fL","Leave (200 m)")+(a._inCount?"":b("fC","Count this bar")):tg?b("fA","Arrive at bar")+b("fR","Spin again"):b("fS","Spin for the next bar")}</div>
+    <div class="trow">${tg?b("fA","Arrive at bar")+b("fR","Spin again"):b("fS","Spin for the next bar")}${a?b("fL","Leave (200 m)")+(a._inCount?"":b("fC","Count this bar")):""}</div>
     <div class="trow" style="margin-top:8px">${b("fW",g.wnext?"Wildcard on next spin · on":"Wildcard on next spin")}${b("fZ","Move their zone")}</div>
     <div class="trow" style="margin-top:8px">${b("fG","Give me the spin")}</div>`}
 function followSimBind(F){const k=F.k,re=()=>setTimeout(()=>$("testFab").onclick(),150),on=(id,fn,stay)=>{const el=$(id);if(el)el.onclick=()=>{simAct(k,fn);if(stay)re();else closeSheet()}};
   on("fA",(g,o)=>{if(!g.target)return false;simArrive(g,o.t,g.target)});
   on("fL",(g,o)=>simLeave(g,o.t));
   on("fC",g=>{const a=simAt(g);if(!a)return false;a._inCount=true});
-  on("fS",(g,o)=>{if(simAt(g))simLeave(g,o.t);simSpinNext(g,o.t)});
+  on("fS",(g,o)=>simSpinNext(g,o.t));
   on("fR",(g,o)=>simSpinNext(g,o.t));
   on("fW",g=>{g.wnext=!g.wnext},true);
   on("fZ",g=>{const c=g.center||{lat:-33.8688,lng:151.2093},nc={lat:c.lat+.009,lng:c.lng+.004};g.center=nc;g.radius=Math.min(2,(g.radius||1)+.5);g.areas=(g.areas||[]).concat([nearestSuburb(nc)]);g.voluntaryUsed=true;g.target=null;g.wild=null});
