@@ -418,7 +418,8 @@ const CHEVD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const EYEI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
 function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt=null;
   // the tabs stay under the follow screen, like they do under your own crawl
-  if(!fvPrev&&!["home","bars","hist","end"].includes(S.route)){S.route="home";save();render()}document.body.classList.add("fvon");paintTabsFv();
+  if(!fvPrev&&S.route!=="home"){S.route="home";save();render()}   // opening it puts you back on the Play tab, wherever you opened it from
+  document.body.classList.add("fvon");paintTabsFv();
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-live" role="status"><span class="fv-eye">${EYEI}</span><span class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Bars so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
