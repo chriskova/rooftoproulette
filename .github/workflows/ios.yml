@@ -57,14 +57,19 @@ jobs:
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $HOME/private_keys/AuthKey.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER_ID"
           xcodebuild -project app/ios/App/App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' -archivePath $RUNNER_TEMP/App.xcarchive \
-            DEVELOPMENT_TEAM=$TEAM_ID CURRENT_PROJECT_VERSION=$BUILD CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=$TEAM_ID CURRENT_PROJECT_VERSION=$BUILD \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- AD_HOC_CODE_SIGNING_ALLOWED=YES PROVISIONING_PROFILE_SPECIFIER= \
             archive | tail -40
+          # The archive is only ad-hoc signed, so the app's entitlements (Sign in with Apple, associated domains) are
+          # embedded; the export below re-signs it for the App Store with a profile that carries the same capabilities.
+          codesign -d --entitlements :- "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app" 2>/dev/null | grep -q applesignin \
+            || { echo "::error::The archive is missing its entitlements (Sign in with Apple, associated domains)."; exit 1; }
           cat > $RUNNER_TEMP/export.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>export</string>
             <key>signingStyle</key><string>automatic</string>
             <key>teamID</key><string>$TEAM_ID</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
@@ -72,6 +77,14 @@ jobs:
           PLIST
           xcodebuild -exportArchive -archivePath $RUNNER_TEMP/App.xcarchive \
             -exportOptionsPlist $RUNNER_TEMP/export.plist -exportPath $RUNNER_TEMP/out $AUTH | tail -40
+          # Check the uploaded app really carries Sign in with Apple and the crawl-link domains.
+          cd $RUNNER_TEMP/out && unzip -q -o *.ipa -d ipa && ENT=$(codesign -d --entitlements :- ipa/Payload/App.app 2>/dev/null)
+          echo "$ENT" | grep -q applesignin || { echo "::error::Exported app has no Sign in with Apple entitlement."; exit 1; }
+          echo "$ENT" | grep -q "applinks:rooftoproulette.com" || { echo "::error::Exported app has no associated domains."; exit 1; }
+          echo "Entitlements OK: Sign in with Apple and associated domains are in the app."
+          cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          xcrun altool --upload-app -f "$(ls $RUNNER_TEMP/out/*.ipa | head -1)" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tail -20
+          [ ${PIPESTATUS[0]} -eq 0 ] || { echo "::error::Upload to App Store Connect failed."; exit 1; }
           echo "::notice::Build $BUILD uploaded to App Store Connect. It shows in TestFlight after Apple's processing (usually 5–30 min)."
       - name: Clean up the key
         if: always()

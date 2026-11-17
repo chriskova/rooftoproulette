@@ -17,6 +17,11 @@ function fbBackend(){return new Promise((res,rej)=>{
   const go_=()=>{try{const F=window.RRFB,app=F.initializeApp(FB_CFG);
     const auth=F.initializeAuth(app,{persistence:[F.indexedDBLocalPersistence,F.browserLocalPersistence]}),db=F.initializeFirestore(app,{});
     const d=p=>F.doc(db,...p.split("/")),c=p=>F.collection(db,...p.split("/"));
+    const linkOrIn=async(cred,P,name)=>{const u=auth.currentUser;let r;
+      try{r=await F.linkWithCredential(u,cred)}
+      catch(e){if(e.code==="auth/credential-already-in-use"||e.code==="auth/email-already-in-use")return F.signInWithCredential(auth,P.credentialFromError(e)||cred);throw e}
+      if(!r.user.displayName){const pd=(r.user.providerData||[])[0]||{},n=name||pd.displayName;if(n)await F.updateProfile(r.user,{displayName:n,photoURL:pd.photoURL||null})}
+      return r};
     res({
       onUser:cb=>F.onAuthStateChanged(auth,u=>{if(!u){F.signInAnonymously(auth).catch(e=>console.warn("anon",e));return}const pd=(u.providerData||[]).find(x=>x&&(x.displayName||x.email))||{};
         cb({uid:u.uid,anon:u.isAnonymous,name:u.displayName||pd.displayName||"",photo:u.photoURL||pd.photoURL||"",email:u.email||pd.email||"",via:(pd.providerId||"").replace(".com","")})}),
@@ -25,11 +30,21 @@ function fbBackend(){return new Promise((res,rej)=>{
       resetPw:email=>F.sendPasswordResetEmail(auth,email),
       rename:n=>F.updateProfile(auth.currentUser,{displayName:n}),
       refresh:()=>auth.currentUser,
+      // Google and Apple both end in a Firebase credential, linked onto this phone's anonymous account so its data comes along
+      // (or, if that Google/Apple account already exists, signed into instead).
       google:async()=>{let cred=null;
-        if(NATIVE){const o=await PLG.GoogleAuth.signIn({webClientId:RR_CONFIG.googleWebClientId});cred=F.GoogleAuthProvider.credential(o.idToken)}
-        const u=auth.currentUser;
-        if(cred){try{const r=await F.linkWithCredential(u,cred);if(!r.user.displayName){const pd=(r.user.providerData||[])[0];if(pd&&pd.displayName)await F.updateProfile(r.user,{displayName:pd.displayName,photoURL:pd.photoURL||null})}return r}catch(e){if(e.code==="auth/credential-already-in-use"||e.code==="auth/email-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e)||cred);throw e}}
-        const p=new F.GoogleAuthProvider();try{return await F.linkWithPopup(u,p)}catch(e){if(e.code==="auth/credential-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e));throw e}},
+        if(NATIVE&&IOSNAT){const o=await PLG.RRSignIn.google({clientId:RR_CONFIG.googleIosClientId});cred=F.GoogleAuthProvider.credential(o.idToken)}
+        else if(NATIVE){const o=await PLG.GoogleAuth.signIn({webClientId:RR_CONFIG.googleWebClientId});cred=F.GoogleAuthProvider.credential(o.idToken)}
+        if(cred)return linkOrIn(cred,F.GoogleAuthProvider,null);
+        const u=auth.currentUser,p=new F.GoogleAuthProvider();try{return await F.linkWithPopup(u,p)}catch(e){if(e.code==="auth/credential-already-in-use")return F.signInWithCredential(auth,F.GoogleAuthProvider.credentialFromError(e));throw e}},
+      apple:async()=>{const raw=Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>b.toString(16).padStart(2,"0")).join("");
+        const o=await PLG.RRSignIn.apple({nonce:raw});
+        const cred=new F.OAuthProvider("apple.com").credential({idToken:o.idToken,rawNonce:raw});
+        // Apple only shares the name the first time someone signs in to the app
+        return linkOrIn(cred,F.OAuthProvider,[o.givenName,o.familyName].filter(Boolean).join(" ")||null)},
+      // Apple asks apps to cut their access when an account is deleted: a fresh Apple sign-in gives the code to revoke with
+      revokeApple:async()=>{const raw=Array.from(crypto.getRandomValues(new Uint8Array(24)),b=>b.toString(16).padStart(2,"0")).join("");
+        const o=await PLG.RRSignIn.apple({nonce:raw});if(o.authorizationCode)await F.revokeAccessToken(auth,o.authorizationCode)},
       signOut:async()=>{try{if(NATIVE)await PLG.GoogleAuth.signOut()}catch(e){}await F.signOut(auth)},
       deleteMe:async()=>{await F.deleteUser(auth.currentUser)},
       get:async p=>{const s=await F.getDoc(d(p));return s.exists()?s.data():null},
@@ -65,7 +80,9 @@ function fakeBackend(){
 function cloud(){if(!CLP){CLP=(FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
 const myName=()=>(ME&&ME.name)||S.myName||"";
-const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId))));
+const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId)||(IOSNAT&&RR_CONFIG.googleIosClientId))));
+// Sign in with Apple: on iPhone (Apple requires it next to Google there)
+const canApple=()=>!!(FB_CFG&&IOSNAT);
 
 function onUserChange(was,u){
   if(u&&!u.anon&&(!was||was.anon||was.uid!==u.uid)){tabSyncAll();watchInvites()}
@@ -78,10 +95,10 @@ function onUserChange(was,u){
 const AUTH_ERR={"auth/invalid-credential":"Wrong email or password.","auth/wrong-password":"Wrong email or password.","auth/user-not-found":"No account with that email. Create one instead.","auth/email-already-in-use":"That email already has an account. Sign in instead.","auth/credential-already-in-use":"That email already has an account. Sign in instead.","auth/weak-password":"Use at least 6 characters.","auth/invalid-email":"That email doesn't look right.","auth/too-many-requests":"Too many tries. Wait a minute and try again.","auth/network-request-failed":"No connection. Check your signal."};
 const authErr=e=>AUTH_ERR[e&&e.code]||"Couldn't sign in. Try again.";
 const isCancel=e=>/cancel|popup-closed|user.?cancel/i.test(String(e&&(e.code||e.message)||e));
-async function signIn(from){track("sign_in_tap",{from,via:"google"});
-  try{const B=await cloud();await B.google();track("signed_in",{from,via:"google"});afterSignIn(from);return true}
+async function signIn(from,via){via=via||"google";track("sign_in_tap",{from,via});
+  try{const B=await cloud();await(via==="apple"?B.apple():B.google());track("signed_in",{from,via});afterSignIn(from);return true}
   catch(e){console.warn("sign in",e);if(!isCancel(e))toast(esc(authErr(e)),3500);return false}}
-// one sign-in sheet everywhere: Google or email
+// one sign-in sheet everywhere: Apple (iPhone), Google or email
 // Signing in from Settings or the account button lists the perks; from an action, just the line that action needs.
 const PERK_TAB=()=>`<div>${I.check}<span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></div>`;
 const PERK_LIVE=()=>`<div>${I.check}<span><b>Share your crawl live</b><small>Let friends follow every spin and the timer from their own phones</small></span></div>`;
@@ -90,9 +107,10 @@ function signInSheet(why,from,title){from=from||"sheet";
   sheet(`<h3>${title||"Sign in"}</h3>${why?`<p class="note">${why}</p>`:""}
     ${perks?`<div class="aperks">${perks}</div>`:""}
     <div class="acts">
+    ${canApple()?`<button class="btn apple" type="button" id="siA">${AIC} Continue with Apple</button>`:""}
     ${canGoogle()?`<button class="btn" type="button" id="siG">${GIC} Continue with Google</button>`:""}
     <button class="btn dark" type="button" id="siE">${I.mail||MAILI} Continue with email</button></div>`,()=>{
-    if($("siG"))$("siG").onclick=()=>signIn(from);$("siE").onclick=()=>emailSheet("in",from)})}
+    if($("siA"))$("siA").onclick=()=>signIn(from,"apple");if($("siG"))$("siG").onclick=()=>signIn(from);$("siE").onclick=()=>emailSheet("in",from)})}
 const MAILI='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg>';
 function emailSheet(mode,from,em){const up=mode==="up";
   sheet(`<h3>${up?"Create an account":"Sign in with email"}</h3>
@@ -131,7 +149,7 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
   if(fresh){pg=document.createElement("div");pg.id="acctPage";pg.className="setpage";document.body.appendChild(pg);
     try{history.pushState({acctPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
   if($("sheet").open)closeSheet();
-  const n=readH(HKEY).filter(r=>!r.demo).length,via=ME.via==="google"?"Google":ME.via==="password"?"Email":"";
+  const n=readH(HKEY).filter(r=>!r.demo).length,via=ME.via==="google"?"Google":ME.via==="apple"?"Apple":ME.via==="password"?"Email":"";
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="apBack" aria-label="Back">${I.back}</button><b>Account</b></div><div class="spbody">
     <div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
     <div class="sgh">Profile</div><div class="sgrp">
@@ -170,6 +188,7 @@ function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
   return signedIn()?`<button class="acbtn on" type="button" id="acctChip" aria-label="Your account">${avatarHTML()}</button>`
     :`<button class="acbtn" type="button" id="acctChip" aria-label="Sign in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.8 4-5.6 7.5-5.6s6.3 1.8 7.5 5.6"/></svg></button>`}
 function acctChipBind(){const b=$("acctChip");if(b)b.onclick=accountSheet}
+const AIC='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="vertical-align:-2px"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.77-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.82-.81-3-.79-1.54.02-2.97.9-3.76 2.28-1.6 2.78-.41 6.9 1.15 9.16.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.77.74 2.98.72 1.24-.02 2.02-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.38-3.69zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.02.61-2.67 1.37-.58.68-1.1 1.77-.96 2.81 1.02.08 2.06-.52 2.69-1.29z"/></svg>';
 const GIC='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px"><path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.3H12v4.3h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2-1.9 3.2-4.7 3.2-8z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1-3.7 1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8l3.7-2.8z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.6l3.2-3.2A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z"/></svg>';
 async function signOutNow(){const B=await cloud();await B.signOut();closeAcct();localStorage.removeItem("rr-synced");toast("Signed out. Your tab stays on this phone.",3000)}
 function deleteAccountSheet(){
@@ -177,8 +196,8 @@ function deleteAccountSheet(){
     $("daN").onclick=closeSheet;$("daY").onclick=async()=>{const B=await cloud(),uid=ME.uid;
       try{const L=await B.list(`users/${uid}/crawls`);for(const x of L)await B.del(`users/${uid}/crawls/${x._id}`);
         try{for(const x of await B.list(`users/${uid}/invites`))await B.del(`users/${uid}/invites/${x._id}`)}catch(e){}
-        await B.del(`users/${uid}`);await B.deleteMe();localStorage.removeItem("rr-synced");closeSheet();closeAcct();toast("Account deleted.",3000);track("account_deleted")}
-      catch(e){console.warn(e);if(/recent-login/.test(e.code||"")){closeSheet();toast("Sign in again, then delete.",3500);await signIn("delete")}else toast("Couldn't delete it. Try again.",3000)}}})}
+        await B.del(`users/${uid}`);if(ME.via==="apple"&&B.revokeApple&&RR_CONFIG.appleRevoke)try{await B.revokeApple()}catch(e){console.warn("apple revoke",e)}await B.deleteMe();localStorage.removeItem("rr-synced");closeSheet();closeAcct();toast("Account deleted.",3000);track("account_deleted")}
+      catch(e){console.warn(e);if(/recent-login/.test(e.code||"")){closeSheet();toast("Sign in again, then delete.",3500);await signIn("delete",ME.via==="apple"?"apple":"google")}else toast("Couldn't delete it. Try again.",3000)}}})}
 
 // ----- My Tab backup (signed in) -----
 const syncedMap=()=>{try{return JSON.parse(localStorage.getItem("rr-synced")||"{}")}catch(e){return {}}};

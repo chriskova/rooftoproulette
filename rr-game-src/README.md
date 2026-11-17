@@ -79,4 +79,7 @@ Optional Google sign-in backs up My Tab and records who you crawl with. Live cra
 - `firebase/firestore.rules`: paste into Firestore > Rules.
 - `vendor/firebase/rr-firebase.js` is a bundle of the Firebase SDK (rebuild from `vendor/firebase/entry.js` with esbuild). Loaded only when needed.
 - Android sign-in uses `GoogleAuthPlugin` (Credential Manager); register the app's SHA-1s in the Firebase project.
+- iPhone sign-in: Sign in with Apple, Google and email. `RRSignInPlugin` (in `app/ios/App/App/SceneDelegate.swift`, no third-party SDKs) does Sign in with Apple (AuthenticationServices) and Google's standard iOS OAuth flow (`googleIosClientId`, the Firebase-made iOS client) and hands the ID token to Firebase. Apple requires Sign in with Apple wherever Google sign-in is offered on iPhone.
+- The iOS build ad-hoc signs the archive so its entitlements (Sign in with Apple, associated domains for crawl links) are embedded, re-signs it for the App Store on export, and refuses to upload if either entitlement is missing.
+- Revoking Apple sign-in on account deletion (`appleRevoke` in `data/config.json`) needs a Sign in with Apple key added to Firebase's Apple provider (OAuth code flow). Do that before App Store review.
 - Tests: `node fakecloud-server.js 8787 &` then `node live-crawl.js $(realpath ../../index.html)` (uses `?fakecloud=`).
