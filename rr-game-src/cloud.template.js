@@ -130,7 +130,11 @@ function simEnd(k){const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.pa
   SIM.B.set(k,{ended:true,rec:recForCloud(rec),g:JSON.stringify(rec),beat:Date.now()},true)}
 // Sam or Jess starts a 1 hr crawl near you and invites you
 async function simInvite(f){const B=await cloud();if(!SIM.B)return;const c=you()||{lat:-33.8688,lng:151.2093},t=Date.now(),len=60;
-  const g={id:"gsim"+t,mode:"rush",len,radius:1.5,city:S.city,started:true,startedAt:t,endsAt:t+len*60000+45*60000,frz:{from:t,until:t+45*60000,start:true,zone:true,trip:true},visits:[],center:{lat:c.lat,lng:c.lng}};
+  // the same shape as a crawl started on a real phone, so it ends, lands on the tab and shows its card like one
+  const g={id:"gsim"+t,city:S.city,test:true,mode:"rush",len,radius:1.5,newOnly:false,started:true,startedAt:t,endsAt:t+len*60000+45*60000,frz:{from:t,until:t+45*60000,start:true,zone:true,trip:true},
+    center:{lat:c.lat,lng:c.lng},startPos:{lat:c.lat,lng:c.lng},areas:[nearestSuburb(c)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],zone:{lat:c.lat,lng:c.lng,name:nearestArea(c)},
+    visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
+  g.zoneN=playable(inCircle(c,g.radius),false).length;
   simSpin(g,t);const id="SIM"+t.toString(36);
   await B.set(`live/${id}`,{host:f.uid,hostName:f.n,g:JSON.stringify(g),beat:t,upd:t,members:{},ended:false,v:1,off:0,simAt:t});
   await B.set(`users/${ME.uid}/invites/${id}`,{from:f.n,fromUid:f.uid,at:t});return id}
@@ -496,9 +500,12 @@ async function liveEnded(rec){if(!rec.live||!CLP)return;rec.liveId=rec.live;dele
     matesFrom(liveDoc)}catch(e){console.warn("live end",e)}
   liveDetach()}
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
-  let r;try{r=JSON.parse(d.rec)}catch(e){return}const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
+  let r;try{r=JSON.parse(d.rec)}catch(e){return}
+  // fill in anything an older host version left out, so the crawl card and tab can always draw it
+  r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
+  const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
-  delete r.newIds;r.bodDone=true;r.test=false;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});
+  delete r.newIds;r.bodDone=true;r.test=!!S.test;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});
   toast("The crawl's on your tab.",3000);if(!signedIn())setTimeout(()=>signInSheet("Keep your crawls, photos and saved lists across devices.","follow_end","Save your tab"),1800)}
 async function matesFrom(d){if(!d||!signedIn())return;const B=await cloud(),me=ME.uid,add={};
   const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me)add[u]={n:m.n||"",t:Date.now()}});

@@ -191,6 +191,8 @@ const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(
     if(r.test||r.startedAt>Date.now()+3600000||atBar){r.test=true;test.push(r)}else{r.test=false;real.push(r)}});
   if(test.length){writeH(TKEY,test.concat(readH(TKEY)).sort((x,y)=>y.startedAt-x.startedAt));writeH(HKEY,real)}
   localStorage.setItem("rr-hsplit","1")}catch(e){}})();
+// a simulated friend's crawl (test mode) belongs on the test tab: move any that landed on the real tab before that was fixed
+try{const R=readH(HKEY),sim=R.filter(r=>/^SIM/.test(r.liveId||""));if(sim.length){writeH(HKEY,R.filter(r=>!/^SIM/.test(r.liveId||"")));const T=readH(TKEY);sim.forEach(r=>{r.test=true;if(!T.some(x=>x.id===r.id))T.unshift(r)});writeH(TKEY,T)}}catch(e){}
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
