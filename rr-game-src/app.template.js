@@ -866,7 +866,7 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
-const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Bars you've saved</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Bars you want to try</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -3600,7 +3600,7 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     <div class="acts">
       ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
-      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Save for next time</small></span><span class="sw"></span></button>`}
+      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Add to bars you want to try</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
