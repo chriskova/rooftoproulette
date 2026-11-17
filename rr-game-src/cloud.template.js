@@ -292,9 +292,9 @@ async function qrSheet(link,back){let svg="";
   track("live_qr");
   sheet(`<h3>Scan to follow</h3><p class="note">Open the phone camera and point it here.</p><div class="qrbox">${svg}</div>
     <div class="acts"><button class="btn dark" type="button" id="qrBack">Back</button></div>`,()=>{$("qrBack").onclick=()=>back?back():closeSheet()})}
-function nameSheet(after){
-  sheet(`<h3>What's your name?</h3><p class="note">So friends know whose crawl it is.</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
-    <div class="acts"><button class="btn" type="button" id="nmOk">Done</button><button class="btn dark" type="button" id="nmG">Sign in instead</button></div>`,()=>{
+function nameSheet(after,why){
+  sheet(`<h3>What's your name?</h3><p class="note">${why==="follow"?"So friends know who's following.":"So friends know whose crawl it is."}</p><input class="cnin" id="nmIn" maxlength="24" autocomplete="given-name" placeholder="First name" value="${esc(S.myName||"")}">
+    <div class="acts"><button class="btn" type="button" id="nmOk">Done</button>${why==="follow"?"":`<button class="btn dark" type="button" id="nmG">Sign in instead</button>`}</div>`,()=>{
     const ok=()=>{const v=$("nmIn").value.trim();if(!v)return;S.myName=v;save();closeSheet();after&&after()};
     $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So friends see your name.","live");setTimeout(()=>$("nmIn").focus(),50)})}
 
@@ -309,12 +309,12 @@ async function liveAttach(){const id=(S.game&&S.game.live)||S.follow;if(!id)retu
   liveUnsub=B.watch(`live/${id}`,d=>{liveDoc=d;onLive(id,d)});liveUnsub._id=id}
 function liveDetach(){if(liveUnsub)liveUnsub();liveUnsub=null;liveDoc=null}
 function onLive(id,d){
-  if(!d){if(S.follow===id){S.follow=null;save();closeFollow();toast("That crawl's not live any more.",3000)}return}
+  if(!d){if(S.follow===id){S.follow=null;save();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}toast("That crawl's not live any more.",3000)}return}
   const me=ME&&ME.uid,g=G();
   if(g&&g.live===id&&d.host!==me){   // the spin was handed over or taken: this phone becomes a follower
     g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(d.hostName||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
-  if(S.follow===id){if(d.ended)followEnded(d);paintFollow()}
+  if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now())}}
   if(g&&g.live===id)paintMembers(d)}
 function paintMembers(d){const n=Object.keys(d.members||{}).length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople()}
 // the people button on the crawl screen: a plus until someone follows, then how many are following
@@ -327,6 +327,7 @@ function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn(
 async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest app.",3000);return}
   if(S.game&&S.game.live===id){go("play");return}
   if(S.game&&S.game.started&&!S.game.ended){toast("Finish your own crawl first.",3000);return}
+  if(!myName()){nameSheet(()=>followLive(id),"follow");return}   // so the host sees who's following, not "Friend"
   S.follow=id;S.liveInv=null;save();track("live_follow");openFollow();
   const B=await cloud();
   try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid)return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===myName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:myName()||"",j:Date.now(),b:(gg.visits||[]).length}}
@@ -339,15 +340,32 @@ function openFollow(){if(fv)return;fv=document.createElement("div");fv.className
   $("fvX").onclick=()=>{closeFollow();go("home")};
   try{fvMap=mkMap($("fvMap"),{attributionControl:false});fvMap.setView([-33.8688,151.2093],14);fvLayer=L.layerGroup().addTo(fvMap)}catch(e){}
   clearInterval(fvT);fvT=setInterval(paintFollow,1000);liveAttach();paintFollow()}
+// Followers get the same ongoing notification as the person spinning (Android): where the crawl's at and the time left
+let fvNote="",fvNoteAt=0;
+function followNote(d,g,t){if(!NATIVE)return;
+  if(!d||d.ended||!g.started){if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}return}
+  noteSetup();if(!S.notifAsked){S.notifAsked=1;save();natCall("LocalNotifications","requestPermissions").catch(()=>{})}
+  const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?d.hostName+"'s crawl":"Live crawl";
+  const o={follower:true,title:at?`${who} · at ${byId(at.id).name}`:tgt?`${who} · heading to ${tgt.name}`:`${who} · spinning next`,text:cr?"R&R":plural(vs.filter(v=>v.counted!==false).length,"bar")+" so far"};
+  const fz=g.frz&&t<g.frz.until;
+  if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first bar";
+  else if(!cr&&!fz){o.endsAt=Math.round(g.endsAt);o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-t)/Math.max(1,g.endsAt-g.startedAt))}
+  else if(cr&&at)o.since=Math.round(at.arrivedAt);
+  const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
+  fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
 function closeFollow(){clearInterval(fvT);if(fv){const el=fv;el.classList.remove("on");setTimeout(()=>el.remove(),220)}fv=null;fvMap=null;if(S.follow&&!(liveDoc&&!liveDoc.ended)){S.follow=null;save();liveDetach()}}
-function leaveFollow(){S.follow=null;save();liveDetach();closeFollow()}
+function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}}
 let fvSig="";
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now(),cr=g.mode==="cruise";
   $("fvWho").textContent=`${d.hostName?d.hostName+"'s":"A"} crawl · live`;
-  const ck=$("fvClock");if(d.ended)ck.textContent="Done";else if(!g.started)ck.textContent="Not started";else if(cr){ck.textContent=hmm(t-g.startedAt)}else{const ms=Math.max(0,g.endsAt-t),m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;ck.textContent=`${m}:${String(s).padStart(2,"0")}`}
+  followNote(d,g,t);
+  // the same clock as the host's phone: held at the full length until the first bar (and through a time freeze), then counting down
+  const fz=g.frz&&t<g.frz.until,left=fz?g.endsAt-g.frz.until:g.endsAt-t;
+  const ck=$("fvClock");if(d.ended)ck.textContent="Done";else if(!g.started)ck.textContent="Not started";else if(cr){ck.textContent=hmm(t-g.startedAt)}else{ck.textContent=mmss(left)}
   const at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target);
-  $("fvSub").textContent=d.ended?`${vs.filter(v=>v.counted!==false).length} bars`:cr?"No timer":`${vs.filter(v=>v.counted!==false).length} bar${vs.length===1?"":"s"} so far`;
+  const nb=vs.filter(v=>v.counted!==false).length;
+  $("fvSub").textContent=d.ended?plural(nb,"bar"):cr?"No timer":fz&&g.frz.start?"Clock starts at the first bar":`${plural(nb,"bar")} so far`;
   $("fvNow").innerHTML=d.ended?"":at?`<small>At</small><b>${esc(byId(at.id).name)}</b><span>${hmm(t-at.arrivedAt)} there</span>`:tgt?`<small>Heading to</small><b>${esc(tgt.name)}</b>`:`<small>Next</small><b>Waiting on a spin</b>`;
   const sig=JSON.stringify([vs.map(v=>[v.id,v.leftAt,v.counted]),g.target,d.ended]);
   if(sig!==fvSig){fvSig=sig;
@@ -414,7 +432,7 @@ let scanSt=null,jqP=null;
 const jsqrLib=()=>jqP||(jqP=new Promise((res,rej)=>{if(window.jsQR)return res(window.jsQR);const sc=document.createElement("script");sc.src=(window.RR_ROOT||"")+"vendor/qr/jsQR.js";sc.onload=()=>res(window.jsQR);sc.onerror=()=>{jqP=null;rej(new Error("jsqr didn't load"))};document.head.appendChild(sc)}));
 async function joinScan(){track("join_scan_open");
   const ov=document.createElement("div");ov.className="scanv";
-  ov.innerHTML=`<video playsinline muted autoplay></video><div class="scan-frame" aria-hidden="true"></div>
+  ov.innerHTML=`<video playsinline muted autoplay poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></video><div class="scan-frame" aria-hidden="true"></div>
     <div class="scan-top"><b>Scan a friend's QR code</b><button type="button" class="shv-x" id="scX" aria-label="Close">${I.x}</button></div>`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   const msg=t=>{toast(esc(t),2500);const tt=$("toast");if(tt){tt.style.zIndex="2001";if(tt.parentNode!==document.body)document.body.appendChild(tt)}};

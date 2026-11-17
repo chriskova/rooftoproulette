@@ -81,7 +81,8 @@ public class CrawlNotifyPlugin extends Plugin {
                 b.setContentIntent(open);
                 b.addAction(0, "Open", open);
             }
-            PendingIntent end = actionIntent(ctx, "end", 2);
+            // Followers watch someone else's crawl: nothing for them to end
+            PendingIntent end = Boolean.TRUE.equals(call.getBoolean("follower", false)) ? null : actionIntent(ctx, "end", 2);
             if (end != null) b.addAction(0, "End crawl", end);
 
             NotificationManagerCompat nm = NotificationManagerCompat.from(ctx);

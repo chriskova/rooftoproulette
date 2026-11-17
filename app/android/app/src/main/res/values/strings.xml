@@ -1,6 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Rooftops</string>
+    <!-- app_name is what Android shows in permission prompts and settings; the home-screen label is the activity's -->
+    <string name="app_name">Rooftop Roulette</string>
     <string name="title_activity_main">Rooftops</string>
     <string name="package_name">com.rooftoproulette.app</string>
     <string name="custom_url_scheme">com.rooftoproulette.app</string>

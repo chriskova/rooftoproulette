@@ -232,7 +232,8 @@ function openState0(v,ts){
 }
 const openOK=(v,ts)=>{const s=openState(v,ts);return s.open&&s.until>SOON};
 function clock12(m){m=((m%1440)+1440)%1440;let h=Math.floor(m/60),mm=m%60;const ap=h>=12?"pm":"am";h=h%12||12;return h+(mm?":"+String(mm).padStart(2,"0"):"")+ap}
-const mmss=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+// clock text: 59:59 under an hour, 1:44:42 from an hour (never "104:42")
+const mmss=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s/60)%60,p=n=>String(n).padStart(2,"0");return h?h+":"+p(m)+":"+p(s%60):m+":"+p(s%60)};
 const hmm=ms=>{if(ms<60000)return "<1 min";const m=Math.round(ms/60000);return m>=60?Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m":m+" min"};
 const dateTxt=ts=>new Date(ts).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
 
@@ -1369,7 +1370,7 @@ function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v
   // Ask rather than count it (the demo just counts it).
   const walkedOff=reason==="walk"&&!v.dep&&!(G()&&G().demo);
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else if(walkedOff)v.counted=v._ans!==undefined?v._ans:null;else v.counted=ok?true:v._ans!==undefined?v._ans:null;
-  if(walkedOff&&v.counted===null){v.walkedOff=1;try{if(NATIVE&&document.hidden){noteSetup();natCall("LocalNotifications","schedule",{notifications:[{id:105,title:`Did you have a drink at ${byId(v.id).name}?`,body:"You left without spinning. Tap to say if it counts.",channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(Date.now()+1500),allowWhileIdle:true}}]}).catch(()=>{})}}catch(e){}}
+  if(walkedOff&&v.counted===null){v.walkedOff=1;try{if(NATIVE&&document.hidden){noteSetup();lnSchedule([{id:105,title:`Did you have a drink at ${byId(v.id).name}?`,body:"You left without spinning. Tap to say if it counts.",channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(Date.now()+1500),allowWhileIdle:true}}]).catch(()=>{})}}catch(e){}}
   delete v._ans}
 function onLocation(){liveNote();alertSync();if(S.game&&S.game.live)liveSync(false);
   const g=G();[bMap,zMap].forEach(setMe);meAll();
@@ -1845,7 +1846,7 @@ function camSync(asked){
     CAM.busy=true;
     navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:1920},height:{ideal:1080}},audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:{ideal:2},sampleRate:{ideal:48000}}}).then(st=>{
       CAM.busy=false;if(!(CAM.once&&S.route==="play"&&!document.hidden)){st.getTracks().forEach(t=>t.stop());return}
-      CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
+      CAM.stream=st;let v=$("camVid");if(!v){v=document.createElement("video");v.id="camVid";v.poster=NOPOSTER;v.muted=true;v.playsInline=true;v.setAttribute("playsinline","");document.body.prepend(v)}
       v.classList.remove("on");v.onplaying=()=>v.classList.add("on");v.srcObject=st;v.play().catch(()=>{});CAM.vid=v;document.body.classList.add("camon");fitPlay();
       // Android's web view sometimes hands over a stuck picture the first time (often right after the permission prompt).
       // If the picture hasn't started moving in 2.5 s, drop it and open the camera again, once, the same as closing and reopening it.
@@ -1992,7 +1993,7 @@ function addSharedToTab(){const r=SHARED;if(!r)return;const L=readH(HKEY);if(!L.
 let camPopT=null;
 function camSaved(blob,type,at,inGal){let p=$("camPop");if(p){clearTimeout(camPopT);p.remove()}
   p=document.createElement("div");p.id="camPop";p.className="campop";const u=URL.createObjectURL(blob);
-  p.innerHTML=`<video src="${u}" muted playsinline autoplay loop></video><span class="cpt"><b>Clip saved</b><small>On your crawl card${inGal?" and in your gallery":""}</small></span>${inGal?"":`<button type="button" data-a="save">Save</button>`}<button type="button" data-a="share" class="pri">Share</button>`;
+  p.innerHTML=`<video poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" src="${u}" muted playsinline autoplay loop></video><span class="cpt"><b>Clip saved</b><small>On your crawl card${inGal?" and in your gallery":""}</small></span>${inGal?"":`<button type="button" data-a="save">Save</button>`}<button type="button" data-a="share" class="pri">Share</button>`;
   document.body.appendChild(p);requestAnimationFrame(()=>p.classList.add("on"));
   const bye=()=>{clearTimeout(camPopT);p.classList.remove("on");setTimeout(()=>{p.remove();URL.revokeObjectURL(u)},250)};
   if(p.querySelector('[data-a="save"]'))p.querySelector('[data-a="save"]').onclick=()=>{clipSave(blob,type,at);p.querySelector("b").textContent="Saved to your phone";clearTimeout(camPopT);camPopT=setTimeout(bye,2200)};
@@ -2140,7 +2141,7 @@ function clipSave(blob,type,at){if(NATIVE){const f=clipFile(blob,type,at);return
   const f=clipFile(blob,type,at),u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 function clipShare(blob,type,at,text){const f=clipFile(blob,type,at);if(NATIVE){nativeShare(blob,f.name,"Rooftop Roulette",text).catch(e=>console.warn(e));return}const o=text?{files:[f],text}:{files:[f]};if(navigator.canShare&&navigator.canShare(o))navigator.share(o).catch(()=>{});else clipSave(blob,type,at)}
 function clipsSheet(gid){clipList(gid).then(L=>{const urls=L.map(c=>URL.createObjectURL(c.blob));
-  sheet(`<h3>Clips</h3><p class="note">Your spins from this crawl. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
+  sheet(`<h3>Clips</h3><p class="note">Your spins from this crawl. They're saved on this phone.</p><div class="clips">${L.map((c,i)=>`<div class="clip"><video poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" src="${urls[i]}#t=0.1" controls playsinline preload="metadata"></video><div class="clipb"><span class="small">${(d=>clock12(d.getHours()*60+d.getMinutes()))(new Date(c.at))}</span><button class="btn sm" type="button" data-cs="${i}">Share</button><button class="btn sm dark" type="button" data-cv="${i}">Save</button><button class="btn sm line" type="button" data-cd="${i}" aria-label="Delete">Delete</button></div></div>`).join("")}</div>`,()=>{
     document.querySelectorAll("[data-cs]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cs];clipShare(c.blob,c.type,c.at)});
     document.querySelectorAll("[data-cv]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cv];clipSave(c.blob,c.type,c.at)});
     document.querySelectorAll("[data-cd]").forEach(b=>b.onclick=()=>{const c=L[+b.dataset.cd];clipDel(c.id).then(()=>{closeSheet();if(S.route==="end")renderEnd();clipList(gid).then(n=>{if(n.length)clipsSheet(gid)})})});
@@ -3246,7 +3247,7 @@ async function shareStory(r){track("share_open",{has_photo:!!r.photo});
       blobs[i]=b;urls[i]=URL.createObjectURL(b);if(sl)sl.innerHTML=`<img src="${urls[i]}" alt="Crawl card">`;return b}));
     clipList(r.id).then(L=>{if(g!==gen||!L||!L.length)return;clips=L;
       L.forEach(c=>{const i=looks.length;looks.push("clip");const u=URL.createObjectURL(c.blob);urls.push(u);blobs.push(c.blob);ready.push(Promise.resolve(c.blob));
-        car.insertAdjacentHTML("beforeend",`<div class="shv-s clip" data-s="${i}"><video src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`);
+        car.insertAdjacentHTML("beforeend",`<div class="shv-s clip" data-s="${i}"><video poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" src="${u}" muted loop playsinline preload="metadata"></video><button type="button" class="shv-snd" aria-label="Sound">${I.sound}</button></div>`);
         ov.querySelector(".shv-dots").insertAdjacentHTML("beforeend",`<button type="button" data-k="${i}" aria-pressed="false" class="cdot"></button>`)});
       ov.querySelectorAll(".shv-snd").forEach(b=>b.onclick=()=>{const v=b.parentNode.querySelector("video");v.muted=!v.muted;b.classList.toggle("on",!v.muted)});bindDots()}).catch(()=>{});
     const item=async()=>{const i=cur,b=blobs[i]||await ready[i];if(!b){toast("That card didn't load. Swipe to another.",2500);return null}
@@ -3294,7 +3295,7 @@ async function mediaView(r,start){
   const items=(r.photos||[]).map(p=>({k:"p",src:p})).concat(clips.map(c=>({k:"c",c,src:URL.createObjectURL(c.blob)})));if(!items.length){photoSheet(r,renderEnd);return}
   let cur=Math.max(0,start!=null?start:items.findIndex(x=>x.k==="p"&&x.src===r.photo));
   const ov=document.createElement("div");ov.className="mview";
-  ov.innerHTML=`<div class="mv-car">${items.map(x=>`<div class="mv-s">${x.k==="p"?`<img src="${x.src}" alt="">`:`<video src="${x.src}#t=0.1" controls playsinline preload="metadata"></video>`}</div>`).join("")}</div>
+  ov.innerHTML=`<div class="mv-car">${items.map(x=>`<div class="mv-s">${x.k==="p"?`<img src="${x.src}" alt="">`:`<video poster="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" src="${x.src}#t=0.1" controls playsinline preload="metadata"></video>`}</div>`).join("")}</div>
     <button class="shv-x mv-x" type="button" aria-label="Close">${I.x}</button><div class="mv-bar"><span class="mv-n"></span><span class="mv-acts"></span></div>`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   const car=ov.querySelector(".mv-car"),acts=ov.querySelector(".mv-acts");
@@ -3942,6 +3943,11 @@ $("testFab").onclick=()=>{
 const NOTE={live:"",liveAt:0,alerts:"",ready:false};
 const realAt=t=>t-(now()-Date.now());   // game time -> the phone's clock (test mode can run ahead)
 const LEN=m=>m%60===0?`${m/60} hr`:`${m} min`;   // the timed game goes by its length: "1 hr", "2 hr"
+// Every scheduled alert is inexact: an exact alarm needs Android's "Alarms & reminders" permission, and asking for it
+// throws the phone's settings screen at people mid-crawl. allowWhileIdle still gets them through the phone sleeping.
+// Android draws a big grey "play" icon on any video that has no frame yet (camera starting, clip loading): a blank poster hides it
+const NOPOSTER="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+const lnSchedule=L=>natCall("LocalNotifications","schedule",{notifications:L.map(n=>Object.assign({},n,{isExactNotification:false}))});
 const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
 function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
   natCall("LocalNotifications","createChannel",{id:"crawl_alerts",name:"Crawl alerts",description:"Time warnings and check-ins during a crawl",importance:4,visibility:1,vibration:true}).catch(()=>{});
@@ -3978,14 +3984,14 @@ function alertSync(){
   const key=JSON.stringify(want.map(w=>[w.id,w.body,Math.round(w.at/10000)]));if(key===NOTE.alerts)return;NOTE.alerts=key;noteSetup();
   natCall("LocalNotifications","cancel",{notifications:[{id:101},{id:102},{id:103}]}).catch(()=>{}).then(()=>{
     const L=want.filter(w=>w.at>Date.now()+5000).map(w=>({id:w.id,title:w.title,body:w.body,channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(w.at),allowWhileIdle:true}}));
-    if(L.length)natCall("LocalNotifications","schedule",{notifications:L}).catch(()=>{})})}
+    if(L.length)lnSchedule(L).catch(()=>{})})}
 // The day after: which day, how many, which bars. Reads the same whether or not they've looked at the card since.
 function afterNote(rec){
   if(!NATIVE||!rec)return;const names=rec.visits.filter(v=>v.counted===true).map(v=>byId(v.id)).filter(Boolean).map(v=>v.name);if(!names.length)return;
   const st=new Date(realAt(rec.startedAt)),at=new Date(st.getFullYear(),st.getMonth(),st.getDate()+1,10,0,0);if(at.getTime()<Date.now()+30*60000)return;
   const day=st.toLocaleDateString("en-AU",{weekday:"long"}),u=[...new Set(names)];
   const list=u.length<=3?(u.length>1?u.slice(0,-1).join(", ")+" and "+u[u.length-1]:u[0]):u.slice(0,3).join(", ")+` and ${u.length-3} more`;
-  noteSetup();natCall("LocalNotifications","schedule",{notifications:[{id:104,title:`${day}'s crawl: ${plural(u.length,"rooftop")}`,body:list+".",channelId:"crawl_after",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",extra:{crawl:rec.id},schedule:{at,allowWhileIdle:true}}]}).catch(()=>{})}
+  noteSetup();lnSchedule([{id:104,title:`${day}'s crawl: ${plural(u.length,"rooftop")}`,body:list+".",channelId:"crawl_after",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",extra:{crawl:rec.id},schedule:{at,allowWhileIdle:true}}]).catch(()=>{})}
 function loop(){
   liveNote();alertSync();if(S.route!=="play")renderMini();
   const g=G();
