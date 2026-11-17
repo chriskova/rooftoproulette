@@ -932,9 +932,10 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const ours=()=>prog&&Date.now()<prog;
   const setBase=()=>{if(rrMap&&rrMap.mpp)base={r:z.r,mpp:rrMap.mpp()}};
   const fit=()=>{if(!rrMap)return;const p0=prog=Date.now()+800;clamped=false;setTimeout(()=>{if(prog===p0){prog=0;setBase()}},820);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD(),ZONEK);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-  // sliding: the map zooms with the circle as you go, so the circle keeps its size on screen
+  // sliding bigger: the map zooms out with the circle as you go. Sliding smaller: the circle shrinks on the map as it is,
+  // and the map zooms back in to fit when you let go.
   $("rrR").oninput=()=>{const r0=z.r;if(!base&&r0)setBase();z.r=Z.toR(+$("rrR").value);paint(false);
-    if(rrMap&&rrMap.setMpp&&z.r&&r0&&base&&base.r){prog=Date.now()+400;rrMap.setMpp(base.mpp*z.r/base.r)}};
+    if(rrMap&&rrMap.setMpp&&z.r&&r0&&base&&base.r){const want=base.mpp*z.r/base.r;if(want>rrMap.mpp()*1.001){prog=Date.now()+400;rrMap.setMpp(want)}}};
   $("rrR").onchange=()=>{save();paint(true);fit()};
   // tap a pin: a little card on the map; tap the card for the full bar page (not from inside a panel)
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
