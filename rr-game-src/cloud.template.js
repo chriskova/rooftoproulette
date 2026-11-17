@@ -102,7 +102,8 @@ const simFriend=uid=>SIMF.find(f=>f.uid===uid);
 function simTick(){const B=SIM.B;if(!B)return;
   // an invite to Sam or Jess: they join that crawl a couple of seconds later
   SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
-  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&!SIM.manual[k])simDrive(k,false)})}
+  // their crawl moves only when you move it from the test panel; their phone still checks in so it doesn't look gone
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()+(d.off||0)-(d.beat||0)>60000)B.set(k,{beat:Date.now()+(d.off||0)},true)})}
 function simJoin(id,f){return SIM.B.tx(`live/${id}`,d=>{if(!d||d.ended)return undefined;const m=Object.assign({},d.members||{});if(m[f.uid])return undefined;
   let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[f.uid]={n:f.n,j:Date.now(),b:(gg.visits||[]).length};return Object.assign({},d,{members:m})})}
 function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set((g.visits||[]).map(v=>v.id));
@@ -142,7 +143,7 @@ async function simInvite(f){const B=await cloud();if(!SIM.B)return;const c=you()
 // Sam or Jess follows your crawl (makes it live first if it isn't)
 async function simFollowMe(f){const g=G();if(!g||!g.started)return;await cloud();const id=await startLive();if(id)await simJoin(id,f)}
 const simLiveKey=()=>{const id=S.follow||(G()&&G().live);return id?`live/${id}`:null};
-function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]=1;SIM.B.set(k,{beat:Date.now()-STALE_MS-5000},true)}
+function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]=1;SIM.B.set(k,{beat:Date.now()+(SIM.docs[k].off||0)-STALE_MS-5000},true)}
 
 function cloud(){if(!CLP){CLP=(S.test?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
