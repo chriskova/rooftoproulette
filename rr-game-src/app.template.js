@@ -982,7 +982,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
       if(clamped){clamped=false;fit();return}
       setBase();if(!z.r)return;followCity(z);save();paint(true)});
     if(m.onZoom&&!(o&&o.fixed))m.onZoom(()=>{if(!active()||ours()||!z.r)return;if(!base){setBase();return}
-      const r0=base.r*m.mpp()/base.mpp,r=Z.snap(Math.max(lo,Math.min(hi,r0)));clamped=r0<lo*.97||r0>hi*1.03;if(r===z.r)return;
+      const r0=base.r*m.mpp()/base.mpp,r=Z.snap(Math.max(lo,Math.min(hi,r0)));clamped=r0<lo*.97||r0>hi*1.03;if(r0<lo*.97&&o&&o.onShrink)o.onShrink();if(r===z.r)return;
       z.r=r;$("rrR").value=Z.toX(r);paint(false)});
     m.onTap(()=>{if(Date.now()-cardAt>500)card.hidden=true});
     // the map's box changes size (keyboard, a toggle opening below): put the whole circle back in view
@@ -2280,35 +2280,46 @@ function rackUp(box,n){
     lb.animate([{transform:"scale(1)"},{transform:`scale(${k===n?1.45:1.18})`,textShadow:"0 0 20px rgba(245,184,61,.8)",offset:.35},{transform:"scale(1)"}],{duration:k===n?420:180,easing:"ease-out"})});
   at(shut+300+(n-1)*110+520,finish);
 }
-/* Tap the drinks counter: tonight's bars, your zone, and what's left to spin */
+/* Tap the drinks counter: tonight's bars, your zone, and what's left to spin.
+   Followers of a live crawl get the same sheet (fo: {g, t, who, prev}) with the host's bars, minus anything that changes the crawl. */
 let ngMap=null;
-function nightSheet(){
-  const g=G();if(!g)return;if(!S.tips.night){S.tips.night=1;save();renderPlay()}
-  const t=now(),left=basePool().length,cr=CR(g),c=countShown(g),arr=g.visits.filter(v=>v.arrivedAt!=null);
-  const rows=g.visits.map((v,i)=>{const b=byId(v.id),here=v.leftAt==null&&v.arrivedAt!=null,ms=v.arrivedAt!=null?(v.leftAt||t)-v.arrivedAt:0;
-    const st=here?(v._inCount?"You're here · Counted":"You're here"):v.counted===true?"Counted":v.counted===false?"Didn't count":"Waiting on you";
-    return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${v.counted===true?"ok":""}">${st}${v.counted===true?" ✓":""}</small></span><span class="d">${v.arrivedAt!=null?hmm(ms):""}</span></button>`}).join("");
-  sheet(`<h3 tabindex="-1" autofocus style="outline:0">Your crawl</h3>
-    <div class="nightzone"><span>${I.pin} ${cr?zoneTxt(g):esc(g.areas[g.areas.length-1])}</span>${cr?`<span>R&amp;R</span>`:`<span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>`}</div>
-    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":"left in your zone to spin"}</p>
+const ZONEI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>';
+// when you got to a bar, on the crawl city's clock
+const arrTime=(ts,city)=>clock12(sydAt(ts,TZ[city||"Sydney"]).min);
+function nightSheet(fo){
+  fo=fo&&fo.g?fo:null;const g=fo?fo.g:G();if(!g)return;if(!fo&&!S.tips.night){S.tips.night=1;save();renderPlay()}
+  const t=fo?fo.t:now(),cr=fo?g.mode==="cruise":CR(g),vis=g.visits||[],arr=vis.filter(v=>v.arrivedAt!=null);
+  const c=fo?vis.filter(v=>v.counted===true||(v.leftAt==null&&v.arrivedAt!=null&&v._inCount)).length:countShown(g);
+  const been=arr.map(v=>v.id),left=fo?(cr||!g.center?null:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been.includes(v.id)&&openOK(v,t)).length):basePool().length;
+  const who=fo?(fo.who||"Their"):null,area=(g.areas&&g.areas[g.areas.length-1])||(g.center?nearestSuburb(g.center):"");
+  const back=fo?()=>nightSheet(fo.fresh?fo.fresh():fo):()=>nightSheet(),title=fo?(fo.prev?"Your crawl":`${who}'s crawl`):"Your crawl";
+  const rows=arr.map((v,i)=>{const b=byId(v.id);if(!b)return "";const here=v.leftAt==null,ms=(v.leftAt||t)-v.arrivedAt,ok=v.counted===true||(here&&v._inCount);
+    // the tick says it counted, so the time it was logged sits beside it. Where you are now, the time on the right is still ticking: no arrival time.
+    const st=here?(fo&&!fo.prev?"There now":"You're here"):v.counted===false?`${arrTime(v.arrivedAt,g.city)} · Didn't count`:v.counted===true?arrTime(v.arrivedAt,g.city):fo&&!fo.prev?`${arrTime(v.arrivedAt,g.city)} · Not counted yet`:"Waiting on you";
+    return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${ok?"ok":""}">${st}${ok?" ✓":""}</small></span><span class="d">${hmm(ms)}</span></button>`}).join("");
+  sheet(`<h3 tabindex="-1" autofocus style="outline:0">${esc(title)}</h3>
+    <div class="nightzone">${area||cr?`<span>${I.pin} ${cr&&!fo?zoneTxt(g):esc(area)}</span>`:""}${cr?`<span>R&amp;R</span>`:`<span>${ZONEI}${rLabel(g.radius)}</span><span>${I.clock}${g.len===60?"1 hour":"2 hours"}</span>`}</div>
+    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far${left!=null?` · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":fo?"left in the zone to spin":"left in your zone to spin"}`:""}</p>
     ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
-    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet. Get spinning.</p>`}
+    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet.${fo?"":" Get spinning."}</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
     $("ngX").onclick=closeSheet;
-    const open=id=>{const v=byId(id),vi=g.visits.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
-      const ms=vi&&vi.arrivedAt!=null?(vi.leftAt||now())-vi.arrivedAt:0;
-      barSheet(v,null,{lite:true,back:nightSheet,backTxt:"Your crawl",visit:vi&&vi.arrivedAt!=null?`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`:""})};
+    const open=id=>{const v=byId(id),vi=arr.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
+      const ms=vi?(vi.leftAt||(fo?fo.t:now()))-vi.arrivedAt:0;
+      const visit=!vi?"":fo&&!fo.prev?`Got there ${arrTime(vi.arrivedAt,g.city)} · ${here?hmm(ms)+" so far":hmm(ms)}${vi.counted===true?" ✓":vi.counted===false?" · Didn't count":""}`
+        :`${here?"Here for":"You were here"} ${hmm(ms)}${vi.counted===true?" · Counted ✓":vi.counted===false?" · Didn't count":""}`;
+      barSheet(v,null,{lite:true,back,backTxt:title,visit})};
     $("sheetBody").querySelectorAll(".ngrow").forEach(x=>{x.onclick=()=>open(x.dataset.b);
-      const vis=g.visits.find(y=>y.id===x.dataset.b&&y.arrivedAt!=null);if(!vis||g.demo)return;
-      swipeRow(x,()=>removeVisit(g,vis,true));longPress(x,()=>removeAsk(g,vis,true))});
+      const vis_=arr.find(y=>y.id===x.dataset.b);if(fo||!vis_||g.demo)return;
+      swipeRow(x,()=>removeVisit(g,vis_,true));longPress(x,()=>removeAsk(g,vis_,true))});
     // the bars so far, joined bar to bar. The real walking route waits for the summary.
     if(arr.length){try{ngMap&&ngMap.remove()}catch(e){}ngMap=null;
-      makeMap("ngMap",{}).then(m=>{if(!m||!$("ngMap"))return;ngMap=m;const pts=arr.map(v=>byId(v.id));
-        if(pts.length>1)m.route(pts,true);arr.forEach((v,i)=>m.num(byId(v.id),i+1,v.counted===false,byId(v.id).name,()=>open(v.id)));
-        const y=you(),all=y?pts.concat([y]):pts;if(y)m.me&&m.me(y);setTimeout(()=>m.fitPts(all,16,{top:28,left:28,right:28,bottom:28}),60)})}
+      makeMap("ngMap",{}).then(m=>{if(!m||!$("ngMap"))return;ngMap=m;const pts=arr.map(v=>byId(v.id)).filter(Boolean);
+        if(pts.length>1)m.route(pts,true);arr.forEach((v,i)=>{const b=byId(v.id);if(b)m.num(b,i+1,v.counted===false,b.name,()=>open(v.id))});
+        const y=fo&&fo.prev?null:you(),all=y?pts.concat([y]):pts;if(y)m.me&&m.me(y);setTimeout(()=>m.fitPts(all,16,{top:28,left:28,right:28,bottom:28}),60)})}
   });
 }
-$("pCount").onclick=nightSheet;
+$("pCount").onclick=()=>nightSheet();
 function boardHTML(names,live){
   return `<div class="board${live?" live":""}" id="board">${names.map((n,i)=>{const o=i-2;return `<div class="flap${o===0?" mid":Math.abs(o)===1?" f1":" f2"}"${live?` id="q${i}"`:""}><span>${esc(n)}</span></div>`}).join("")}</div>`;
 }
@@ -2364,31 +2375,8 @@ async function apToggle(ap,k,getList,getGeo,force){
   if(g_&&g_.r){m.circle(g_.c,g_.r);m.fitZone(g_.c,g_.r)}else if(L.length)m.fitPts(L,15);
   L.forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));if(k==="__me")setMe(m);
 }
-let mvMaps=[];
-function openMove(free,keep){
-  clearInactiveZoneSetup();
-  const g=G(),me=you()||fromPoint(),z=keep||{lat:g.center.lat,lng:g.center.lng,r:g.radius};
-  const range0=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
-  // Once the clock's running the zone can move or grow, never shrink: a tighter circle late in a crawl only buys
-  // shorter walks. (The last half hour already sticks to bars you can reach.)
-  const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
-  const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
-  if(z.r<range.lo)z.r=range.lo;
-  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">${free?"Your zone's run dry":"Adjust your zone"}</h3>
-    <p class="note" style="margin:2px 0 10px">${free?"Nothing else is open here, so this one's free. Drag the circle somewhere new.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move. Pinch or slide to change the radius."}</p></div>
-    <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="mvNote" style="margin:8px 0 0"></p>
-    <div class="lsfoot"><button class="btn" type="button" id="mvGo">Move here</button><button class="btn dark" type="button" id="mvX" style="margin-top:10px">${free?"Close":"Stay here"}</button></div></div>`,()=>{
-    $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
-    rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{const m=me?dist(me,zz):0,far=m>1500,same=dist(zz,g.center)<300&&Math.abs(zz.r-g.radius)<.025;
-      $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):far?`About ${km(m)} from you, so the clock waits till you reach your first bar there (up to 20 minutes).`:"Close enough that the clock keeps running.";
-      const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Use this zone";
-      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(m)});if(!free)g.voluntaryUsed=true;
-        if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
-        g.target=null;g.reelOpen=false;save();closeSheet();if(rrMap){rrMap.remove();rrMap=null}renderPlay();renderClock()}},{...range,pool,reopen:k=>openMove(free,k)});
-    $("mvX").onclick=closeSheet;
-  });
-}
+// Moving the zone happens right on the crawl map: the circle comes loose, a panel slides up, and you drag it.
+function openMove(free){crawlMap({move:true,free:!!free})}
 /* Practice spin: the real wheel and real rooftops, landing on a card. No game, nothing saved.
    First time someone taps Play for a mode: rules → Next → practice spin → "Let's play" (or skip).
    Any other time it hangs off the rules sheet. Opening either one counts as having seen that mode's intro. */
@@ -2421,7 +2409,7 @@ const HOW={rush:()=>[
     ["Spin","You get a random rooftop in your zone. The clock starts when you reach your first bar."],
     ["Get to the bar","Walk, run or Uber. One drink at each bar."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
-    ["Stuck somewhere quiet?","Adjust your zone once a crawl: move it or make it bigger. If it's far, the clock waits."],
+    ["Stuck somewhere quiet?","Move your zone once a crawl: drag it somewhere new or make it bigger. If it's far, the clock waits."],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, you'll hit the jackpot."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
   ["Spin","You get a random rooftop near you, or one from your Hit list."],
@@ -2442,7 +2430,7 @@ function openMenu(){
   const cr=CR(g);
   sheet(`<h3>Menu</h3><div class="menu">
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
-    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Adjust zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
+    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
@@ -2625,8 +2613,8 @@ function renderPlay(){
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
-      ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Adjust zone</button>`:""}
-      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Adjust zone</button>`:""}</div>`:""}
+      ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
+      ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
       ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts at your first bar."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
@@ -2826,23 +2814,56 @@ function resumeNight(r){
 }
 // shrink text until it sits on one line (never cut off)
 // The live crawl map, full screen from Play. No route line: the path is the reveal on the scorecard.
-async function crawlMap(){const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map2=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
-  const ov=document.createElement("div");ov.className="mapfull";
-  const free=g.started&&!CR(g)&&basePool().length<2,canMove=!CR(g)&&(free||!g.voluntaryUsed);
-  const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
+async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if(!S.tips.mapOpened){S.tips.mapOpened=1;S.tips.map2=1;save();const t_=document.querySelector(".maptip");if(t_)t_.remove();if($("pMap"))$("pMap").classList.remove("hasdot")}
+  clearInactiveZoneSetup();closeSheet();document.querySelectorAll(".mapfull.crawlmf").forEach(x=>x.remove());
+  const ov=document.createElement("div");ov.className="mapfull crawlmf";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
+  let m=null,gen=0;
+  const drop=()=>{gen++;try{m&&m.remove()}catch(e){}m=null;if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
+  const close=()=>{ov.classList.remove("on");setTimeout(()=>{drop();ov.remove()},220)};
+  const freeNow=()=>g.started&&!CR(g)&&basePool().length<2;
   // like Uber or Google Maps: only round icon buttons float on the map; the words live in a card at the bottom
-  ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Adjust zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
-  document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));let m=null;
-  const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
-  if($("cmMove")&&canMove)$("cmMove").onclick=()=>{close();setTimeout(()=>openMove(free),240)};
-  m=await makeMap("crawlMap",{greedy:true});if(!m)return;
-  const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
-  if(!CR(g))m.circle(g.center,g.radius);
-  inZ.filter(v=>!been.includes(v.id)&&v.id!==g.target).forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
-  been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"seen",()=>barSheet(v)));
-  if(g.target){const v=byId(g.target);if(v)m.pin(v,"big",()=>barSheet(v))}
-  setMe(m);
-  if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}
+  const view=async()=>{drop();const my=gen,free=freeNow(),canMove=!CR(g)&&(free||!g.voluntaryUsed);
+    const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
+    ov.classList.remove("moving");
+    ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
+    ov.querySelector(".mf-x").onclick=close;
+    if($("cmMove"))$("cmMove").onclick=()=>move(free);
+    const mm=await makeMap("crawlMap",{greedy:true});if(!mm)return;if(my!==gen||!ov.isConnected){try{mm.remove()}catch(e){}return}m=mm;
+    const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
+    if(!CR(g))m.circle(g.center,g.radius);
+    inZ.filter(v=>!been.includes(v.id)&&v.id!==g.target).forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
+    been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"seen",()=>barSheet(v)));
+    if(g.target){const v=byId(g.target);if(v)m.pin(v,"big",()=>barSheet(v))}
+    setMe(m);
+    if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}};
+  // the same map, with the circle loose: drag the map under it, pinch or slide to make it bigger
+  const move=free=>{drop();ov.classList.add("moving");
+    const me=you()||fromPoint(),z={lat:g.center.lat,lng:g.center.lng,r:g.radius};
+    const range0=g.len===60?{lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]}:{lo:.5,hi:2,ticks:[[.5,"500 m"],[1,"1 km"],[2,"2 km"]]};
+    // Once the clock's running the zone can move or grow, never shrink: a tighter circle late in a crawl only buys
+    // shorter walks. (The last half hour already sticks to bars you can reach.)
+    const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
+    const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
+    if(z.r<range.lo)z.r=range.lo;
+    ov.innerHTML=`<div class="mf-move">${rrZoneHTML(range)}
+      <div class="mf-mvhead"><b>${free?"Your zone's run dry":"Move your zone"}</b><small>${free?"Nothing else is open here. This move's free.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move. Pinch or slide to change the radius."}</small></div>
+      <p class="note" id="mvNote"></p>
+      <div class="mf-mvbtns"><button class="btn" type="button" id="mvGo">Use this zone</button><button class="btn dark" type="button" id="mvX">${o.move?(free?"Close":"Stay here"):"Cancel"}</button></div></div>`;
+    $("mvX").onclick=()=>{if(o.move)close();else view()};
+    const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
+    let warned=false;
+    rrZoneBind(z,me,()=>g.newOnly,(P,zz)=>{if(!$("mvNote"))return;const same=dist(zz,g.center)<300&&Math.abs(zz.r-g.radius)<.025;
+      // How far is the walk? To the closest open bar in the new circle, not its middle: otherwise a circle parked
+      // with its only bars on the edge nearest you would buy a free 20 minutes.
+      const near=me&&P.open.length?Math.min(...P.open.map(v=>dist(me,v))):null,far=near!=null&&near>1500;
+      $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):near==null?"":far?`Closest open bar there is ${km(near)} away. The clock waits till you reach your first bar (up to 20 minutes).`:`Closest open bar there is ${mOrKm(near)} away. The clock keeps running.`;
+      const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Use this zone";
+      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(near||0)});if(!free)g.voluntaryUsed=true;
+        if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
+        g.target=null;g.reelOpen=false;save();renderPlay();renderClock();if(o.move)close();else view()}},
+      {...range,pool,onShrink:()=>{if(warned||!g.started)return;warned=true;toast("Your zone can only get bigger once the clock's running.",2600)}});
+  };
+  if(o.move)move(o.free);else view();
 }
 // the night's route, full screen
 async function bigMap(r,st){
@@ -3479,13 +3500,13 @@ function renderBars(){
       ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
     pins=inZ.map(v=>({v,cls:v.id===g.target?"big":tonight.includes(v.id)?"done":os(v).open?"":"off"}));
     if(!CR(g)){const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Adjust zone</button>`:`<p class="note" style="margin-top:8px">You've adjusted your zone this crawl.</p>`}
+      extra=canMove?`<button class="btn sm line" type="button" id="bMove" style="margin-top:10px">${I.move} Change of scenery? Move zone</button>`:`<p class="note" style="margin-top:8px">You've moved your zone this crawl.</p>`}
   }else if(f==="other"){
     const zIds=new Set((CR(g)?cruiseSet(g):inCircle(g.center,g.radius)).map(v=>v.id));
     const others=VENUES.filter(v=>!zIds.has(v.id)&&!S.nfu[v.id]).sort(sortD);
     const free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
-    if(CR(g)){intro=`Every other rooftop in ${S.city}. ${tapHint}`}else intro=`<b>Fancy a change of scenery?</b> Adjust your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
-    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Adjust zone</button>`:`<p class="note" style="margin-top:8px">You've adjusted your zone this crawl.</p>`;
+    if(CR(g)){intro=`Every other rooftop in ${S.city}. ${tapHint}`}else intro=`<b>Fancy a change of scenery?</b> Move your zone and every spin from then on lands in the new area. You get one move per game${free?", and right now it's free because your zone's nearly empty":""}.`;
+    extra=CR(g)?"":canMove?`<button class="btn sm" type="button" id="bMove" style="margin-top:10px">${I.move} Move zone</button>`:`<p class="note" style="margin-top:8px">You've moved your zone this crawl.</p>`;
     rows=groupedRows(others,v=>rowHTML(v,os(v),barStatus(v,c),y));
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
