@@ -484,7 +484,7 @@ const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></d
 const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num sm${x?" x":""}">${n}</div>`,iconSize:[16,16]});
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
-function fitZone(m,c,r,extra,pad){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.04);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
+function fitZone(m,c,r,extra,pad,k){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*(k||1.04));(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
 
 /* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
 const GKEY=(BUNDLED&&window.RR_CONFIG.googleMapsAppKey)||window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10a";
@@ -524,14 +524,14 @@ function gWrap(el,o){
       if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},   // light map: a white casing and a deeper amber so the line stands out
     line(pts){const P=(c,o,w)=>ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:c,strokeOpacity:o,strokeWeight:w,clickable:false}));
       if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
-    fitZone(c,r,extra,pad){const b=new google.maps.Circle({center:LL(c),radius:r*1000*1.03}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
+    fitZone(c,r,extra,pad,k){const b=new google.maps.Circle({center:LL(c),radius:r*1000*(k||1.03)}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
       if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
     setView(p,z){map.panTo(LL(p));map.setZoom(z)},
     me(p){if(!p){if(meM){meM.map=null;meM=null}return}if(!meM)meM=mk(p,'<div class="me"></div>',1000);else meM.position=LL(p)},
     onTap(fn){map.addListener("click",e=>{if(Date.now()-tapAt<500)return;fn(e.latLng.lat(),e.latLng.lng())})},
     center(){const c=map.getCenter();return {lat:c.lat(),lng:c.lng()}},onMove(fn){map.addListener("center_changed",fn)},onIdle(fn){map.addListener("idle",fn)},
-    onZoom(fn){map.addListener("zoom_changed",fn)},mpp(){return 156543.03392*Math.cos(map.getCenter().lat()*Math.PI/180)/Math.pow(2,map.getZoom())},
+    onZoom(fn){map.addListener("zoom_changed",fn)},mpp(){return 156543.03392*Math.cos(map.getCenter().lat()*Math.PI/180)/Math.pow(2,map.getZoom())},setMpp(v){map.setZoom(Math.log2(156543.03392*Math.cos(map.getCenter().lat()*Math.PI/180)/v))},
     ring(c,r){if(!c){if(ringC){ringC.setMap(null);ringC=null}return}if(!ringC)ringC=new google.maps.Circle({map,center:LL(c),radius:r*1000,strokeColor:"#F5B83D",strokeOpacity:.9,strokeWeight:2,fillColor:"#F5B83D",fillOpacity:.08,clickable:false});else{ringC.setCenter(LL(c));ringC.setRadius(r*1000)}},
     resize(){},remove(){this.clear();if(meM)meM.map=null;if(ringC)ringC.setMap(null);el.innerHTML=""}
   };
@@ -549,13 +549,13 @@ function lWrap(el){
       if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},
     line(pts){const ll=pts.map(p=>[p.lat,p.lng]),P=(c,o,w)=>L.polyline(ll,{color:c,weight:w,opacity:o,lineCap:"round",lineJoin:"round"}).addTo(ov);
       if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
-    fitZone(c,r,extra,pad){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad)},
+    fitZone(c,r,extra,pad,k){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad,k)},
     fitPts(pts,maxZoom,pad){const bb=L.latLngBounds(pts.map(p=>[p.lat,p.lng]));pad?m.fitBounds(bb,{animate:false,maxZoom:maxZoom||16,paddingTopLeft:[pad.left,pad.top],paddingBottomRight:[pad.right,pad.bottom]}):m.fitBounds(bb.pad(.3),{animate:false,maxZoom:maxZoom||16})},
     setView(p,z){m.setView([p.lat,p.lng],z,{animate:true})},
     me(p){if(!p){if(meM){m.removeLayer(meM);meM=null}return}if(!meM)meM=L.marker([p.lat,p.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else meM.setLatLng([p.lat,p.lng])},
     onTap(fn){m.on("click",e=>fn(e.latlng.lat,e.latlng.lng))},
     center(){const c=m.getCenter();return {lat:c.lat,lng:c.lng}},onMove(fn){m.on("move",fn)},onIdle(fn){m.on("moveend",fn)},
-    onZoom(fn){m.on("zoom",fn)},mpp(){return 156543.03392*Math.cos(m.getCenter().lat*Math.PI/180)/Math.pow(2,m.getZoom())},
+    onZoom(fn){m.on("zoom",fn)},mpp(){return 156543.03392*Math.cos(m.getCenter().lat*Math.PI/180)/Math.pow(2,m.getZoom())},setMpp(v){m.setZoom(Math.log2(156543.03392*Math.cos(m.getCenter().lat*Math.PI/180)/v),{animate:false})},
     ring(c,r){if(!c){if(ringC){m.removeLayer(ringC);ringC=null}return}if(!ringC)ringC=zoneCircle(c,r).addTo(m);else{ringC.setLatLng([c.lat,c.lng]);ringC.setRadius(r*1000)}},
     resize(){m.invalidateSize()},remove(){m.remove()}
   };
@@ -911,6 +911,7 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
       ${o&&o.note?`<p class="note rrnote" style="margin:2px 0 0">${o.note}</p>`:""}
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
+const ZONEK=1.3;   // zone maps leave a ring of map around the circle, so the bars just outside it show
 const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
@@ -930,8 +931,10 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   let base=null,prog=0,clamped=false,pinKey="";const lo=Z.toR(0),hi=Z.all?Z.toR(RRALL-1):Z.toR(Z.max);
   const ours=()=>prog&&Date.now()<prog;
   const setBase=()=>{if(rrMap&&rrMap.mpp)base={r:z.r,mpp:rrMap.mpp()}};
-  const fit=()=>{if(!rrMap)return;const p0=prog=Date.now()+800;clamped=false;setTimeout(()=>{if(prog===p0){prog=0;setBase()}},820);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD());else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
-  $("rrR").oninput=()=>{z.r=Z.toR(+$("rrR").value);paint(false)};
+  const fit=()=>{if(!rrMap)return;const p0=prog=Date.now()+800;clamped=false;setTimeout(()=>{if(prog===p0){prog=0;setBase()}},820);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD(),ZONEK);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
+  // sliding: the map zooms with the circle as you go, so the circle keeps its size on screen
+  $("rrR").oninput=()=>{const r0=z.r;if(!base&&r0)setBase();z.r=Z.toR(+$("rrR").value);paint(false);
+    if(rrMap&&rrMap.setMpp&&z.r&&r0&&base&&base.r){prog=Date.now()+400;rrMap.setMpp(base.mpp*z.r/base.r)}};
   $("rrR").onchange=()=>{save();paint(true);fit()};
   // tap a pin: a little card on the map; tap the card for the full bar page (not from inside a panel)
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
