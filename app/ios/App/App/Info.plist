@@ -34,6 +34,8 @@
 	<string>Rooftop Roulette uses your location to spin bars near you and check you in when you arrive, including with your phone in your pocket during a crawl.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record mode captures sound with your spin clips.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save your share cards and spin clips to your photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

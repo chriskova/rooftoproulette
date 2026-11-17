@@ -3962,16 +3962,16 @@ function noteSetup(){if(NOTE.ready||!NATIVE)return;NOTE.ready=true;
 // The live notification needs notification permission (Android 13+). Check once per crawl, after the location prompt is out of
 // the way: Android drops a second permission prompt that arrives while one is open, which is how it went missing before.
 let notifKey=null;
-async function notifEnsure(key){if(!NATIVE||IOSNAT||notifKey===key)return;notifKey=key;
+async function notifEnsure(key){if(!NATIVE||notifKey===key)return;notifKey=key;
   const st=async()=>{try{const r=await natCall("CrawlNotify","status");return r||{}}catch(e){return {}}};
-  let r=await st();if(r.enabled){track("notif_state",{on:true});return}
+  let r=await st();if(r.enabled){track("notif_state",{on:true,ios:IOSNAT});return}if(IOSNAT&&r.supported===false)return;   // Live Activities need iOS 16.2
   for(let i=0;i<40&&(document.visibilityState!=="visible"||!(here||locErr));i++)await new Promise(f=>setTimeout(f,1500));   // location sorted first
   await new Promise(f=>setTimeout(f,1200));
-  if(r.app===false){try{await natCall("LocalNotifications","requestPermissions")}catch(e){}r=await st()}
-  track("notif_state",{on:!!r.enabled,app:!!r.app,channel:r.channel!==false});
+  if(r.app===false&&!IOSNAT){try{await natCall("LocalNotifications","requestPermissions")}catch(e){}r=await st()}   // iPhone: Live Activities are on unless switched off in Settings
+  track("notif_state",{on:!!r.enabled,app:!!r.app,channel:r.channel!==false,ios:IOSNAT});
   if(r.enabled||(S.notifNo||0)>=2)return;
   if($("sheet").open){notifKey=null;return}   // try again on the next update
-  sheet(`<h3>Turn on notifications?</h3><p class="note">Shows the time left and the next bar on your lock screen.</p>
+  sheet(`<h3>Turn on ${IOSNAT?"Live Activities":"notifications"}?</h3><p class="note">Shows the time left and the next bar on your lock screen.</p>
     <div class="acts"><button class="btn" type="button" id="nfOn">Turn on</button><button class="btn dark" type="button" id="nfNo">Not now</button></div>`,()=>{
     $("nfOn").onclick=()=>{closeSheet();track("notif_settings");natCall("CrawlNotify","openSettings").catch(()=>{});
       const back=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",back);NOTE.live="";fvNote="";notifKey=null};document.addEventListener("visibilitychange",back)};
@@ -3987,7 +3987,7 @@ function liveNote(){
   else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"bar")}`}
   const o={title,text};
   if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first bar"}
-  else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
+  else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.startAt=Math.round(realAt(g.startedAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
   else if(a)o.since=Math.round(realAt(a.arrivedAt));
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);
   if(key===NOTE.live&&Date.now()-NOTE.liveAt<60000)return;   // text changes go straight out; the bar moves once a minute

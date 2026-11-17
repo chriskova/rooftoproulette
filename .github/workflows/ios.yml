@@ -40,6 +40,11 @@ jobs:
         working-directory: app
         run: |
           npm ci && npm run sync -- ios
+      - name: Add the Live Activity extension to the project
+        if: env.HAS_KEYS == 'true'
+        run: |
+          gem list -i xcodeproj >/dev/null || sudo gem install xcodeproj --no-document
+          ruby app/ios/add-live-activity.rb
       - name: Check the app actually starts
         run: |
           mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw" && npm init -y >/dev/null && npm i --silent playwright@1 && npx playwright install --with-deps chromium >/dev/null
@@ -89,6 +94,9 @@ jobs:
           echo "$ENT" | grep -q applesignin || { echo "::error::Exported app has no Sign in with Apple entitlement."; exit 1; }
           echo "$ENT" | grep -q "applinks:rooftoproulette.com" || { echo "::error::Exported app has no associated domains."; exit 1; }
           echo "Entitlements OK: Sign in with Apple and associated domains are in the app."
+          [ -d ipa/Payload/App.app/PlugIns/RRLive.appex ] || { echo "::error::The Live Activity extension isn't in the app."; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :NSSupportsLiveActivities" ipa/Payload/App.app/Info.plist | grep -q true || { echo "::error::Live Activities aren't switched on in Info.plist."; exit 1; }
+          echo "Live Activity extension is in the app."
           if [ "${{ inputs.upload }}" = "false" ]; then echo "::notice::Built and signed. Not uploaded (upload=false)."; exit 0; fi
           cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$ASC_KEY_ID.p8
           xcrun altool --upload-app -f "$(ls $RUNNER_TEMP/out/*.ipa | head -1)" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tail -20

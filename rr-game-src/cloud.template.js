@@ -349,7 +349,7 @@ function followNote(d,g,t){if(!NATIVE)return;
   const o={follower:true,title:at?`${who} · at ${byId(at.id).name}`:tgt?`${who} · heading to ${tgt.name}`:`${who} · spinning next`,text:cr?"R&R":plural(vs.filter(v=>v.counted!==false).length,"bar")+" so far"};
   const fz=g.frz&&t<g.frz.until;
   if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first bar";
-  else if(!cr&&!fz){o.endsAt=Math.round(g.endsAt-(d.off||0));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-t)/Math.max(1,g.endsAt-g.startedAt))}
+  else if(!cr&&!fz){o.endsAt=Math.round(g.endsAt-(d.off||0));o.startAt=Math.round(g.startedAt-(d.off||0));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-t)/Math.max(1,g.endsAt-g.startedAt))}
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}

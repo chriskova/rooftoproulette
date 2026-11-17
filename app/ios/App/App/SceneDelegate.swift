@@ -29,6 +29,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 class RRBridgeViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(RRSignInPlugin())
+        bridge?.registerPluginInstance(CrawlNotifyPlugin())
     }
 }
 
