@@ -422,10 +422,10 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-live" role="status"><span class="fv-eye">${EYEI}</span><span class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Bars so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
-      <div class="pbtns"><button type="button" class="iconbtn" id="fvMapB" aria-label="Crawl map">${I.map}</button><button type="button" class="iconbtn" id="fvMin" aria-label="Minimise">${CHEVD}</button></div></div>
+      <div class="pbtns"><button type="button" class="iconbtn" id="fvMapB" aria-label="Crawl map">${I.map}</button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-now" id="fvNow"></div><div class="fv-act" id="fvAct"></div>`;
-  $("fvMin").onclick=()=>minFollow();
+  $("fvMenu").onclick=followMenu;
   $("fvMapB").onclick=followMap;$("fvCount").onclick=followBars;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{fvCardSig="";paintFollow()}).catch(()=>{})}).catch(()=>{});
@@ -472,6 +472,18 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
+// the follower's menu: the same sheet as the host's, with only what a follower can do
+function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
+  sheet(`<h3>Menu</h3><div class="menu">
+    <button type="button" id="fmHow">${I.help}<span>How it works</span></button>
+    <button type="button" id="fmSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
+    ${mine?"":`<button type="button" class="danger" id="fmLeave">${I.flag}<span>Stop following<small>Stop seeing ${esc(who)}'s spins and timer</small></span></button>`}
+  </div>`,()=>{
+    $("fmHow").onclick=()=>{let g={};try{g=JSON.parse(d.g)}catch(e){}(g.mode==="cruise"?cruiseHow:howSheet)()};
+    $("fmSound").onclick=()=>{S.sound=!S.sound;save();followMenu()};
+    if($("fmLeave"))$("fmLeave").onclick=()=>sheet(`<h3>Stop following?</h3><p class="note">This crawl won't go on your tab.</p>
+      <div class="acts"><button class="btn" type="button" id="flY" style="background:var(--red);color:#fff">Stop following</button><button class="btn dark" type="button" id="flN">Keep following</button></div>`,()=>{
+      $("flN").onclick=closeSheet;$("flY").onclick=()=>{closeSheet();leaveFollow();go("home")}})})}
 function paintTabsFv(){document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",String(fv?b.dataset.tab==="play":b.dataset.tab===(S.route==="bars"?"bars":S.route==="hist"?"hist":"play"))))}
 // minimise: the follow screen drops into the bar above the tabs, the same as leaving your own crawl
 function minFollow(to){const p=fvPrev;fvMinDrop=!p;closeFollow();go(p?"play":to||"home")}
@@ -518,7 +530,7 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const stale=!d.ended&&g.started&&t-(d.beat||0)>STALE_MS,act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
-      :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:`<button class="txtbtn" type="button" id="fvLeave">Stop following</button>`;
+      :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOver;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
