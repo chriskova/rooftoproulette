@@ -2974,7 +2974,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   const fit=(t,w)=>{t=String(t);if(x.measureText(t).width<=w)return t;while(t.length>1&&x.measureText(t+"…").width>w)t=t.slice(0,-1);return t.trimEnd()+"…"};
   const sp=(t,X,Y,ls,al)=>{x.letterSpacing=ls+"px";x.textAlign=al||"left";x.fillText(t,X,Y);x.letterSpacing="0px";x.textAlign="left"};
   const AMB="#F5B83D",INK="#F4F1EA",MUT="#9AA1AD",BG="#0B0D12",full=look==="full"&&!!r.photo,rund=look==="rund",RV=rund?(window.RUND_VAR||(r.photo?"photo":"map")):"",mapc=look==="map"||look==="map2",photo=(look==="photo"||full)&&r.photo;let mapP=null,sideMap=false;
-  x.fillStyle=BG;x.fillRect(0,0,W,Hh);x._day=look==="map2"?!dayCrawl(r):dayCrawl(r);   // daytime crawls get the light map, under the same dark gradient
+  x.fillStyle=BG;x.fillRect(0,0,W,Hh);x._day=look==="map2"?!dayCrawl(r):dayCrawl(r);   // daytime crawls (sunrise to sunset where the crawl was) get the light map with warm fades; night crawls the dark one
   // hero
   // where the Rundown's title will land, so the map above it can reach down to meet it
   const L4=Math.min(8,st.arrived.length),LT=RV==="plain"?Math.max(760,1700-(L4-1)*96):Math.max(1180,1700-(L4-1)*78),T4=LT-265,RMH=LT-10;
@@ -2993,9 +2993,9 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   else{x.fillStyle="#10141B";x.fillRect(0,0,W,HH);mapP=await mapTiles(x,r,st,W,HH,mapc?{cx:W/2,cy:780,bw:860,bh:900}:null).catch(e=>{(window._mapErrs=window._mapErrs||[]).push("error: "+(e&&e.message||e));return null});if(!mapP){x.save();x.translate(W/2,HH/2);x.rotate(-12*Math.PI/180);x.strokeStyle="rgba(255,255,255,.035)";x.lineWidth=2;for(let i=-1400;i<=1400;i+=90){x.beginPath();x.moveTo(i,-1400);x.lineTo(i,1400);x.stroke();x.beginPath();x.moveTo(-1400,i);x.lineTo(1400,i);x.stroke()}x.restore()}}
   const gr=x.createLinearGradient(0,0,0,HH);if(rund&&RV==="plain"){gr.addColorStop(0,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund&&RV==="photo"){gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.1,"rgba(11,13,18,0)");gr.addColorStop(1,"rgba(11,13,18,0)")}else if(rund){const q=v=>Math.max(0,Math.min(1,v/HH));gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");if(x._day){[[T4-520,0],[T4-380,.14],[T4-240,.38],[T4-100,.66],[T4+20,.84]].forEach(([y,a])=>gr.addColorStop(q(y),`rgba(11,13,18,${a})`));gr.addColorStop(q(LT-50),"rgba(11,13,18,.94)")}
     else{gr.addColorStop(q(T4-330),"rgba(11,13,18,0)");gr.addColorStop(q(T4-180),"rgba(11,13,18,.35)");gr.addColorStop(q(T4-40),"rgba(11,13,18,.74)");gr.addColorStop(q(LT-50),"rgba(11,13,18,.9)")}gr.addColorStop(1,BG)}else if(mapc){const q=v=>Math.max(0,Math.min(1,v/HH));
-    // Daytime: the light map with a warm fade (the light-mode bar card's brown), eased in so there's no visible edge: a soft one at the top for Instagram's header, and a longer one at the bottom that never goes to black.
+    // Daytime: the light map with a warm fade (the light-mode bar card's brown), eased in so there's no visible edge: a soft one at the top for Instagram's header, and a longer one at the bottom that never goes to black (82% at the very bottom, enough to read the stats).
     if(x._day){const WM="34,22,6";for(let i=0;i<=8;i++){const t=i/8;gr.addColorStop(q(t*380),`rgba(${WM},${(.28*(1-t)*(1-t)).toFixed(3)})`)}
-      for(let i=1;i<=12;i++){const t=i/12;gr.addColorStop(q(860+t*(HH-860)),`rgba(${WM},${(.72*Math.pow(t,1.35)).toFixed(3)})`)}}
+      for(let i=1;i<=12;i++){const t=i/12;gr.addColorStop(q(860+t*(HH-860)),`rgba(${WM},${(.82*Math.pow(t,1.2)).toFixed(3)})`)}}
     else{gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(q(220),"rgba(11,13,18,0)");gr.addColorStop(q(1230),"rgba(11,13,18,0)");gr.addColorStop(q(1380),"rgba(11,13,18,.35)");gr.addColorStop(q(1520),"rgba(11,13,18,.74)");gr.addColorStop(q(1660),"rgba(11,13,18,.9)");gr.addColorStop(1,BG)}}else if(full){x.fillStyle="rgba(11,13,18,.06)";x.fillRect(0,0,W,Hh);gr.addColorStop(0,"rgba(11,13,18,.3)");gr.addColorStop(.12,"rgba(11,13,18,0)");gr.addColorStop(.46,"rgba(11,13,18,0)");gr.addColorStop(.58,"rgba(11,13,18,.42)");gr.addColorStop(.7,"rgba(11,13,18,.66)");gr.addColorStop(1,"rgba(11,13,18,.84)")}
   else{gr.addColorStop(0,"rgba(11,13,18,.35)");gr.addColorStop(.14,"rgba(11,13,18,0)");gr.addColorStop(.45,"rgba(11,13,18,0)");gr.addColorStop(.76,"rgba(11,13,18,.85)");gr.addColorStop(1,BG)}x.fillStyle=gr;x.fillRect(0,0,W,HH);
   // route: GPS trail when we have one, otherwise stop to stop
@@ -3165,8 +3165,14 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   return new Promise(res=>c.toBlob(res,"image/png"));
 }
 // Dark basemap behind the map card. Returns the lat/lng -> canvas projection, or null.
-function dayCrawl(r){const t=rt(r,r.startedAt),d=new Date(t+((r.endedAt||r.endsAt||t)-t)/2),m=d.getMonth(),c=Math.cos((m-11.5)/12*2*Math.PI);   // 1 in late Dec, -1 in late Jun
-  const h=d.getHours()+d.getMinutes()/60,rise=6.4-0.6*c,set=18.6+1.4*c;return h>=rise&&h<set}
+// Day or night for the share cards: the crawl's midpoint against the real sunrise and sunset where the crawl was (standard sunrise equation).
+const sunUp=(ts,lat,lng)=>{const R=Math.PI/180,J=ts/864e5+2440587.5,n=Math.round(J-2451545+lng/360),Js=n-lng/360,M=(357.5291+.98560028*Js)%360,
+  C=1.9148*Math.sin(M*R)+.02*Math.sin(2*M*R)+.0003*Math.sin(3*M*R),L=(M+C+282.9372)%360,Jt=2451545+Js+.0053*Math.sin(M*R)-.0069*Math.sin(2*L*R),
+  sd=Math.sin(L*R)*Math.sin(23.4397*R),cd=Math.cos(Math.asin(sd)),cw=(Math.sin(-.833*R)-Math.sin(lat*R)*sd)/(Math.cos(lat*R)*cd);
+  if(cw<=-1)return true;if(cw>=1)return false;const w=Math.acos(cw)/R/360,ms=j=>(j-2440587.5)*864e5;return ts>=ms(Jt-w)&&ts<ms(Jt+w)};
+function dayCrawl(r){const t=rt(r,r.startedAt),mid=t+((r.endedAt||r.endsAt||t)-t)/2;
+  const v=r.visits&&r.visits.find(v=>v.arrivedAt!=null&&byId(v.id)),p=r.center||(v&&byId(v.id))||r.startPos||{lat:-33.87,lng:151.21};
+  return sunUp(mid,p.lat,p.lng)}
 async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:W/2,cy:670,bw:860,bh:540};
   const cp=crawlPath(r,st),stops=cp.stops.length?cp.stops:[r.startPos].filter(Boolean),all=stops.concat(cp.trail);if(!all.length)return null;
   const wp=(p,z)=>{const n=256*Math.pow(2,z),s=Math.sin(p.lat*Math.PI/180);return[(p.lng+180)/360*n,(.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]};
@@ -3202,7 +3208,7 @@ async function mapTiles(x,r,st,W,HH,area){const DAY=!!x._day;const AR=area||{cx:
 // Crawl cards are made once per crawl and kept, and the scorecard starts making them in the background,
 // so Share opens straight onto the cards and the share row (like Spotify's share screen).
 const CARDS=new Map();
-const cardLooks=r=>r.photo?["full","map","map2","rund"]:["map","map2","rund"];
+const cardLooks=r=>r.photo?["full","map","rund"]:["map","rund"];   // one map card: light for a daytime crawl, dark after sunset
 const cardSig=r=>[r.id,r.photo?r.photo.length+r.photo.slice(-24):"",r.title||"",r.barOfDay||"",r.jp&&r.jp.k||"",(r.visits||[]).map(v=>v.id+(v.counted===true?1:v.counted===false?0:2)).join(","),r.endedAt||"",window.RUND_VAR||""].join("|");
 function cardBlob(r,look){const k=cardSig(r)+"|"+look;let p=CARDS.get(k);
   if(!p){p=Promise.race([storyCard(r,look),new Promise(z=>setTimeout(()=>z(null),20000))]).catch(e=>{console.warn(e);return null}).then(b=>{if(!b)CARDS.delete(k);return b});CARDS.set(k,p)}
