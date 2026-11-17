@@ -303,10 +303,15 @@ async function tabSyncAll(){if(!signedIn())return;const B=await cloud(),uid=ME.u
     if(u.prefs){try{const p=JSON.parse(u.prefs);PREF_KEYS.forEach(k=>{if(p[k]&&typeof p[k]==="object")S[k]=Object.assign({},p[k],S[k]||{})});save();if(typeof render==="function"&&S.route!=="play")render()}catch(e){}}
     const L=readH(HKEY),have=new Set(L.map(r=>r.id)),m=syncedMap(),docs=await B.list(`users/${uid}/crawls`),pics={};let added=0,picsBack=0;
     docs.filter(x=>isPicDoc(x._id)).forEach(x=>{const [id,n]=x._id.split("~p");(pics[id]=pics[id]||[])[+n]=x.j});
+    // test crawls (simulated friends' crawls, ones moved to test) don't belong on the real tab: mark them so tabPush
+    // clears them from the account, instead of bringing them back on every open
+    const testIds=new Set(readH(TKEY).map(r=>r.id)),isTestRec=r=>r.test||/^SIM/.test(r.liveId||"")||testIds.has(r.id);
     for(const x of docs){if(isPicDoc(x._id)||have.has(x._id))continue;try{const r=JSON.parse(x.j);m[r.id]=recHash(x.j);
+      if(isTestRec(r)){docs.filter(d=>d._id.startsWith(r.id+"~p")).forEach(d=>m[d._id]=1);continue}
       const P=(pics[r.id]||[]).filter(Boolean);if(P.length){r.photos=P;if(r.pi>=0&&P[r.pi])r.photo=P[r.pi]}delete r.np;delete r.pi;L.push(r);added++}catch(e){}}
     // crawls already on this phone that lost their photos get them back too
     L.forEach(r=>{const P=(pics[r.id]||[]).filter(Boolean);if(P.length&&!crawlPics(r).length){r.photos=P;r.photo=P[P.length-1];picsBack++}});
+    localStorage.setItem("rr-synced",JSON.stringify(m));
     if(added||picsBack){L.sort((a,b)=>b.startedAt-a.startedAt);writeTab(L);if(!hTest)H=readH(HKEY);localStorage.setItem("rr-synced",JSON.stringify(m));
       if(added)toast(`${added} crawl${added===1?"":"s"} back on your tab.`,3000);if(S.route==="hist")renderHist()}
     await tabPush()}catch(e){console.warn("tab sync",e)}}
