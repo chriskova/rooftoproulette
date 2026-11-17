@@ -5,4 +5,6 @@
     <string name="title_activity_main">Rooftops</string>
     <string name="package_name">com.rooftoproulette.app</string>
     <string name="custom_url_scheme">com.rooftoproulette.app</string>
+    <!-- status bar icon for the "Active crawl" location notification (otherwise it uses the full app icon) -->
+    <string name="capacitor_background_geolocation_notification_icon">drawable/ic_stat_rr</string>
 </resources>
