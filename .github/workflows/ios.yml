@@ -5,13 +5,16 @@
 #   ASC_KEY_ID      — App Store Connect API key ID
 #   ASC_ISSUER_ID   — App Store Connect API issuer ID
 #   ASC_KEY_P8      — the whole contents of the downloaded AuthKey_XXXX.p8 file
-# Runs on every push to main that changes the app, or by hand from the Actions tab.
+# Runs only by hand (Actions tab, or gh workflow dispatch), so TestFlight gets one build per release, not one per change.
+# upload=false builds, signs and checks the app without sending it to TestFlight (for trying native changes on a branch).
 name: iOS TestFlight build
 on:
-  push:
-    branches: [main]
-    paths: ["play/**", "rooftop-app.js", "browser-config.js", "vendor/**", "icons/**", "fonts/**", "app/**", ".github/workflows/ios.yml"]
   workflow_dispatch:
+    inputs:
+      upload:
+        description: "Send the build to TestFlight"
+        type: boolean
+        default: true
 concurrency:
   group: ios-testflight
   cancel-in-progress: true
@@ -86,6 +89,7 @@ jobs:
           echo "$ENT" | grep -q applesignin || { echo "::error::Exported app has no Sign in with Apple entitlement."; exit 1; }
           echo "$ENT" | grep -q "applinks:rooftoproulette.com" || { echo "::error::Exported app has no associated domains."; exit 1; }
           echo "Entitlements OK: Sign in with Apple and associated domains are in the app."
+          if [ "${{ inputs.upload }}" = "false" ]; then echo "::notice::Built and signed. Not uploaded (upload=false)."; exit 0; fi
           cp ~/private_keys/AuthKey.p8 ~/private_keys/AuthKey_$ASC_KEY_ID.p8
           xcrun altool --upload-app -f "$(ls $RUNNER_TEMP/out/*.ipa | head -1)" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tail -20
           [ ${PIPESTATUS[0]} -eq 0 ] || { echo "::error::Upload to App Store Connect failed."; exit 1; }
