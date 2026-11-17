@@ -113,20 +113,21 @@ function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set
 const simMin=(a,b)=>(a+Math.random()*(b-a))*60000;
 function simDrive(k,force){const d=SIM.docs[k];let g;try{g=JSON.parse(d.g)}catch(e){return}
   let off=d.off||0;const real=Date.now(),cr=g.mode==="cruise";let ch=false;g.visits=g.visits||[];
+  if(!d.simAt&&!force){SIM.B.set(k,{simAt:real,beat:real},true);return}   // just handed the spin: start their clock from now, not from the crawl's start
   const jump=ms=>{off+=Math.max(0,ms-(real-(d.simAt||real)));t=real+off};let t=real+off;
   if(!cr&&g.started&&t>=g.endsAt){simEnd(k);return}
   const at=g.visits.find(v=>v.arrivedAt!=null&&!v.leftAt);
-  if(at){if(force||real-(d.simAt||0)>=SIMSTEP*1.4){jump(simMin(15,30));at.leftAt=t;at.counted=true;simSpin(g,t);ch=true}}
+  if(at){if(force||real-(d.simAt||0)>=SIMSTEP*1.4){jump(simMin(15,30));if(!cr&&t>=g.endsAt){simEnd(k,g);return}at.leftAt=t;at.counted=true;simSpin(g,t);ch=true}}
   else if(g.target){if(!g.tAt){g.tAt=t;ch=true}
-    else if(force||real-(d.simAt||0)>=SIMSTEP){jump(simMin(6,14));g.visits.push({id:g.target,arrivedAt:t,counted:null});if(g.frz&&t<g.frz.until){g.endsAt-=g.frz.until-t;g.frz.until=t}
+    else if(force||real-(d.simAt||0)>=SIMSTEP){jump(simMin(6,14));if(!cr&&g.started&&t>=g.endsAt){simEnd(k,g);return}g.visits.push({id:g.target,arrivedAt:t,counted:null});if(g.frz&&t<g.frz.until){g.endsAt-=g.frz.until-t;g.frz.until=t}
       if(g.wild&&g.wild.id!==g.target)g.wild=null;g.target=null;ch=true}}
   else{simSpin(g,t);ch=true}
   const patch={beat:real};if(ch){patch.g=JSON.stringify(g);patch.off=off;patch.simAt=real}
   if(!cr&&g.started&&t>=g.endsAt){SIM.B.set(k,patch,true).then(()=>simEnd(k));return}
   SIM.B.set(k,patch,true)}
-function simEnd(k){const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.parse(d.g)}catch(e){return}const t=Date.now()+(d.off||0);
-  (g.visits||[]).forEach(v=>{if(v.arrivedAt!=null&&!v.leftAt){v.leftAt=t;v.counted=true}});
-  const rec=Object.assign({},g,{id:g.id||("gsim"+t),ended:true,endedAt:Math.min(t,g.endsAt||t),target:null});
+function simEnd(k,g0){const d=SIM.docs[k];if(!d||d.ended)return;let g=g0;if(!g)try{g=JSON.parse(d.g)}catch(e){return}const t=Date.now()+(d.off||0),stop=g.mode==="cruise"?t:Math.min(t,g.endsAt||t);
+  (g.visits||[]).forEach(v=>{if(v.arrivedAt!=null&&!v.leftAt){v.leftAt=Math.max(stop,v.arrivedAt+60000);v.counted=true}});
+  const rec=Object.assign({},g,{id:g.id||("gsim"+t),ended:true,endedAt:stop,target:null,wild:null});
   SIM.B.set(k,{ended:true,rec:recForCloud(rec),g:JSON.stringify(rec),beat:Date.now()},true)}
 // Sam or Jess starts a 1 hr crawl near you and invites you
 async function simInvite(f){const B=await cloud();if(!SIM.B)return;const c=you()||{lat:-33.8688,lng:151.2093},t=Date.now(),len=60;

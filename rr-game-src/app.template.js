@@ -181,7 +181,11 @@ S.been=S.been||{};S.nfu=S.nfu||{};S.want=S.want||{};S.fav=S.fav||{};S.city=S.cit
 if(/[?&]test\b/.test(location.search))S.test=true;
 // Real games and test games keep separate histories. H is whichever one matches the current mode.
 const TKEY="rr-history-test";
-const readH=k=>{try{return JSON.parse(localStorage.getItem(k)||"[]")||[]}catch(e){return []}};
+// every saved crawl gets the fields the tab and crawl card rely on, whichever version (or friend's phone) saved it
+const fixRec=r=>{if(!r||typeof r!=="object")return null;if(!Array.isArray(r.visits))r.visits=[];r.visits=r.visits.filter(v=>v&&v.id);
+  if(!(Array.isArray(r.areas)&&r.areas.length)){let a="";try{a=(r.zone&&r.zone.name)||(r.center?nearestSuburb(r.center):"")}catch(e){}r.areas=[a||""]}
+  if(!Array.isArray(r.moves))r.moves=[];if(!Array.isArray(r.excluded))r.excluded=[];if(!r.startedAt&&r.visits[0])r.startedAt=r.visits[0].arrivedAt;if(!r.len&&r.mode!=="cruise")r.len=60;return r};
+const readH=k=>{try{return (JSON.parse(localStorage.getItem(k)||"[]")||[]).map(fixRec).filter(Boolean)}catch(e){return []}};
 const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(let i=L.length-1;i>=0;i--){if(L[i].photo){L[i].photo=null;try{localStorage.setItem(k,JSON.stringify(L));return}catch(_){}}}}};
 // One-off: before the split, test games went into the real history. A test game is one marked as test, dated in the
 // future (time travel), or whose start point is exactly the first bar (test mode puts it there; real GPS never lands on it).
