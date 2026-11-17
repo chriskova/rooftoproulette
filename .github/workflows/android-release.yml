@@ -37,9 +37,7 @@ jobs:
           cache: gradle
       - name: Copy the web app into the native project
         working-directory: app
-        # Same as the test app: it opens the live site, so fixes reach everyone without a new Play release.
         run: |
-          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/play/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- android
       - name: Build the signed bundle
         working-directory: app/android
@@ -55,6 +53,11 @@ jobs:
           cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/rooftop-roulette-$RR_VERSION_NAME-$RR_VERSION_CODE.aab"
           echo "AAB=rooftop-roulette-$RR_VERSION_NAME-$RR_VERSION_CODE.aab" >> $GITHUB_ENV
           rm -f "$RUNNER_TEMP/upload.jks"
+      - name: Check the game is inside the bundle
+        run: |
+          unzip -p "$AAB" base/assets/capacitor.config.json | grep -q '"url"' && { echo "::error::This build points at a website instead of carrying the game inside."; exit 1; }
+          unzip -l "$AAB" | grep -q "base/assets/public/play/index.html" || { echo "::error::The game is missing from the bundle."; exit 1; }
+          echo "Game is bundled inside the app."
       - name: Publish to the android-store release
         env:
           GH_TOKEN: ${{ github.token }}

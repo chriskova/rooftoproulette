@@ -4,7 +4,7 @@ name: Android test build
 on:
   push:
     branches: [main]
-    paths: ["index.html", "rooftop-app.js", "browser-config.js", "app/**", ".github/workflows/android.yml"]
+    paths: ["play/**", "rooftop-app.js", "browser-config.js", "vendor/**", "icons/**", "fonts/**", "app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 permissions:
   contents: write
@@ -28,10 +28,7 @@ jobs:
           cache: gradle
       - name: Copy the web app into the native project
         working-directory: app
-        # The test app loads the live site, so changes show up on the next open without reinstalling.
-        # (Store builds leave this out and carry the app inside, as the stores expect.)
         run: |
-          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/play/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- android
       - name: Build the APK
         working-directory: app/android

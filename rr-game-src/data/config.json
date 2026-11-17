@@ -1,8 +1,9 @@
 {
-  "_note": "Public browser settings written to browser-config.js at build time. The Maps key is a browser key restricted to the site's address and APIs in Google Cloud; the PostHog project key can only send events. Leave posthogKey empty to turn analytics off. firebase is the public web config for the Rooftop Roulette Firebase project (free Spark plan); access is controlled by firebase/firestore.rules.",
+  "_note": "Public browser settings written to browser-config.js at build time. The Maps key is a browser key restricted to the site's address and APIs in Google Cloud; googleMapsAppKey is the store apps' key (the game runs inside the app, where iPhones send no site address), limited to the three maps APIs; the PostHog project key can only send events. Leave posthogKey empty to turn analytics off. firebase is the public web config for the Rooftop Roulette Firebase project (free Spark plan); access is controlled by firebase/firestore.rules.",
   "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
   "posthogHost": "https://eu.i.posthog.com",
   "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",
+  "googleMapsAppKey": "AIzaSyADmKtYUPyfXEym9Ze_wr3XG_FBkDZmul8",
   "firebase": {
     "apiKey": "AIzaSyBBqzxMQeii9V__clMwfMwnx6-E7g2pU-8",
     "authDomain": "rooftop-roulette.firebaseapp.com",

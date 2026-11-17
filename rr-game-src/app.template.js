@@ -1,9 +1,12 @@
 "use strict";
+// Store builds carry the game inside the app (served from the phone, not the website). Anything that
+// depends on the address it runs from checks this.
+const BUNDLED=(()=>{try{const C=window.Capacitor;return !!(C&&C.isNativePlatform&&C.isNativePlatform())&&!/^(www\.)?rooftoproulette\.com$|github\.io$/.test(location.hostname)}catch(e){return false}})();
 const VENUES=__VENUES__,VENUES_V=__VENUES_V__;
 let venuesV=VENUES_V;
 (()=>{try{const c=JSON.parse(localStorage.getItem("rr-venues")||"null");if(c&&c.v>VENUES_V&&Array.isArray(c.bars)&&c.bars.length>20){VENUES.splice(0,VENUES.length,...c.bars);venuesV=c.v}}catch(e){}})();
 function refreshVenues(){
-  const url=/github\.io$|rooftoproulette\.com/.test(location.hostname)?(window.RR_ROOT||"")+"venues.json":"https://rooftoproulette.com/venues.json";
+  const url=!BUNDLED&&/github\.io$|rooftoproulette\.com/.test(location.hostname)?(window.RR_ROOT||"")+"venues.json":"https://rooftoproulette.com/venues.json";
   fetch(url+"?t="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
     if(!d||!(d.v>venuesV)||!Array.isArray(d.bars)||d.bars.length<20||!d.bars.every(v=>v&&v.id&&v.name&&isFinite(v.lat)&&isFinite(v.lng)))return;
     VENUES.splice(0,VENUES.length,...d.bars);venuesV=d.v;try{localStorage.setItem("rr-venues",JSON.stringify(d))}catch(e){}
@@ -477,11 +480,11 @@ const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",we
 function fitZone(m,c,r,extra,pad){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*1.04);(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
 
 /* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
-const GKEY=window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10a";
+const GKEY=(BUNDLED&&window.RR_CONFIG.googleMapsAppKey)||window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10a";
 let gP=null,gBad=false;
 function gload(){
   if(gP)return gP;
-  if(!/^(www\.)?rooftoproulette\.com$|^chriskova\.github\.io$/.test(location.hostname)||gBad)return Promise.reject("off");
+  if(!(BUNDLED||/^(www\.)?rooftoproulette\.com$|^chriskova\.github\.io$/.test(location.hostname))||gBad)return Promise.reject("off");
   gP=new Promise((res,rej)=>{
     window.__gmReady=()=>res(window.google);
     window.gm_authFailure=()=>{gBad=true};
@@ -3828,7 +3831,7 @@ function settingsSheet(){
 }
 // Privacy policy and terms open on a page of their own inside the app; back comes back to settings
 function docPage(file,title){if($("docPage"))return;const pg=document.createElement("div");pg.id="docPage";pg.className="setpage docpage";
-  pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="dpBack" aria-label="Back">${I.back}</button><b>${title}</b></div><iframe src="${(location.hostname==="localhost"?SITE:(window.RR_ROOT||""))+file}?embed" title="${title}"></iframe>`;
+  pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="dpBack" aria-label="Back">${I.back}</button><b>${title}</b></div><iframe src="${(BUNDLED||location.hostname==="localhost"?SITE:(window.RR_ROOT||""))+file}?embed" title="${title}"></iframe>`;
   document.body.appendChild(pg);try{history.pushState({docPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")));
   $("dpBack").onclick=()=>{try{if(history.state&&history.state.docPage)history.back();else closeDoc()}catch(e){closeDoc()}}}
 function closeDoc(){const pg=$("docPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
@@ -4027,10 +4030,10 @@ if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
 render();loop();setTimeout(refreshVenues,1500);openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
-if("serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register((window.RR_ROOT||"")+"sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
+if(!BUNDLED&&"serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register((window.RR_ROOT||"")+"sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
   // a new version took over: reload once so it's used straight away, unless a crawl screen is open (then it's used next launch)
   let reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadSW||reloaded||S.route==="play"||spinning)return;reloaded=true;location.reload()})}
 // Phones keep the app open in the background for days. Coming back to it (not mid-crawl), pick up a newer version if there is one.
 {let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return}
-  if(!hidAt||Date.now()-hidAt<5000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
+  if(BUNDLED||!hidAt||Date.now()-hidAt<5000||location.protocol!=="https:"||(S.game&&S.game.started&&!S.game.ended)||$("sheet").open)return;
   fetch((window.RR_ROOT||"")+"sw.js",{cache:"no-store"}).then(r=>r.text()).then(t=>{const m=t.match(/rr-app-(v[\d-]+)/);if(m&&m[1]!==APPV)location.reload()}).catch(()=>{})})}

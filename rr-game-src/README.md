@@ -7,7 +7,7 @@ The game page loads shared files from the root (`../rooftop-app.js`, `../venues.
 ## Files
 
 - `index.template.html` contains the page markup and CSS. Edit `app.template.js` for app behaviour. The build injects venues and version information into `rooftop-app.js`.
-- `data/config.json` holds the public browser settings (Google Maps browser key, PostHog key). The build writes them to `../browser-config.js`, which loads before `rooftop-app.js`. The Maps key is restricted to the site's address and APIs in Google Cloud, so it's fine for it to be public.
+- `data/config.json` holds the public browser settings (Google Maps browser key, PostHog key). The build writes them to `../browser-config.js`, which loads before `rooftop-app.js`. The Maps browser key is restricted to the site's address and APIs in Google Cloud, so it's fine for it to be public. `googleMapsAppKey` ("Rooftop Roulette app key" in Google Cloud) is used only inside the store apps, which carry the game inside them: it's limited to the Maps JavaScript, Maps Static and Places (New) APIs, with no address restriction because iPhones send none.
 - `data/venues.json` holds the bars (Sydney, Melbourne, Brisbane, Perth and the Gold Coast).
 - `data/manifest.webmanifest` is the PWA manifest.
 - `build.py` writes `../play/index.html`, `../rooftop-app.js`, `../browser-config.js`, `../manifest.webmanifest`, `../sw.js` and `../.nojekyll`. It also inlines Leaflet and the main fonts.
@@ -53,16 +53,16 @@ The app is light (warm cream) by default and switches to the dark look when the 
 
 ## Native app (app/)
 
-`app/` wraps the built web app in Capacitor (app ID `com.rooftoproulette.app`) for Android and iOS.
+`app/` wraps the game in Capacitor (app ID `com.rooftoproulette.app`) for Android and iOS. **Every build carries the game inside the app**, the way the stores expect: it opens instantly, works on a bad connection, and never depends on the website's address. Never set `server.url` in `capacitor.config.json`; `sync-web.js` refuses to build if it is, and the Play Store build checks the bundle before publishing.
 
-- `node app/sync-web.js` copies the built site into `app/www`; `npm run sync` (in `app/`) also runs `cap sync`.
-- `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`. Placeholder for now: swap those for the final logo and re-run.
-- Every push to `main` that changes `index.html` or `app/` builds an Android test APK on GitHub Actions and puts it on the `android-test` release (download it on the phone and install).
-- iOS needs the Apple Developer account before builds can be signed.
+- `node app/sync-web.js` copies the built game into `app/www` (same layout as the site: the game at `play/`, shared files beside it); `npm run sync` (in `app/`) also runs `cap sync`.
+- Inside the app, `BUNDLED` (top of `app.template.js`) is true: bar lists still update from `https://rooftoproulette.com/venues.json`, the Settings pages load from the site, there's no service worker, and Google Maps uses `googleMapsAppKey`.
+- Game changes reach phones through a new store build: the test APK (`android-test` release) and TestFlight build on every push that changes the game or `app/`; the Play Store build is the "Android Play Store build" workflow, uploaded to closed testing. Bar list changes still need no build (see above).
+- `python3 app/make-icons.py` makes the app icons and splash screens from `icons/icon-512.png` and `icons/maskable-512.png`.
 
 ## Website and early access (site/index.html)
 
-`rooftoproulette.com` is the website: for now an early-access signup, swapped for the launch site (store buttons) after launch. Anything that should open the game goes on to `/play/` from there: the native app (it loads the live site; current builds load `/`, new ones `/play/`), an installed web app, `#crawl=`/`#live=` links, `?test` and `?fakecloud=`.
+`rooftoproulette.com` is the website: for now an early-access signup, swapped for the launch site (store buttons) after launch. Anything that should open the game goes on to `/play/` from there: older app builds that loaded the live site, an installed web app, `#crawl=`/`#live=` links, `?test` and `?fakecloud=`.
 
 Signups go into the Firestore `waitlist` collection over the REST API, no sign-in needed: email, phone (`iphone`/`android`) and `src` (`?from=` or the referring site). The document id is a hash of the email, so signing up twice doesn't add a second entry. The rules in `firebase/firestore.rules` only allow adding a well-formed entry, never reading it. Read the list in the Firebase console (Firestore > Data > waitlist). On the free Spark plan a flood of signups stops at the daily write cap rather than billing.
 

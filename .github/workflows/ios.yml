@@ -10,7 +10,7 @@ name: iOS TestFlight build
 on:
   push:
     branches: [main]
-    paths: ["index.html", "rooftop-app.js", "browser-config.js", "app/**", ".github/workflows/ios.yml"]
+    paths: ["play/**", "rooftop-app.js", "browser-config.js", "vendor/**", "icons/**", "fonts/**", "app/**", ".github/workflows/ios.yml"]
   workflow_dispatch:
 concurrency:
   group: ios-testflight
@@ -36,8 +36,6 @@ jobs:
         if: env.HAS_KEYS == 'true'
         working-directory: app
         run: |
-          # same as Android: the app loads the live site, so Google maps/photos (key locked to that address) work and updates ship without a new build
-          node -e "const f='capacitor.config.json',c=require('./'+f);c.server={url:'https://rooftoproulette.com/play/',cleartext:false};require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
           npm ci && npm run sync -- ios
       - name: Archive
         if: env.HAS_KEYS == 'true'

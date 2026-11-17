@@ -3,6 +3,7 @@ window.RR_CONFIG={
  "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
  "posthogHost": "https://eu.i.posthog.com",
  "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",
+ "googleMapsAppKey": "AIzaSyADmKtYUPyfXEym9Ze_wr3XG_FBkDZmul8",
  "firebase": {
   "apiKey": "AIzaSyBBqzxMQeii9V__clMwfMwnx6-E7g2pU-8",
   "authDomain": "rooftop-roulette.firebaseapp.com",
