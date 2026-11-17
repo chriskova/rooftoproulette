@@ -832,7 +832,7 @@ function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
 if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{if(!S.safeOK&&!S.test){safetySheet(()=>{S.quick={step:0,from:null};go("quick")});return}S.quick={step:0,from:null};go("quick")})};
-(()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();render()}}))})();
+(()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();if(CLP)location.reload();else render()}}))})();
 if($("rrIcon"))$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
@@ -3913,6 +3913,7 @@ $("testFab").onclick=()=>{
    <div class="eyebrow" style="margin:14px 0 8px">Time travel</div><div class="trow">${G()&&G().started?`<span class="note">Finish or end your crawl first.</span>`:`<button class="btn sm dark" type="button" data-to="4,1080">Friday 6pm</button><button class="btn sm dark" type="button" data-to="5,900">Saturday 3pm</button>`}</div>
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div><div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tCT">Play the "it counts" animation</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
+   ${simHTML()}
    <div class="eyebrow" style="margin:14px 0 8px">Put me at a bar</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
    <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tSB">Wheel sandbox</button><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{S.ff=(S.ff||0)+ +b.dataset.ff*60000;save();loop();closeSheet();render()});
@@ -3928,10 +3929,23 @@ $("testFab").onclick=()=>{
     $("sheetBody").querySelectorAll("[data-to]").forEach(b=>b.onclick=()=>{const [dd,mm]=b.dataset.to.split(",").map(Number),s0=sydAt(now());let d=((dd-s0.day+7)%7)*1440+(mm-s0.min);if(d<=0)d+=7*1440;S.ff=(S.ff||0)+d*60000;save();closeSheet();render()});
     $("tP").onclick=()=>{try{localStorage.removeItem("rr-ph");localStorage.removeItem("rr-ph-b")}catch(e){}for(const k in phMem)delete phMem[k];closeSheet();render()};
     $("tF").onclick=()=>{S.onboarded=false;S.intro=0;S.tips={};S.seenHow={};save();closeSheet();go("intro")};
-    $("tX").onclick=()=>{try{localStorage.removeItem(KEY);localStorage.removeItem(HKEY);localStorage.removeItem(TKEY)}catch(e){}location.reload()};
-    $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(S.game)startWatch();render()};
+    $("tX").onclick=()=>{try{localStorage.removeItem("rr-sim");localStorage.removeItem(KEY);localStorage.removeItem(HKEY);localStorage.removeItem(TKEY)}catch(e){}location.reload()};
+    $("tO").onclick=()=>{S.test=false;S.ff=0;S.fake=null;save();history.replaceState(null,"",location.pathname);closeSheet();if(CLP){location.reload();return}if(S.game)startWatch();render()};
+    simBind();
   });
 };
+
+// Test mode: Sam and Jess, simulated friends (cloud.template.js, simBackend) for trying invites and live crawls on one phone
+function simHTML(){const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);
+  const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;let r="";
+  if(fh)r=b("sNx",`${fh.n}: next step`)+b("sQt",`${fh.n} goes quiet`)+b("sEn",`${fh.n} ends the crawl`);
+  else if(mine)r=b("sPv","See what friends see")+SIMF.filter(f=>!(d&&d.members&&d.members[f.uid])).map(f=>b("sF-"+f.uid,`${f.n} follows you`)).join("");
+  else if(!S.follow)r=SIMF.map(f=>b("sI-"+f.uid,`${f.n} invites you`)).join("");
+  return r?`<div class="eyebrow" style="margin:14px 0 8px">Friends (simulated)</div><p class="note" style="margin:0 0 8px">Sam and Jess are on this phone only. Nothing gets sent.</p><div class="trow">${r}</div>`:""}
+function simBind(){const k=simLiveKey(),on=(id,f)=>{const el=$(id);if(el)el.onclick=()=>{closeSheet();f()}};
+  on("sPv",previewFollow);on("sNx",()=>simDrive(k,true));on("sQt",()=>{simQuiet();toast("Sam's phone has gone quiet. Take over shows up on the follow screen.",3500)});on("sEn",()=>simEnd(k));
+  SIMF.forEach(f=>{on("sF-"+f.uid,async()=>{await simFollowMe(f);toast(`${f.n} is following.`,2200);try{paintPeople()}catch(e){}});
+    on("sI-"+f.uid,async()=>{await cloud();watchInvites();await simInvite(f)})})}
 
 /* ---------- loop ---------- */
 

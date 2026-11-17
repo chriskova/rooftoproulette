@@ -8,7 +8,7 @@
    Backend: Firebase (Auth + Firestore) when data/config.json has "firebase"; ?fakecloud uses a local stand-in for tests.
    Nothing here runs, and none of it shows, until one of those is set. */
 const FB_CFG=(window.RR_CONFIG&&RR_CONFIG.firebase)||null,FAKE_CLOUD=/[?&]fakecloud\b/.test(location.search);
-const cloudOn=()=>((!!FB_CFG&&!S.test)||FAKE_CLOUD)&&!DEMO();
+const cloudOn=()=>((!!FB_CFG&&!S.test)||FAKE_CLOUD||S.test)&&!DEMO();   // test mode: friends and live crawls are simulated on the phone (simBackend)
 const BEAT_MS=120000,STALE_MS=300000;
 let ME=null,CLP=null,liveUnsub=null,liveDoc=null,inviteUnsub=null;
 
@@ -77,7 +77,65 @@ function fakeBackend(){
     watch:(p,cb)=>poll(cb,()=>req("get",p)),watchList:(p,cb)=>poll(cb,()=>req("list",p)),
     tx:async(p,fn)=>{const v=fn(await req("get",p));if(v===undefined)return false;await req("set",p,v);return true}})}
 
-function cloud(){if(!CLP){CLP=(FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
+// ----- backend: test mode. Nothing leaves the phone. You're signed in as "You", and two simulated friends,
+// Sam and Jess, answer invites, follow your crawl, invite you to theirs and play their crawls out (a step every ~25 s).
+const SIM={docs:{},w:{},wl:{},quiet:{},B:null,t:null};
+const SIMF=[{uid:"sim-sam",n:"Sam"},{uid:"sim-jess",n:"Jess"}],SIMSTEP=25000;
+function simBackend(){
+  const me={uid:"sim-me",anon:false,name:S.myName||"You",photo:"",email:"you@test",via:"google"};
+  try{SIM.docs=JSON.parse(localStorage.getItem("rr-sim")||"{}")}catch(e){SIM.docs={}}
+  const cp=v=>v==null?null:JSON.parse(JSON.stringify(v)),par=p=>p.split("/").slice(0,-1).join("/");
+  const list=pp=>Object.keys(SIM.docs).filter(k=>par(k)===pp).map(k=>Object.assign({_id:k.split("/").pop()},cp(SIM.docs[k])));
+  const fire=p=>{(SIM.w[p]||[]).forEach(cb=>setTimeout(()=>cb(cp(SIM.docs[p]||null)),0));const pp=par(p);(SIM.wl[pp]||[]).forEach(cb=>setTimeout(()=>cb(list(pp)),0))};
+  const put=(p,v)=>{if(v==null)delete SIM.docs[p];else SIM.docs[p]=cp(v);try{localStorage.setItem("rr-sim",JSON.stringify(SIM.docs))}catch(e){}fire(p)};
+  const sub=(m,p,cb)=>{(m[p]=m[p]||[]).push(cb);return()=>{m[p]=(m[p]||[]).filter(x=>x!==cb)}};
+  put(`users/${me.uid}`,Object.assign({},SIM.docs[`users/${me.uid}`]||{},{mates:Object.fromEntries(SIMF.map(f=>[f.uid,{n:f.n,t:Date.now()}]))}));
+  const B={onUser:cb=>setTimeout(()=>cb(me),0),refresh:()=>me,
+    google:async()=>{},apple:async()=>{},emailUp:async()=>{},emailIn:async()=>{},resetPw:async()=>true,deleteMe:async()=>{},revokeApple:async()=>{},
+    signOut:async()=>{toast("Test mode keeps you signed in.",2200)},rename:async n=>{me.name=n},
+    get:async p=>cp(SIM.docs[p]||null),set:async(p,v,merge)=>put(p,merge?Object.assign({},SIM.docs[p]||{},v):v),del:async p=>put(p,null),list:async p=>list(p),
+    watch:(p,cb)=>{setTimeout(()=>cb(cp(SIM.docs[p]||null)),0);return sub(SIM.w,p,cb)},
+    watchList:(p,cb)=>{setTimeout(()=>cb(list(p)),0);return sub(SIM.wl,p,cb)},
+    tx:async(p,fn)=>{const v=fn(cp(SIM.docs[p]||null));if(v===undefined)return false;put(p,v);return true}};
+  SIM.B=B;if(!SIM.t)SIM.t=setInterval(simTick,2000);return Promise.resolve(B)}
+const simFriend=uid=>SIMF.find(f=>f.uid===uid);
+function simTick(){const B=SIM.B;if(!B)return;
+  // an invite to Sam or Jess: they join that crawl a couple of seconds later
+  SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k])simDrive(k,false)})}
+function simJoin(id,f){return SIM.B.tx(`live/${id}`,d=>{if(!d||d.ended)return undefined;const m=Object.assign({},d.members||{});if(m[f.uid])return undefined;
+  let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[f.uid]={n:f.n,j:Date.now(),b:(gg.visits||[]).length};return Object.assign({},d,{members:m})})}
+function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set((g.visits||[]).map(v=>v.id));
+  let P=VENUES.filter(v=>!been.has(v.id)&&dist(c,v)<=(g.radius||1.5)*1000);if(!P.length)P=VENUES.filter(v=>!been.has(v.id)).sort((a,b)=>dist(c,a)-dist(c,b)).slice(0,20);
+  const v=P[Math.floor(Math.random()*P.length)];if(!v)return;g.target=v.id;g.tAt=t;
+  g.wild=Math.random()<.5?{id:v.id,text:WILDS[Math.floor(Math.random()*WILDS.length)],shown:1}:null}
+// one step of a crawl Sam or Jess is spinning: spin, walk (~25 s), arrive, stay (~35 s), leave and spin again
+function simDrive(k,force){const d=SIM.docs[k];let g;try{g=JSON.parse(d.g)}catch(e){return}
+  const t=Date.now()+(d.off||0),cr=g.mode==="cruise";let ch=false;g.visits=g.visits||[];
+  if(!cr&&g.started&&t>=g.endsAt){simEnd(k);return}
+  const at=g.visits.find(v=>v.arrivedAt!=null&&!v.leftAt);
+  if(at){if(force||t-at.arrivedAt>=SIMSTEP*1.4){at.leftAt=t;at.counted=true;simSpin(g,t);ch=true}}
+  else if(g.target){if(!g.tAt){g.tAt=t;ch=true}
+    else if(force||t-g.tAt>=SIMSTEP){g.visits.push({id:g.target,arrivedAt:t,counted:null});if(g.frz&&t<g.frz.until){g.endsAt-=g.frz.until-t;g.frz.until=t}
+      if(g.wild&&g.wild.id!==g.target)g.wild=null;g.target=null;ch=true}}
+  else{simSpin(g,t);ch=true}
+  const patch={beat:Date.now()};if(ch)patch.g=JSON.stringify(g);SIM.B.set(k,patch,true)}
+function simEnd(k){const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.parse(d.g)}catch(e){return}const t=Date.now()+(d.off||0);
+  (g.visits||[]).forEach(v=>{if(v.arrivedAt!=null&&!v.leftAt){v.leftAt=t;v.counted=true}});
+  const rec=Object.assign({},g,{id:g.id||("gsim"+t),ended:true,endedAt:Math.min(t,g.endsAt||t),target:null});
+  SIM.B.set(k,{ended:true,rec:recForCloud(rec),g:JSON.stringify(rec),beat:Date.now()},true)}
+// Sam or Jess starts a 1 hr crawl near you and invites you
+async function simInvite(f){const B=await cloud();if(!SIM.B)return;const c=you()||{lat:-33.8688,lng:151.2093},t=Date.now(),len=60;
+  const g={id:"gsim"+t,mode:"rush",len,radius:1.5,city:S.city,started:true,startedAt:t,endsAt:t+len*60000+45*60000,frz:{from:t,until:t+45*60000,start:true,zone:true,trip:true},visits:[],center:{lat:c.lat,lng:c.lng}};
+  simSpin(g,t);const id="SIM"+t.toString(36);
+  await B.set(`live/${id}`,{host:f.uid,hostName:f.n,g:JSON.stringify(g),beat:t,upd:t,members:{},ended:false,v:1,off:0});
+  await B.set(`users/${ME.uid}/invites/${id}`,{from:f.n,fromUid:f.uid,at:t});return id}
+// Sam or Jess follows your crawl (makes it live first if it isn't)
+async function simFollowMe(f){const g=G();if(!g||!g.started)return;await cloud();const id=await startLive();if(id)await simJoin(id,f)}
+const simLiveKey=()=>{const id=S.follow||(G()&&G().live);return id?`live/${id}`:null};
+function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]=1;SIM.B.set(k,{beat:Date.now()-STALE_MS-5000},true)}
+
+function cloud(){if(!CLP){CLP=(S.test?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
 const myName=()=>(ME&&ME.name)||S.myName||"";
 const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId)||(IOSNAT&&RR_CONFIG.googleIosClientId))));
@@ -312,7 +370,7 @@ function onLive(id,d){
   if(!d){if(S.follow===id){S.follow=null;save();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}toast("That crawl's not live any more.",3000)}return}
   const me=ME&&ME.uid,g=G();
   if(g&&g.live===id&&d.host!==me){   // the spin was handed over or taken: this phone becomes a follower
-    g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(d.hostName||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
+    if(fv&&fvPrev)closeFollow();g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(d.hostName||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
   if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
   if(g&&g.live===id)paintMembers(d)}
@@ -323,6 +381,8 @@ function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn(
   const n=g.live&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0;
   b.innerHTML=PEOPLEI_()+`<i class="pbadge${n?" n":""}">${n||"+"}</i>`;{const t=$("tbar");if(t)b.style.top=(t.offsetTop+t.offsetHeight+12)+"px"}b.setAttribute("aria-label",n?`${n} following. Invite friends`:"Invite friends")}
 
+// test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
+async function previewFollow(){const g=G();if(!g||!g.started)return;try{await cloud();await startLive();await liveSync(true)}catch(e){console.warn(e)}closeSheet();openFollow(true);liveAttach()}
 // follower
 async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest app.",3000);return}
   if(S.game&&S.game.live===id){go("play");return}
@@ -333,16 +393,17 @@ async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest 
   try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid)return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===myName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:myName()||"",j:Date.now(),b:(gg.visits||[]).length}}
     m[ME.uid].n=myName()||m[ME.uid].n||"";return Object.assign({},d,{members:m})})}catch(e){console.warn("join",e)}
   liveAttach()}
-let fv=null,fvMap=null,fvLayer=null,fvT=null;
-function openFollow(){if(fv)return;fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv.classList.add("on"));
+let fv=null,fvMap=null,fvLayer=null,fvT=null,fvPrev=false;
+function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-top"><span class="eyebrow" id="fvWho">Live crawl</span><button type="button" class="shv-x" id="fvX" aria-label="Close">${I.x}</button></div>
     <div class="fv-clock" id="fvClock">--:--</div><div class="fv-sub" id="fvSub"></div><div class="fv-now" id="fvNow"></div><div class="fv-list" id="fvList"></div><div class="fv-map" id="fvMap"></div><div class="fv-act" id="fvAct"></div>`;
-  $("fvX").onclick=()=>{closeFollow();go("home")};
+  $("fvX").onclick=()=>{const p=fvPrev;closeFollow();go(p?"play":"home")};
+  if(S.test){const tb=document.createElement("button");tb.type="button";tb.className="fv-test";tb.textContent="TEST";tb.onclick=()=>$("testFab").onclick();$("fvX").before(tb)}
   try{fvMap=mkMap($("fvMap"),{attributionControl:false});fvMap.setView([-33.8688,151.2093],14);fvLayer=L.layerGroup().addTo(fvMap)}catch(e){}
   clearInterval(fvT);fvT=setInterval(paintFollow,1000);liveAttach();paintFollow()}
 // Followers get the same ongoing notification as the person spinning (Android): where the crawl's at and the time left
 let fvNote="",fvNoteAt=0;
-function followNote(d,g,t){if(!NATIVE)return;
+function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   if(!d||d.ended||!g.started){if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}return}
   noteSetup();notifEnsure("f"+S.follow);
   const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?d.hostName+"'s crawl":"Live crawl";
@@ -353,7 +414,7 @@ function followNote(d,g,t){if(!NATIVE)return;
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
-function closeFollow(){clearInterval(fvT);if(fv){const el=fv;el.classList.remove("on");setTimeout(()=>el.remove(),220)}fv=null;fvMap=null;if(S.follow&&!(liveDoc&&!liveDoc.ended)){S.follow=null;save();liveDetach()}}
+function closeFollow(){clearInterval(fvT);fvPrev=false;if(fv){const el=fv;el.classList.remove("on");setTimeout(()=>el.remove(),220)}fv=null;fvMap=null;if(S.follow&&!(liveDoc&&!liveDoc.ended)){S.follow=null;save();liveDetach()}}
 function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}}
 let fvSig="",fvCardSig="";
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
@@ -378,7 +439,7 @@ function fvCard(d,g,t){const el=$("fvNow");
       <a class="btn dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a></div>`}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now()+(d.off||0),cr=g.mode==="cruise";   // the host's game clock
-  $("fvWho").textContent=`${d.hostName?d.hostName+"'s":"A"} crawl · live`;
+  $("fvWho").textContent=fvPrev?"What friends see":`${d.hostName?d.hostName+"'s":"A"} crawl · live`;
   followNote(d,g,t);
   // the same clock as the host's phone: held at the full length until the first bar (and through a time freeze), then counting down
   const fz=g.frz&&t<g.frz.until,left=fz?g.endsAt-g.frz.until:g.endsAt-t;
@@ -395,10 +456,10 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
       if(tgt&&!at){pts.push([tgt.lat,tgt.lng]);L.marker([tgt.lat,tgt.lng],{icon:pinIcon("big"),interactive:false}).addTo(fvLayer)}
       if(pts.length===1)fvMap.setView(pts[0],15,{animate:false});else if(pts.length)fvMap.fitBounds(pts,{padding:[30,30],animate:false});else if(g.center)fvMap.setView([g.center.lat,g.center.lng],14,{animate:false})}}
   const stale=!d.ended&&g.started&&t-(d.beat||0)>STALE_MS,act=$("fvAct");
-  const want=d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
-    act.innerHTML=want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
+  const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
+    act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
       :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:`<button class="txtbtn" type="button" id="fvLeave">Stop following</button>`;
-    if($("fvTake"))$("fvTake").onclick=takeOver;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
+    if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOver;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
   try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||Date.now()-(d.beat||0)<=STALE_MS)return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
@@ -406,7 +467,7 @@ async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
     return Object.assign({},d,{host:ME.uid,hostName:myName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
   if(!ok){toast("Someone else got there first.",2500);return}track("live_takeover")}
 function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
-  const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=false;
+  const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=!!S.test;
   S.game=g;save();liveLastSig=liveSig(g);startWatch();buzz(30);go("play");toast("You've got the spin.",2500);liveSync(true)}
 // host hands the spin to a follower
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
