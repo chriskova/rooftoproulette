@@ -199,7 +199,7 @@ const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(
 try{const R=readH(HKEY),sim=R.filter(r=>/^SIM/.test(r.liveId||""));if(sim.length){writeH(HKEY,R.filter(r=>!/^SIM/.test(r.liveId||"")));const T=readH(TKEY);sim.forEach(r=>{r.test=true;if(!T.some(x=>x.id===r.id))T.unshift(r)});writeH(TKEY,T)}}catch(e){}
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof liveKick==="function"&&S.game&&S.game.live)liveKick()};   // a live crawl: friends see the change straight away
 const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon()};
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
@@ -1631,7 +1631,7 @@ function doSpin(force,vel){
   const {pool:P}=spinPool();
   if(!P.length){save();renderPlay();if(CR(g))noneLeft();else openMove(true);return false}
   const pick=P[Math.floor(Math.random()*P.length)],from=fromPoint();barPhoto(pick);
-  spinning=true;seen("spin");if(vel!==undefined){S.tips.swipe=1}g.finalBanner=false;renderPlay();
+  g.spinAt=now();spinning=true;seen("spin");if(vel!==undefined){S.tips.swipe=1}g.finalBanner=false;renderPlay();save();   // spinAt: followers see the wheel going
   if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
     $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum"><b>${P.length}</b> rooftop${P.length===1?"":"s"} in the mix</div></div>`;
     reel=makeReel($("reelBox"),gameReelNames(),{});
@@ -1658,7 +1658,7 @@ const JACKPOTS=[
   {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next bar.",go:"Pick it"}];
 function jackpotSpin(vel){
   const g=G(),opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(S.test&&S.forceJP&&JACKPOTS.find(x=>x.k===S.forceJP))||opts[Math.floor(Math.random()*opts.length)];
-  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;spinning=true;save();track("jackpot",{kind:j.k,leg:g.visits.length});
+  g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;g.spinAt=now();spinning=true;save();track("jackpot",{kind:j.k,leg:g.visits.length});
   if(!reel||!$("reelBox")||!document.contains($("reelBox"))){
     $("stage").innerHTML=`<div class="ready">${mixlineHTML(g)}<div id="reelBox"></div><div class="poolnum">&nbsp;</div></div>`;
     reel=makeReel($("reelBox"),gameReelNames(),{});
@@ -4064,8 +4064,9 @@ function followSimBind(F){const k=F.k,re=()=>setTimeout(()=>$("testFab").onclick
   on("fA",(g,o)=>{if(!g.target)return false;simArrive(g,o.t,g.target)});
   on("fL",(g,o)=>simLeave(g,o.t));
   on("fC",g=>{const a=simAt(g);if(!a)return false;a._inCount=true});
-  on("fS",(g,o)=>simSpinNext(g,o.t));
-  on("fR",(g,o)=>simSpinNext(g,o.t));
+  // their wheel goes for a few seconds (you see it rolling), then lands
+  const spinNow=(g,o)=>{g.spinAt=o.t;setTimeout(()=>simAct(k,(g2,o2)=>{simSpinNext(g2,o2.t);g2.targetAt=o2.t}),3500)};
+  on("fS",spinNow);on("fR",spinNow);
   on("fW",g=>{g.wnext=!g.wnext},true);
   on("fZ",g=>{const c=g.center||{lat:-33.8688,lng:151.2093},nc={lat:c.lat+.009,lng:c.lng+.004};g.center=nc;g.radius=Math.min(2,(g.radius||1)+.5);g.areas=(g.areas||[]).concat([nearestSuburb(nc)]);g.voluntaryUsed=true;g.target=null;g.wild=null});
   on("fG",()=>({patch:{host:ME.uid,hostName:myName()||"You"}}))}

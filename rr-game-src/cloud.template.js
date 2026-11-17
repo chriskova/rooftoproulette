@@ -328,7 +328,7 @@ const liveLink=id=>LIVE_BASE+"#live="+id;
 const liveCode=u=>{const m=String(u||"").match(/[#?&]live=([A-Za-z0-9]+)/);return m?m[1]:null};
 // what followers get: the bars and times, never your GPS trail or where you started from
 const gameForCloud=g=>{const o=Object.assign({},g);["trail","photos","photo","moves","clipN","startPos","here","lastFix"].forEach(k=>delete o[k]);return JSON.stringify(o)};
-const liveSig=g=>JSON.stringify([g.started,g.startedAt,g.endsAt,g.frz&&g.frz.until,g.target,g.jp,g.wild,g.title,(g.visits||[]).map(v=>[v.id,v.arrivedAt,v.leftAt,v.counted])]);
+const liveSig=g=>JSON.stringify([g.started,g.startedAt,g.endsAt,g.frz&&g.frz.until,g.target,g.targetAt,g.spinAt,g.reelOpen,g.jp,g.wild,g.title,g.center,g.radius,(g.visits||[]).map(v=>[v.id,v.arrivedAt,v.leftAt,v.counted,v._inCount])]);
 let liveLastSig=null,liveLastPut=0,liveBusy=false;
 const isHost=()=>!!(liveDoc&&ME&&liveDoc.host===ME.uid);
 
@@ -375,8 +375,13 @@ function nameSheet(after,why){
     $("nmOk").onclick=ok;$("nmIn").onkeydown=e=>{if(e.key==="Enter")ok()};if($("nmG"))$("nmG").onclick=()=>signInSheet("So friends see your name.","live");setTimeout(()=>$("nmIn").focus(),50)})}
 
 // host: push the crawl when something happened, plus a "still here" every 2 minutes
-async function liveSync(force){const g=G();if(!g||!g.live||!CLP||liveBusy||!isHost())return;
-  const sig=liveSig(g),t=Date.now();if(!force&&sig===liveLastSig&&t-liveLastPut<BEAT_MS)return;if(!force&&sig!==liveLastSig&&t-liveLastPut<3000)return;
+// Anything friends would see (a spin starting, the bar it lands on, arriving, a bar counting) goes out as soon as it
+// happens, at most one write a second; otherwise a "still here" every 2 minutes.
+let liveKickT=0;
+function liveKick(){if(liveKickT)return;liveKickT=setTimeout(()=>{liveKickT=0;liveSync(false)},120)}
+async function liveSync(force){const g=G();if(!g||!g.live||!CLP||!isHost())return;if(liveBusy){liveKick();return}
+  const sig=liveSig(g),t=Date.now();if(!force&&sig===liveLastSig&&t-liveLastPut<BEAT_MS)return;
+  if(!force&&sig!==liveLastSig&&t-liveLastPut<1000){clearTimeout(liveKickT);liveKickT=setTimeout(()=>{liveKickT=0;liveSync(false)},1000-(t-liveLastPut)+20);return}
   liveBusy=true;try{const B=await cloud();const patch={beat:t,upd:t,off:now()-Date.now()};if(sig!==liveLastSig||force)patch.g=gameForCloud(g);if(g.ended)patch.ended=true;
     await B.set(`live/${g.live}`,patch,true);liveLastSig=sig;liveLastPut=t}catch(e){console.warn("live sync",e)}finally{liveBusy=false}}
 
@@ -430,7 +435,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   $("fvMapB").onclick=followMap;$("fvCount").onclick=followBars;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{fvCardSig="";paintFollow()}).catch(()=>{})}).catch(()=>{});
-  clearInterval(fvT);fvT=setInterval(paintFollow,1000);liveAttach();paintFollow()}
+  clearInterval(fvT);fvT=setInterval(paintFollow,250);liveAttach();paintFollow()}
 const fvGame=d=>{try{return JSON.parse(d.g)}catch(e){return {}}};
 const fvHost=d=>((d&&d.hostName)||"Friend").split(" ")[0];
 // the crawl's map, full screen, the same as the person spinning has it: zone, every bar in it, the bars so far, the next bar, you
@@ -493,16 +498,23 @@ function closeFollow(){clearInterval(fvT);fvPrev=false;document.body.classList.r
 function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}}
 let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
+// the host's wheel is going: their spin started after the bar they last landed on, in the last 30 seconds (60 for a jackpot)
+const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(g.jp&&g.jp.at>=g.spinAt?60000:30000);
+// a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
+function fvReelHTML(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
+  const L=shuffle(P.length?P:VENUES.map(v=>v.name)).slice(0,14),list=L.concat(L.slice(0,4));
+  return `<div class="bar fv-reel"><span class="eyebrow">${esc(fvHost(liveDoc))}'s spinning</span><div class="fvr"><div class="fvr-s" style="--n:${L.length}">${list.map(n=>`<b>${esc(n)}</b>`).join("")}</div></div></div>`}
 function fvCard(d,g,t){const pv=cardSnap($("fvNow"));fvCard0(d,g,t);try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
   if(d.ended||!g.started){el.innerHTML="";fvCardSig="";return}
-  const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target?null:at0,v=g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
+  const spin=fvSpinning(g,t),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target||spin?null:at0,v=spin?null:g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
-  const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:null,wd,v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
+  const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:spin?"spin":g.reelOpen?"open":null,wd,v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
   fvCardSig=sig;
   const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
-  if(!v){el.innerHTML=`<div class="bar fv-spin${landed?" anim":""}"><span class="eyebrow">Next bar</span><h2>Spinning…</h2></div>`;return}
+  if(!v){const who=esc(fvHost(liveDoc));
+    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):`<div class="bar fv-wait"><span class="eyebrow">Next bar</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){fvCardSig="";paintFollow()}});
   const cp0=cardPhoto(v),cp=cp0.cls?cp0:{cls:" photo blank",style:"",cr:""},o=openState(v,t),nw=isNew(v.id),an=landed?" anim":"",y=fvPrev?null:you();
   const wild=wd?`<div class="wild${at?" dark":""}">${I.sparkle}<span><b>Wildcard</b>${esc(wd)}</span></div>`:"";
