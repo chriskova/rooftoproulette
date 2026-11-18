@@ -268,7 +268,7 @@ const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
 // Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
 function farSheet(){track("far_from_city",{});
-  sheet(`<h3>Try a Sydney crawl from anywhere</h3><p class="note" style="margin:4px 0 14px">We don’t cover your area yet. Spin for real rooftops around Circular Quay and tap “I’m here” to play from home.</p>
+  sheet(`<h3>Try a Sydney crawl from anywhere</h3><p class="note" style="margin:4px 0 14px">We don’t cover your area yet. Pick a zone in Sydney, spin for real rooftops and tap “I’m here” to play from home.</p>
     <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Start demo crawl</button>
     <button class="btn line" type="button" id="fsTrip">${I.pin} Browse cities</button></div>`,()=>{
     $("fsDemo").onclick=()=>askDemo();
@@ -278,13 +278,27 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
   sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
-// The demo: a 1-hour timed game from Circular Quay. "I'm here" stands in for the walk, "Skip 3 min" for the wait.
+// The demo: a 1-hour timed game in a zone you pick (it opens on Circular Quay, or your own city's centre). "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
 function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">For a practice run from home. This won't appear in “My&nbsp;Tab” as a completed&nbsp;crawl.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
   $("dmNo").onclick=closeSheet;$("dmGo").onclick=()=>{closeSheet();if(before)before();startDemo()}})}
-function startDemo(){if(S.game)return;ac();S.city="Sydney";const st=DEMO_START,r=1;
-  S.game={id:"demo"+Date.now(),demo:true,city:"Sydney",test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
-    zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:["The Rocks"],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
+// The demo starts with picking a zone, same as a real crawl: drag the map, pinch or slide the radius, then go.
+// It's practice from anywhere, any hour, so every bar counts as open and you're dropped in the middle of it.
+function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
+  const range={lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]},cc=S.city!=="Sydney"&&CITIES.find(x=>x.live&&x.name===S.city&&x.lat),z=cc?{lat:cc.lat,lng:cc.lng,r:1}:{lat:DEMO_START.lat,lng:DEMO_START.lng,r:1};
+  const pool=zz=>{const all=playable(inCircle(zz,zz.r),false);return {all,open:all}};
+  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Pick your zone</h3>
+    <p class="note" style="margin:2px 0 10px">Drag to move. Pinch or slide to change the radius.</p></div>
+    <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="dzNote" style="margin:8px 0 0"></p>
+    <div class="lsfoot"><button class="btn" type="button" id="dzGo">Start the demo</button><button class="btn dark" type="button" id="dzX" style="margin-top:10px">Cancel</button></div></div>`,()=>{
+    $("sheet").classList.add("full");$("sheet").scrollTop=0;
+    $("dzX").onclick=()=>{closeSheet();if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
+    rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("dzGo");if(!b)return;
+      $("dzNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every bar's open in the demo, whatever the time.";
+      b.disabled=n<2;b.onclick=()=>{closeSheet();if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})})}
+function startDemoAt(st,r){if(S.game)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(st,x)})).sort((a,b)=>a.d-b.d)[0],city=c?c.x.name:"Sydney";S.city=city;
+  S.game={id:"demo"+Date.now(),demo:true,city,test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
+    zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:[nearestSuburb(st)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
     zone:{lat:st.lat,lng:st.lng,name:nearestArea(st)},visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false,dpos:{lat:st.lat,lng:st.lng,acc:5},dff:0};
   track("demo_start",{});save();buzz(30);go("play")}
 function demoBar(g){return `<div class="demobar"><span class="dtag">Demo</span><span>Practice run</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
