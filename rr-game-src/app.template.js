@@ -1217,7 +1217,7 @@ function renderWiz(){
     const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub" style="margin:6px 0 0">You're outside your zone.<br>The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
-      <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button></div>
+      <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button>${w.rr?"":`<button class="chip" type="button" id="wDeck">${I.sparkle} ${esc(deckLbl())}</button>`}</div>
       <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
       ${beenHere?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars you've been to</b><small>You've been to ${beenHere} of ${allHere} in your zone</small></span><span class="sw"></span></button>`:""}`;
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
@@ -1227,7 +1227,7 @@ function renderWiz(){
     makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
     draw();wizRepaint=draw;
     body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
-    $("wSee").onclick=wizSpoiler;
+    $("wSee").onclick=wizSpoiler;if($("wDeck"))$("wDeck").onclick=()=>packsSheet(false);
     const canInv=(()=>{try{return cloudOn()}catch(e){return false}})();
     cta(canInv?`<div class="ctarow"><button class="btn dark" id="wInv" type="button">${PEOPLEI_()} Invite</button><button class="btn" id="wStart" type="button">Start the crawl</button></div>`:`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()};if($("wInv"))$("wInv").onclick=()=>liveInvite()});
   }
@@ -1769,7 +1769,7 @@ function jvRun(j,card,ctx,choose){
     const flip=(c,html)=>{const b=c.querySelector(".jv-b");b.animate([{transform:"rotateY(180deg) scaleX(1)"},{transform:"rotateY(180deg) scaleX(0)"}],{duration:140,easing:"ease-in"}).onfinish=()=>{b.innerHTML=html;b.animate([{transform:"rotateY(180deg) scaleX(0)"},{transform:"rotateY(180deg) scaleX(1)"}],{duration:180,easing:"ease-out"})}};
     setTimeout(()=>cs.forEach(c=>{c.disabled=false;c.onclick=()=>{const i=+c.dataset.i;if(i===pickI)return;
       if(pickI>=0){const p=cs[pickI];p.classList.remove("picked");flip(p,`<span class="jv-face">${wildFace(ctx.wilds[pickI])}</span>`)}
-      pickI=i;c.classList.add("picked");card.classList.add("haspick");sfx("flip");buzz(10);flip(c,`<span class="jv-txt"><b>${esc((WNAME[ctx.wilds[i]]||["Wildcard"])[0])}</b>${esc(ctx.wilds[i])}</span>`);
+      pickI=i;c.classList.add("picked");card.classList.add("haspick");sfx("flip");buzz(10);flip(c,`<span class="jv-txt"><b>${esc((WNAME[ctx.wilds[i]]||["Wildcard"])[0])}</b>${esc(wShort(ctx.wilds[i]))}</span>`);
       if(txt)txt.textContent="That's the one for your next bar.";if(go)go.hidden=false}}),500+3*260+200);
     if(go){go.hidden=true;go.onclick=()=>{if(pickI>=0)choose({wild:ctx.wilds[pickI]})}}}
 }
@@ -1778,11 +1778,11 @@ const jvText=j=>j.k==="call"?"Pick one before the bar runs out.":j.k==="dealer"?
 const jvActs=j=>j.k==="call"?"":j.k==="dealer"?`<button class="btn dark" type="button" id="jvGo" hidden>Lock it in</button>`:`<button class="btn dark" type="button" id="jvGo">${j.go}</button>`;
 function jackpotCtx(){   // the real numbers, for a game in progress
   const g=G(),from=fromPoint(),P=spinPool().pool.slice(),near=P.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];
-  return {from,bars:shuffle(P).slice(0,3),nearest:near,clock:()=>remaining(),wilds:shuffle(WILDS.slice()).slice(0,3)};
+  return {from,bars:shuffle(P).slice(0,3),nearest:near,clock:()=>remaining(),wilds:shuffle(deckCards()).slice(0,3)};
 }
 function demoCtx(){      // stand-ins for the test jackpot
   const c=AREAS.find(a=>a.name==="The City")||AREAS[0],P=playable(inCircle(c,1),false).filter(v=>!v.tempClosed),near=P.slice().sort((a,b)=>dist(c,a)-dist(c,b))[0];
-  return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clock:()=>37*60000+12000,wilds:shuffle(WILDS.slice()).slice(0,3)};
+  return {from:{lat:c.lat,lng:c.lng},bars:shuffle(P.slice()).slice(0,3),nearest:near,clock:()=>37*60000+12000,wilds:shuffle(deckCards()).slice(0,3)};
 }
 function applyJackpot(g,j){if(g.jp.applied)return;g.jp.applied=true;if(j.k==="freeze")startFreeze(g,10*60000,false);if(j.k==="spins")g.freeSkips=(g.freeSkips||0)+3}
 // test panel: an endless wheel of every bar. Flick, land, spin again. No game, no clock, nothing saved.
@@ -1840,10 +1840,10 @@ function shortcut(){
   setTarget(v,from);animateId=v.id;save();renderPlay();onLocation();
 }
 function dealerChoice(){
-  const g=G(),cards=shuffle(WILDS.slice()).slice(0,3);let done=false;
+  const g=G(),cards=shuffle(deckCards()).slice(0,3);let done=false;
   const pick=text=>{if(done)return;done=true;g.dealt={leg:g.visits.length,text};save();closeSheet();renderPlay();doSpin(true)};
   sheet(`<h3>Dealer's choice</h3><p class="note">Pick the wildcard for your next bar.</p>
-    <div class="acts">${cards.map((c,i)=>`<button class="opt dealt" type="button" data-dc="${i}"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[(WNAME[c]||[0,"star"])[1]]}</svg></span><span class="t"><b>${esc((WNAME[c]||["Wildcard"])[0])}</b><small>${esc(c)}</small></span></button>`).join("")}
+    <div class="acts">${cards.map((c,i)=>`<button class="opt dealt" type="button" data-dc="${i}"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[(WNAME[c]||[0,"star"])[1]]}</svg></span><span class="t"><b>${esc((WNAME[c]||["Wildcard"])[0])}</b><small>${esc(wShort(c))}</small></span></button>`).join("")}
     </div>`,()=>{
     document.querySelectorAll("[data-dc]").forEach(b=>b.onclick=()=>pick(cards[+b.dataset.dc]));
     $("sheet").addEventListener("close",()=>pick(null),{once:true});
@@ -2463,6 +2463,7 @@ function openMenu(){
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
+    ${cr||g.demo?"":`<button type="button" id="mWild">${I.sparkle}<span>Wildcards<small>${esc(deckLbl())}</small></span></button>`}
     <button type="button" id="mHow">${I.help}<span>How it works</span></button>
     <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     ${S.film!==false?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>`:""}
@@ -2472,7 +2473,7 @@ function openMenu(){
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
-    $("mHow").onclick=cr?cruiseHow:howSheet;
+    $("mHow").onclick=cr?cruiseHow:howSheet;if($("mWild"))$("mWild").onclick=()=>packsSheet(true);
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);liveMenuBind();
@@ -2622,7 +2623,7 @@ function renderPlay0(){
   if(g.lastOrders&&now()>=g.endsAt&&g.target)banner=`<div class="banner"><b>Last orders.</b> Walk there. It counts if you arrive by ${clock12(new Date(g.lastOrders).getHours()*60+new Date(g.lastOrders).getMinutes())}.</div>`;
   const wild=(id)=>g.wild&&g.wild.id===id&&g.wild.locked?
     '<div class="wild"><span aria-hidden="true">🔒</span><span><b>Locked wildcard</b>Play a real crawl to discover this one.</span></div>':
-    g.wild&&g.wild.id===id?`<div class="wild"${g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"'}>${I.sparkle}<span><b>Wildcard</b>${esc(g.wild.text)}</span></div>`:"";
+    g.wild&&g.wild.id===id?wildBox(g,g.wild).replace('<div class="wild"','<div class="wild"'+(g.wild.landed||g.wild.shown&&!g.wild.flying?"":' data-pending="1"')):"";
   if(a&&!g.reelOpen){
     const v=byId(a.id),o=openState(v,t),d=t-a.arrivedAt,ok=d>=DWELL(),nw=isNew(v.id);
     const cp=cardPhoto(v);
@@ -2685,8 +2686,10 @@ function renderPlay0(){
   const pv=a?byId(a.id):g.target?byId(g.target):null;
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph){if(G()===g&&g.target===pv.id)st.querySelector(".bar.loading")?.classList.remove("loading");return}afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
   fitPlay();
-  st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.querySelector("span").lastChild.textContent;
-    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>This one</b>${esc(txt)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>`,()=>$("wOk").onclick=closeSheet)});
+  st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
+    if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
+    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt,allOwn=PACKS.every(p=>packOwned(p.id));
+    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${g.demo?"":`<button class="txtbtn wmore" type="button" id="wMore">${allOwn?"Wildcard packs ›":"Get more wildcards ›"}</button>`}`,()=>{$("wOk").onclick=closeSheet;if($("wMore"))$("wMore").onclick=()=>packsSheet(true)})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
@@ -2759,6 +2762,119 @@ const WILDS=[
  "Order whatever the bartender just made for the last person. The whole group.",
  "Whoever's wearing the most black picks the round."
 ];
+// ---------- Wildcard packs ----------
+// Paid packs join the free deck. Cards are keyed by their rule text, like the free ones, so live crawls,
+// Dealer's choice and the recent-cards list all keep working. Sealed cards show only their name on the way
+// and open when you get to the bar. Spin cards open with a Spin button that rolls their options on the wheel.
+Object.assign(WIC,{spin:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><path d="M12 3.5v6.5M12 14v6.5M3.5 12H10M14 12h6.5"/>',
+ music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+ phone:'<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+ build:'<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
+ walk:'<circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2-6 3 3v3M8 12l2-4 4 1 2 3M12 15l-1-5"/>'});
+const SPIN_DRINKS=["Spritz","Martini","Margarita","Beer","Wine","Negroni","Mojito","Espresso martini"];
+const PACKS=[
+ {id:"house",name:"House Rules",line:"Wildcards that hit the whole group.",prev:[0,1,6],cards:[
+  {n:"Every colour",ic:"two",t:"Everyone orders a different colour drink."},
+  {n:"First letter",ic:"person",t:"Everyone orders a drink starting with the first letter of their name."},
+  {n:"Outfit match",ic:"shirt",t:"Everyone orders a drink that matches their outfit."},
+  {n:"Odd glass",ic:"glass",t:"Every drink comes in a different glass."},
+  {n:"Last glass",ic:"two",t:"Last glass up at the cheers drinks."},
+  {n:"Walk time",ic:"walk",t:"Everyone guesses the walk to the next bar. Furthest off drinks.",walk:1},
+  {n:"Drink spin",ic:"spin",t:"At the bar, spin for what everyone orders.",seal:1,spin:SPIN_DRINKS},
+  {n:"Swap spin",ic:"spin",t:"Once the drinks land, spin: left, right or keep.",seal:1,spin:["Swap left","Swap right","Keep"]},
+  {n:"Now playing",ic:"music",t:"Agree on one drink for the song playing as you walk in. Everyone orders it."},
+  {n:"Level up",ic:"build",t:"Count the floor number through the alphabet. Order a drink starting with that letter."},
+  {n:"Last search",ic:"search",t:"Read out your last Google search. The group picks a drink to match it."},
+  {n:"Lock screen",ic:"phone",t:"Order a drink that matches your lock screen."}]},
+ {id:"spin",name:"Double Spin",line:"Wildcards that hit the whole group.",prev:[0,9,6],cards:[
+  {n:"Spirit spin",ic:"spin",t:"Everyone orders something with the spirit it lands on.",seal:1,spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"]},
+  {n:"Colour spin",ic:"spin",t:"Everyone orders that colour.",seal:1,spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"]},
+  {n:"Flavour spin",ic:"spin",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",seal:1,spin:["Sweet","Sour","Bitter","Fizzy"]},
+  {n:"Glass spin",ic:"spin",t:"Everyone orders something served in that glass.",seal:1,spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"]},
+  {n:"Fruit spin",ic:"spin",t:"Everyone orders something with that fruit in it.",seal:1,spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"]},
+  {n:"Order spin",ic:"spin",t:"Bartender's choice, a stranger's pick, or the next table's drink.",seal:1,spin:["Bartender's choice","A stranger's pick","The next table's drink"]},
+  {n:"Shot spin",ic:"spin",t:"Shots all round, half of you, or one of you.",seal:1,spin:["Shots all round","Half of you","One of you"]},
+  {n:"Passport spin",ic:"spin",t:"Spin for a country. Everyone orders a drink from it.",seal:1,spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"]},
+  {n:"Your spin",ic:"spin",t:"Pass the phone. Everyone spins for their own drink.",seal:1,spin:SPIN_DRINKS,multi:1},
+  {n:"Story spin",ic:"spin",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",seal:1,spin:["Your first drink","Your holiday drink","Your guilty pleasure"]},
+  {n:"Usual spin",ic:"spin",t:"Your usual, the opposite of your usual, or something you've never tried.",seal:1,spin:["Your usual","The opposite of your usual","Something you've never tried"]},
+  {n:"Bartender spin",ic:"spin",t:"Ask for their favourite to make, their most popular, the newest on the menu, or the one they hate making.",seal:1,spin:["Their favourite to make","Their most popular","The newest on the menu","The one they hate making"]}]}];
+const WMETA={};PACKS.forEach(p=>p.cards.forEach(c=>{c.p=p.id;WMETA[c.t]=c;WNAME[c.t]=[c.n,c.ic]}));
+const ALLW=WILDS.concat(...PACKS.map(p=>p.cards.map(c=>c.t)));   // free deck first, so the recent-cards list keeps its numbers
+const packById=id=>PACKS.find(p=>p.id===id);
+// test mode keeps its own pretend purchases, so locked and owned can both be tried
+const packStore=()=>S.test?(S.tpacks=S.tpacks||{}):(S.packs=S.packs||{});
+const packOwned=id=>!!packStore()[id];
+const packOn=id=>packOwned(id)&&!(S.packOff||{})[id];
+const deckIdx=()=>ALLW.map((_,i)=>i).filter(i=>{const m=WMETA[ALLW[i]];return !m||packOn(m.p)});
+const deckCards=()=>deckIdx().map(i=>ALLW[i]);
+const deckLbl=()=>{const on=PACKS.filter(p=>packOn(p.id));return !on.length?"Free deck":on.length===1?on[0].name:on.length+" packs"};
+const wSealed=t=>!!(WMETA[t]&&WMETA[t].seal);
+const wShort=t=>wSealed(t)?"Opens at the bar":t;   // what a card shows before it's opened (Dealer's choice, previews)
+const wOpenNow=(g,w)=>!!(g&&w&&(g.visits||[]).some(v=>v.id===w.id&&v.arrivedAt!=null&&v.leftAt==null));
+// The inside of a wildcard box: sealed on the way, the rule once you're there, then what the spin landed on
+function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
+  if(!m)return `${I.sparkle}<span><b>Wildcard</b>${esc(w.text)}</span>`;
+  const here=wOpenNow(g,w),open=!m.seal||here,ic=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m.ic]||WIC.star}</svg>`;
+  if(!open)return `${ic}<span><b>${esc(m.n)}</b>Opens at the bar</span>`;
+  if(!o.follow&&g&&!g.demo)markPlayed(w.text);
+  const res=(w.res||[]).length?`<small class="wres">${w.res.map(esc).join(" · ")}</small>`:"";
+  let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
+  const btn=m.spin&&here&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin"}</button>`:"";
+  return `${ic}<span><b>${esc(m.n)}</b>${esc(m.t)}${res}${walk}${btn}</span>`}
+function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
+const markPlayed=t=>{if(!WMETA[t])return;(S.wplayed=S.wplayed||{})[t]=1};
+// the wheel for a spin card. trial: a preview from the pack sheet, nothing is kept
+function wildSpin(t,trial,back){const m=WMETA[t];if(!m||!m.spin)return;const g=G();
+  const draw=()=>{const w=g&&g.wild&&g.wild.text===t?g.wild:null,done=w&&(w.res||[]);
+    sheet(`<h3>${esc(m.n)}</h3><p class="note">${esc(m.t)}</p><div class="demo wsdemo"><div id="wsBox"><div id="wsReel" class="demoreel"></div></div></div><div id="wsOut"></div>`,()=>{
+      const box=$("wsBox");box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
+      const R=makeReel($("wsReel"),m.spin,{hint:true,onRelease:vel=>{if(R.busy)return false;go_(vel)}});
+      const go_=vel=>{const pick=m.spin[Math.floor(Math.random()*m.spin.length)];
+        R.spinTo(pick,vel===undefined?-(30+Math.random()*20):vel,()=>{buzz(20);box.innerHTML=`<div class="wsres">${esc(pick)}</div>`;
+          if(!trial&&G()&&G().wild&&G().wild.text===t){const ww=G().wild;ww.res=m.multi?(ww.res||[]).concat([pick]):[pick];save();if(S.route==="play")renderPlay()}
+          const more=m.multi||trial;
+          $("wsOut").innerHTML=`<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the pack":"Done"}</button></div>`;
+          if($("wsAgain"))$("wsAgain").onclick=draw;$("wsDone").onclick=()=>{if(trial&&back)back();else closeSheet()}})};
+      $("wsOut").innerHTML=`<button class="btn" type="button" id="wsGo">Spin</button>`;$("wsGo").onclick=()=>{$("wsOut").innerHTML="";go_()};
+    })};
+  draw()}
+// What's in play: the free deck, packs you own (switch them on or off) and packs you could add
+function packsSheet(mid){const g=G();
+  const row=p=>packOwned(p.id)?`<button class="toggle pkrow" type="button" role="switch" data-pkt="${p.id}" aria-checked="${packOn(p.id)}"><span class="t"><b>${esc(p.name)}</b><small>${p.cards.length} wildcards · See the cards ›</small></span><span class="sw"></span></button>`
+    :`<button class="opt pkrow" type="button" data-pk="${p.id}"><span class="ic">${I.sparkle}</span><span class="t"><b>${esc(p.name)}</b><small>${p.cards.length} wildcards · Preview</small></span><span class="chev">›</span></button>`;
+  sheet(`<h3>Wildcards</h3><div class="pklist"><div class="toggle pkrow pkfree" aria-disabled="true"><span class="t"><b>Free deck</b><small>${WILDS.length} wildcards · Always in</small></span></div>${PACKS.map(row).join("")}</div>`,()=>{
+    document.querySelectorAll("[data-pkt]").forEach(b=>b.onclick=e=>{const id=b.dataset.pkt;
+      if(!e.target.closest(".sw")){packSheet(id,()=>packsSheet(mid));return}
+      S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()});
+    document.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>packSheet(b.dataset.pk,()=>packsSheet(mid)));
+  })}
+function refreshDeckLbl(){const c=$("wDeck");if(c)c.innerHTML=`${I.sparkle} ${esc(deckLbl())}`}
+function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwned(id),g=G();
+  const face=c=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[c.ic]||WIC.star}</svg>`;
+  if(!own){const pv=p.prev.map(i=>p.cards[i]),rest=p.cards.length-pv.length;
+    sheet(`<h3>${esc(p.name)}</h3><p class="note">${esc(p.line)}</p>
+      <div class="pkprev">${pv.map((c,k)=>`<div class="wild wexplain">${face(c)}<span><b>${esc(c.n)}</b>${esc(c.t)}${c.spin&&k===0?`<button class="btn sm line wspin" type="button" id="pkTry">Try a spin</button>`:""}</span></div>`).join("")}
+      <div class="pkbacks">${Array.from({length:rest},()=>`<span class="pkback">${I.sparkle}</span>`).join("")}</div></div>
+      <p class="note pkgroup">Your whole group plays it.</p>
+      <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test?"":" disabled"}>${S.test?"Unlock (test mode)":"Coming soon"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
+      if($("pkTry"))$("pkTry").onclick=()=>wildSpin(pv[0].t,true,()=>packSheet(id,back));
+      if(S.test)$("pkBuy").onclick=()=>{packStore()[id]=true;if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();toast(`${esc(p.name)} is in play`,1800);packSheet(id,back)};
+      if($("pkBack"))$("pkBack").onclick=back});
+    return}
+  const pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
+  sheet(`<h3>${esc(p.name)}</h3>
+    <button class="toggle" type="button" role="switch" id="pkOn" aria-checked="${packOn(id)}"><span class="t"><b>In play</b><small>Mixed in with the free deck</small></span><span class="sw"></span></button>
+    <div class="eyebrow pkcount">${n} of ${p.cards.length} played</div>
+    <div class="pkcards">${p.cards.map(c=>`<div class="wild wexplain pkc${pl[c.t]?"":" unseen"}">${face(c)}<span><b>${esc(c.n)}</b>${pl[c.t]?esc(c.t):"Play it to see the rule"}</span></div>`).join("")}</div>
+    <div class="acts">${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}${S.test?`<button class="txtbtn" type="button" id="pkLock">Lock again (test mode)</button>`:""}</div>`,()=>{
+    $("pkOn").onclick=()=>{S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();$("pkOn").setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()};
+    if($("pkBack"))$("pkBack").onclick=back;
+    if($("pkLock"))$("pkLock").onclick=()=>{delete packStore()[id];if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)}})}
+// My Tab: your packs, then the ones you could add
+function tabPacksHTML(){return `<div class="eyebrow hsec">Wildcard packs</div><div class="recs">${PACKS.map(p=>{const own=packOwned(p.id),pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
+  return `<button class="rec" type="button" data-tpk="${p.id}"><span class="t"><small>${own?(packOn(p.id)?"In play":"Switched off"):p.cards.length+" wildcards"}</small><span>${esc(p.name)}</span></span><b>${own?n+"/"+p.cards.length:"Preview"}</b><span class="chev">›</span></button>`}).join("")}</div>`}
 // Wildcards: a set number per game (1 hour: 2, 2 hours: 3 or 4), on random bars, never the first and never two in a row.
 // Cards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.
 function planWilds(g){
@@ -2770,23 +2886,23 @@ function planWilds(g){
 }
 function rollWild(g,id){
   const leg=g.visits.length;   // how many bars you've been to before this one
-  if(!g.demo&&g.dealt&&g.dealt.leg===leg){g.wild=g.dealt.text?{id,text:g.dealt.text,leg}:null;if(g.wild)g.lastWild=g.wild.text;return}   // Dealer's choice
+  if(!g.demo&&g.dealt&&g.dealt.leg===leg){g.wild=g.dealt.text?{id,text:g.dealt.text,leg,t0:now()}:null;if(g.wild)g.lastWild=g.wild.text;return}   // Dealer's choice
   if(!g.wplan)g.wplan=planWilds(g);
   // past the planned stretch (a big night), wildcards keep coming: never two in a row, and the longer it's been, the likelier
   const max=g.len===60?4:8;g.wlate=g.wlate||{};
   if(leg>max&&g.wlate[leg]===undefined){const last=Math.max(0,...g.wplan.filter(x=>x<leg)),dry=leg-last;   // bars since the last one
     g.wlate[leg]=dry>1&&Math.random()<Math.min(1,.3+.3*(dry-2));if(g.wlate[leg])g.wplan.push(leg)}
   if(!g.wplan.includes(leg)){g.wild=null;return}
-  if(g.wild&&g.wild.leg===leg){g.wild.id=id;return}   // re-spun: the same wildcard moves to the new bar
+  if(g.wild&&g.wild.leg===leg){g.wild.id=id;g.wild.t0=now();return}   // re-spun: the same wildcard moves to the new bar
   if(g.demo){
     if(g.demoWildLeg==null)g.demoWildLeg=g.lastWild?-1:leg;
     if(leg!==g.demoWildLeg){g.wild={id,leg,locked:true,shown:true};return}
     if(g.lastWild){g.wild={id,leg,text:g.lastWild};return}
   }
-  if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(WILDS.map((_,i)=>i));g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
-  const i=g.wdeck.shift(),w=WILDS[i];
+  if(!g.wdeck||!g.wdeck.length){const recent=S.wseen||[],sh=shuffle(deckIdx());g.wdeck=sh.filter(i=>!recent.includes(i)).concat(sh.filter(i=>recent.includes(i)))}
+  const i=g.wdeck.shift(),w=ALLW[i];
   if(!g.demo)S.wseen=[i].concat((S.wseen||[]).filter(x=>x!==i)).slice(0,8);
-  g.wild={id,text:w,leg};g.lastWild=w;if(w===PICK3)g.pick3=true;
+  g.wild={id,text:w,leg,t0:now()};g.lastWild=w;if(w===PICK3)g.pick3=true;
 }
 function renderClock(){
   const g=G();if(!g)return;{const lt=$("lvT"),d=leaving();if(lt&&d)lt.textContent=mmss(now()-d.arrivedAt)}const r=remaining(),tot=g.len*60000;
@@ -3741,7 +3857,7 @@ function records(){
   return R}
 function renderHist(){
   const b=$("v-hist");
-  if(!H.length){b.innerHTML=`<div class="cityrow"><h1 class="q">My Tab</h1>${acctChip()}<button class="gear tabgear" type="button" data-gear aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a crawl and it goes on your tab.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new crawl</button></div>`;$("hStart").onclick=startWizard;return}
+  if(!H.length){b.innerHTML=`<div class="cityrow"><h1 class="q">My Tab</h1>${acctChip()}<button class="gear tabgear" type="button" data-gear aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div><div class="empty">${I.trophy}<b style="color:var(--text);font-size:17px">No crawls yet</b><span>Finish a crawl and it goes on your tab.</span><button class="btn" type="button" id="hStart" style="max-width:260px">Start a new crawl</button></div>${tabPacksHTML()}`;$("hStart").onclick=startWizard;b.querySelectorAll("[data-tpk]").forEach(x=>x.onclick=()=>packSheet(x.dataset.tpk));return}
   const N=H.map(stats),games=H.length,vs=allVisits(),bars=vs.length,uniq=new Set(vs.map(x=>x.b.id)).size,TI=H.map((r,i)=>!r.noLoc);
   const tracked=TI.filter(Boolean).length||1,dist_=N.reduce((s,x,i)=>s+(TI[i]?x.total:0),0),tv=vs.filter(x=>!x.r.noLoc),atBars=tv.reduce((s,x)=>s+x.ms,0),mk=monthTxt(now()),thisMonth=H.filter(r=>monthTxt(rt(r,r.startedAt))===mk).length;
   const recs=records();
@@ -3753,7 +3869,9 @@ function renderHist(){
       <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?"Avg "+km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
       <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
     </div>
-    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map((x,ri)=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}" data-ri="${ri}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}`;
+    ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map((x,ri)=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}" data-ri="${ri}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
+    ${tabPacksHTML()}`;
+  b.querySelectorAll("[data-tpk]").forEach(x=>x.onclick=()=>packSheet(x.dataset.tpk));
   b.querySelectorAll(".rec[data-id]").forEach(x=>x.onclick=()=>{const rc=recs[+x.dataset.ri];if(rc&&rc.open){rc.open();return}S.lastEnd=x.dataset.id;go("end")});
   b.querySelectorAll(".rec[data-bar]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.bar);if(v)barSheet(v)});
   if($("tabIn"))$("tabIn").onclick=()=>signInSheet("Keep your crawls and saved lists across devices.","my_tab","Save your crawls");
