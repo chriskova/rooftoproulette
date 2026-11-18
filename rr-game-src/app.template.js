@@ -4009,7 +4009,7 @@ $("testFab").onclick=()=>{
    <div class="eyebrow" style="margin:14px 0 8px">Fast-forward${F?` ${esc(F.fh.n)}'s clock`:""}</div><div class="trow">${[1,5,15,60].map(m=>`<button class="btn sm dark" type="button" data-ff="${m}">+${m<60?m+" min":"1 hr"}</button>`).join("")}</div>
    ${F?followSimHTML(F):""}
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div><div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tCT">Play the "it counts" animation</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
-   ${simHTML()}
+   ${liveModeHTML()}${simHTML()}
    <div class="eyebrow" style="margin:14px 0 8px">${F?`Put ${esc(F.fh.n)} at a bar`:"Put me at a bar"}</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
    <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tSB">Wheel sandbox</button><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     if(F){followSimBind(F);
@@ -4035,7 +4035,12 @@ $("testFab").onclick=()=>{
 };
 
 // Test mode: Sam and Jess, simulated friends (cloud.template.js, simBackend) for trying invites and live crawls on one phone
-function simHTML(){const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);
+function liveModeHTML(){if(!(FB_CFG||(typeof FAKE_CLOUD!=="undefined"&&FAKE_CLOUD)))return "";const on=!!S.testLive;
+  return `<div class="eyebrow" style="margin:14px 0 8px">Live crawls</div><div class="trow"><button class="btn sm ${on?"dark":""}" type="button" id="tLm1">Sam &amp; Jess</button><button class="btn sm ${on?"":"dark"}" type="button" id="tLm2">Two real phones</button></div>
+  <p class="note" style="margin:8px 0 0">${on?"Host on this phone (signed in) and join from the other with Join on home. Both phones can stay in test mode. Test crawls stay off real tabs.":"Sam and Jess are simulated on this phone. Nothing gets sent."}</p>`}
+function liveModeBind(){[["tLm1",false],["tLm2",true]].forEach(([id,v])=>{const el=$(id);if(!el)return;el.onclick=()=>{if(!!S.testLive===v)return;
+  if((S.game&&S.game.live)||S.follow){toast("Finish the live crawl first.",2500);return}S.testLive=v;save();location.reload()}})}
+function simHTML(){if(typeof testReal==="function"&&testReal())return "";const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;let r="";
   if(fh)r=b("sQt",`${fh.n} goes quiet`)+b("sEn",`${fh.n} ends the crawl`);
   else if(mine)r=b("sPv","See what friends see")+SIMF.filter(f=>!(d&&d.members&&d.members[f.uid])).map(f=>b("sF-"+f.uid,`${f.n} follows you`)).join("");
@@ -4046,7 +4051,7 @@ function followSim(){if(typeof SIM==="undefined"||G())return null;const k=simLiv
 function simAct(k,fn){const d=SIM.docs[k];if(!d||d.ended)return;let g;try{g=JSON.parse(d.g)}catch(e){return}g.visits=g.visits||[];
   const o={off:d.off||0};o.t=Date.now()+o.off;const r=fn(g,o,d);if(r===false)return;const real=Date.now();
   {const a=simAt(g);if(a&&!a._inCount&&real+o.off-a.arrivedAt>=DWELL_MIN*60000)a._inCount=true}
-  SIM.B.set(k,Object.assign({beat:real+o.off,simAt:real,off:o.off,g:JSON.stringify(g)},r&&r.patch||{}),true).then(()=>{if(g.mode!=="cruise"&&g.started&&real+o.off>=g.endsAt)simEnd(k)})}
+  SIM.B.set(k,Object.assign({beat:real,simAt:real,off:o.off,g:JSON.stringify(g)},r&&r.patch||{}),true).then(()=>{if(g.mode!=="cruise"&&g.started&&real+o.off>=g.endsAt)simEnd(k)})}
 const simAt=g=>(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
 // their spin: a bar in their zone, with a wildcard if one was asked for
 function simSpinNext(g,t){const was=g.target;g.target=null;for(let i=0;i<6&&(!g.target||g.target===was);i++)simSpin(g,t);
@@ -4070,7 +4075,7 @@ function followSimBind(F){const k=F.k,re=()=>setTimeout(()=>$("testFab").onclick
   on("fW",g=>{g.wnext=!g.wnext},true);
   on("fZ",g=>{const c=g.center||{lat:-33.8688,lng:151.2093},nc={lat:c.lat+.009,lng:c.lng+.004};g.center=nc;g.radius=Math.min(2,(g.radius||1)+.5);g.areas=(g.areas||[]).concat([nearestSuburb(nc)]);g.voluntaryUsed=true;g.target=null;g.wild=null});
   on("fG",()=>({patch:{host:ME.uid,hostName:myName()||"You"}}))}
-function simBind(){const k=simLiveKey(),on=(id,f)=>{const el=$(id);if(el)el.onclick=()=>{closeSheet();f()}};
+function simBind(){liveModeBind();if(typeof testReal==='function'&&testReal())return;const k=simLiveKey(),on=(id,f)=>{const el=$(id);if(el)el.onclick=()=>{closeSheet();f()}};
   if($("sNote"))natCall("CrawlNotify","status").then(r=>{const el=$("sNote");if(!el)return;el.innerHTML=r&&r.enabled?"Notifications: on":`Notifications: off. <button class="txtbtn" type="button" id="sNoteOn">Turn on</button>`;
     if($("sNoteOn"))$("sNoteOn").onclick=()=>natCall("CrawlNotify","openSettings").catch(()=>{})}).catch(()=>{const el=$("sNote");if(el)el.textContent="Notifications: this app version can't tell"});
   on("sPv",previewFollow);on("sQt",()=>{simQuiet();toast("Sam's phone has gone quiet. Take over shows up on the follow screen.",3500)});on("sEn",()=>simEnd(k));

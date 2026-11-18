@@ -103,7 +103,7 @@ function simTick(){const B=SIM.B;if(!B)return;
   // an invite to Sam or Jess: they join that crawl a couple of seconds later
   SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
   // their crawl moves only when you move it from the test panel; their phone still checks in so it doesn't look gone
-  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()+(d.off||0)-(d.beat||0)>60000)B.set(k,{beat:Date.now()+(d.off||0)},true)});
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()-(d.beat||0)>60000)B.set(k,{beat:Date.now()},true)});
   // and their bar counts once they've been there 3 minutes, the way it does on a real phone
   Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host))return;let g;try{g=JSON.parse(d.g)}catch(e){return}const a=(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
     if(a&&!a._inCount&&Date.now()+(d.off||0)-a.arrivedAt>=DWELL_MIN*60000)simAct(k,()=>{})})}
@@ -146,9 +146,11 @@ async function simInvite(f){const B=await cloud();if(!SIM.B)return;const c=you()
 // Sam or Jess follows your crawl (makes it live first if it isn't)
 async function simFollowMe(f){const g=G();if(!g||!g.started)return;await cloud();const id=await startLive();if(id)await simJoin(id,f)}
 const simLiveKey=()=>{const id=S.follow||(G()&&G().live);return id?`live/${id}`:null};
-function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]=1;SIM.B.set(k,{beat:Date.now()+(SIM.docs[k].off||0)-STALE_MS-5000},true)}
+function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]=1;SIM.B.set(k,{beat:Date.now()-STALE_MS-5000},true)}
 
-function cloud(){if(!CLP){CLP=(S.test?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
+// test mode simulates friends on this phone, unless two-phone mode is on: then live crawls go through the real backend
+const testReal=()=>!!(S.test&&S.testLive&&(FB_CFG||FAKE_CLOUD));
+function cloud(){if(!CLP){CLP=(S.test&&!testReal()?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
 const myName=()=>(ME&&ME.name)||S.myName||"";
 const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId)||(IOSNAT&&RR_CONFIG.googleIosClientId))));
@@ -380,7 +382,7 @@ function nameSheet(after,why){
 let liveKickT=0;
 function liveKick(){if(liveKickT)return;liveKickT=setTimeout(()=>{liveKickT=0;liveSync(false)},120)}
 async function liveSync(force){const g=G();if(!g||!g.live||!CLP||!isHost())return;if(liveBusy){liveKick();return}
-  const sig=liveSig(g),t=Date.now();if(!force&&sig===liveLastSig&&t-liveLastPut<BEAT_MS)return;
+  const sig=liveSig(g)+"|"+Math.round((now()-Date.now())/5000),t=Date.now();if(!force&&sig===liveLastSig&&t-liveLastPut<BEAT_MS)return;
   if(!force&&sig!==liveLastSig&&t-liveLastPut<1000){clearTimeout(liveKickT);liveKickT=setTimeout(()=>{liveKickT=0;liveSync(false)},1000-(t-liveLastPut)+20);return}
   liveBusy=true;try{const B=await cloud();const patch={beat:t,upd:t,off:now()-Date.now()};if(sig!==liveLastSig||force)patch.g=gameForCloud(g);if(g.ended)patch.ended=true;
     await B.set(`live/${g.live}`,patch,true);liveLastSig=sig;liveLastPut=t}catch(e){console.warn("live sync",e)}finally{liveBusy=false}}
@@ -499,7 +501,8 @@ function leaveFollow(){S.follow=null;save();liveDetach();closeFollow();if(fvNote
 let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
 // the host's wheel is going: their spin started after the bar they last landed on, in the last 30 seconds (60 for a jackpot)
-const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(g.jp&&g.jp.at>=g.spinAt?60000:30000);
+const fvJack=g=>g.jp&&g.jp.at>(g.targetAt||0)&&g.jp.at>=(g.spinAt||0)?g.jp:null;   // a jackpot spin since the last bar landed
+const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(fvJack(g)?5500:30000);
 // a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
 function fvReelHTML(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
   const L=shuffle(P.length?P:VENUES.map(v=>v.name)).slice(0,14),list=L.concat(L.slice(0,4));
@@ -507,14 +510,15 @@ function fvReelHTML(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.rad
 function fvCard(d,g,t){const pv=cardSnap($("fvNow"));fvCard0(d,g,t);try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
   if(d.ended||!g.started){el.innerHTML="";fvCardSig="";return}
-  const spin=fvSpinning(g,t),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target||spin?null:at0,v=spin?null:g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
+  const spin=fvSpinning(g,t)||!!fvJack(g),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target||spin?null:at0,v=spin?null:g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
-  const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:spin?"spin":g.reelOpen?"open":null,wd,v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
+  const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:fvSpinning(g,t)?"spin":fvJack(g)?"jp":g.reelOpen?"open":null,wd,v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
   fvCardSig=sig;
   const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
   if(!v){const who=esc(fvHost(liveDoc));
-    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):`<div class="bar fv-wait"><span class="eyebrow">Next bar</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
+    const J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
+    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next bar</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){fvCardSig="";paintFollow()}});
   const cp0=cardPhoto(v),cp=cp0.cls?cp0:{cls:" photo blank",style:"",cr:""},o=openState(v,t),nw=isNew(v.id),an=landed?" anim":"",y=fvPrev?null:you();
   const wild=wd?`<div class="wild${at?" dark":""}">${I.sparkle}<span><b>Wildcard</b>${esc(wd)}</span></div>`:"";
@@ -540,7 +544,8 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   fvCnt=ak?{k:ak,c:!!atv._inCount}:null;
   if(fvFly)nb--;
   const fc=$("fvCount"),fch=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${nb}</b><i class="cv">${I.chev||"›"}</i>`;if(!fvFly&&fc._h!==fch){fc._h=fch;fc.innerHTML=fch}
-  const stale=!d.ended&&g.started&&t-(d.beat||0)>STALE_MS,act=$("fvAct");
+  const stale=!d.ended&&g.started&&Date.now()-(d.beat||0)>STALE_MS,   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
+  act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
       :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
@@ -583,7 +588,9 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
-  delete r.newIds;r.bodDone=true;r.test=!!S.test;pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
+  delete r.newIds;r.bodDone=true;r.test=!!S.test;
+  let gT={};try{gT=JSON.parse(d.g)}catch(e){}if(gT.test&&!S.test){leaveFollow();closeSheet();toast("That was a test crawl, so it's not on your tab.",3500);go("home");return}   // a test crawl stays out of a real tab
+  pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
   // followers get the same ending as the host: straight onto the summary, with the stats racking up. No sign-in ask here
   // (they're out, a few drinks in); the day-after card and My Tab ask instead.
   if(fvPrev)return;leaveFollow();closeSheet();S.lastEnd=r.id;S.rackEnd=r.id;SHARED=null;
