@@ -12,6 +12,6 @@ window.RR_CONFIG={
  },
  "googleWebClientId": "929028627906-68c54bo74m1jqrlmo6pdchd1vl2sq3i0.apps.googleusercontent.com",
  "googleIosClientId": "929028627906-vv64kc5e1dnjrc9slua888fkuv96rj8f.apps.googleusercontent.com",
- "revenuecatAndroidKey": "",
- "revenuecatIosKey": ""
+ "revenuecatAndroidKey": "goog_TuYgjagNxqpckfeSXkdywwbdxGH",
+ "revenuecatIosKey": "appl_mOxMjFjODNLgbQCpajOrNURUOdk"
 };
