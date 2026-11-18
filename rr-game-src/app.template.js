@@ -288,6 +288,7 @@ function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   const range={lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]},cc=S.city!=="Sydney"&&CITIES.find(x=>x.live&&x.name===S.city&&x.lat),z=cc?{lat:cc.lat,lng:cc.lng,r:1}:{lat:DEMO_START.lat,lng:DEMO_START.lng,r:1};
   const pool=zz=>{const all=playable(inCircle(zz,zz.r),false);return {all,open:all}};
   sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Pick your zone</h3>
+    <div class="nightzone" style="margin:8px 0 6px"><span>${I.clock}1 hour</span></div>
     <p class="note" style="margin:2px 0 10px">Drag to move. Pinch or slide to change the radius.</p></div>
     <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="dzNote" style="margin:8px 0 0"></p>
     <div class="lsfoot"><button class="btn" type="button" id="dzGo">Start the demo</button><button class="btn dark" type="button" id="dzX" style="margin-top:10px">Cancel</button></div></div>`,()=>{
