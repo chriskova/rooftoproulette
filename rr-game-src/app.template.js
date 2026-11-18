@@ -885,7 +885,12 @@ const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;retu
 const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
-  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000)q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};q.step=1}
+  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};
+      // nothing open within 2 km of you: start on the spot with the most bars open (or the city centre if nothing's open)
+      const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t));
+        let best=null,bn=0;O.forEach(v=>{const n=O.filter(u=>dist(u,v)<=2000);if(n.length>bn){bn=n.length;best=n}});
+        const c=best?{lat:best.reduce((a,v)=>a+v.lat,0)/best.length,lng:best.reduce((a,v)=>a+v.lng,0)/best.length}:(GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city));
+        q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};setTimeout(()=>toast(best?"Nothing's open within 2 km of you. This is where most bars are open.":"Nothing's open right now. Starting in the city centre.",3500),400)}}q.step=1}
   catch(e){q.note="Couldn't find you just now. Try again, or spin from your Hit list."}
   save();renderQuick();
 }
@@ -1061,7 +1066,7 @@ function renderQuick(){
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
     b.innerHTML=top+`<div><h1 class="q modename modefull">Rest <i>&amp;</i> Roulette</h1><p class="sub" style="margin:6px 0 0">No timer, no wildcards, no jackpot</p></div>
-      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Spin area</b><small>Set where and how far</small></span></button>
+      <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Select an area</b><small>Set where and how far</small></span></button>
       ${apWrap("__want",listOpt(t,q.sel==="__want"))}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
     apBind(b,async k=>wantList(),()=>null);
@@ -1492,25 +1497,26 @@ function makeReel(el,names,o){
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
   R.spinTo=(name,v,done,opt)=>{
-    opt=opt||{};moved=true;const dir=-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
+    // it rolls the way you flicked it: down (the usual) or up
+    opt=opt||{};moved=true;const dir=v>0?1:-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
     const extra=v0>VC?Math.min(30,(v0-VC)*.5):0, Dd=Math.max(7,vs*vs/24);   // 24 = 2 × friction (12 rows/s²)
     let k=Math.round(R.p+dir*(extra+Dd));
     if(opt.dur){const Tdj=2.5*Dd/vs;k=Math.round(R.p+dir*(Math.max(0,opt.dur-Tdj)*vs+Dd))}
     // rewrite everything between just off-screen now and just past where it'll stop (all out of sight)
-    const top=Math.round(R.p)-5;
+    const top=Math.round(R.p)+dir*5;
     // on a short spin the rows still on screen sit close to the stop: if the winner's among them, roll a bit further
-    for(let guard=0;guard<GAP+2;guard++){let near=false;for(let j=top+1;j<=k+GAP;j++)if(L[mod(j)]===name)near=true;if(!near)break;k--}
+    for(let guard=0;guard<GAP+2;guard++){const a=top-dir,b=k-dir*GAP;let near=false;if(dir*(a-b)>=0)for(let j=Math.min(a,b);j<=Math.max(a,b);j++)if(L[mod(j)]===name)near=true;if(!near)break;k+=dir}
     // try stopping a row or two further if that lets every name keep its distance (matters for tiny pools)
-    const attempt=kk=>{const end=kk-4-2*GAP,seq={},get=j=>seq[j]!==undefined?seq[j]:L[mod(j)];let fails=0;
-      for(let j=top;j>=end;j--){
-        if(j===kk){seq[j]=name;if([...Array(GAP)].some((_,d)=>get(j+d+1)===name))fails++;continue}
-        const ban=new Set();for(let d=1;d<=GAP;d++){ban.add(get(j+d));if(j-d<end)ban.add(L[mod(j-d)])}
+    const attempt=kk=>{const end=kk+dir*(4+2*GAP),seq={},get=j=>seq[j]!==undefined?seq[j]:L[mod(j)];let fails=0;
+      for(let j=top;dir<0?j>=end:j<=end;j+=dir){
+        if(j===kk){seq[j]=name;if([...Array(GAP)].some((_,d)=>get(j-dir*(d+1))===name))fails++;continue}
+        const ban=new Set();for(let d=1;d<=GAP;d++){ban.add(get(j-dir*d));if(dir*(j+dir*d-end)>0)ban.add(L[mod(j+dir*d)])}
         if(Math.abs(j-kk)<=GAP)ban.add(name);
         if(U.every(x=>ban.has(x)))fails++;
-        seq[j]=pickFrom(ban,get(j+1));
+        seq[j]=pickFrom(ban,get(j-dir));
       }
       return {kk,seq,fails}};
-    let best=null;for(let kk=k;kk>=k-3;kk--){const a=attempt(kk);if(!best||a.fails<best.fails)best=a;if(!a.fails)break}
+    let best=null;for(let i=0;i<=3;i++){const a=attempt(k+dir*i);if(!best||a.fails<best.fails)best=a;if(!a.fails)break}
     k=best.kk;for(const j in best.seq)L[mod(+j)]=best.seq[j];
     const stop=k;
     const p0=R.p,dist=Math.abs(stop-p0),Dc=Math.max(0,dist-Dd),Tc=Dc/vs,Dr=dist-Dc,Td=(opt.jackpot?2.5:2)*Dr/vs,T=Tc+Td;
@@ -1531,8 +1537,7 @@ function makeReel(el,names,o){
     const up=()=>{if(!down)return;down=false;R.down=false;draw();const t=performance.now(),a=pts[0],travel=R.p-pS;
       let v=(t-a[0])>8&&(t-pts[pts.length-1][0])<150?(R.p-a[1])/((t-a[0])/1000):0;
       if(Math.abs(travel)<.2&&Math.abs(v)<2){if(o.onRelease(-16)===false)R.bounce();return}  // a tap gives a gentle spin
-      if(v>0||travel>0){v=-v;}                                                                // flicked up: spin it all the same
-      if(v>-3.5){if(Math.abs(travel)>1.5)v=-14;else{R.bounce();return}}                     // too gentle (a long, slow pull either way still counts)
+      if(Math.abs(v)<3.5){if(Math.abs(travel)>1.5)v=travel>0?14:-14;else{R.bounce();return}}   // too gentle (a long, slow pull either way still counts), in the direction pulled
       if(o.onRelease(v)===false)R.bounce()};
     el.addEventListener("pointerup",up);el.addEventListener("pointercancel",up);
   }
@@ -1853,7 +1858,13 @@ function dealWild(delay){
     const slot=$("stage")&&$("stage").querySelector(".bar .wild,.camtgt .wild");if(!slot||S.route!=="play"){g.wild.dealing=false;return}
     g.wild.shown=true;g.wild.flying=true;delete g.wild.dealing;save();
     const b=slot.getBoundingClientRect(),fly=slot.cloneNode(true);fly.removeAttribute("data-pending");fly.classList.add("wfly");{const card=slot.closest(".bar");if(card&&/\bphd\b/.test(card.className))fly.classList.add("wfly-dk")}   // light mode: dark fly-in on photo cards
-    Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});document.body.appendChild(fly);
+    Object.assign(fly.style,{left:b.left+"px",top:b.top+"px",width:b.width+"px",height:b.height+"px"});
+    // it flies in looking exactly as it lands (same see-through tint, border and text), not a solid card
+    {const cs=getComputedStyle(slot),put=(el,src)=>{const c=getComputedStyle(src);el.style.setProperty("color",c.color,"important")};
+      ["background-color","background-image","border-color","border-style","border-width","backdrop-filter","-webkit-backdrop-filter"].forEach(k=>{const v=cs.getPropertyValue(k);if(v)fly.style.setProperty(k,v,"important")});
+      put(fly,slot);const fs=fly.querySelectorAll("svg,b,small,span"),ss=slot.querySelectorAll("svg,b,small,span");fs.forEach((el,i)=>{if(ss[i])put(el,ss[i])});
+      fly.style.setProperty("box-shadow","0 14px 34px rgba(0,0,0,.25)","important")}
+    document.body.appendChild(fly);
     const calm=matchMedia("(prefers-reduced-motion: reduce)").matches,dy=-(b.top+b.height+80),dx=innerWidth*.35;
     sfx("deal");buzz(20);
     fly.animate(calm?[{opacity:0},{opacity:1}]:[
@@ -3738,7 +3749,7 @@ function renderHist(){
     ${typeof tabSignIn==="function"?tabSignIn():""}
     <div class="grid2 hstats">
       <button class="stat tap" type="button" id="hCrawls"><small>Crawls <span class="chev">›</span></small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
-      <button class="stat tap" type="button" id="hVisits"><small>Bar visits <span class="chev">›</span></small><b>${bars}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
+      <button class="stat tap" type="button" id="hVisits"><small>Bars visited <span class="chev">›</span></small><b>${uniq}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
       <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?"Avg "+km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
       <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
     </div>
@@ -3791,9 +3802,9 @@ function visitsSheet(){
   const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0),yr=String(new Date(now()).getFullYear());let m=null;
   const list=vs.map(x=>{const mm=monthTxt(x.t),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
     return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":LEN(x.r.len)}</small></span><span class="chev vch">›</span></button>`}).join("");
-  sheet(`<h3>Bar visits</h3><p class="note vsum">${vs.length} visits · ${uniq} rooftop${uniq===1?"":"s"}</p><div class="vlist2">${list}</div>`,()=>{
+  sheet(`<h3>Bars visited</h3><div class="vstats"><div><b>${uniq}</b><small>Bar${uniq===1?"":"s"}</small></div><div><b>${vs.length}</b><small>Total visit${vs.length===1?"":"s"}</small></div></div><div class="vlist2">${list}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bar visits"})});
+    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bars visited"})});
   });
 }
 function crawlsSheet(){const N=H.map(stats);let m=null;const yr=String(new Date(now()).getFullYear());
