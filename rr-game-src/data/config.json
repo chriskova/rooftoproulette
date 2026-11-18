@@ -1,5 +1,5 @@
 {
-  "_note": "Public browser settings written to browser-config.js at build time. The Maps key is a browser key restricted to the site's address and APIs in Google Cloud; googleMapsAppKey is the store apps' key (the game runs inside the app, where iPhones send no site address), limited to the three maps APIs; the PostHog project key can only send events. Leave posthogKey empty to turn analytics off. firebase is the public web config for the Rooftop Roulette Firebase project (free Spark plan); access is controlled by firebase/firestore.rules.",
+  "_note": "Public browser settings written to browser-config.js at build time. The Maps key is a browser key restricted to the site's address and APIs in Google Cloud; googleMapsAppKey is the store apps' key (the game runs inside the app, where iPhones send no site address), limited to the three maps APIs; the PostHog project key can only send events. Leave posthogKey empty to turn analytics off. firebase is the public web config for the Rooftop Roulette Firebase project (free Spark plan); access is controlled by firebase/firestore.rules. revenuecatAndroidKey and revenuecatIosKey are RevenueCat's public app keys (they can only make purchases through the stores); leave them empty and packs show Coming soon in the apps.",
   "posthogKey": "phc_ASmKL365VM7eBi4X2XdBTNACAkKCvYroRezsgfiWXXXZ",
   "posthogHost": "https://eu.i.posthog.com",
   "googleMapsBrowserKey": "AIzaSyBAgh5g3nP40P9ZmCt8AgFX4MYZ4kMEfRU",
@@ -11,5 +11,7 @@
     "appId": "1:929028627906:web:e7f1435a5fe44072654a5b"
   },
   "googleWebClientId": "929028627906-68c54bo74m1jqrlmo6pdchd1vl2sq3i0.apps.googleusercontent.com",
-  "googleIosClientId": "929028627906-vv64kc5e1dnjrc9slua888fkuv96rj8f.apps.googleusercontent.com"
+  "googleIosClientId": "929028627906-vv64kc5e1dnjrc9slua888fkuv96rj8f.apps.googleusercontent.com",
+  "revenuecatAndroidKey": "",
+  "revenuecatIosKey": ""
 }

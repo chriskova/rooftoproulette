@@ -231,12 +231,13 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
     <div class="sgh">My Tab</div><div class="sgrp">
       <div class="strow"><span class="t"><b>Backed up</b><small>Sign in on any phone and it comes back</small></span><span class="sval">${n} crawl${n===1?"":"s"}</span></div></div>
     <div class="sgh">Friends</div><div class="sgrp" id="apMates"><div class="strow"><span class="t"><small>Loading…</small></span></div></div>
+    ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard packs, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
     <div class="sgh">Account</div><div class="sgrp">
       <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
       <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>
   </div>`;
   $("apBack").onclick=()=>{try{if(history.state&&history.state.acctPage)history.back();else closeAcct()}catch(e){closeAcct()}};
-  $("apName").onclick=renameSheet;$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;
+  $("apName").onclick=renameSheet;if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;
   matesList(true).then(L=>{const el=$("apMates");if(!el)return;
     el.innerHTML=L.length?L.map(m=>`<button class="strow apmate" type="button" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0].toUpperCase())}</span><span class="t"><b>${esc(m.n||"Friend")}</b><small>${m.t?"Last crawled "+fmtD(m.t):""}</small></span><i class="chev">›</i></button>`).join("")
       :`<div class="strow"><span class="t"><b>No friends here yet</b><small>People from your live crawls show up here</small></span></div>`;

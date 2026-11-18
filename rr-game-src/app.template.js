@@ -2844,7 +2844,9 @@ function wildSpin(t,trial,back){const m=WMETA[t];if(!m||!m.spin)return;const g=G
 function packsSheet(mid){const g=G();
   const row=p=>packOwned(p.id)?`<button class="toggle pkrow" type="button" role="switch" data-pkt="${p.id}" aria-checked="${packOn(p.id)}"><span class="t"><b>${esc(p.name)}</b><small>${p.cards.length} wildcards · See the cards ›</small></span><span class="sw"></span></button>`
     :`<button class="opt pkrow" type="button" data-pk="${p.id}"><span class="ic">${I.sparkle}</span><span class="t"><b>${esc(p.name)}</b><small>${p.cards.length} wildcards · Preview</small></span><span class="chev">›</span></button>`;
-  sheet(`<h3>Wildcards</h3><div class="pklist"><div class="toggle pkrow pkfree" aria-disabled="true"><span class="t"><b>Free deck</b><small>${WILDS.length} wildcards · Always in</small></span></div>${PACKS.map(row).join("")}</div>`,()=>{
+  sheet(`<h3>Wildcards</h3><div class="pklist"><div class="toggle pkrow pkfree" aria-disabled="true"><span class="t"><b>Free deck</b><small>${WILDS.length} wildcards · Always in</small></span></div>${PACKS.map(row).join("")}</div>${canBuy()?`<button class="txtbtn wmore" type="button" id="pkRestore">Restore purchases</button>`:""}`,()=>{
+    if($("pkRestore"))$("pkRestore").onclick=()=>restorePacks().then(()=>packsSheet(mid));
+    if(canBuy())rcInit();
     document.querySelectorAll("[data-pkt]").forEach(b=>b.onclick=e=>{const id=b.dataset.pkt;
       if(!e.target.closest(".sw")){packSheet(id,()=>packsSheet(mid));return}
       S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()});
@@ -2858,7 +2860,12 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
       <div class="pkprev">${pv.map((c,k)=>`<div class="wild wexplain">${face(c)}<span><b>${esc(c.n)}</b>${esc(c.t)}${c.spin&&k===0?`<button class="btn sm line wspin" type="button" id="pkTry">Try a spin</button>`:""}</span></div>`).join("")}
       <div class="pkbacks">${Array.from({length:rest},()=>`<span class="pkback">${I.sparkle}</span>`).join("")}</div></div>
       <p class="note pkgroup">Your whole group plays it.</p>
-      <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test?"":" disabled"}>${S.test?"Unlock (test mode)":"Coming soon"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
+      <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test||canBuy()?"":" disabled"}>${S.test?"Unlock (test mode)":canBuy()?(rcPrice[PK_PRODUCT[id]]?"Get it · "+esc(rcPrice[PK_PRODUCT[id]]):"Get it"):NATIVE?"Coming soon":"In the app"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
+      if(!S.test&&canBuy()&&!rcPrice[PK_PRODUCT[id]])rcInit().then(()=>{const b=$("pkBuy"),pr=rcPrice[PK_PRODUCT[id]];if(b&&pr&&!b.disabled)b.textContent="Get it · "+pr});
+      if(!S.test&&canBuy())$("pkBuy").onclick=async()=>{const b=$("pkBuy");b.disabled=true;
+        try{if(await buyPack(id)){if(g)g.wdeck=null;track("pack_buy",{pack:id});refreshDeckLbl();toast(`${esc(p.name)} is in play`,1800);packSheet(id,back);return}}
+        catch(e){const c=e&&(e.userCancelled||e.code==="1"||/cancel/i.test(e.message||""));if(!c)toast("Couldn't finish that. You haven't been charged.",2600)}
+        b.disabled=false};
       if($("pkTry"))$("pkTry").onclick=()=>wildSpin(pv[0].t,true,()=>packSheet(id,back));
       if(S.test)$("pkBuy").onclick=()=>{packStore()[id]=true;if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();toast(`${esc(p.name)} is in play`,1800);packSheet(id,back)};
       if($("pkBack"))$("pkBack").onclick=back});
@@ -2872,6 +2879,30 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
     $("pkOn").onclick=()=>{S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();$("pkOn").setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()};
     if($("pkBack"))$("pkBack").onclick=back;
     if($("pkLock"))$("pkLock").onclick=()=>{delete packStore()[id];if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)}})}
+// ---------- Purchases: RevenueCat in the store apps, pretend unlocks in test mode ----------
+// Product IDs are the same in App Store Connect and Play Console. Entitlement IDs in RevenueCat match the pack ids.
+const PK_PRODUCT={house:"house_rules",spin:"double_spin"};
+const RCP=()=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Purchases}catch(e){return null}};
+const RCK=()=>{try{const p=Capacitor.getPlatform();return (p==="ios"?AN.revenuecatIosKey:p==="android"?AN.revenuecatAndroidKey:"")||""}catch(e){return ""}};
+const canBuy=()=>!!(NATIVE&&RCK()&&RCP());
+let rcOn=null,rcUser=null;const rcPrice={};
+function rcInit(){if(rcOn)return rcOn;rcOn=(async()=>{if(!canBuy())return null;const P=RCP();
+  await P.configure({apiKey:RCK()});
+  try{const r=await P.getProducts({productIdentifiers:Object.values(PK_PRODUCT),type:"NON_SUBSCRIPTION"});(r.products||[]).forEach(p=>rcPrice[p.identifier]=p.priceString)}catch(e){}
+  await rcSync(P);return P})().catch(e=>{rcOn=null;return null});return rcOn}
+// signed in: purchases follow the account onto any phone. Signed out: they stay with the Apple or Google account
+async function rcSync(P){P=P||RCP();if(!P)return;try{const uid=typeof ME!=="undefined"&&ME&&!ME.anon?ME.uid:null;
+  if(uid&&uid!==rcUser){const r=await P.logIn({appUserID:uid});rcUser=uid;rcApply(r.customerInfo);return}
+  const {customerInfo}=await P.getCustomerInfo();rcApply(customerInfo)}catch(e){}}
+function rcApply(ci){if(!ci)return;const act=(ci.entitlements&&ci.entitlements.active)||{},bought=ci.allPurchasedProductIdentifiers||[];let ch=false;
+  PACKS.forEach(p=>{if((act[p.id]||bought.includes(PK_PRODUCT[p.id]))&&!(S.packs||{})[p.id]){(S.packs=S.packs||{})[p.id]=true;ch=true}});
+  if(ch){save();refreshDeckLbl();if(S.route==="hist")renderHist()}}
+async function buyPack(id){const P=await rcInit();if(!P)throw new Error("store");
+  const r=await P.getProducts({productIdentifiers:[PK_PRODUCT[id]],type:"NON_SUBSCRIPTION"}),prod=(r.products||[])[0];if(!prod)throw new Error("product");
+  const res=await P.purchaseStoreProduct({product:prod});rcApply(res.customerInfo);return packOwned(id)}
+async function restorePacks(){const P=await rcInit();if(!P)return;
+  try{const {customerInfo}=await P.restorePurchases();rcApply(customerInfo);const n=PACKS.filter(p=>packOwned(p.id)).length;toast(n?`Restored ${n} pack${n===1?"":"s"}`:"No packs to restore",2200)}catch(e){toast("Couldn't reach the store. Try again soon.",2400)}}
+if(NATIVE)setTimeout(()=>rcInit(),2500);
 // My Tab: your packs, then the ones you could add
 function tabPacksHTML(){return `<div class="eyebrow hsec">Wildcard packs</div><div class="recs">${PACKS.map(p=>{const own=packOwned(p.id),pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
   return `<button class="rec" type="button" data-tpk="${p.id}"><span class="t"><small>${own?(packOn(p.id)?"In play":"Switched off"):p.cards.length+" wildcards"}</small><span>${esc(p.name)}</span></span><b>${own?n+"/"+p.cards.length:"Preview"}</b><span class="chev">›</span></button>`}).join("")}</div>`}
