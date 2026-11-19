@@ -1148,7 +1148,10 @@ let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
-  $("wProg").style.width=((w.step+1)/3*100)+"%";
+  // steps across the top: done ones show your pick and take you back to change it
+  const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
+  $("wSteps").innerHTML=["Time","Zone","Spin"].map((n,i)=>{const done=i<w.step;return done?`<button class="wst on done" type="button" data-s="${i}"><i></i><span>${esc(stVal[i])}</span></button>`:`<div class="wst${i===w.step?" on cur":""}"><i></i><span>${n}</span></div>`}).join("");
+  $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
   const picks=[];
@@ -1217,7 +1220,6 @@ function renderWiz(){
     const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub" style="margin:6px 0 0">You're outside your zone.<br>The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
-      <div class="rset${w.rr?" three":""}"><button class="rs" type="button" data-s="0"><small>Time</small><b>${w.len===60?"1 hr":"2 hrs"}</b><span class="chev">›</span></button><button class="rs" type="button" data-s="1"><small>Zone</small><b>${kmTxt(w.radius)}</b><span class="chev">›</span></button><button class="rs" type="button" data-s="1"><small>Start</small><b>${esc(area)}</b><span class="chev">›</span></button>${w.rr?"":`<button class="rs" type="button" id="wDeck"><small>Wildcards</small><b>${esc(deckLbl())}</b><span class="chev">›</span></button>`}</div>
       <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
       ${beenHere?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars you've been to</b><small>You've been to ${beenHere} of ${allHere} in your zone</small></span><span class="sw"></span></button>`:""}`;
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
@@ -1226,8 +1228,8 @@ function renderWiz(){
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
     makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
     draw();wizRepaint=draw;
-    body.querySelectorAll(".rs[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
-    $("wSee").onclick=wizSpoiler;if($("wDeck"))$("wDeck").onclick=deckSheet;
+    
+    $("wSee").onclick=wizSpoiler;
     const canInv=(()=>{try{return cloudOn()}catch(e){return false}})();
     cta(canInv?`<div class="ctarow"><button class="btn dark" id="wInv" type="button">${PEOPLEI_()} Invite</button><button class="btn" id="wStart" type="button">Start the crawl</button></div>`:`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()};if($("wInv"))$("wInv").onclick=()=>liveInvite()});
   }
