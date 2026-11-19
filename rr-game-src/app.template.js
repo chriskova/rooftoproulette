@@ -4091,7 +4091,8 @@ function settingsSheet(){
     el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
   $("stPerm").onclick=permSheet;
   $("stPriv").onclick=()=>docPage("privacy.html","Privacy policy");$("stTerms").onclick=()=>docPage("terms.html","Terms of use");
-  if($("stHow"))$("stHow").onclick=()=>howToPlay(G()&&CR(G())?"rr":"rush");
+  // replays the first-open walkthrough, the same screens the home link used to show
+  if($("stHow"))$("stHow").onclick=()=>{closeSettings(true);S.intro=0;S.introReplay=true;save();go("intro")};
   $("stSup").onclick=()=>{const body=`\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
     location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
   $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
