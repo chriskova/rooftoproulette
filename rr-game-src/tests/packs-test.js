@@ -37,10 +37,15 @@ console.log('my tab rows:',await p.evaluate(()=>[...document.querySelectorAll('[
 // try a spin from a locked preview, unlock in test mode
 await p.evaluate(()=>{delete S.tpacks.spin;save();packSheet('spin')});await p.waitForTimeout(500);await shot('11-locked-spin');
 await p.click('#pkTry');await p.waitForTimeout(400);await p.click('#wsGo');await p.waitForTimeout(4500);await shot('12-try');
-await p.click('#wsDone');await p.waitForTimeout(400);await p.click('#pkBuy');await p.waitForTimeout(600);console.log('unlocked:',await p.evaluate(()=>packOwned('spin')));
+await p.click('#wsDone');await p.waitForTimeout(400);await p.click('#pkBuy');await p.waitForTimeout(600);console.log('unlocked:',await p.evaluate(()=>packOwned('spin')));await shot('12b-afterbuy');
+await p.click('#abOnly');await p.waitForTimeout(500);console.log('only-pack deck size',await p.evaluate(()=>deckIdx().length),await p.evaluate(()=>deckLbl()));
+await p.evaluate(()=>{closeSheet();deckSheet()});await p.waitForTimeout(500);await shot('12c-decks');
+await p.click('[data-dk="spin"]');await p.waitForTimeout(300);console.log('last deck kept:',await p.evaluate(()=>packOn('spin')));
+await p.click('[data-dk="free"]');await p.waitForTimeout(300);console.log('with free:',await p.evaluate(()=>deckIdx().length),await p.evaluate(()=>deckLbl()));
 // deck uses owned packs
 console.log('deck size',await p.evaluate(()=>deckIdx().length),'free',await p.evaluate(()=>WILDS.length));
 // Ready to spin chip
 await p.evaluate(()=>{closeSheet();S.wiz={step:2,len:60,rr:false,radius:1,z:{lat:-33.8688,lng:151.2093,r:1},start:{type:"spot",name:"CBD",lat:-33.8688,lng:151.2093}};save();go('wiz')});await p.waitForTimeout(1500);await shot('13-ready');
-console.log('chips:',await p.evaluate(()=>[...document.querySelectorAll('.rchips .chip')].map(c=>c.innerText)));
+console.log('chips:',await p.evaluate(()=>[...document.querySelectorAll('.rset .rs')].map(c=>c.innerText)));
+await p.evaluate(()=>{S.wiz.rr=true;save();go('wiz')});await p.waitForTimeout(1200);await shot('14-ready-rr');
 console.log('errors',e);await b.close()})();

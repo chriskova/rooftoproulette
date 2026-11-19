@@ -1217,7 +1217,7 @@ function renderWiz(){
     const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
     body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub" style="margin:6px 0 0">You're outside your zone.<br>The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
-      <div class="rchips"><button class="chip" type="button" data-s="0">${I.clock} ${w.len===60?"1 hr":"2 hrs"}</button><button class="chip" type="button" data-s="1">${I.target} ${kmTxt(w.radius)}</button><button class="chip" type="button" data-s="1">${I.pin} ${esc(area)}</button>${w.rr||!PACKS.some(p=>packOwned(p.id))?"":`<button class="chip" type="button" id="wDeck">${I.sparkle} ${esc(deckLbl())}</button>`}</div>
+      <div class="rset${w.rr?" three":""}"><button class="rs" type="button" data-s="0"><small>Time</small><b>${w.len===60?"1 hr":"2 hrs"}</b><span class="chev">›</span></button><button class="rs" type="button" data-s="1"><small>Zone</small><b>${kmTxt(w.radius)}</b><span class="chev">›</span></button><button class="rs" type="button" data-s="1"><small>Start</small><b>${esc(area)}</b><span class="chev">›</span></button>${w.rr?"":`<button class="rs" type="button" id="wDeck"><small>Wildcards</small><b>${esc(deckLbl())}</b><span class="chev">›</span></button>`}</div>
       <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
       ${beenHere?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars you've been to</b><small>You've been to ${beenHere} of ${allHere} in your zone</small></span><span class="sw"></span></button>`:""}`;
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
@@ -1226,8 +1226,8 @@ function renderWiz(){
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
     makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
     draw();wizRepaint=draw;
-    body.querySelectorAll(".chip[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
-    $("wSee").onclick=wizSpoiler;if($("wDeck"))$("wDeck").onclick=()=>packsSheet(false);
+    body.querySelectorAll(".rs[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
+    $("wSee").onclick=wizSpoiler;if($("wDeck"))$("wDeck").onclick=deckSheet;
     const canInv=(()=>{try{return cloudOn()}catch(e){return false}})();
     cta(canInv?`<div class="ctarow"><button class="btn dark" id="wInv" type="button">${PEOPLEI_()} Invite</button><button class="btn" id="wStart" type="button">Start the crawl</button></div>`:`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()};if($("wInv"))$("wInv").onclick=()=>liveInvite()});
   }
@@ -2807,9 +2807,10 @@ const packById=id=>PACKS.find(p=>p.id===id);
 const packStore=()=>S.test?(S.tpacks=S.tpacks||{}):(S.packs=S.packs||{});
 const packOwned=id=>!!packStore()[id];
 const packOn=id=>packOwned(id)&&!(S.packOff||{})[id];
-const deckIdx=()=>ALLW.map((_,i)=>i).filter(i=>{const m=WMETA[ALLW[i]];return !m||packOn(m.p)});
+const freeOn=()=>!S.freeOff||!PACKS.some(p=>packOn(p.id));
+const deckIdx=()=>{const fo=freeOn();return ALLW.map((_,i)=>i).filter(i=>{const m=WMETA[ALLW[i]];return m?packOn(m.p):fo})};
 const deckCards=()=>deckIdx().map(i=>ALLW[i]);
-const deckLbl=()=>{const on=PACKS.filter(p=>packOn(p.id));return !on.length?"Free deck":on.length===1?on[0].name:on.length+" packs"};
+const deckLbl=()=>{const on=(freeOn()?["Free deck"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name));return on.length===1?on[0]:on.length+" decks"};
 const wSealed=t=>!!(WMETA[t]&&WMETA[t].seal);
 const wShort=t=>wSealed(t)?"Opens at the bar":t;   // what a card shows before it's opened (Dealer's choice, previews)
 const wOpenNow=(g,w)=>!!(g&&w&&(g.visits||[]).some(v=>v.id===w.id&&v.arrivedAt!=null&&v.leftAt==null));
@@ -2853,7 +2854,7 @@ function packsSheet(mid){const g=G();
       S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()});
     document.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>packSheet(b.dataset.pk,()=>packsSheet(mid)));
   })}
-function refreshDeckLbl(){const c=$("wDeck");if(c)c.innerHTML=`${I.sparkle} ${esc(deckLbl())}`}
+function refreshDeckLbl(){const c=$("wDeck");if(c&&c.querySelector("b"))c.querySelector("b").textContent=deckLbl()}
 function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwned(id),g=G();
   const face=c=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[c.ic]||WIC.star}</svg>`;
   if(!own){const pv=p.prev.map(i=>p.cards[i]),rest=p.cards.length-pv.length;
@@ -2864,11 +2865,11 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
       <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test||canBuy()?"":" disabled"}>${S.test?"Unlock (test mode)":canBuy()?(rcPrice[PK_PRODUCT[id]]?"Get it · "+esc(rcPrice[PK_PRODUCT[id]]):"Get it"):NATIVE?"Coming soon":"In the app"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
       if(!S.test&&canBuy()&&!rcPrice[PK_PRODUCT[id]])rcInit().then(()=>{const b=$("pkBuy"),pr=rcPrice[PK_PRODUCT[id]];if(b&&pr&&!b.disabled)b.textContent="Get it · "+pr});
       if(!S.test&&canBuy())$("pkBuy").onclick=async()=>{const b=$("pkBuy");b.disabled=true;
-        try{if(await buyPack(id)){packToPile(id);if(g)g.wdeck=null;track("pack_buy",{pack:id});refreshDeckLbl();toast(`${esc(p.name)} is in play`,1800);packSheet(id,back);return}}
+        try{if(await buyPack(id)){packToPile(id);if(g)g.wdeck=null;track("pack_buy",{pack:id});refreshDeckLbl();afterBuy(id,back);return}}
         catch(e){const c=e&&(e.userCancelled||e.code==="1"||/cancel/i.test(e.message||""));if(!c)toast("Couldn't finish that. You haven't been charged.",2600)}
         b.disabled=false};
       if($("pkTry"))$("pkTry").onclick=()=>wildSpin(pv[0].t,true,()=>packSheet(id,back));
-      if(S.test)$("pkBuy").onclick=()=>{packStore()[id]=true;packToPile(id);if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();toast(`${esc(p.name)} is in play`,1800);packSheet(id,back)};
+      if(S.test)$("pkBuy").onclick=()=>{packStore()[id]=true;packToPile(id);if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();afterBuy(id,back)};
       if($("pkBack"))$("pkBack").onclick=back});
     return}
   const pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
@@ -2923,7 +2924,10 @@ function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length;
   const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc((WNAME[t]||["Wildcard"])[0])}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
   const pack=p=>{const own=packOwned(p.id),np=p.cards.filter(c=>pl[c.t]).length;
     return `<button class="dk-pack${own?" own":""}" type="button" data-dp="${p.id}"><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${own?np+" of "+p.cards.length:(canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview")}</span><span class="chev">›</span></button>`};
+  const owned=PACKS.filter(p=>packOwned(p.id)),fo=freeOn();
+  const sw=(k,name,on)=>`<button class="toggle" type="button" role="switch" data-dk="${k}" aria-checked="${on}"><span class="t"><b>${esc(name)}</b></span><span class="sw"></span></button>`;
   sheet(`<h3>Wildcards</h3>
+    ${owned.length?`<div class="eyebrow dk-ph first">Decks in play</div><div class="dk-on">${sw("free","Free deck",fo)}${owned.map(p=>sw(p.id,p.name,packOn(p.id))).join("")}</div>`:""}
     <div class="dk-head"><span class="eyebrow">Free deck</span><span class="dk-n">${n>=tot?"All "+tot+" played":n+" of "+tot+" played"}</span></div>
     <div class="dk-bar wide"><i style="width:${Math.round(n/tot*100)}%"></i></div>
     <div class="dk-grid">${WILDS.map(mini).join("")}</div>
@@ -2933,9 +2937,19 @@ function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length;
     $("sheet").classList.add("tq");
     document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc((WNAME[t]||["Wildcard"])[0])}</h3><div class="wild wexplain">${face(t)}<span>${esc(t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=deckSheet)});
     document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
+    document.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
+      if(on&&document.querySelectorAll('[data-dk][aria-checked="true"]').length<2){toast("Keep one deck on",1600);return}
+      if(k==="free"){if(on)S.freeOff=true;else delete S.freeOff}else{S.packOff=S.packOff||{};if(on)S.packOff[k]=true;else delete S.packOff[k]}
+      const g=G();if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(!on));refreshDeckLbl()});
     if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
     if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet")&&$("sheet").querySelector(".dk-packs"))deckSheet()});
   })}
+// just bought a pack: play it on its own, or mix it in
+function afterBuy(id,back){const p=packById(id),g=G();
+  sheet(`<h3>${esc(p.name)} is in</h3><p class="note" style="margin:6px 0 14px">How do you want to play it?</p>
+    <div class="acts"><button class="btn" type="button" id="abMix">With the free deck</button><button class="btn line" type="button" id="abOnly">Only this pack</button></div>`,()=>{
+    $("abMix").onclick=()=>{delete S.freeOff;if(S.packOff)delete S.packOff[id];if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)};
+    $("abOnly").onclick=()=>{S.freeOff=true;S.packOff={};PACKS.forEach(q=>{if(q.id!==id)S.packOff[q.id]=true});if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)}})}
 // the day after, on the recap: where your deck's at, once per crawl
 function recapDeck(r){if(r.demo||r.deckAsked||!H.length)return "";const n=freePlayed(),tot=WILDS.length;if(n>=tot&&PACKS.every(p=>packOwned(p.id)))return "";
   return `<button class="sinudge" type="button" id="rcDeck">${I.sparkle}<span><b>${n>=tot?"Free deck done":"Wildcards: "+n+" of "+tot+" played"}</b><small>${n>=tot?"Two packs to add when you're ready":(tot-n)+" free ones you haven't had yet"}</small></span></button>`}
