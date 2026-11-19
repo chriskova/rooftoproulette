@@ -16,7 +16,7 @@ await p.click('#stage .wild');await p.waitForTimeout(500);await shot('2-explaine
 console.log('explainer:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
 await p.click('#wMore');await p.waitForTimeout(500);await shot('3-packs');
 console.log('packs sheet:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
-await p.click('[data-pk="house"]');await p.waitForTimeout(500);await shot('4-locked');
+await p.click('[data-dp="house"]');await p.waitForTimeout(500);await shot('4-locked');
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 // arrive: the card opens with a Spin
 await p.evaluate(()=>logArrival(true));await p.waitForTimeout(1500);await shot('5-atbar');
