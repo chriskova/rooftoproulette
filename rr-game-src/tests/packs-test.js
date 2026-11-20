@@ -15,7 +15,7 @@ console.log('on the way:',await p.evaluate(()=>document.querySelector('#stage .w
 await p.evaluate(()=>{S.wplayed={};WILDS.slice(0,14).forEach(t=>S.wplayed[t]=1);save()});
 await p.click('#stage .wild');await p.waitForTimeout(500);await shot('2-explainer');
 console.log('played under:',await p.evaluate(()=>document.querySelectorAll('[data-pt]').length),'link:',await p.evaluate(()=>!!document.getElementById('wMore')));
-await p.click('[data-pt]');await p.waitForTimeout(400);await shot('2b-played');await p.click('#ptBack');await p.waitForTimeout(400);console.log('back to info:',await p.evaluate(()=>!!document.getElementById('wOk')));
+await shot('2a-folded');await p.click('#ptFold');await p.waitForTimeout(300);await shot('2-open');await p.click('[data-pt]');await p.waitForTimeout(400);await shot('2b-played');await p.click('#ptBack');await p.waitForTimeout(400);console.log('back to info:',await p.evaluate(()=>!!document.getElementById('wOk')));
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 console.log('explainer:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
 await p.evaluate(()=>deckSheet());await p.waitForTimeout(500);await shot('3-packs');
