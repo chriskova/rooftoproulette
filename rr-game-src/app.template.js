@@ -1214,7 +1214,7 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===3){
-    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">New cards first. Repeats once you've had them all.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
+    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">New cards first. Repeats once you've played them all.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
     bindDeckSw(body);$("wSeeDeck").onclick=deckSheet;
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=2;save();renderWiz()}});
   }
