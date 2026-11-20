@@ -2700,7 +2700,7 @@ function renderPlay0(){
     const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt;
     const pl=S.wplayed||{},played=g.demo?[]:ALLW.filter(t=>pl[t]&&t!==txt);
     const nm=t=>WMETA[t]?WMETA[t].n:(WNAME[t]||["Wildcard"])[0];
-    const exp=()=>sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${played.length?`<div class="eyebrow dk-ph">Played so far</div><div class="dk-grid">${played.map(t=>`<button class="dk-card up" type="button" data-pt="${esc(t)}">${wFace(t)}<span>${esc(nm(t))}</span></button>`).join("")}</div>`:""}`,()=>{
+    const exp=()=>sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>${played.length?`<div class="eyebrow dk-ph">Played so far</div><div class="dk-grid">${played.map(t=>`<button class="dk-card up" type="button" data-pt="${esc(t)}">${wFace(t)}<span>${esc(nm(t))}</span></button>`).join("")}</div>`:""}<div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
       $("wOk").onclick=closeSheet;
       document.querySelectorAll("[data-pt]").forEach(b=>b.onclick=()=>{const t=b.dataset.pt;sheet(`<h3>${esc(nm(t))}</h3><div class="wild wexplain">${wFace(t)}<span>${esc(t)}</span></div><div class="acts"><button class="btn line" type="button" id="ptBack">Back</button></div>`,()=>$("ptBack").onclick=exp)})});
     exp()});
