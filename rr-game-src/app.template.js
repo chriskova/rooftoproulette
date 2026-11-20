@@ -2801,18 +2801,18 @@ const PACKS=[
   {n:"Last search",ic:"search",t:"Read out your last Google search. The group picks a drink to match it."},
   {n:"Lock screen",ic:"phone",t:"Order a drink that matches your lock screen."}]},
  {id:"spin",name:"Double Spin",line:"Wildcards that hit the whole group.",prev:[0,9,6],cards:[
-  {n:"Spirit spin",ic:"spin",t:"Everyone orders something with the spirit it lands on.",seal:1,spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"]},
-  {n:"Colour spin",ic:"spin",t:"Everyone orders that colour.",seal:1,spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"]},
-  {n:"Flavour spin",ic:"spin",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",seal:1,spin:["Sweet","Sour","Bitter","Fizzy"]},
-  {n:"Glass spin",ic:"spin",t:"Everyone orders something served in that glass.",seal:1,spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"]},
-  {n:"Fruit spin",ic:"spin",t:"Everyone orders something with that fruit in it.",seal:1,spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"]},
-  {n:"Order spin",ic:"spin",t:"Bartender's choice, a stranger's pick, or the next table's drink.",seal:1,spin:["Bartender's choice","A stranger's pick","The next table's drink"]},
-  {n:"Shot spin",ic:"spin",t:"Shots all round, half of you, or one of you.",seal:1,spin:["Shots all round","Half of you","One of you"]},
-  {n:"Passport spin",ic:"spin",t:"Spin for a country. Everyone orders a drink from it.",seal:1,spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"]},
-  {n:"Your spin",ic:"spin",t:"Pass the phone. Everyone spins for their own drink.",seal:1,spin:SPIN_DRINKS,multi:1},
-  {n:"Story spin",ic:"spin",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",seal:1,spin:["Your first drink","Your holiday drink","Your guilty pleasure"]},
-  {n:"Usual spin",ic:"spin",t:"Your usual, the opposite of your usual, or something you've never tried.",seal:1,spin:["Your usual","The opposite of your usual","Something you've never tried"]},
-  {n:"Bartender spin",ic:"spin",t:"Ask for their favourite to make, their most popular, the newest on the menu, or the one they hate making.",seal:1,spin:["Their favourite to make","Their most popular","The newest on the menu","The one they hate making"]}]}];
+  {n:"Spirit spin",ic:"spin",t:"Everyone orders something with the spirit it lands on.",spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"]},
+  {n:"Colour spin",ic:"spin",t:"Everyone orders that colour.",spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"]},
+  {n:"Flavour spin",ic:"spin",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",spin:["Sweet","Sour","Bitter","Fizzy"]},
+  {n:"Glass spin",ic:"spin",t:"Everyone orders something served in that glass.",spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"]},
+  {n:"Fruit spin",ic:"spin",t:"Everyone orders something with that fruit in it.",spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"]},
+  {n:"Order spin",ic:"spin",t:"Bartender's choice, a stranger's pick, or the next table's drink.",spin:["Bartender's choice","A stranger's pick","The next table's drink"]},
+  {n:"Shot spin",ic:"spin",t:"Shots all round, half of you, or one of you.",spin:["Shots all round","Half of you","One of you"]},
+  {n:"Passport spin",ic:"spin",t:"Spin for a country. Everyone orders a drink from it.",spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"]},
+  {n:"Your spin",ic:"spin",t:"Pass the phone. Everyone spins for their own drink.",spin:SPIN_DRINKS,multi:1},
+  {n:"Story spin",ic:"spin",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",spin:["Your first drink","Your holiday drink","Your guilty pleasure"]},
+  {n:"Usual spin",ic:"spin",t:"Your usual, the opposite of your usual, or something you've never tried.",spin:["Your usual","The opposite of your usual","Something you've never tried"]},
+  {n:"Bartender spin",ic:"spin",t:"Ask for their favourite to make, their most popular, the newest on the menu, or the one they hate making.",spin:["Their favourite to make","Their most popular","The newest on the menu","The one they hate making"]}]}];
 const WMETA={};PACKS.forEach(p=>p.cards.forEach(c=>{c.p=p.id;WMETA[c.t]=c;WNAME[c.t]=[c.n,c.ic]}));
 const ALLW=WILDS.concat(...PACKS.map(p=>p.cards.map(c=>c.t)));   // free deck first, so the recent-cards list keeps its numbers
 const packById=id=>PACKS.find(p=>p.id===id);
@@ -2837,7 +2837,7 @@ function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
   const res=(w.res||[]).length?`<small class="wres">${w.res.map(esc).join(" · ")}</small>`:"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
-  const btn=m.spin&&here&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin"}</button>`:"";
+  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin"}</button>`:"";
   return `${ic}<span><b>${esc(m.n)}</b>${esc(m.t)}${res}${walk}${lastLine(w)}${btn}</span>`}
 const lastLine=w=>w&&w.last?`<small class="wres">Last new one in the free deck</small>`:"";
 function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
@@ -2930,26 +2930,27 @@ function drawWild(){let pile=(S.wpile||[]).filter(i=>deckIdx().includes(i));
 function packToPile(id){const p=packById(id);if(!p)return;const add=p.cards.map(c=>ALLW.indexOf(c.t)).filter(i=>i>=0&&!(S.wplayed||{})[ALLW[i]]);
   let pile=(S.wpile||[]).slice();add.forEach(i=>{if(!pile.includes(i))pile.splice(Math.floor(Math.random()*(pile.length+1)),0,i)});S.wpile=pile}
 // My Tab: under the headline stats
-function deckCardHTML(){const n=freePlayed(),tot=WILDS.length,done=n>=tot;
-  return `<button class="deckcard" type="button" id="hDeck"><span class="dk-l"><small>Wildcards</small><b>${done?"Free deck done":n+" of "+tot+" played"}</b><span class="dk-bar"><i style="width:${Math.round(n/tot*100)}%"></i></span></span><span class="dk-fan">${[0,1,2].map(()=>`<span class="dk-back">${I.sparkle}</span>`).join("")}</span><span class="chev">›</span></button>`}
-const PACK_PITCH={house:"Rules that hit the whole table",spin:"A second spin at the bar decides the round"};
+function deckCardHTML(){const pl=S.wplayed||{},own=PACKS.filter(p=>packOwned(p.id)),cards=WILDS.concat(...own.map(p=>p.cards.map(c=>c.t))),n=cards.filter(t=>pl[t]).length,tot=cards.length,done=n>=tot;
+  return `<button class="deckcard" type="button" id="hDeck"><span class="dk-l"><small>Wildcards</small><b>${done?(own.length?"All played":"Free deck done"):n+" of "+tot+" played"}</b><span class="dk-bar"><i style="width:${Math.round(n/tot*100)}%"></i></span></span><span class="dk-fan">${[0,1,2].map(()=>`<span class="dk-back">${I.sparkle}</span>`).join("")}</span><span class="chev">›</span></button>`}
+const PACK_PITCH={house:"Rules that hit the whole table",spin:"A second spin decides the round"};
 // The deck screen: your free deck, then the packs and what each one adds
-function wFace(t){const m=WNAME[t]||["Wildcard","star"];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m[1]]||WIC.star}</svg>`}
+function wFace(t){const ic=WMETA[t]?WMETA[t].ic:(WNAME[t]||["Wildcard","star"])[1];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[ic]||WIC.star}</svg>`}
+const wNm=t=>WMETA[t]?WMETA[t].n:(WNAME[t]||["Wildcard"])[0];
 function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length,face=wFace;
-  const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc((WNAME[t]||["Wildcard"])[0])}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
+  const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc(wNm(t))}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
+  const sec=(name,ts)=>{const k=ts.filter(t=>pl[t]).length;return `<div class="dk-head"><span class="eyebrow">${esc(name)}</span><span class="dk-n">${k>=ts.length?"All "+ts.length+" played":k+" of "+ts.length+" played"}</span></div><div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div><div class="dk-grid">${ts.map(mini).join("")}</div>`};
+  const toAdd=PACKS.filter(p=>!packOwned(p.id));
   const pack=p=>{const own=packOwned(p.id),np=p.cards.filter(c=>pl[c.t]).length;
     return `<button class="dk-pack${own?" own":""}" type="button" data-dp="${p.id}"><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${own?np+" of "+p.cards.length:(canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview")}</span><span class="chev">›</span></button>`};
   const owned=PACKS.filter(p=>packOwned(p.id));
   sheet(`<h3>Wildcards</h3>
     ${owned.length?`<div class="eyebrow dk-ph first">Decks in play</div>${deckSwHTML()}`:""}
-    <div class="dk-head"><span class="eyebrow">Free deck</span><span class="dk-n">${n>=tot?"All "+tot+" played":n+" of "+tot+" played"}</span></div>
-    <div class="dk-bar wide"><i style="width:${Math.round(n/tot*100)}%"></i></div>
-    <div class="dk-grid">${WILDS.map(mini).join("")}</div>
-    <div class="eyebrow dk-ph">Packs</div>
-    <div class="dk-packs">${PACKS.map(pack).join("")}</div>
+    ${sec("Free deck",WILDS)}
+    ${owned.map(p=>`<div class="dk-sec">${sec(p.name,p.cards.map(c=>c.t))}</div>`).join("")}
+    ${toAdd.length?`<div class="eyebrow dk-ph">${owned.length?"More wildcard packs":"Packs"}</div><div class="dk-packs">${toAdd.map(pack).join("")}</div>`:""}
     ${canBuy()?`<button class="txtbtn wmore" type="button" id="dkRestore">Restore purchases</button>`:""}`,()=>{
     $("sheet").classList.add("tq");
-    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc((WNAME[t]||["Wildcard"])[0])}</h3><div class="wild wexplain">${face(t)}<span>${esc(t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=deckSheet)});
+    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?WMETA[t].t:t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=deckSheet)});
     document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
     bindDeckSw(document.querySelector(".sheet")||document);
     if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
