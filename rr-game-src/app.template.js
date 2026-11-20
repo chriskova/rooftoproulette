@@ -2700,8 +2700,8 @@ function renderPlay0(){
     const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt;
     const pl=S.wplayed||{};
     const nAll=ALLW.filter(t=>pl[t]).length,own=anyOwned();
-    const sub=own?esc(deckLbl())+(nAll?` · ${nAll} played`:""):`${freePlayed()} of ${WILDS.length} played`;
-    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>${g.demo?"":`<button class="dk-fold" type="button" id="wDeckRow"><span class="t"><b>Your deck</b><small>${sub}</small></span><span class="chev">›</span></button>`}<div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
+    const sub=own?esc((freeOn()?["Free deck"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name)).join(" + ")):`${freePlayed()} of ${WILDS.length} played`;
+    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>${g.demo?"":`<button class="dk-fold" type="button" id="wDeckRow"><span class="t"><b>${own?"Decks in play":"Your deck"}</b><small>${sub}</small></span><span class="chev">›</span></button>`}<div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
       $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=deckSheet})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
