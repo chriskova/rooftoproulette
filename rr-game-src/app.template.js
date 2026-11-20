@@ -1146,11 +1146,13 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step>2)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
+  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===3&&!anyOwned())w.step=2;if(w.step>3)w.step=2;if(w.step===2&&!w.start)w.step=1;if(w.step===2&&!w.z)w.z={lat:w.start.lat,lng:w.start.lng,r:w.radius};
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
-  $("wSteps").innerHTML=["Time","Zone","Spin"].map((n,i)=>{const done=i<w.step;return done?`<button class="wst on done" type="button" data-s="${i}"><i></i><span>${esc(stVal[i])}</span></button>`:`<div class="wst${i===w.step?" on cur":""}"><i></i><span>${n}</span></div>`}).join("");
+  stVal[3]=deckLbl();const order=anyOwned()?[0,1,3,2]:[0,1,2],names={0:"Time",1:"Zone",3:"Wildcards",2:"Spin"},pos=order.indexOf(w.step);
+  $("wSteps").style.gridTemplateColumns=`repeat(${order.length},minmax(0,1fr))`;
+  $("wSteps").innerHTML=order.map((k,i)=>{const done=i<pos;return done?`<button class="wst on done" type="button" data-s="${k}"><i></i><span>${esc(stVal[k])}</span></button>`:`<div class="wst${i===pos?" on cur":""}"><i></i><span>${names[k]}</span></div>`}).join("");
   $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
@@ -1205,11 +1207,16 @@ function renderWiz(){
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
         cta(ok?`<button class="btn" id="wNext" type="button">Next</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
-          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});w.step=2;save();renderWiz()};
+          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});w.step=anyOwned()?3:2;save();renderWiz()};
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
     fitMap($("v-wiz"));
+  }
+  if(w.step===3){
+    body.innerHTML=`<div><h1 class="q">Which decks are in?</h1><p class="sub" style="margin:6px 0 0">Wildcards come from the decks you turn on.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">See all wildcards ›</button>`;
+    bindDeckSw(body);$("wSeeDeck").onclick=deckSheet;
+    cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=2;save();renderWiz()}});
   }
   if(w.step===2){
     // Ready to spin: your zone as the hero, the rooftops in play as unnamed pins, your picks as chips you can tap to change
@@ -1271,7 +1278,7 @@ async function useMe(){
   }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }
-$("wBack").onclick=()=>{const w=S.wiz;if(w.step>0){w.step--;save();renderWiz()}else go("home")};
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step===3)w.step=1;else if(w.step===2&&anyOwned())w.step=3;else if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
   ac();noLoc=noLoc===true;if(tryStart.busy)return;
@@ -2926,10 +2933,9 @@ function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length;
   const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc((WNAME[t]||["Wildcard"])[0])}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
   const pack=p=>{const own=packOwned(p.id),np=p.cards.filter(c=>pl[c.t]).length;
     return `<button class="dk-pack${own?" own":""}" type="button" data-dp="${p.id}"><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${own?np+" of "+p.cards.length:(canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview")}</span><span class="chev">›</span></button>`};
-  const owned=PACKS.filter(p=>packOwned(p.id)),fo=freeOn();
-  const sw=(k,name,on)=>`<button class="toggle" type="button" role="switch" data-dk="${k}" aria-checked="${on}"><span class="t"><b>${esc(name)}</b></span><span class="sw"></span></button>`;
+  const owned=PACKS.filter(p=>packOwned(p.id));
   sheet(`<h3>Wildcards</h3>
-    ${owned.length?`<div class="eyebrow dk-ph first">Decks in play</div><div class="dk-on">${sw("free","Free deck",fo)}${owned.map(p=>sw(p.id,p.name,packOn(p.id))).join("")}</div>`:""}
+    ${owned.length?`<div class="eyebrow dk-ph first">Decks in play</div>${deckSwHTML()}`:""}
     <div class="dk-head"><span class="eyebrow">Free deck</span><span class="dk-n">${n>=tot?"All "+tot+" played":n+" of "+tot+" played"}</span></div>
     <div class="dk-bar wide"><i style="width:${Math.round(n/tot*100)}%"></i></div>
     <div class="dk-grid">${WILDS.map(mini).join("")}</div>
@@ -2939,13 +2945,18 @@ function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length;
     $("sheet").classList.add("tq");
     document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc((WNAME[t]||["Wildcard"])[0])}</h3><div class="wild wexplain">${face(t)}<span>${esc(t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=deckSheet)});
     document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
-    document.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
-      if(on&&document.querySelectorAll('[data-dk][aria-checked="true"]').length<2){toast("Keep one deck on",1600);return}
-      if(k==="free"){if(on)S.freeOff=true;else delete S.freeOff}else{S.packOff=S.packOff||{};if(on)S.packOff[k]=true;else delete S.packOff[k]}
-      const g=G();if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(!on));refreshDeckLbl()});
+    bindDeckSw(document.querySelector(".sheet")||document);
     if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
     if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet")&&$("sheet").querySelector(".dk-packs"))deckSheet()});
   })}
+// deck switches, used on the Wildcards screen and the setup step
+function deckSwHTML(){const sw=(k,name,on)=>`<button class="toggle" type="button" role="switch" data-dk="${k}" aria-checked="${on}"><span class="t"><b>${esc(name)}</b></span><span class="sw"></span></button>`;
+  return `<div class="dk-on">${sw("free","Free deck",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>sw(p.id,p.name,packOn(p.id))).join("")}</div>`}
+function bindDeckSw(root,after){root.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
+  if(on&&root.querySelectorAll('[data-dk][aria-checked="true"]').length<2){toast("Keep one deck on",1600);return}
+  if(k==="free"){if(on)S.freeOff=true;else delete S.freeOff}else{S.packOff=S.packOff||{};if(on)S.packOff[k]=true;else delete S.packOff[k]}
+  const g=G();if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(!on));refreshDeckLbl();after&&after()})}
+const anyOwned=()=>PACKS.some(p=>packOwned(p.id));
 // just bought a pack: play it on its own, or mix it in
 function afterBuy(id,back){const p=packById(id),g=G();
   sheet(`<h3>${esc(p.name)} is in</h3><p class="note" style="margin:6px 0 14px">How do you want to play it?</p>
