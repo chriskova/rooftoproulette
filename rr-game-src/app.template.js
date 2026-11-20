@@ -2817,7 +2817,9 @@ const WMETA={};PACKS.forEach(p=>p.cards.forEach(c=>{c.p=p.id;WMETA[c.t]=c;WNAME[
 const ALLW=WILDS.concat(...PACKS.map(p=>p.cards.map(c=>c.t)));   // free deck first, so the recent-cards list keeps its numbers
 const packById=id=>PACKS.find(p=>p.id===id);
 // test mode keeps its own pretend purchases, so locked and owned can both be tried
-const packStore=()=>S.test?(S.tpacks=S.tpacks||{}):(S.packs=S.packs||{});
+// RR Dev loads the live site inside the app: packs unlock free there, kept apart from real purchases
+const DEVAPP=NATIVE&&/(^|\.)rooftoproulette\.com$/.test(location.hostname);
+const packStore=()=>S.test?(S.tpacks=S.tpacks||{}):DEVAPP?(S.dpacks=S.dpacks||{}):(S.packs=S.packs||{});
 const packOwned=id=>!!packStore()[id];
 const packOn=id=>packOwned(id)&&!(S.packOff||{})[id];
 const freeOn=()=>!S.freeOff||!PACKS.some(p=>packOn(p.id));
@@ -2875,14 +2877,14 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
       <div class="pkprev">${pv.map((c,k)=>`<div class="wild wexplain">${face(c)}<span><b>${esc(c.n)}</b>${esc(c.t)}${c.spin&&k===0?`<button class="btn sm line wspin" type="button" id="pkTry">Try a spin</button>`:""}</span></div>`).join("")}
       <div class="pkbacks">${Array.from({length:rest},()=>`<span class="pkback">${I.sparkle}</span>`).join("")}</div></div>
       <p class="note pkgroup">Your whole group plays it.</p>
-      <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test||canBuy()?"":" disabled"}>${S.test?"Unlock (test mode)":canBuy()?(rcPrice[PK_PRODUCT[id]]?"Get it · "+esc(rcPrice[PK_PRODUCT[id]]):"Get it"):NATIVE?"Coming soon":"In the app"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
+      <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test||DEVAPP||canBuy()?"":" disabled"}>${S.test?"Unlock (test mode)":DEVAPP?"Unlock (RR Dev)":canBuy()?(rcPrice[PK_PRODUCT[id]]?"Get it · "+esc(rcPrice[PK_PRODUCT[id]]):"Get it"):NATIVE?"Coming soon":"In the app"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
       if(!S.test&&canBuy()&&!rcPrice[PK_PRODUCT[id]])rcInit().then(()=>{const b=$("pkBuy"),pr=rcPrice[PK_PRODUCT[id]];if(b&&pr&&!b.disabled)b.textContent="Get it · "+pr});
       if(!S.test&&canBuy())$("pkBuy").onclick=async()=>{const b=$("pkBuy");b.disabled=true;
         try{if(await buyPack(id)){packToPile(id);if(g)g.wdeck=null;track("pack_buy",{pack:id});refreshDeckLbl();afterBuy(id,back);return}}
         catch(e){const c=e&&(e.userCancelled||e.code==="1"||/cancel/i.test(e.message||""));if(!c)toast("Couldn't finish that. You haven't been charged.",2600)}
         b.disabled=false};
       if($("pkTry"))$("pkTry").onclick=()=>wildSpin(pv[0].t,true,()=>packSheet(id,back));
-      if(S.test)$("pkBuy").onclick=()=>{packStore()[id]=true;packToPile(id);if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();afterBuy(id,back)};
+      if(S.test||DEVAPP)$("pkBuy").onclick=()=>{packStore()[id]=true;packToPile(id);if(g)g.wdeck=null;save();track("pack_unlock",{pack:id});refreshDeckLbl();afterBuy(id,back)};
       if($("pkBack"))$("pkBack").onclick=back});
     return}
   const pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
@@ -2899,7 +2901,7 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
 const PK_PRODUCT={house:"house_rules",spin:"double_spin"};
 const RCP=()=>{try{return window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Purchases}catch(e){return null}};
 const RCK=()=>{try{const p=Capacitor.getPlatform();return (p==="ios"?AN.revenuecatIosKey:p==="android"?AN.revenuecatAndroidKey:"")||""}catch(e){return ""}};
-const canBuy=()=>!!(NATIVE&&RCK()&&RCP());
+const canBuy=()=>!!(NATIVE&&!DEVAPP&&RCK()&&RCP());
 let rcOn=null,rcUser=null;const rcPrice={};
 function rcInit(){if(rcOn)return rcOn;rcOn=(async()=>{if(!canBuy())return null;const P=RCP();
   await P.configure({apiKey:RCK()});
