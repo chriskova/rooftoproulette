@@ -1214,7 +1214,7 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===3){
-    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">New cards first. Repeats once you've played them all.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
+    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">You'll get new cards before any repeats.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
     bindDeckSw(body);$("wSeeDeck").onclick=deckSheet;
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=2;save();renderWiz()}});
   }
@@ -2698,7 +2698,12 @@ function renderPlay0(){
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
     if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
     const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt;
-    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${g.demo?"":`<button class="txtbtn wmore" type="button" id="wMore">Played so far ›</button>`}`,()=>{$("wOk").onclick=closeSheet;if($("wMore"))$("wMore").onclick=deckSheet})});
+    const pl=S.wplayed||{},played=g.demo?[]:ALLW.filter(t=>pl[t]&&t!==txt);
+    const nm=t=>WMETA[t]?WMETA[t].n:(WNAME[t]||["Wildcard"])[0];
+    const exp=()=>sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${played.length?`<div class="eyebrow dk-ph">Played so far</div><div class="dk-grid">${played.map(t=>`<button class="dk-card up" type="button" data-pt="${esc(t)}">${wFace(t)}<span>${esc(nm(t))}</span></button>`).join("")}</div>`:""}`,()=>{
+      $("wOk").onclick=closeSheet;
+      document.querySelectorAll("[data-pt]").forEach(b=>b.onclick=()=>{const t=b.dataset.pt;sheet(`<h3>${esc(nm(t))}</h3><div class="wild wexplain">${wFace(t)}<span>${esc(t)}</span></div><div class="acts"><button class="btn line" type="button" id="ptBack">Back</button></div>`,()=>$("ptBack").onclick=exp)})});
+    exp()});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
@@ -2928,8 +2933,8 @@ function deckCardHTML(){const n=freePlayed(),tot=WILDS.length,done=n>=tot;
   return `<button class="deckcard" type="button" id="hDeck"><span class="dk-l"><small>Wildcards</small><b>${done?"Free deck done":n+" of "+tot+" played"}</b><span class="dk-bar"><i style="width:${Math.round(n/tot*100)}%"></i></span></span><span class="dk-fan">${[0,1,2].map(()=>`<span class="dk-back">${I.sparkle}</span>`).join("")}</span><span class="chev">›</span></button>`}
 const PACK_PITCH={house:"Rules that hit the whole table",spin:"A second spin at the bar decides the round"};
 // The deck screen: your free deck, then the packs and what each one adds
-function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length;
-  const face=t=>{const m=WNAME[t]||["Wildcard","star"];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m[1]]||WIC.star}</svg>`};
+function wFace(t){const m=WNAME[t]||["Wildcard","star"];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m[1]]||WIC.star}</svg>`}
+function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length,face=wFace;
   const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc((WNAME[t]||["Wildcard"])[0])}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
   const pack=p=>{const own=packOwned(p.id),np=p.cards.filter(c=>pl[c.t]).length;
     return `<button class="dk-pack${own?" own":""}" type="button" data-dp="${p.id}"><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${own?np+" of "+p.cards.length:(canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview")}</span><span class="chev">›</span></button>`};

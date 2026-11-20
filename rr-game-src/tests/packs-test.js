@@ -12,9 +12,13 @@ await p.evaluate(()=>{S.game={id:"pk"+Date.now(),mode:"rush",len:60,visits:[{id:
   wild:{id:"panorama-bar",text:"Everyone orders something with the spirit it lands on.",leg:1,t0:now()-5*60000,shown:true,landed:true},wplan:[1],test:true};save();go('play')});
 await p.waitForTimeout(1200);await shot('1-sealed');
 console.log('on the way:',await p.evaluate(()=>document.querySelector('#stage .wild').innerText.replace(/\n/g,' | ')));
+await p.evaluate(()=>{S.wplayed={};WILDS.slice(0,7).forEach(t=>S.wplayed[t]=1);save()});
 await p.click('#stage .wild');await p.waitForTimeout(500);await shot('2-explainer');
+console.log('played under:',await p.evaluate(()=>document.querySelectorAll('[data-pt]').length),'link:',await p.evaluate(()=>!!document.getElementById('wMore')));
+await p.click('[data-pt]');await p.waitForTimeout(400);await shot('2b-played');await p.click('#ptBack');await p.waitForTimeout(400);console.log('back to info:',await p.evaluate(()=>!!document.getElementById('wOk')));
+await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 console.log('explainer:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
-await p.click('#wMore');await p.waitForTimeout(500);await shot('3-packs');
+await p.evaluate(()=>deckSheet());await p.waitForTimeout(500);await shot('3-packs');
 console.log('packs sheet:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
 await p.click('[data-dp="house"]');await p.waitForTimeout(500);await shot('4-locked');
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
