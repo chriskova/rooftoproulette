@@ -3513,50 +3513,6 @@
   "vibe": "Sunday roast"
  },
  {
-  "id": "manly-greenhouse",
-  "name": "Manly Greenhouse",
-  "area": "Manly",
-  "lat": -33.7974882,
-  "lng": 151.2882014,
-  "rating": 4.3,
-  "address": "36-38 South Steyne",
-  "hours": [
-   [
-    [
-     900,
-     1440
-    ]
-   ],
-   [],
-   [],
-   [
-    [
-     900,
-     1440
-    ]
-   ],
-   [
-    [
-     900,
-     1440
-    ]
-   ],
-   [
-    [
-     900,
-     1440
-    ]
-   ],
-   [
-    [
-     900,
-     1440
-    ]
-   ]
-  ],
-  "pid": "ChIJg6p7bg-rEmsRIh4Xw6XtYoE"
- },
- {
   "id": "bne-sixteen-antlers",
   "name": "Sixteen Antlers",
   "area": "Brisbane City",
