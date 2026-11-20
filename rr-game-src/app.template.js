@@ -1214,7 +1214,7 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===3){
-    body.innerHTML=`<div><h1 class="q">Which decks are in?</h1><p class="sub" style="margin:6px 0 0">Wildcards come from the decks you turn on.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">See all wildcards ›</button>`;
+    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">New cards first. Repeats once you've had them all.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
     bindDeckSw(body);$("wSeeDeck").onclick=deckSheet;
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=2;save();renderWiz()}});
   }
@@ -2697,8 +2697,8 @@ function renderPlay0(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
     if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
-    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt,allOwn=PACKS.every(p=>packOwned(p.id));
-    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${g.demo?"":`<button class="txtbtn wmore" type="button" id="wMore">${allOwn?"Your wildcards ›":"See all wildcards ›"}</button>`}`,()=>{$("wOk").onclick=closeSheet;if($("wMore"))$("wMore").onclick=deckSheet})});
+    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt;
+    sheet(`<h3>Wildcards</h3><p class="note">Little challenges for the bar you're heading to. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div><button class="btn" type="button" id="wOk" style="margin-top:16px">Challenge accepted</button>${g.demo?"":`<button class="txtbtn wmore" type="button" id="wMore">Played so far ›</button>`}`,()=>{$("wOk").onclick=closeSheet;if($("wMore"))$("wMore").onclick=deckSheet})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
