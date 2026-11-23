@@ -495,11 +495,11 @@ function mkMap(el,opts){
   L.tileLayer(ESRI_T("Reference"),{maxNativeZoom:16,maxZoom:19,pane:"overlayPane",opacity:.85}).addTo(m);
   return m;
 }
-const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="seen"?[24,24]:cls==="off"?[13,13]:[20,20]});
+const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></div>`,iconSize:cls==="big"?[26,26]:cls==="seen"?[24,24]:cls&&/\boff\b/.test(cls)?[13,13]:[20,20]});
 const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num sm${x?" x":""}">${n}</div>`,iconSize:[16,16]});
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
-function fitZone(m,c,r,extra,pad,k){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*(k||1.04));(extra||[]).forEach(p=>b.extend(p));m.fitBounds(b,pad?{animate:false,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{animate:false,padding:[8,8]})}
+function fitZone(m,c,r,extra,pad,k,anim){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*(k||1.04));(extra||[]).forEach(p=>b.extend(p));const a=anim?{animate:true,duration:.45}:{animate:false};m.fitBounds(b,pad?{...a,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{...a,padding:[8,8]})}
 
 /* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
 const GKEY=(BUNDLED&&window.RR_CONFIG.googleMapsAppKey)||window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10a";
@@ -564,7 +564,7 @@ function lWrap(el){
       if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},
     line(pts){const ll=pts.map(p=>[p.lat,p.lng]),P=(c,o,w)=>L.polyline(ll,{color:c,weight:w,opacity:o,lineCap:"round",lineJoin:"round"}).addTo(ov);
       if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
-    fitZone(c,r,extra,pad,k){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad,k)},
+    fitZone(c,r,extra,pad,k,anim){fitZone(m,c,r,(extra||[]).map(p=>L.latLng(p.lat,p.lng)),pad,k,anim)},
     fitPts(pts,maxZoom,pad){const bb=L.latLngBounds(pts.map(p=>[p.lat,p.lng]));pad?m.fitBounds(bb,{animate:false,maxZoom:maxZoom||16,paddingTopLeft:[pad.left,pad.top],paddingBottomRight:[pad.right,pad.bottom]}):m.fitBounds(bb.pad(.3),{animate:false,maxZoom:maxZoom||16})},
     setView(p,z){m.setView([p.lat,p.lng],z,{animate:true})},
     me(p){if(!p){if(meM){m.removeLayer(meM);meM=null}return}if(!meM)meM=L.marker([p.lat,p.lng],{icon:meIcon,zIndexOffset:1000,interactive:false}).addTo(m);else meM.setLatLng([p.lat,p.lng])},
@@ -1207,11 +1207,12 @@ function renderWiz(){
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
         cta(ok?`<button class="btn" id="wNext" type="button">Next</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
-          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});w.step=2;save();renderWiz()};
+          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});w.step=2;save();wizMorphOut(renderWiz)};
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
     fitMap($("v-wiz"));
+    if(WIZB){WIZB=false;if(!RMOTION())[...body.children].forEach(x=>{if(!x.querySelector("#rrMap"))x.classList.add("win")});const sb=body.querySelector(".rrmap.stack");if(sb&&!RMOTION())[...sb.children].forEach(x=>{if(!x.classList.contains("rrcanvas"))x.classList.add("win")})}
   }
   if(w.step===3){
     body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">You'll get new cards before any repeats.</p></div>${deckSwHTML()}`;
@@ -1220,7 +1221,7 @@ function renderWiz(){
   }
   if(w.step===2){
     // Ready to spin: the zone and the rooftops in play on the map, then the crawl as a list you can tap to change
-    const excl=w.excl||(w.excl=[]),area=w.start.type==="me"?nearestSuburb(w.z):w.start.name;
+    const excl=w.excl||(w.excl=[]),area=w.start.type==="me"?nearestSuburb(w.z):w.start.name,M=WIZM;WIZM=null;
     const inPlay=()=>playable(inCircle(w.z,w.radius),!!w.newOnly).filter(v=>!excl.includes(v.id)&&openOK(v,now()));
     const cm=collectedMap(),beenL=playable(inCircle(w.z,w.radius),false).filter(v=>cm[v.id]);if(!beenL.length)w.newOnly=false;
     const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
@@ -1235,19 +1236,39 @@ function renderWiz(){
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
     if($("rBeen"))$("rBeen").onclick=()=>sheet(`<h3>Been here before</h3><p class="note" style="margin:2px 0 10px">Rooftops in your zone you've already been to.</p><div class="card zlist">${beenL.map(v=>`<div class="zrow"><button class="t zopen" type="button" data-b="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></button></div>`).join("")}</div><button class="btn dark" type="button" id="bDone" style="margin-top:14px">Done</button>`,()=>{
       document.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.b)));$("bDone").onclick=closeSheet});
-    $("rLen").onclick=()=>{w.step=0;save();renderWiz()};$("rZone").onclick=()=>{w.step=1;save();renderWiz()};
+    $("rLen").onclick=()=>{w.step=0;save();renderWiz()};$("rZone").onclick=()=>{w.step=1;save();wizMorphBack(renderWiz)};
     $("rDeck").onclick=()=>{deckSheet();const t=setInterval(()=>{if(S.route!=="wiz"||!$("rDeckV")){clearInterval(t);return}$("rDeckV").textContent=deckLbl()},400)};
     if($("wInv"))$("wInv").onclick=()=>liveInvite();
     let m=null;
     const draw=()=>{if(!$("wSeeV"))return;const L_=inPlay();$("wSeeV").textContent=L_.length+(excl.length?` · ${excl.length} vetoed`:"");
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
-    makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,56);draw()});
-    draw();wizRepaint=draw;
+    // From the zone step: this is the same map settling in. It starts where that one was (same size, place, view and pins),
+    // the bars outside the zone fade, the map grows into place and zooms to your zone, then the list rises in.
+    const box=body.querySelector(".rmap"),late=[...body.querySelectorAll(".rlist,.rchips,.rhead,.oneline")];
+    if(M){const r1=box.getBoundingClientRect(),h1=r1.height;late.forEach(x=>x.classList.add("wpre"));
+      Object.assign(box.style,{flex:"none",height:M.h+"px",transform:`translateY(${Math.round(M.top-r1.top)}px)`});
+      M.h1=h1}
+    makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;
+      if(!M){m.fitZone(w.z,w.radius,null,56);draw();return}
+      m.fitZone(w.z,w.radius,null,M.pad,M.k);if(M.mpp&&m.setMpp)m.setMpp(M.mpp);m.ring(w.z,w.radius);$("wSeeV").textContent=inPlay().length+(excl.length?` · ${excl.length} vetoed`:"");
+      const ids=new Set(inPlay().map(v=>v.id));VENUES.filter(v=>cityOf(v)===S.city).forEach(v=>m.pin(v,ids.has(v.id)?"":"off gone"));
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{box.style.transition="height .34s cubic-bezier(.3,.7,.3,1),transform .34s cubic-bezier(.3,.7,.3,1)";box.style.height=M.h1+"px";box.style.transform="none"}));
+      setTimeout(()=>{if(!$("wMap")||wMapRef!==m)return;Object.assign(box.style,{transition:"",flex:"",height:"",transform:""});m.resize();m.fitZone(w.z,w.radius,null,56,undefined,true);
+        late.forEach(x=>{x.classList.remove("wpre");x.classList.add("win")});setTimeout(()=>{if(wMapRef===m){m.ring(null);draw()}},520)},380)});
+    if(!M)draw();wizRepaint=draw;
     $("wSee").onclick=wizSpoiler;
     cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()}});
   }
 }
-let wizRepaint=null,wMapRef=null;
+let wizRepaint=null,wMapRef=null,WIZM=null,WIZB=false;
+const RMOTION=()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}};
+// zone step → Ready: everything but the map slides away, and we note where the map sits so Ready can start from there
+function wizMorphOut(then){const el=$("rrMap"),cv=el&&el.closest(".rrcanvas,.rrmap");if(RMOTION()||!cv||!rrMap){then();return}
+  const r=cv.getBoundingClientRect();WIZM={top:r.top,h:r.height,pad:ZPAD(),k:ZONEK,mpp:rrMap.mpp?rrMap.mpp():null};
+  const body=$("wBody");[...body.children].forEach(x=>{if(!x.contains(el))x.classList.add("wout")});const sb=body.querySelector(".rrmap.stack");if(sb)[...sb.children].forEach(x=>{if(!x.contains(el))x.classList.add("wout")});
+  setTimeout(then,190)}
+// Ready → zone step: the list and pills slide away, and the zone step's controls slide back in around its map
+function wizMorphBack(then){if(RMOTION()){then();return}document.querySelectorAll("#wBody .rlist,#wBody .rchips,#wBody .rhead").forEach(x=>x.classList.add("wout"));WIZB=true;setTimeout(then,170)}
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
 // The bars are a surprise by default: a spoiler warning first, then the list (with vetoes) for anyone who wants it.
 function wizSpoiler(then){then=typeof then==="function"?then:wizBars;const w=S.wiz;if(w&&w.spoiled){then();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
@@ -1284,7 +1305,7 @@ async function useMe(){
   }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }
-$("wBack").onclick=()=>{const w=S.wiz;if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step===2){w.step=1;save();wizMorphBack(renderWiz);return}if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
   ac();noLoc=noLoc===true;if(tryStart.busy)return;
