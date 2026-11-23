@@ -145,10 +145,10 @@ a.btn{text-decoration:none}
 
 /* wizard top */
 .wtop{display:flex;align-items:center;gap:12px}
-.wsteps{flex:1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;min-width:0;padding-top:18px}
-.wst{display:flex;flex-direction:column;gap:7px;background:none;border:0;padding:0;font:inherit;text-align:left;color:var(--muted);min-width:0}
-.wst i{display:block;height:6px;border-radius:99px;background:var(--s2);transition:background .3s}
-.wst.on i{background:var(--amber)}
+.wsteps{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0;padding-top:18px}
+.wsteps .prog{flex:none}
+.wlbls{display:grid;gap:6px}
+.wst{display:flex;flex-direction:column;background:none;border:0;padding:0;font:inherit;text-align:left;color:var(--muted);min-width:0}
 .wst span{font-size:12.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wst.cur span{color:var(--text)}
 .wst.done{cursor:pointer}.wst.done span{color:var(--amber-text);font-weight:700}
@@ -269,6 +269,9 @@ a.btn{text-decoration:none}
 .msub{display:none}
 
 .view h1.q.qmap{font-size:26px}
+.sub.oneline{white-space:nowrap;font-size:clamp(13px,3.65vw,15px)}
+/* zone step: the move-once note under the heading, tucked in so the map keeps its size */
+#v-wiz p.sub.zmove{margin:2px 0 -8px!important;font-size:14.5px;line-height:1.3}#v-wiz h1.q.qmap{line-height:1.1}
 body.mapq .view .wtop~*:not(:has(.rrmap)):not(.rrmap),body.mapq .view :has(>.rrmap)>:not(.rrmap),body.mapq .rrsum,body.mapq .rrslide,body.mapq .rrnote,body.mapq #cta,body.mapq #wSum{display:none!important}
 body.mapq .view{padding-bottom:12px!important}
 .sczone{display:flex;align-items:center;gap:6px;justify-content:center;color:var(--muted);font-size:13.5px;font-weight:600;margin:-4px 0 2px}.sczone svg{width:15px;height:15px;color:var(--amber-text)}
@@ -1600,6 +1603,24 @@ body.camon #v-play .adjz{display:none}
 .rset .rs b{font-size:16px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rset .rs .chev{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--amber-text);font-size:20px;line-height:1}
 .dk-ph.first{margin-top:4px}.dk-on{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+/* deck rows: mark, name and played count; the switch sits apart on the right, the rest of the row opens the deck */
+.dk-row{display:flex;align-items:center;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);transition:border-color .15s}
+.dk-row.on{border-color:var(--amber)}
+.dk-open{flex:1;min-width:0;display:flex;align-items:center;gap:12px;appearance:none;background:none;border:0;padding:12px 6px 12px 14px;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.dk-open .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.dk-open .t b{font-size:15.5px}.dk-open .t small{color:var(--muted);font-size:13px}
+.dk-open .chev{color:var(--amber-text);font-size:20px;line-height:1;padding-right:8px}
+.dk-sw{appearance:none;background:none;border:0;border-left:1px solid var(--line);padding:6px 16px 6px 14px;align-self:stretch;display:flex;align-items:center;cursor:pointer}
+.dk-sw[aria-checked="true"] .sw{background:var(--amber)}.dk-sw[aria-checked="true"] .sw::after{transform:translateX(20px)}
+.dk-logo{width:30px;height:40px;flex:none;border-radius:7px;border:1.5px dashed rgba(245,184,61,.6);display:flex;align-items:center;justify-content:center;color:var(--amber-text)}
+.dk-logo svg{width:17px;height:17px}
+.dk-vhead{display:flex;align-items:center;gap:12px}.dk-vhead h3{margin:0}
+.dk-pack .dk-logo{margin-right:2px}
+.dk-card.down svg{width:15px;height:15px}
+/* spin cards: the card starts the sentence, the spin finishes it underneath in amber */
+.wild .wfill{display:block;margin-top:4px;color:var(--amber-text);font-weight:800;font-size:1.06em}
+.wild .wspin{width:100%;justify-content:center}
+.wild>span{flex:1;min-width:0}
+.wsfull{margin:12px 0 0;text-align:center;font-weight:600;font-size:16px}.wsfull span{color:var(--amber-text);font-weight:800}
 .rchips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.rchips::-webkit-scrollbar{display:none}.rchips .chip{flex:none}
 .rchips .chip{display:inline-flex;align-items:center;gap:6px;color:var(--text);font-size:14.5px;cursor:pointer}
 .rchips .chip svg{width:16px;height:16px;color:var(--amber-text)}

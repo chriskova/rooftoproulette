@@ -1084,7 +1084,7 @@ function renderQuick(){
     if(!q.z)q.z={lat:q.from.lat,lng:q.from.lng,r:2};
     const zz=lst?q.lz:q.z;
     const listPool=(z,t)=>{const all=wantList().filter(v=>!z.r||dist(z,v)<=z.r*1000);return {all,open:all.filter(v=>openOK(v,t))}};
-    b.innerHTML=top+`<div><h1 class="q qmap">${pick?"Where to?":lst?"Your Hit list":"Set your area"}</h1><p class="sub msub" style="margin:6px 0 0">${pick?"Drag the map to where you'll start.":lst?"Spin all of it, or slide to keep it to one area.":"Drag the map to move it. Pinch or slide to change how far."}</p></div>${rrZoneHTML()}${lst?"":newTog}`;
+    b.innerHTML=top+`<div><h1 class="q qmap">${lst?"Your Hit list":"Set your area"}</h1><p class="sub msub" style="margin:6px 0 0">${pick?"Drag the map to where you'll start.":lst?"Spin all of it, or slide to keep it to one area.":"Drag the map to move it. Pinch or slide to change how far."}</p></div>${rrZoneHTML()}${lst?"":newTog}`;
     qZB=rrZoneBind(zz,me,()=>lst?false:q.newOnly,(P,z,moved)=>cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Let's go</button>`,()=>$("qGo").onclick=()=>{if(lst){q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};q.r=z.r||null;save();startCruise();return}q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};q.r=z.r||null;save();startCruise()}),lst?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);fitMap(b);
   }
   $("qBack").onclick=()=>{if(step===0){S.quick=null;go("home");return}q.step=0;q.note=null;save();renderQuick()};
@@ -1151,8 +1151,8 @@ function renderWiz(){
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
   stVal[3]=deckLbl();const order=anyOwned()?[0,1,3,2]:[0,1,2],names={0:"Time",1:"Zone",3:"Wildcards",2:"Spin"},pos=order.indexOf(w.step);
-  $("wSteps").style.gridTemplateColumns=`repeat(${order.length},minmax(0,1fr))`;
-  $("wSteps").innerHTML=order.map((k,i)=>{const done=i<pos;return done?`<button class="wst on done" type="button" data-s="${k}"><i></i><span>${esc(stVal[k])}</span></button>`:`<div class="wst${i===pos?" on cur":""}"><i></i><span>${names[k]}</span></div>`}).join("");
+  // one bar that fills as you go, with each step named underneath (done ones show your pick and jump back)
+  $("wSteps").innerHTML=`<div class="prog"><i style="width:${Math.round((pos+1)/order.length*100)}%"></i></div><div class="wlbls" style="grid-template-columns:repeat(${order.length},minmax(0,1fr))">${order.map((k,i)=>{const done=i<pos;return done?`<button class="wst on done" type="button" data-s="${k}"><span>${esc(stVal[k])}</span></button>`:`<div class="wst${i===pos?" on cur":""}"><span>${names[k]}</span></div>`}).join("")}</div>`;
   $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
@@ -1184,7 +1184,7 @@ function renderWiz(){
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
     w.z.r=Math.round(w.z.r*10)/10;
     const excl=w.excl||(w.excl=[]),hasHistory=Object.keys(collectedMap()).length;
-    body.innerHTML=`<h1 class="q qmap">Where are you playing?</h1>${rrZoneHTML(R1)}
+    body.innerHTML=`<div><h1 class="q qmap">Set your zone</h1><p class="sub zmove">You can move it once mid-crawl.</p></div>${rrZoneHTML(R1)}
       <div class="zwarn" id="zWarn" hidden><b id="zWarnT"></b><small id="zWarnS"></small><button class="btn line sm" type="button" id="zoneSuggest" hidden></button></div>
 `;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),!!w.newOnly).filter(v=>!excl.includes(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
@@ -1194,7 +1194,7 @@ function renderWiz(){
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
       $("rrN").textContent=P.all.length?"Rooftops in your zone":"No rooftops in your zone";
-      $("rrNs").textContent=(!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):P.open.length?`${P.open.length} open now`:"Drag the map or widen the circle.")+(S.route==="wiz"&&P.open.length?" · Move once mid-crawl":"");
+      $("rrNs").textContent=(!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):P.open.length?`${P.open.length} open now`:"Drag the map or widen the circle.");
       $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok&&!P.open.length)$("rrNB").hidden=true;   // the warning says it all (and the setup screen has to fit without scrolling)
@@ -1214,8 +1214,8 @@ function renderWiz(){
     fitMap($("v-wiz"));
   }
   if(w.step===3){
-    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">You'll get new cards before any repeats.</p></div>${deckSwHTML()}<button class="txtbtn" type="button" id="wSeeDeck" style="align-self:flex-start">Played so far ›</button>`;
-    bindDeckSw(body);$("wSeeDeck").onclick=deckSheet;
+    body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">You'll get new cards before any repeats.</p></div>${deckSwHTML()}`;
+    bindDeckSw(body);
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=2;save();renderWiz()}});
   }
   if(w.step===2){
@@ -1225,7 +1225,7 @@ function renderWiz(){
     // been to some of these before? offer to skip them here, with the count, rather than on the map screen
     const cm=collectedMap(),zoneAll=playable(inCircle(w.z,w.radius),false),allHere=zoneAll.length,beenHere=zoneAll.filter(v=>cm[v.id]).length;if(!beenHere)w.newOnly=false;
     const yy=you(),awayZ=!!(yy&&dist(yy,w.start)>w.radius*1000+150);
-    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub" style="margin:6px 0 0">You're outside your zone.<br>The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
+    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub oneline" style="margin:6px 0 0">Outside your zone. The clock starts at your first bar.</p>`:first?`<p class="sub" style="margin:6px 0 0">Spin and head to the bar. Your next spin unlocks once you arrive.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <button class="zbars" type="button" id="wSee"><span class="zic">${I.glass}</span><span class="t"><b>Rooftops in your zone</b><small id="wInPlay"></small></span><span class="chev">›</span></button>
       ${beenHere?`<button class="toggle" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}"><span class="t"><b>Skip bars you've been to</b><small>You've been to ${beenHere} of ${allHere} in your zone</small></span><span class="sw"></span></button>`:""}`;
@@ -2697,7 +2697,7 @@ function renderPlay0(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
     if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
-    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":txt;
+    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":m&&m.spin?((g.wild&&g.wild.res||[]).length?wFull(m,g.wild.res):wLead(m)):txt;
     const pl=S.wplayed||{};
     const nAll=ALLW.filter(t=>pl[t]).length,own=anyOwned();
     const sub=own?esc((freeOn()?["Free deck"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name)).join(" + ")):`${freePlayed()} of ${WILDS.length} played`;
@@ -2784,38 +2784,60 @@ Object.assign(WIC,{spin:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12
  phone:'<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
  search:'<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
  build:'<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
- walk:'<circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2-6 3 3v3M8 12l2-4 4 1 2 3M12 15l-1-5"/>'});
+ walk:'<circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2-6 3 3v3M8 12l2-4 4 1 2 3M12 15l-1-5"/>',
+ drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+ letter:'<path d="M5 20L11 4h2l6 16M7.5 14h9"/>',
+ swap:'<path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 12l4 4-4 4"/><path d="M21 16H7"/>',
+ coupe:'<path d="M4 5h16c0 4-3.5 7-8 7s-8-3-8-7z"/><path d="M12 12v7M8 20h8"/>',
+ bottle:'<path d="M10 2.5h4V7l1.5 2.5V20a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 8.5 20V9.5L10 7z"/><path d="M8.5 13h7"/>',
+ bubbles:'<circle cx="8.5" cy="15.5" r="3.5"/><circle cx="15.5" cy="8.5" r="4"/><circle cx="17" cy="18" r="1.8"/><circle cx="7" cy="6.5" r="1.5"/>',
+ citrus:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5.5"/><path d="M12 6.5v11M6.5 12h11M8.1 8.1l7.8 7.8M15.9 8.1l-7.8 7.8"/>',
+ bell:'<path d="M5 17a7 7 0 0 1 14 0z"/><path d="M3 20h18M12 10V7.5M10 7.5h4"/>',
+ globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.5 3.5 5.4 3.5 8.5s-1.1 6-3.5 8.5c-2.4-2.5-3.5-5.4-3.5-8.5s1.1-6 3.5-8.5z"/>',
+ book:'<path d="M12 6.5C10 5 7 4.5 4 5v13.5c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5V20"/>',
+ repeat:'<path d="M17 3l3 3-3 3"/><path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H20"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H4"/>',
+ shaker:'<path d="M7.5 9h9L15 21H9z"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2"/><path d="M11 3h2"/>',
+ house:'<path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>',
+ dspin:'<circle cx="8" cy="12" r="6.5"/><circle cx="16" cy="12" r="6.5"/><path d="M8 7.5v9M3.5 12h9"/>'});
+const DRINK_SAY=["a spritz","a martini","a margarita","a beer","a glass of wine","a negroni","a mojito","an espresso martini"];
 const SPIN_DRINKS=["Spritz","Martini","Margarita","Beer","Wine","Negroni","Mojito","Espresso martini"];
 const PACKS=[
- {id:"house",name:"House Rules",line:"Wildcards that hit the whole group.",prev:[0,1,6],cards:[
-  {n:"Every colour",ic:"two",t:"Everyone orders a different colour drink."},
-  {n:"First letter",ic:"person",t:"Everyone orders a drink starting with the first letter of their name."},
+ {id:"house",name:"House Rules",logo:"house",line:"Wildcards that hit the whole group.",prev:[0,1,6],cards:[
+  {n:"Every colour",ic:"drop",t:"Everyone orders a different colour drink."},
+  {n:"First letter",ic:"letter",t:"Everyone orders a drink starting with the first letter of their name."},
   {n:"Outfit match",ic:"shirt",t:"Everyone orders a drink that matches their outfit."},
-  {n:"Odd glass",ic:"glass",t:"Every drink comes in a different glass."},
+  {n:"Odd glass",ic:"coupe",t:"Every drink comes in a different glass."},
   {n:"Last glass",ic:"two",t:"Last glass up at the cheers drinks."},
   {n:"Walk time",ic:"walk",t:"Everyone guesses the walk to the next bar. Furthest off drinks.",walk:1},
-  {n:"Drink spin",ic:"spin",t:"At the bar, spin for what everyone orders.",seal:1,spin:SPIN_DRINKS},
-  {n:"Swap spin",ic:"spin",t:"Once the drinks land, spin: left, right or keep.",seal:1,spin:["Swap left","Swap right","Keep"]},
+  {n:"Drink spin",ic:"spin",t:"At the bar, spin for what everyone orders.",seal:1,spin:SPIN_DRINKS,lead:"Everyone orders",say:DRINK_SAY},
+  {n:"Swap spin",ic:"swap",t:"Once the drinks land, spin: left, right or keep.",seal:1,spin:["Swap left","Swap right","Keep"],lead:"Once the drinks land, everyone",say:["passes their drink left","passes their drink right","keeps their own"]},
   {n:"Now playing",ic:"music",t:"Agree on one drink for the song playing as you walk in. Everyone orders it."},
   {n:"Level up",ic:"build",t:"Count the floor number through the alphabet. Order a drink starting with that letter."},
   {n:"Last search",ic:"search",t:"Read out your last Google search. The group picks a drink to match it."},
   {n:"Lock screen",ic:"phone",t:"Order a drink that matches your lock screen."}]},
- {id:"spin",name:"Double Spin",line:"Wildcards that hit the whole group.",prev:[0,9,6],cards:[
-  {n:"Spirit spin",ic:"spin",t:"Everyone orders something with the spirit it lands on.",spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"]},
-  {n:"Colour spin",ic:"spin",t:"Everyone orders that colour.",spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"]},
-  {n:"Flavour spin",ic:"spin",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",spin:["Sweet","Sour","Bitter","Fizzy"]},
-  {n:"Glass spin",ic:"spin",t:"Everyone orders something served in that glass.",spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"]},
-  {n:"Fruit spin",ic:"spin",t:"Everyone orders something with that fruit in it.",spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"]},
-  {n:"Order spin",ic:"spin",t:"Bartender's choice, a stranger's pick, or the next table's drink.",spin:["Bartender's choice","A stranger's pick","The next table's drink"]},
-  {n:"Shot spin",ic:"spin",t:"Shots all round, half of you, or one of you.",spin:["Shots all round","Half of you","One of you"]},
-  {n:"Passport spin",ic:"spin",t:"Spin for a country. Everyone orders a drink from it.",spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"]},
-  {n:"Your spin",ic:"spin",t:"Pass the phone. Everyone spins for their own drink.",spin:SPIN_DRINKS,multi:1},
-  {n:"Story spin",ic:"spin",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",spin:["Your first drink","Your holiday drink","Your guilty pleasure"]},
-  {n:"Usual spin",ic:"spin",t:"Your usual, the opposite of your usual, or something you've never tried.",spin:["Your usual","The opposite of your usual","Something you've never tried"]},
-  {n:"Bartender spin",ic:"spin",t:"Ask for their favourite to make, their most popular, the newest on the menu, or the one they hate making.",spin:["Their favourite to make","Their most popular","The newest on the menu","The one they hate making"]}]}];
+ {id:"spin",name:"Double Spin",logo:"dspin",line:"Wildcards that hit the whole group.",prev:[0,9,6],cards:[
+  {n:"Spirit spin",ic:"bottle",t:"Everyone orders something with the spirit it lands on.",spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"],lead:"Everyone orders something with"},
+  {n:"Colour spin",ic:"drop",t:"Everyone orders that colour.",spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"],lead:"Everyone orders something"},
+  {n:"Flavour spin",ic:"bubbles",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",spin:["Sweet","Sour","Bitter","Fizzy"],lead:"Everyone orders something"},
+  {n:"Glass spin",ic:"coupe",t:"Everyone orders something served in that glass.",spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"],lead:"Everyone orders something served in a"},
+  {n:"Fruit spin",ic:"citrus",t:"Everyone orders something with that fruit in it.",spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"],lead:"Everyone orders something with"},
+  {n:"Order spin",ic:"bell",t:"Bartender's choice, a stranger's pick, or the next table's drink.",spin:["Bartender's choice","A stranger's pick","The next table's drink"],lead:"Everyone orders",say:["whatever the bartender picks","whatever a stranger picks","whatever the next table's drinking"]},
+  {n:"Shot spin",ic:"shot",t:"Shots all round, half of you, or one of you.",spin:["Everyone","Half of you","One of you"],lead:"Shots for",say:["everyone","half of you","one of you"]},
+  {n:"Passport spin",ic:"globe",t:"Spin for a country. Everyone orders a drink from it.",spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"],lead:"Everyone orders a drink from",keep:1},
+  {n:"Your spin",ic:"phone",t:"Pass the phone. Everyone spins for their own drink.",spin:SPIN_DRINKS,multi:1,lead:"Pass the phone. Everyone spins for their own drink."},
+  {n:"Story spin",ic:"book",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",spin:["First drink","Holiday drink","Guilty pleasure"],lead:"Everyone orders their",say:["first ever drink","go-to holiday drink","guilty pleasure drink"]},
+  {n:"Usual spin",ic:"repeat",t:"Your usual, the opposite of your usual, or something you've never tried.",spin:["Your usual","The opposite","Never tried"],lead:"Everyone orders",say:["their usual","the opposite of their usual","something they've never tried"]},
+  {n:"Bartender spin",ic:"shaker",t:"Ask for their favourite to make, their most popular, the newest on the menu, or the one they hate making.",spin:["Their favourite","Most popular","Newest one","One they hate"],lead:"Ask the bartender for",say:["their favourite to make","their most popular drink","the newest drink on the menu","the one they hate making"]}]}];
 const WMETA={};PACKS.forEach(p=>p.cards.forEach(c=>{c.p=p.id;WMETA[c.t]=c;WNAME[c.t]=[c.n,c.ic]}));
 const ALLW=WILDS.concat(...PACKS.map(p=>p.cards.map(c=>c.t)));   // free deck first, so the recent-cards list keeps its numbers
 const packById=id=>PACKS.find(p=>p.id===id);
+// Spin cards: the card shows how the sentence starts, the wheel finishes it. Rules stay keyed by t (played list, live crawls).
+const wLead=m=>m&&m.lead?(m.multi?m.lead:m.lead+"…"):m?m.t:"";
+const wSay=(m,r)=>{const i=m.spin?m.spin.indexOf(r):-1;if(i<0)return r;if(m.say)return m.say[i];return m.keep?r:r.charAt(0).toLowerCase()+r.slice(1)};
+const wFull=(m,res)=>m.multi?m.lead+" "+res.join(", "):m.lead+" "+wSay(m,res[res.length-1])+".";
+const wFill=(m,res)=>m.multi?res.join(" · "):"…"+wSay(m,res[res.length-1])+".";
+// each deck's own mark: on its row, its pack and the cards you haven't landed yet
+const deckLogo=id=>{const p=packById(id);return p&&p.logo?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[p.logo]}</svg>`:I.sparkle};
 // test mode keeps its own pretend purchases, so locked and owned can both be tried
 // RR Dev loads the live site inside the app: packs unlock free there, kept apart from real purchases
 const DEVAPP=NATIVE&&/(^|\.)rooftoproulette\.com$/.test(location.hostname);
@@ -2827,7 +2849,7 @@ const deckIdx=()=>{const fo=freeOn();return ALLW.map((_,i)=>i).filter(i=>{const 
 const deckCards=()=>deckIdx().map(i=>ALLW[i]);
 const deckLbl=()=>{const on=(freeOn()?["Free deck"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name));return on.length===1?on[0]:on.length+" decks"};
 const wSealed=t=>!!(WMETA[t]&&WMETA[t].seal);
-const wShort=t=>wSealed(t)?"Opens at the bar":t;   // what a card shows before it's opened (Dealer's choice, previews)
+const wShort=t=>wSealed(t)?"Opens at the bar":WMETA[t]?wLead(WMETA[t]):t;   // what a card shows before it's opened (Dealer's choice, previews)
 const wOpenNow=(g,w)=>!!(g&&w&&(g.visits||[]).some(v=>v.id===w.id&&v.arrivedAt!=null&&v.leftAt==null));
 // The inside of a wildcard box: sealed on the way, the rule once you're there, then what the spin landed on
 function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
@@ -2835,26 +2857,26 @@ function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   const here=wOpenNow(g,w),open=!m.seal||here,ic=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m.ic]||WIC.star}</svg>`;
   if(!open)return `${ic}<span><b>${esc(m.n)}</b>Opens at the bar</span>`;
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
-  const res=(w.res||[]).length?`<small class="wres">${w.res.map(esc).join(" · ")}</small>`:"";
+  const res=(w.res||[]).length?(m.spin?`<span class="wfill">${esc(wFill(m,w.res))}</span>`:`<small class="wres">${w.res.map(esc).join(" · ")}</small>`):"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
-  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin"}</button>`:"";
-  return `${ic}<span><b>${esc(m.n)}</b>${esc(m.t)}${res}${walk}${lastLine(w)}${btn}</span>`}
+  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin the wildcard"}</button>`:"";
+  return `${ic}<span><b>${esc(m.n)}</b>${esc(wLead(m))}${res}${walk}${lastLine(w)}${btn}</span>`}
 const lastLine=w=>w&&w.last?`<small class="wres">Last new one in the free deck</small>`:"";
 function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
 const markPlayed=t=>{if(!t||ALLW.indexOf(t)<0)return;(S.wplayed=S.wplayed||{})[t]=1};
 // the wheel for a spin card. trial: a preview from the pack sheet, nothing is kept
 function wildSpin(t,trial,back){const m=WMETA[t];if(!m||!m.spin)return;const g=G();
   const draw=()=>{const w=g&&g.wild&&g.wild.text===t?g.wild:null,done=w&&(w.res||[]);
-    sheet(`<h3>${esc(m.n)}</h3><p class="note">${esc(m.t)}</p><div class="demo wsdemo"><div id="wsBox"><div id="wsReel" class="demoreel"></div></div></div><div id="wsOut"></div>`,()=>{
+    sheet(`<h3>${esc(m.n)}</h3><p class="note">${esc(wLead(m))}</p><div class="demo wsdemo"><div id="wsBox"><div id="wsReel" class="demoreel"></div></div></div><div id="wsOut"></div>`,()=>{
       const box=$("wsBox");box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
       const R=makeReel($("wsReel"),m.spin,{hint:true,onRelease:vel=>{if(R.busy)return false;go_(vel)}});
       const go_=vel=>{const pick=m.spin[Math.floor(Math.random()*m.spin.length)];
         R.spinTo(pick,vel===undefined?-(30+Math.random()*20):vel,()=>{buzz(20);box.innerHTML=`<div class="wsres">${esc(pick)}</div>`;
           if(!trial&&G()&&G().wild&&G().wild.text===t){const ww=G().wild;ww.res=m.multi?(ww.res||[]).concat([pick]):[pick];save();if(S.route==="play")renderPlay()}
           const more=m.multi||trial;
-          $("wsOut").innerHTML=`<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the pack":"Done"}</button></div>`;
+          $("wsOut").innerHTML=`${m.multi?"":`<p class="wsfull">${esc(m.lead)} <span>${esc(wSay(m,pick))}.</span></p>`}<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the pack":"Done"}</button></div>`;
           if($("wsAgain"))$("wsAgain").onclick=draw;$("wsDone").onclick=()=>{if(trial&&back)back();else closeSheet()}})};
-      $("wsOut").innerHTML=`<button class="btn" type="button" id="wsGo">Spin</button>`;$("wsGo").onclick=()=>{$("wsOut").innerHTML="";go_()};
+      $("wsOut").innerHTML=`<button class="btn" type="button" id="wsGo">Spin the wildcard</button>`;$("wsGo").onclick=()=>{$("wsOut").innerHTML="";go_()};
     })};
   draw()}
 // What's in play: the free deck, packs you own (switch them on or off) and packs you could add
@@ -2874,8 +2896,8 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
   const face=c=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[c.ic]||WIC.star}</svg>`;
   if(!own){const pv=p.prev.map(i=>p.cards[i]),rest=p.cards.length-pv.length;
     sheet(`<h3>${esc(p.name)}</h3><p class="note">${esc(p.line)}</p>
-      <div class="pkprev">${pv.map((c,k)=>`<div class="wild wexplain">${face(c)}<span><b>${esc(c.n)}</b>${esc(c.t)}${c.spin&&k===0?`<button class="btn sm line wspin" type="button" id="pkTry">Try a spin</button>`:""}</span></div>`).join("")}
-      <div class="pkbacks">${Array.from({length:rest},()=>`<span class="pkback">${I.sparkle}</span>`).join("")}</div></div>
+      <div class="pkprev">${pv.map((c,k)=>`<div class="wild wexplain">${face(c)}<span><b>${esc(c.n)}</b>${esc(wLead(c))}${c.spin&&k===0?`<button class="btn sm line wspin" type="button" id="pkTry">Try a spin</button>`:""}</span></div>`).join("")}
+      <div class="pkbacks">${Array.from({length:rest},()=>`<span class="pkback">${deckLogo(id)}</span>`).join("")}</div></div>
       <p class="note pkgroup">Your whole group plays it.</p>
       <div class="acts"><button class="btn" type="button" id="pkBuy"${S.test||DEVAPP||canBuy()?"":" disabled"}>${S.test?"Unlock (test mode)":DEVAPP?"Unlock (RR Dev)":canBuy()?(rcPrice[PK_PRODUCT[id]]?"Get it · "+esc(rcPrice[PK_PRODUCT[id]]):"Get it"):NATIVE?"Coming soon":"In the app"}</button>${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}</div>`,()=>{
       if(!S.test&&canBuy()&&!rcPrice[PK_PRODUCT[id]])rcInit().then(()=>{const b=$("pkBuy"),pr=rcPrice[PK_PRODUCT[id]];if(b&&pr&&!b.disabled)b.textContent="Get it · "+pr});
@@ -2891,7 +2913,7 @@ function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwne
   sheet(`<h3>${esc(p.name)}</h3>
     <button class="toggle" type="button" role="switch" id="pkOn" aria-checked="${packOn(id)}"><span class="t"><b>In play</b><small>Mixed in with the free deck</small></span><span class="sw"></span></button>
     <div class="eyebrow pkcount">${n} of ${p.cards.length} played</div>
-    <div class="pkcards">${p.cards.map(c=>`<div class="wild wexplain pkc${pl[c.t]?"":" unseen"}">${face(c)}<span><b>${esc(c.n)}</b>${pl[c.t]?esc(c.t):"Play it to see the rule"}</span></div>`).join("")}</div>
+    <div class="pkcards">${p.cards.map(c=>`<div class="wild wexplain pkc${pl[c.t]?"":" unseen"}">${face(c)}<span><b>${esc(c.n)}</b>${pl[c.t]?esc(wLead(c)):"Play it to see the rule"}</span></div>`).join("")}</div>
     <div class="acts">${back?`<button class="btn line" type="button" id="pkBack">Back</button>`:""}${S.test?`<button class="txtbtn" type="button" id="pkLock">Lock again (test mode)</button>`:""}</div>`,()=>{
     $("pkOn").onclick=()=>{S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();$("pkOn").setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()};
     if($("pkBack"))$("pkBack").onclick=back;
@@ -2936,33 +2958,42 @@ const PACK_PITCH={house:"Rules that hit the whole table",spin:"A second spin dec
 // The deck screen: your free deck, then the packs and what each one adds
 function wFace(t){const ic=WMETA[t]?WMETA[t].ic:(WNAME[t]||["Wildcard","star"])[1];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[ic]||WIC.star}</svg>`}
 const wNm=t=>WMETA[t]?WMETA[t].n:(WNAME[t]||["Wildcard"])[0];
-function deckSheet(){const pl=S.wplayed||{},n=freePlayed(),tot=WILDS.length,face=wFace;
-  const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc(wNm(t))}</span></button>`:`<span class="dk-card down">${I.sparkle}</span>`;
-  const sec=(name,ts)=>{const k=ts.filter(t=>pl[t]).length;return `<div class="dk-head"><span class="eyebrow">${esc(name)}</span><span class="dk-n">${k>=ts.length?"All "+ts.length+" played":k+" of "+ts.length+" played"}</span></div><div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div><div class="dk-grid">${ts.map(mini).join("")}</div>`};
-  const toAdd=PACKS.filter(p=>!packOwned(p.id));
-  const pack=p=>{const own=packOwned(p.id),np=p.cards.filter(c=>pl[c.t]).length;
-    return `<button class="dk-pack${own?" own":""}" type="button" data-dp="${p.id}"><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${own?np+" of "+p.cards.length:(canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview")}</span><span class="chev">›</span></button>`};
-  const owned=PACKS.filter(p=>packOwned(p.id));
+// The Wildcards screen: one row per deck, like a phone's settings list. Switch it on or off on the right, tap the row to see its cards.
+function deckSheet(){const pl=S.wplayed||{};
+  const toAdd=PACKS.filter(p=>!packOwned(p.id)),owned=PACKS.filter(p=>packOwned(p.id));
+  const pack=p=>`<button class="dk-pack" type="button" data-dp="${p.id}"><span class="dk-logo">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><span class="chev">›</span></button>`;
   sheet(`<h3>Wildcards</h3>
-    ${owned.length?`<div class="eyebrow dk-ph first">Decks in play</div>${deckSwHTML()}`:""}
-    ${sec("Free deck",WILDS)}
-    ${owned.map(p=>`<div class="dk-sec">${sec(p.name,p.cards.map(c=>c.t))}</div>`).join("")}
+    ${owned.length?`<div class="eyebrow dk-ph first">Your decks</div>`:""}${deckSwHTML()}
     ${toAdd.length?`<div class="eyebrow dk-ph">${owned.length?"More wildcard packs":"Packs"}</div><div class="dk-packs">${toAdd.map(pack).join("")}</div>`:""}
     ${canBuy()?`<button class="txtbtn wmore" type="button" id="dkRestore">Restore purchases</button>`:""}`,()=>{
     $("sheet").classList.add("tq");
-    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?WMETA[t].t:t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=deckSheet)});
     document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
-    bindDeckSw(document.querySelector(".sheet")||document);
+    bindDeckSw(document.querySelector(".sheet")||document,null,deckSheet);
     if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
     if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet")&&$("sheet").querySelector(".dk-packs"))deckSheet()});
   })}
-// deck switches, used on the Wildcards screen and the setup step
-function deckSwHTML(){const sw=(k,name,on)=>`<button class="toggle" type="button" role="switch" data-dk="${k}" aria-checked="${on}"><span class="t"><b>${esc(name)}</b></span><span class="sw"></span></button>`;
-  return `<div class="dk-on">${sw("free","Free deck",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>sw(p.id,p.name,packOn(p.id))).join("")}</div>`}
-function bindDeckSw(root,after){root.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
+const deckCardsOf=id=>id==="free"?WILDS:packById(id).cards.map(c=>c.t);
+const deckName=id=>id==="free"?"Free deck":packById(id).name;
+// one deck opened up: played cards face up, the rest face down with the deck's mark
+function deckView(id,back){const pl=S.wplayed||{},ts=deckCardsOf(id),k=ts.filter(t=>pl[t]).length,face=wFace;
+  const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc(wNm(t))}</span></button>`:`<span class="dk-card down">${deckLogo(id)}</span>`;
+  sheet(`<div class="dk-vhead"><span class="dk-logo">${deckLogo(id)}</span><h3>${esc(deckName(id))}</h3></div>
+    <div class="dk-head"><span class="eyebrow">Cards</span><span class="dk-n">${k>=ts.length?"All "+ts.length+" played":k+" of "+ts.length+" played"}</span></div><div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>
+    <div class="dk-grid">${ts.map(mini).join("")}</div>
+    <div class="acts" style="margin-top:16px"><button class="btn line" type="button" id="dvBack">${back?"Back":"Done"}</button></div>`,()=>{
+    $("sheet").classList.add("tq");
+    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?wLead(WMETA[t]):t)}</span></div><div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=()=>deckView(id,back))});
+    $("dvBack").onclick=()=>{if(back)back();else closeSheet()}})}
+// your decks as rows: the deck's mark, name and how much you've played; a switch on the right once you own a pack
+function deckSwHTML(){const pl=S.wplayed||{},own=anyOwned();
+  const row=(k,on)=>{const ts=deckCardsOf(k),n=ts.filter(t=>pl[t]).length;
+    return `<div class="dk-row${own&&on?" on":""}"><button class="dk-open" type="button" data-dv="${k}"><span class="dk-logo">${deckLogo(k)}</span><span class="t"><b>${esc(deckName(k))}</b><small>${n>=ts.length?"All "+ts.length+" played":n+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button>${own?`<button class="dk-sw" type="button" role="switch" data-dk="${k}" aria-checked="${on}" aria-label="${esc(deckName(k))} in play"><span class="sw"></span></button>`:""}</div>`};
+  return `<div class="dk-on">${row("free",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>row(p.id,packOn(p.id))).join("")}</div>`}
+function bindDeckSw(root,after,back){root.querySelectorAll("[data-dv]").forEach(b=>b.onclick=()=>deckView(b.dataset.dv,back));
+  root.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
   if(on&&root.querySelectorAll('[data-dk][aria-checked="true"]').length<2){toast("Keep one deck on",1600);return}
   if(k==="free"){if(on)S.freeOff=true;else delete S.freeOff}else{S.packOff=S.packOff||{};if(on)S.packOff[k]=true;else delete S.packOff[k]}
-  const g=G();if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(!on));refreshDeckLbl();after&&after()})}
+  const g=G();if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(!on));const r=b.closest(".dk-row");if(r)r.classList.toggle("on",!on);refreshDeckLbl();after&&after()})}
 const anyOwned=()=>PACKS.some(p=>packOwned(p.id));
 // just bought a pack: play it on its own, or mix it in
 function afterBuy(id,back){const p=packById(id),g=G();

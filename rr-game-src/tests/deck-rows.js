@@ -1,0 +1,25 @@
+const {chromium,devices}=require('playwright');
+(async()=>{const b=await chromium.launch();const e=[];
+const ctx=await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:860}});await ctx.route('**/i/v0/e/**',r=>r.fulfill({status:200,body:'{}'}));
+const p=await ctx.newPage();p.on('pageerror',x=>e.push(x.message));
+await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(600);
+const shot=n=>p.screenshot({path:'out/dr-'+n+'.png'});
+await p.evaluate(()=>{S.onboarded=true;S.ob=2;S.seenHow={rush:1,rr:1};S.safeOK=1;S.tpacks={spin:true};save();go('home')});
+const T=PT=>p.evaluate(PT);
+await T(()=>{const card=PACKS[1].cards[11];S.game={id:"pk"+Date.now(),mode:"rush",len:60,visits:[{id:"panorama-bar",arrivedAt:now()-2*60000,leftAt:null}],skipped:[],center:{lat:-33.8688,lng:151.2093},radius:1,cz:{type:"me",r:1},areas:["CBD"],city:"Sydney",started:true,startedAt:now()-30*60000,endsAt:now()+30*60000,target:null,
+  wild:{id:"panorama-bar",text:card.t,leg:1,t0:now()-5*60000,shown:true,landed:true},wplan:[1],test:true};save();go('play')});
+await p.waitForTimeout(1200);await shot('1-card');
+console.log('card:',await T(()=>{const w=document.querySelector('#stage .wild');return w&&w.innerText.replace(/\n/g,' | ')}));
+await p.click('#stage [data-wspin]');await p.waitForTimeout(500);await shot('2-sheet');
+await p.click('#wsGo');await p.waitForTimeout(5000);await shot('3-sheetres');
+await p.click('#wsDone').catch(()=>{});await p.waitForTimeout(800);await shot('4-cardres');
+console.log('card after:',await T(()=>{const w=document.querySelector('#stage .wild');return w&&w.innerText.replace(/\n/g,' | ')}));
+await T(()=>{S.game=null;S.tpacks={spin:true};S.wplayed={[PACKS[1].cards[1].t]:1,[WILDS[0]]:1};save();go('hist')});await p.waitForTimeout(800);
+await p.click('#hDeck');await p.waitForTimeout(600);await shot('5-deck');
+await p.click('[data-dv="spin"]');await p.waitForTimeout(600);await shot('6-view');
+await p.click('#dvBack');await p.waitForTimeout(500);
+await p.click('[data-dk="free"]');await p.waitForTimeout(300);console.log('free on?',await T(()=>freeOn()));
+await p.click('[data-dp="house"]');await p.waitForTimeout(600);await shot('7-preview');
+await T(()=>{S.tpacks={};save();closeSheet();});await p.waitForTimeout(400);await T(()=>deckSheet());await p.waitForTimeout(600);await shot('8-deck-noown');
+await T(()=>{closeSheet();S.tpacks={spin:true,house:true};S.wiz={step:3,len:60,rr:false,radius:1,z:{lat:-33.8688,lng:151.2093,r:1},start:{type:"spot",name:"Darlinghurst",lat:-33.8688,lng:151.2093}};save();go('wiz')});await p.waitForTimeout(800);await shot('9-setupdecks');
+console.log('errors',e);await b.close()})();

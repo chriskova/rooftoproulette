@@ -13,9 +13,9 @@ await p.evaluate(()=>{S.game={id:"pk"+Date.now(),mode:"rush",len:60,visits:[{id:
 await p.waitForTimeout(1200);await shot('1-sealed');
 console.log('on the way:',await p.evaluate(()=>document.querySelector('#stage .wild').innerText.replace(/\n/g,' | ')));
 await p.evaluate(()=>{S.wplayed={};WILDS.slice(0,14).forEach(t=>S.wplayed[t]=1);save()});
-await p.click('#stage .wild');await p.waitForTimeout(500);await shot('2-explainer');
+await p.click('#stage .wild b');await p.waitForTimeout(500);await shot('2-explainer');
 console.log('free row:',await p.evaluate(()=>document.getElementById('wDeckRow').innerText.replace(/\n/g,' | ')));
-await p.evaluate(()=>{window._tp=S.tpacks;S.tpacks={spin:true};save();closeSheet()});await p.waitForTimeout(300);await p.click('#stage .wild');await p.waitForTimeout(500);await shot('2a-owner');console.log('owner row:',await p.evaluate(()=>document.getElementById('wDeckRow').innerText.replace(/\n/g,' | ')));await p.click('#wDeckRow');await p.waitForTimeout(500);console.log('opens deck:',await p.evaluate(()=>!!document.querySelector('.dk-grid')));await p.evaluate(()=>{S.tpacks=window._tp;save();closeSheet()});await p.waitForTimeout(300);
+await p.evaluate(()=>{window._tp=S.tpacks;S.tpacks={spin:true};save();closeSheet()});await p.waitForTimeout(300);await p.click('#stage .wild b');await p.waitForTimeout(500);await shot('2a-owner');console.log('owner row:',await p.evaluate(()=>document.getElementById('wDeckRow').innerText.replace(/\n/g,' | ')));await p.click('#wDeckRow');await p.waitForTimeout(500);console.log('opens deck:',await p.evaluate(()=>!!document.querySelector('.dk-grid')));await p.evaluate(()=>{S.tpacks=window._tp;save();closeSheet()});await p.waitForTimeout(300);
 await p.evaluate(()=>closeSheet());await p.waitForTimeout(300);
 console.log('explainer:',await p.evaluate(()=>document.getElementById('sheet').innerText.replace(/\n/g,' | ')));
 await p.evaluate(()=>deckSheet());await p.waitForTimeout(500);await shot('3-packs');
