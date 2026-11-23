@@ -1595,6 +1595,19 @@ body.camon #v-play .adjz{display:none}
 #wBody:has(.rmap){flex:1;min-height:0}
 .rmap{flex:1;min-height:180px;position:relative}
 .rmap #wMap{position:absolute;inset:0}
+/* Ready to spin: the crawl as a plain list, like a phone's settings. Value on the right, amber chevron to change it. */
+.rlist{flex:none;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);overflow:hidden}
+.rrow{appearance:none;display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;border-top:1px solid var(--line);padding:12px 16px;font:inherit;color:var(--text);text-align:left;cursor:pointer;min-height:48px}
+.rlist>.rrow:first-child{border-top:0}
+.rrow .l{flex:1;min-width:0;color:var(--muted);font-size:15px}
+.rrow b{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%}
+.rrow .chev{color:var(--amber-text);font-size:22px;font-weight:700;line-height:1}
+.rrow.rskip{padding:0;cursor:default}
+.rskipt{flex:1;min-width:0;appearance:none;background:none;border:0;padding:10px 6px 10px 16px;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column}
+.rskipt small{display:block;font-size:13px;font-weight:650;color:var(--amber-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rsw{appearance:none;background:none;border:0;display:flex;align-items:center;padding:0 16px 0 14px;align-self:stretch;position:relative;cursor:pointer}
+.rsw::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;background:var(--line)}
+.rsw[aria-checked="true"] .sw{background:var(--amber)}.rsw[aria-checked="true"] .sw::after{transform:translateX(20px)}
 .mpin{width:14px;height:14px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 3px rgba(var(--bgr),.7)}
 .rset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.rset.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 .rset .rs{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 30px 10px 14px;border:1.5px solid var(--line);border-radius:14px;background:var(--card,#fff);color:var(--text);font:inherit;cursor:pointer;min-width:0}
@@ -1706,6 +1719,11 @@ html,body{overflow-x:hidden;max-width:100%}
   .bcard .bth{height:46px}
   #v-wiz .rrticks{margin-bottom:0}
   #v-end .scmap{margin-bottom:-4px}
+}
+/* short phones: the Ready list gets tighter rows so map, list and Start all fit */
+@media (max-height:740px){
+  .rrow{min-height:40px;padding:8px 16px}.rrow.rskip{padding:0}.rskipt{padding:6px 6px 6px 16px}.rsw::before{top:8px;bottom:8px}
+  .rmap{min-height:130px}
 }
 
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
