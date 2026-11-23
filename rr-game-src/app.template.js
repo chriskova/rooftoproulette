@@ -1151,8 +1151,8 @@ function renderWiz(){
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
   stVal[3]=deckLbl();const order=anyOwned()?[0,1,3,2]:[0,1,2],names={0:"Time",1:"Zone",3:"Wildcards",2:"Spin"},pos=order.indexOf(w.step);
-  // one bar that fills as you go, with each step named underneath (done ones show your pick and jump back)
-  $("wSteps").innerHTML=`<div class="prog"><i style="width:${Math.round((pos+1)/order.length*100)}%"></i></div><div class="wlbls" style="grid-template-columns:repeat(${order.length},minmax(0,1fr))">${order.map((k,i)=>{const done=i<pos;return done?`<button class="wst on done" type="button" data-s="${k}"><span>${esc(stVal[k])}</span></button>`:`<div class="wst${i===pos?" on cur":""}"><span>${names[k]}</span></div>`}).join("")}</div>`;
+  // one bar that fills as you go
+  $("wSteps").innerHTML=`<div class="prog"><i style="width:${Math.round((pos+1)/order.length*100)}%"></i></div>`;
   $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   const body=$("wBody"),t=now();
   // pick chips on the last screen only (the map gets the room on screen 2). Tap one to jump back and change it.
