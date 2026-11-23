@@ -1227,11 +1227,11 @@ function renderWiz(){
     const canInv=(()=>{try{return cloudOn()}catch(e){return false}})();
     const row=(id,lbl,val)=>`<button class="rrow" type="button" id="${id}"><span class="l">${lbl}</span><b id="${id}V">${val}</b><span class="chev">›</span></button>`;
     const beenTxt_=beenL.length?esc(beenL[0].name)+(beenL.length>1?` + ${beenL.length-1} other${beenL.length>2?"s":""}`:""):"";
-    body.innerHTML=`<div><h1 class="q">Ready to spin?</h1>${awayZ?`<p class="sub oneline" style="margin:6px 0 0">Outside your zone. The clock starts at your first bar.</p>`:""}</div>
+    body.innerHTML=`<div><div class="rhead"><h1 class="q">Ready to spin?</h1>${canInv?`<button class="rinv" type="button" id="wInv">${PEOPLEI_()} Invite</button>`:""}</div>${awayZ?`<p class="sub oneline" style="margin:6px 0 0">Outside your zone. The clock starts at your first bar.</p>`:""}</div>
       <div class="map rmap"><div id="wMap"></div></div>
       <div class="rlist">${row("rLen","Crawl",w.len===60?"1 hour":"2 hours")}${row("rZone","Zone",esc(area)+" · "+rLabel(w.radius))}${row("wSee","Rooftops in play","")}
         ${beenL.length?`<div class="rrow rskip"><button class="rskipt" type="button" id="rBeen"><span class="l">Skip bars you've been to</span><small>${beenTxt_}</small></button><button class="rsw" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}" aria-label="Skip bars you've been to"><span class="sw"></span></button></div>`:""}
-        ${row("rDeck","Wildcards",esc(deckLbl()))}${canInv?row("wInv","Friends","Invite"):""}</div>`;
+        ${row("rDeck","Wildcards",esc(deckLbl()))}</div>`;
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
     if($("rBeen"))$("rBeen").onclick=()=>sheet(`<h3>Been here before</h3><p class="note" style="margin:2px 0 10px">Rooftops in your zone you've already been to.</p><div class="card zlist">${beenL.map(v=>`<button class="zrow" type="button" data-b="${v.id}"><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></span></button>`).join("")}</div><button class="btn dark" type="button" id="bDone" style="margin-top:14px">Done</button>`,()=>{
       document.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.b)));$("bDone").onclick=closeSheet});

@@ -2382,10 +2382,10 @@ html,body{overflow-x:hidden;max-width:100%}
   #v-end .scmap{margin-bottom:-4px}
 }
 /* short phones: the Ready list gets tighter rows so map, list and Start all fit */
-@media (max-height:740px){
-  .rrow{min-height:40px;padding:8px 16px}.rrow.rskip{padding:0}.rskipt{padding:6px 6px 6px 16px}.rsw::before{top:8px;bottom:8px}
-  .rmap{min-height:130px}
-}
+@media (max-height:740px){.rmap{min-height:120px}}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rinv{appearance:none;flex:none;display:inline-flex;align-items:center;gap:7px;background:var(--s2);border:0;border-radius:99px;padding:9px 16px 9px 13px;font:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer}
+.rinv svg{width:18px;height:18px}
 
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
 .strow.stseg{padding:10px 12px;border-top:0}.stseg .seg{flex:1}

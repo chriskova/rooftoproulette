@@ -12,14 +12,14 @@ await T(()=>{S.onboarded=true;S.test=true;S.seenHow={rush:1};S.fake={lat:-33.868
 await p.waitForTimeout(1500);await p.click('#wNext');await p.waitForTimeout(1500);
 console.log('step',await T(()=>S.wiz.step),'rows',await T(()=>[...document.querySelectorAll('.rlist .rrow')].map(r=>r.innerText.replace(/\n/g,' / ')).join(' | ')));
 console.log('scroll',await T(()=>{const v=$("v-wiz");return v.scrollHeight-v.clientHeight}),'map h',await T(()=>Math.round(document.querySelector('.rmap').getBoundingClientRect().height)),'cta',await T(()=>$("cta").innerText));
-await p.screenshot({path:'out/rl-1.png'});
+await p.screenshot({path:'out/rm-1.png'});
 const n0=await T(()=>$("wSeeV").textContent);await p.click('#newTog');await p.waitForTimeout(300);console.log('in play',n0,'->',await T(()=>$("wSeeV").textContent));
-await p.screenshot({path:'out/rl-2-skip.png'});
-await p.click('#rBeen');await p.waitForTimeout(500);await p.screenshot({path:'out/rl-3-been.png'});console.log('been sheet',await T(()=>document.querySelectorAll('[data-b]').length));
+await p.screenshot({path:'out/rm-2-skip.png'});
+await p.click('#rBeen');await p.waitForTimeout(500);await p.screenshot({path:'out/rm-3-been.png'});console.log('been sheet',await T(()=>document.querySelectorAll('[data-b]').length));
 await T(()=>closeSheet());await p.waitForTimeout(300);
 await p.click('#rDeck');await p.waitForTimeout(500);await p.click('[data-dk="free"]');await p.waitForTimeout(600);console.log('deck val',await T(()=>$("rDeckV").textContent));await T(()=>closeSheet());await p.waitForTimeout(300);
 await p.click('#rZone');await p.waitForTimeout(500);console.log('zone ->',await T(()=>S.wiz.step));await p.click('#wNext');await p.waitForTimeout(800);
 await p.click('#wBack');await p.waitForTimeout(400);console.log('back ->',await T(()=>S.wiz.step));
 await T(()=>{const v=$("v-wiz");});await p.setViewportSize({width:375,height:667});await T(()=>{S.wiz.step=2;renderWiz()});await p.waitForTimeout(1200);
-console.log('SE scroll',await T(()=>{const v=$("v-wiz");return v.scrollHeight-v.clientHeight}),'map h',await T(()=>Math.round(document.querySelector('.rmap').getBoundingClientRect().height)));await p.screenshot({path:'out/rl-4-se.png'});
+console.log('SE scroll',await T(()=>{const v=$("v-wiz");return v.scrollHeight-v.clientHeight}),'map h',await T(()=>Math.round(document.querySelector('.rmap').getBoundingClientRect().height)));await p.screenshot({path:'out/rm-4-se.png'});
 console.log('errors',e);await b.close()})();
