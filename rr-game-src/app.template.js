@@ -1228,8 +1228,8 @@ function renderWiz(){
     const row=(id,lbl,val)=>`<button class="rrow" type="button" id="${id}"><span class="l">${lbl}</span><b id="${id}V">${val}</b><span class="chev">›</span></button>`;
     const beenTxt_=beenL.length?esc(beenL[0].name)+(beenL.length>1?` + ${beenL.length-1} other${beenL.length>2?"s":""}`:""):"";
     body.innerHTML=`<div><div class="rhead"><h1 class="q">Ready to spin?</h1>${canInv?`<button class="rinv" type="button" id="wInv">${PEOPLEI_()} Invite</button>`:""}</div>${awayZ?`<p class="sub oneline" style="margin:6px 0 0">Outside your zone. The clock starts at your first bar.</p>`:""}</div>
-      <div class="map rmap"><div id="wMap"></div></div>
-      <div class="rlist">${row("rLen","Crawl",w.len===60?"1 hour":"2 hours")}${row("rZone","Zone",esc(area)+" · "+rLabel(w.radius))}${row("wSee","Rooftops in play","")}
+      <div class="map rmap"><div id="wMap"></div><div class="rchips"><button class="mchip" type="button" id="rLen">${w.len===60?"1 hour":"2 hours"}<span class="chev">›</span></button><button class="mchip" type="button" id="rZone">${esc(area)} · ${rLabel(w.radius)}<span class="chev">›</span></button></div></div>
+      <div class="rlist">${row("wSee","Rooftops in play","")}
         ${beenL.length?`<div class="rrow rskip"><button class="rskipt" type="button" id="rBeen"><span class="l">Skip bars you've been to</span><small>${beenTxt_}</small></button><button class="rsw" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}" aria-label="Skip bars you've been to"><span class="sw"></span></button></div>`:""}
         ${row("rDeck","Wildcards",esc(deckLbl()))}</div>`;
     if($("newTog"))$("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(w.newOnly));draw()};
@@ -1241,7 +1241,7 @@ function renderWiz(){
     let m=null;
     const draw=()=>{if(!$("wSeeV"))return;const L_=inPlay();$("wSeeV").textContent=L_.length+(excl.length?` · ${excl.length} vetoed`:"");
       if(!m)return;m.clear();m.circle(w.z,w.radius);L_.forEach(v=>m.pin(v,"",()=>wizSpoiler(()=>barSheet(v))))};
-    makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,10);draw()});
+    makeMap("wMap",{greedy:true}).then(mm=>{if(!mm||!$("wMap")){if(mm)mm.remove();return}wMapRef=m=mm;m.fitZone(w.z,w.radius,null,56);draw()});
     draw();wizRepaint=draw;
     $("wSee").onclick=wizSpoiler;
     cta(`<button class="btn" id="wStart" type="button">Start the crawl</button>`,()=>{$("wStart").onclick=()=>{sawHow("rush");tryStart()}});
