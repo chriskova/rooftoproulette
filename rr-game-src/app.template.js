@@ -316,6 +316,9 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-city]"))cityShe
 const listed=()=>VENUES.filter(v=>!S.nfu[v.id]&&(v.city||"Sydney")===S.city);
 function colStats(list){const c=collectedMap(),L=list||listed();const col=L.filter(v=>c[v.id]).length,been=L.filter(v=>!c[v.id]&&S.been[v.id]).length;return {col,been,total:L.length,c}}
 const isNew=(id,c)=>!(c||collectedMap())[id]&&!S.been[id];
+// The Hit list is bars you haven't tried: once you've been (a counted visit, or marked Been), a bar comes off it
+function tickOff(){if(!S.want)return 0;const c=collectedMap();let n=0;Object.keys(S.want).forEach(id=>{if(c[id]||S.been[id]){delete S.want[id];n++}});if(n)save();return n}
+setTimeout(()=>{try{tickOff()}catch(e){}},0);   // tidy lists from before this rule
 /* bars that can come up in a spin: not hidden, optionally only new */
 // rooftops too far from the rest for a timed game (fewer than 5 rooftops within 2 km)
 const FAR=new Set(VENUES.filter(v=>VENUES.filter(u=>dist(u,v)<=2000).length<5).map(v=>v.id));
@@ -873,7 +876,7 @@ const QR=1.5; // km around an area's centre
 const QDIST=[{r:1,t:"A short walk",s:"Within 1 km, about 12 minutes"},{r:2,t:"A decent walk",s:"Within 2 km, about 25 minutes"},{r:5,t:"Happy to Uber",s:"Within 5 km"}];
 function quickSet(q){ // every rooftop that could come up, open or not
   if(!q||!q.from)return [];
-  if(q.from.type==="list")return wantList().filter(v=>!q.r||q.from.lat==null||dist(q.from,v)<=q.r*1000);
+  if(q.from.type==="list")return listOf(q.from.list).filter(v=>!q.r||q.from.lat==null||dist(q.from,v)<=q.r*1000);
   const base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(q.from.type==="me"||inCityNow(v)));
   if(q.from.type==="me")return base.filter(v=>dist(q.from,v)<=(q.r||1)*1000);
   if(q.from.type==="all")return base;
@@ -881,8 +884,10 @@ function quickSet(q){ // every rooftop that could come up, open or not
 }
 function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P.filter(v=>!q.seen.includes(v.id));return fresh.length?fresh:P}
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
+const favList=()=>VENUES.filter(v=>S.fav[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
+const listOf=k=>k==="fav"?favList():wantList(),listName=k=>k==="fav"?"Favourites":"Hit list";
 const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Bars you want to try</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
-const quickLabel=q=>q.from.type==="list"?"Hit list":q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
+const quickLabel=q=>q.from.type==="list"?listName(q.from.list):q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
   try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};
@@ -1072,30 +1077,36 @@ function renderQuick(){
   const pick=q.from.type==="pick",me=q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;
   if(!q.z)q.z={lat:q.from.lat,lng:q.from.lng,r:2};
   if(!q.z.r&&!q.z.all)q.z.r=2;   // a circle from the start, so it's clear the distance can change
-  const wl=wantList(),canHL=wl.filter(v=>openOK(v,t)).length>=2;if(!canHL)q.hl=false;
+  // Lists: Hit list or Favourites as the whole pool (only lists with 2+ open show). Skip visited only with all rooftops.
+  tickOff();if(q.hl&&!q.list)q.list="want";delete q.hl;
+  const opn=k=>listOf(k).filter(v=>openOK(v,t)).length,lists=["want","fav"].filter(k=>opn(k)>=2);if(q.list&&!lists.includes(q.list))q.list=null;
+  const wl=q.list?listOf(q.list):[];
   const listPool=(z,t,newOnly)=>{const all=wl.filter(v=>(!z.r||dist(z,v)<=z.r*1000)&&(!newOnly||isNew(v.id)));return {all,open:all.filter(v=>openOK(v,t))}};
   const tick=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
-  const chips=`<button class="mchip" type="button" id="qHL" aria-pressed="${!!q.hl}" ${canHL?"":"hidden"}><i class="off">${I.sparkle}</i><i class="on">${tick}</i>Hit list <span class="mn">${wl.filter(v=>openOK(v,t)).length}</span></button>`+
+  const caret=`<svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+  const chips=`<button class="mchip" type="button" id="qHL" aria-pressed="${!!q.list}" ${lists.length?"":"hidden"}>${q.list?`${listName(q.list)} <span class="mn">${opn(q.list)}</span>`:"Lists"}${caret}</button>`+
     `<button class="mchip" type="button" id="zSkipC" aria-pressed="${!!q.newOnly}" hidden><i class="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/></svg></i><i class="on">${tick}</i>Skip visited <span class="mn" id="zSkipN"></span></button>`;
   b.innerHTML=top+head+rrZoneHTML({searchHint:"Search a suburb"}).replace('<button class="mcard"',chips+'<button class="mcard"');
   bindTop();
-  qZB=rrZoneBind(q.z,me,()=>!!q.newOnly,(P,z,moved)=>{
-    // Skip visited only shows when it would take something out of play
+  qZB=rrZoneBind(q.z,me,()=>!q.list&&!!q.newOnly,(P,z,moved)=>{
     q.z.all=!z.r;   // remember a deliberate "All" so a redraw doesn't put the circle back
-    const c=collectedMap(),base=q.hl?listPool(z,t,false).all:rrPool(z,t,false).all,vis=base.filter(v=>!isNew(v.id,c)).length;
-    if(!vis&&q.newOnly)q.newOnly=false;$("zSkipC").hidden=!vis;$("zSkipC").setAttribute("aria-pressed",String(!!q.newOnly));$("zSkipN").textContent=vis;
+    // Skip visited only with all rooftops, and only when it would take something out of play
+    const c=collectedMap(),vis=q.list?0:rrPool(z,t,false).all.filter(v=>!isNew(v.id,c)).length;
+    if(!vis&&q.newOnly&&!q.list)q.newOnly=false;$("zSkipC").hidden=!vis;$("zSkipC").setAttribute("aria-pressed",String(!!q.newOnly));$("zSkipN").textContent=vis;
     $("rrNB").hidden=!P.open.length;
     cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Start the crawl</button>`,()=>$("qGo").onclick=()=>{
-      if(q.hl)q.from={type:"list",name:"Hit list",lat:z.lat,lng:z.lng};
+      if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;save();startCruise()})},
-    q.hl?{pool:listPool,allLbl:"Your whole Hit list",pinSet:wantList}:undefined);
+    q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:undefined);
   // the open count leads, then the filters
   {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("rrNB"),$("qHL"),$("zSkipC"));cv.append(row);$("rrNB").classList.add("mchip","mcount")}
-  $("qHL").onclick=()=>{q.hl=!q.hl;
-    // turning the Hit list on: widen the circle (if it needs to) so every open bar on the list is in it
-    if(q.hl&&q.z.r){const far=Math.max(0,...wl.filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
-    save();renderQuick()};
+  $("qHL").onclick=()=>{const opt=(k,lbl,n)=>`<button class="opt" type="button" role="radio" data-k="${k}" aria-checked="${(q.list||"")===k}"><span class="t"><b>${lbl}</b><small>${n}</small></span></button>`;
+    sheet(`<h3>Spin from</h3><div class="opts" style="margin-top:12px">${opt("","All rooftops","Everything in your circle")}${lists.map(k=>opt(k,listName(k),`${opn(k)} open`)).join("")}</div>`,()=>{
+      document.querySelectorAll("#sheetBody [data-k]").forEach(x=>x.onclick=()=>{q.list=x.dataset.k||null;closeSheet();
+        // picking a list: widen the circle (if it needs to) so every open bar on it is in it
+        if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
+        save();renderQuick()})})};
   $("zSkipC").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true)};
   fitMap(b);
 }
@@ -1120,9 +1131,9 @@ async function startCruise(noLoc){
   ac();const q=S.quick;noLoc=noLoc===true;
   if(!S.test&&!noLoc&&q.from&&q.from.type!=="me"&&(await permState(true))==="denied"){noLocSheet(startCruise);return}
   let pos;if(noLoc)pos=null;else if(!S.test&&here&&here.t&&Date.now()-here.t<10*60000)pos=here;else try{pos=await getOnce()}catch(e){if(e&&e.code===1&&q.from&&q.from.type!=="me"){noLocSheet(startCruise);return}S.permNext="cruise";go("perm");return}
-  const f=q.from,c=f.type==="me"||f.type==="spot"||(f.type==="list"&&q.r&&f.lat!=null)?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?wantList():VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
-  const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?"Hit list":f.name;
-  zoneCity(c);S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,name:f.name||null,r:q.r||null,lat:f.type==="spot"||(f.type==="list"&&q.r)?f.lat:null,lng:f.type==="spot"||(f.type==="list"&&q.r)?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
+  const f=q.from,c=f.type==="me"||f.type==="spot"||(f.type==="list"&&q.r&&f.lat!=null)?{lat:f.lat,lng:f.lng}:(()=>{const l=f.type==="list"?listOf(f.list):VENUES.filter(v=>inCityNow(v)&&(f.type==="all"||areaOf(v).reg===f.name));return {lat:l.reduce((s,v)=>s+v.lat,0)/l.length,lng:l.reduce((s,v)=>s+v.lng,0)/l.length}})();
+  const label=f.type==="me"?"Near you":f.type==="spot"?f.name:f.type==="all"?"Anywhere":f.type==="list"?listName(f.list):f.name;
+  zoneCity(c);S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,list:f.type==="list"?(f.list||"want"):undefined,name:f.name||null,r:q.r||null,lat:f.type==="spot"||(f.type==="list"&&q.r)?f.lat:null,lng:f.type==="spot"||(f.type==="list"&&q.r)?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:pos?{lat:pos.lat,lng:pos.lng}:{lat:c.lat,lng:c.lng},noLoc:noLoc||undefined,areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
   S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");
@@ -1354,7 +1365,7 @@ const RR_AUTO=3*3600000; // R&R nights wrap up on their own after 3 hours
 // R&R: where spins can land. Near me = within your distance of where you are now.
 // A region or anywhere = that part of town, kept to bars within 2 km of you once you're out (if there are any).
 function cruiseSet(g){
-  if(g.cz.type==="list")return wantList().filter(v=>!g.cz.r||g.cz.lat==null||dist(g.cz,v)<=g.cz.r*1000);
+  if(g.cz.type==="list")return listOf(g.cz.list).filter(v=>!g.cz.r||g.cz.lat==null||dist(g.cz,v)<=g.cz.r*1000);
   const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!g.newOnly||isNew(v.id,c_))),here_=fromPoint();
   if(g.cz.type==="me")return base.filter(v=>dist(here_,v)<=(g.cz.r||2)*1000);
   if(g.cz.type==="spot")return base.filter(v=>dist(g.cz,v)<=(g.cz.r||2)*1000);
@@ -1363,7 +1374,7 @@ function cruiseSet(g){
   const near=reg.filter(v=>dist(here_,v)<=2000&&openOK(v,now())&&!visited(v.id));return near.length?near:reg;
 }
 const elapsed=ms=>{const m=Math.floor(Math.max(0,ms)/60000);return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
-const zoneTxt=(g,short)=>g.cz.type==="list"?"Hit list"+(g.cz.r&&g.cz.lat!=null?` · ${kmTxt(g.cz.r)}`:""):g.cz.type==="spot"&&g.cz.lat!=null?(short?"":"Around ")+esc(nearestSuburb(g.cz))+` · ${kmTxt(g.cz.r)}`:esc(g.areas[g.areas.length-1])+(g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:"");
+const zoneTxt=(g,short)=>g.cz.type==="list"?listName(g.cz.list)+(g.cz.r&&g.cz.lat!=null?` · ${kmTxt(g.cz.r)}`:""):g.cz.type==="spot"&&g.cz.lat!=null?(short?"":"Around ")+esc(nearestSuburb(g.cz))+` · ${kmTxt(g.cz.r)}`:esc(g.areas[g.areas.length-1])+(g.cz.type==="me"||g.cz.type==="spot"?` · ${kmTxt(g.cz.r)}`:"");
 // shrink the zone line under R&R until it fits (long suburbs, big text settings)
 function fitFacts(){document.querySelectorAll("#v-play .bar.tgt .facts").forEach(f=>{f.style.fontSize="";let z=14;while(f.scrollWidth>f.clientWidth+1&&z>11){z-=.5;f.style.fontSize=z+"px"}})}
 window.addEventListener("resize",()=>fitFacts());
@@ -1402,6 +1413,7 @@ function closeVisit(v,t,reason){if(!v||v.leftAt!=null)return;v.leftAt=Math.max(v
   // Ask rather than count it (the demo just counts it).
   const walkedOff=reason==="walk"&&!v.dep&&!(G()&&G().demo);
   if(reason==="end"&&!v.dep)v.counted=v.arrivedAt<G().endsAt;else if(walkedOff)v.counted=v._ans!==undefined?v._ans:null;else v.counted=ok?true:v._ans!==undefined?v._ans:null;
+  if(v.counted===true&&S.want[v.id]&&!(G()&&(G().demo||G().follow))){delete S.want[v.id];save();setTimeout(()=>toast("Ticked off your Hit list",2200),600)}
   if(walkedOff&&v.counted===null){v.walkedOff=1;try{if(NATIVE&&document.hidden){noteSetup();lnSchedule([{id:105,title:`Did you have a drink at ${byId(v.id).name}?`,body:"You left without spinning. Tap to say if it counts.",channelId:"crawl_alerts",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",schedule:{at:new Date(Date.now()+1500),allowWhileIdle:true}}]).catch(()=>{})}}catch(e){}}
   delete v._ans}
 function onLocation(){liveNote();alertSync();if(S.game&&S.game.live)liveSync(false);
@@ -2454,7 +2466,7 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   sheet(`<h3>Menu</h3><div class="menu">
-    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your Hit list":zoneTxt(g)}</small></span></button>`:""}
+    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your "+listName(g.cz.list):zoneTxt(g)}</small></span></button>`:""}
     <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
     ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
     ${cr||g.demo?"":`<button type="button" id="mWild">${I.sparkle}<span>Wildcards<small>${esc(deckLbl())}</small></span></button>`}
@@ -3751,7 +3763,7 @@ $("bQx").onclick=()=>setSearching(false);
 {let y0=null;const r=$("barsResults");r.addEventListener("touchstart",e=>{y0=e.touches[0].clientY},{passive:true});r.addEventListener("touchmove",e=>{if(y0!==null&&Math.abs(e.touches[0].clientY-y0)>8&&document.activeElement===$("bQ")){$("bQ").blur();y0=null}},{passive:true})}
 /* List or map: the map's a tap away instead of taking half the screen */
 $("bView").onclick=()=>{S.barsView=S.barsView==="map"?"list":"map";save();renderBars();$("v-bars").scrollTop=0};
-function renderBars(){
+function renderBars(){tickOff();
   if(!$("barsLists"))return;
   if(bSearching){paintSearch();return}
   const mapV=S.barsView==="map";
@@ -3784,7 +3796,7 @@ function renderBars(){
     const live=inZ.filter(v=>!tonight.includes(v.id)&&os(v).open).sort(sortD);
     if(g.target){const i=live.findIndex(v=>v.id===g.target);if(i>0)live.unshift(live.splice(i,1)[0])}
     const closed=openOnly?[]:inZ.filter(v=>!tonight.includes(v.id)&&!os(v).open).sort(sortD);
-    intro=`${CR(g)?(g.cz.type==="list"?"Your Hit list. Your spins only land on these.":g.cz.type==="spot"?"Rooftops your next spin could land on, "+esc(g.cz.name.toLowerCase().replace(/^around /,"around "))+".":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
+    intro=`${CR(g)?(g.cz.type==="list"?`Your ${listName(g.cz.list)}. Your spins only land on these.`:g.cz.type==="spot"?"Rooftops your next spin could land on, "+esc(g.cz.name.toLowerCase().replace(/^around /,"around "))+".":"Rooftops your next spin could land on, from where you are now."):"These are the rooftops your spins can land on."} ${tapHint}`;
     rows=[...live.map(v=>rowHTML(v,os(v),v.id===g.target?"next":barStatus(v,c),y)),
       ...tonight.map(id=>rowHTML(byId(id),os(byId(id)),"done",y)),
       ...(closed.length?[`<div class="grouphd shuthd">Closed now</div>`]:[]),...closed.map(v=>rowHTML(v,os(v),barStatus(v,c),y))];
@@ -3870,7 +3882,7 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
     $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();if(typeof liveMeta==="function")liveMeta(night);buzz(15);closeSheet();if(S.route==="end")renderEnd()};
-    if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else S.been[v.id]=1;save();barSheet(v);if(S.route==="bars")renderBars()};
+    if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else{S.been[v.id]=1;delete S.want[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
     if($("bsBack"))$("bsBack").onclick=opt.back;
     if($("bsFav"))$("bsFav").onclick=e=>{e.stopPropagation();toggleFav(v.id);const b=$("bsFav"),on=!!S.fav[v.id];b.setAttribute("aria-pressed",String(on));
       if(on&&b.animate)b.animate([{transform:"scale(1)"},{transform:"scale(1.3)"},{transform:"scale(1)"}],{duration:320,easing:"ease-out"});
@@ -3915,7 +3927,7 @@ function listSheet(k,msg,after){
     nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
     fav:{t:"Favourites",d:"Bars you love. Tap the heart on any bar to add it here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
-  const add=id=>{if(k==="been")S.been[id]=1;else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
+  const add=id=>{if(k==="been"){S.been[id]=1;delete S.want[id]}else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
   // opens full height on every rooftop: the ones on your list ticked at the top, the rest underneath.
   // Tap to tick or untick. Typing narrows it. The order holds while you tick, so nothing jumps.
