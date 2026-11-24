@@ -1293,11 +1293,13 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const set=to=>{if(typeof to==="boolean")to=to?0:1;if(to!==1)gate(false);measure();hfix=u>1.001||to>1;
     parts.forEach((x,i)=>{if(x.style.maxHeight==="none")x.style.maxHeight=full[i]+"px"});if(hfix&&!panel.style.height)panel.style.height=Math.round(base+Math.max(0,u-1)*span)+"px";void panel.offsetHeight;
     if(to>1&&u<=1.01)fill();if(to>1)bx.scrollTop=0;panel.classList.add("fsanim");apply(to);follow(360);clearTimeout(tm);tm=setTimeout(()=>{panel.classList.remove("fsanim");hfix=false;apply(u)},360);
-    hd.setAttribute("aria-expanded",String(to>=1));hd.setAttribute("aria-label",to<1?"Show more":"Show less")};
+    hd.setAttribute("aria-expanded",String(to>=1));hd.setAttribute("aria-label",to>1?"Show less":"Show more")};
   view._fsSet=set;
   // the pill (and pulling up): timed mode asks about spoilers first, right where the controls are; otherwise straight to the list
   const open=()=>{if(needGate()){if(u!==1)set(1);gate(true)}else set(2)};view._fsOpen=open;
-  hd.onclick=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gate(false);return}set(u<1?1:u>1?1:0)};
+  // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
+  const tapTop=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gate(false);return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
+  hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
   // dragging: from the handle, the heading or the controls the whole panel moves; inside the list it scrolls,
   // and only a pull down from the top of the list brings the panel with it
   let y0=null,u0=1,moved=false,swiped=0,cap=2;
@@ -1318,7 +1320,7 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
     if(tl){e.preventDefault();dMove(y)}},{passive:false});
   const tEnd=e=>{if(tl){const t=e.changedTouches[0];dEnd(t?t.clientY:ty)}ty=null;tl=null};
   bx.addEventListener("touchend",tEnd,{passive:true});bx.addEventListener("touchcancel",tEnd,{passive:true});
-  panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(1)});
+  panel.addEventListener("click",e=>{if(Date.now()-swiped<400||e.target.closest(".fshandle,.fslh"))return;if(panel.classList.contains("min")||e.clientY-panel.getBoundingClientRect().top<30&&!e.target.closest("button,input,a"))tapTop()});
   const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);nb.onclick=()=>open()}}
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
