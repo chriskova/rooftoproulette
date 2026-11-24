@@ -939,6 +939,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
+    {const rr=$("rrR");if(rr)rr.style.setProperty("--p",((rr.value-rr.min)/((rr.max-rr.min)||1)*100)+"%")}   // amber fill up to the thumb
     $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:(o&&o.allLbl)||`All of ${S.city}`;
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;

@@ -1081,6 +1081,13 @@ dialog.sheet:not([open]):has(.move-zone){display:none}
 .segdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;vertical-align:middle;margin-left:4px;opacity:.8}.rzlist{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;color:var(--muted)}.rzlist b{color:var(--text)}.rzsheet .acts{margin-top:8px}.rzsheet #rrHome{padding:2px 0}
 .sheet .rrsum{margin:12px 0 8px}.sheet .rrticks{margin-bottom:6px}.rrsum{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rrsum b{font-size:16px}.rrsum span{color:var(--amber-text);font-weight:700;font-size:15px}
 .rrslide{padding:0 10px}.rrrange{width:calc(100% + 20px);margin:0 -10px;accent-color:var(--amber);height:28px}
+/* the zone slider in the app's own look: amber up to the thumb, the same light track as the progress bars after it */
+.rrrange{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+.rrrange::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(to right,var(--amber) var(--p,50%),var(--line) var(--p,50%))}
+.rrrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:var(--amber);border:3px solid var(--s1);box-shadow:0 1px 5px rgba(0,0,0,.22)}
+.rrrange::-moz-range-track{height:6px;border-radius:99px;background:var(--line)}
+.rrrange::-moz-range-progress{height:6px;border-radius:99px;background:var(--amber)}
+.rrrange::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--amber);border:3px solid var(--s1);box-shadow:0 1px 5px rgba(0,0,0,.22)}
 .rrticks{position:relative;height:16px;color:var(--muted);font-size:12px}.rrticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
 .clock .rrz{display:block;margin:5px auto 0;appearance:none;background:none;border:0;padding:2px 4px;font:inherit;font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);cursor:pointer;white-space:nowrap;max-width:calc(min(100vw,480px) - 200px);overflow:hidden;text-overflow:ellipsis}.clock .rrz .zchev{color:var(--amber-text)}
 .clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber-text)}
