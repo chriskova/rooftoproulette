@@ -857,6 +857,8 @@ body:not(.camon) #appbar .logo{display:none}
 .logo span{color:var(--amber-text)}
 .ready{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;min-height:calc(100dvh - 300px);justify-content:center}
 .mixline{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.mixinv{appearance:none;display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;font-weight:750;color:#1a1206;background:var(--amber);border:1px solid var(--amber);border-radius:99px;padding:5px 12px 5px 10px;cursor:pointer}.mixinv svg{width:15px;height:15px}
+#v-wiz .zskip{flex:none}#v-wiz .zskip .l{color:var(--text);font-weight:700;font-size:15.5px}
 .mixline span{font-size:12.5px;font-weight:650;color:var(--muted);background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:5px 11px}
 .poolnum{font-size:14px;color:var(--muted)}.poolnum b{color:var(--amber-text);font-size:16px}
 .spinning{background:radial-gradient(60% 45% at 50% 50%,rgba(245,184,61,.14),transparent 70%)}
@@ -1604,7 +1606,7 @@ body.camon #v-play .adjz{display:none}
 .rrow .chev{color:var(--amber-text);font-size:22px;font-weight:700;line-height:1}
 .rrow.rskip{padding:0;cursor:default}
 .rskipt{flex:1;min-width:0;appearance:none;background:none;border:0;padding:10px 6px 10px 16px;font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column}
-.rskipt small{display:block;font-size:13px;font-weight:650;color:var(--amber-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rskipt small{display:block;font-size:13px;font-weight:500;color:var(--amber-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rsw{appearance:none;background:none;border:0;display:flex;align-items:center;padding:0 16px 0 14px;align-self:stretch;position:relative;cursor:pointer}
 .rsw::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:1px;background:var(--line)}
 .rsw[aria-checked="true"] .sw{background:var(--amber)}.rsw[aria-checked="true"] .sw::after{transform:translateX(20px)}
@@ -1718,25 +1720,9 @@ html,body{overflow-x:hidden;max-width:100%}
   #v-end .sc{gap:9px;padding:12px 14px}
   .bcard .bth{height:46px}
   #v-wiz .rrticks{margin-bottom:0}
+  #v-wiz .zbars{padding-top:9px;padding-bottom:9px}#v-wiz .zskip .rskipt{padding-top:7px;padding-bottom:7px}
   #v-end .scmap{margin-bottom:-4px}
 }
-/* short phones: the Ready list gets tighter rows so map, list and Start all fit */
-@media (max-height:740px){.rmap{min-height:120px}}
-/* Ready to spin: crawl length and zone as pills on the map, tap to change */
-.rchips{position:absolute;top:10px;left:10px;right:10px;z-index:500;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none}
-.mchip{pointer-events:auto;appearance:none;display:inline-flex;align-items:center;gap:6px;background:var(--s1);border:0;border-radius:99px;padding:8px 12px 8px 14px;font:inherit;font-size:14.5px;font-weight:700;color:var(--text);box-shadow:0 2px 10px rgba(0,0,0,.14);cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mchip .chev{color:var(--amber-text);font-size:18px;line-height:1}
-/* zone step ⇄ Ready: the map stays, everything around it slides out and in */
-.wout{opacity:0!important;transform:translateY(10px);transition:opacity .17s ease,transform .17s ease;pointer-events:none}
-.wpre{opacity:0}
-.win{animation:wIn .34s cubic-bezier(.3,.7,.3,1) both}
-@keyframes wIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.pin.gone{animation:pinGone .42s ease forwards;pointer-events:none}
-@keyframes pinGone{to{opacity:0;transform:scale(.3)}}
-@media (prefers-reduced-motion:reduce){.win,.pin.gone{animation:none}.wout{transition:none}}
-.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.rinv{appearance:none;flex:none;display:inline-flex;align-items:center;gap:7px;background:var(--s2);border:0;border-radius:99px;padding:9px 16px 9px 13px;font:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer}
-.rinv svg{width:18px;height:18px}
 
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
 .strow.stseg{padding:10px 12px;border-top:0}.stseg .seg{flex:1}
