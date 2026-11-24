@@ -979,7 +979,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   // the bars in the circle, in a panel from the bottom like everything else
   $("rrNB").onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
     const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
-    const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip bars you've been to</b></span><span class="sw"></span></button>`:"";
+    const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip bars you've been to${o.skip.n&&o.skip.n()?` <span class="skn">${o.skip.n()}</span>`:""}</b></span><span class="sw"></span></button>`:"";
     sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>${sk}
       <div class="mlr">${L.map(v=>{const st=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}" ${back?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${st.open?"Open til "+clock12(st.closeAt):st.opens!=null?"Opens "+clock12(st.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<p class="note">No rooftops in the circle. Drag or widen it.</p>`}</div>
       <button class="btn dark" type="button" id="mlBack" style="margin-top:14px">${back?"Back to the map":"Close"}</button>`,()=>{
@@ -1103,7 +1103,7 @@ function renderQuick(){
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;save();startCruise()})},
-    Object.assign({skip:{show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
+    Object.assign({skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
@@ -1216,7 +1216,7 @@ function renderWiz(){
       // Skip visited: a filter chip on the map, only when you've been to some bars in this zone
       {const c=collectedMap(),bl=playable(inCircle(z,z.r),false).filter(v=>c[v.id]);
         if(!bl.length&&w.newOnly)w.newOnly=false;
-        const ch=$("zSkipC");ch.hidden=!bl.length;ch.setAttribute("aria-pressed",String(!!w.newOnly));$("zSkipN").textContent=bl.length}
+        const ch=$("zSkipC"),bo=bl.filter(v=>openOK(v,now())).length;ch.hidden=!bl.length;ch.setAttribute("aria-pressed",String(!!w.newOnly));$("zSkipN").textContent=bo;$("zSkipN").hidden=!bo}
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
@@ -1252,7 +1252,7 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
 // No count on Skip: the open count on the map shows what it took out.
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
-  const sk=$("zSkipC");if(sk){sk.className="fsopt";sk.innerHTML=`<span class="l">Skip bars you've been to</span><span id="zSkipN" hidden></span><span class="sw"></span>`;o.append(sk)}
+  const sk=$("zSkipC");if(sk){sk.className="fsopt";const n0=$("zSkipN")?$("zSkipN").textContent:"";sk.innerHTML=`<span class="l">Skip bars you've been to <span class="n" id="zSkipN" ${n0&&n0!=="0"?"":"hidden"}>${esc(n0)}</span></span><span class="sw"></span>`;o.append(sk)}
   const sl=panel.querySelector(".rrslide");(sl||panel.lastChild).after(o)}
 const fsOff=()=>document.querySelectorAll(".view.fsv").forEach(v=>v.classList.remove("fsv"));
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
