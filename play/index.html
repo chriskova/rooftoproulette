@@ -2108,7 +2108,7 @@ body.camon #v-play .adjz{display:none}
 .bar.tgt h2{color:var(--amber-text)}
 .bar.tgt .eyebrow{color:#fff}
 /* wildcard: yellow dashed edge, see-through but a shade darker than the card */
-.bar .wild,.bar.photo .wild{background:rgba(0,0,0,.28);border:1.5px dashed rgba(245,184,61,.75);color:#fff;cursor:pointer}.bar .wild b{opacity:1}
+.bar .wild,.bar.photo .wild{background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1.5px dashed rgba(245,184,61,.75);color:#fff;cursor:pointer}.bar .wild b{opacity:1}
 .bar .wild svg,.bar .wild b{color:var(--amber-text)!important}
 .wild.wexplain{background:rgba(245,184,61,.06);border:1.5px dashed rgba(245,184,61,.75);color:var(--text);margin-top:12px}
 /* icon on the left; title and rule line up beside it */
@@ -2500,7 +2500,7 @@ html,body{overflow-x:hidden;max-width:100%}
   html:not(.dark) body:not(.camon) .bar.photo:not(.phd),html:not(.dark) body:not(.camon) .sheetbar.photo:not(.phd),html:not(.dark) body:not(.camon) .sheetbar.loading{color:var(--text);background-color:var(--s2)}
   html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .small{color:var(--muted)}
   html:not(.dark) body:not(.camon) .bar.tgt:not(.phd) .eyebrow{color:var(--text)}
-  html:not(.dark) body:not(.camon) .bar:not(.phd) .wild{background:rgba(245,184,61,.3);border-color:rgba(190,127,12,.7);color:var(--text)}
+  html:not(.dark) body:not(.camon) .bar:not(.phd) .wild{background:rgba(245,184,61,.14);border-color:rgba(190,127,12,.7);color:var(--text)}
   html:not(.dark) body:not(.camon) .camtgt .wild{color:rgba(255,255,255,.92)}
   html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .btn.dir{background:rgba(255,255,255,.75);border-color:rgba(190,127,12,.75)}
   html:not(.dark) body:not(.camon) .bar.photo:not(.phd) .nudge{color:var(--text)}
