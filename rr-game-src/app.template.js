@@ -1249,51 +1249,75 @@ let wizRepaint=null,wMapRef=null;
 // the open count as a "See list" pill above a fixed panel (title, line, distance, slider), Start the crawl below.
 function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelector(".rrmap");if(!box)return;
   const panel=document.createElement("div");panel.className="fspanel";
-  const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)panel.append(head);
-  ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)panel.append(x)});const zw=$("zWarn");if(zw)panel.append(zw);
+  const ctl=document.createElement("div");ctl.className="fsctl";panel.append(ctl);
+  const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)ctl.append(head);
+  ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)ctl.append(x)});const zw=$("zWarn");if(zw)ctl.append(zw);
   box.after(panel);
-  // a handle like Uber's and Google's: drag the panel down to tuck the slider and options away (more map), up or tap to bring them back.
-  // The panel follows your finger and settles smoothly; the map grows and shrinks with it. Always opens full.
+  // Three stops, like Google Maps: tucked (more map), the zone controls (default), and the rooftop list (up, under the search bar).
+  // The controls and the list are never on screen together: dragging between them crossfades one into the other.
   panel.insertAdjacentHTML("afterbegin",`<button class="fshandle" type="button" aria-label="Show less" aria-expanded="true"></button>`);
-  const hd=panel.querySelector(".fshandle"),sub=panel.querySelector("p.sub"),lbl=panel.querySelector(".rrsum");
+  const hd=panel.querySelector(".fshandle"),sub=ctl.querySelector("p.sub"),lbl=ctl.querySelector(".rrsum");
   const mk=()=>{const d=document.createElement("div");d.className="fsmore";return d};
   const m1=mk();if(sub){sub.after(m1);m1.append(sub)}
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
-  // up: the rooftops in play, under everything else in the panel (the pill rides up on the panel's edge and turns into this list's heading)
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
-  const parts=[m1,m2];let full=null,u=1,anim=0,lmax=300,gateOK=false,drag=false;
-  const fill=()=>{const L=view._fsList&&view._fsList();if(!L)return;lw.querySelector(".n").textContent=L.title;const bx=lw.querySelector(".fslb");
-    const gate=L.gate&&!gateOK&&L.gate();
-    bx.innerHTML=(L.top||"")+`<div class="fsrows${gate?" blur":""}">${L.html}</div>`+(gate?`<div class="fsgate"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn line" type="button" data-g="show">Show me anyway</button></div>`:"");
-    if(gate){bx.querySelector('[data-g="keep"]').onclick=()=>set(1);bx.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;if(L.ungate)L.ungate();fill()}}
-    else if(L.bind)L.bind(bx,fill)};
+  // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn line" type="button" data-g="show">Show me anyway</button>`;panel.append(gt);
+  const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,anim=0,base=300,span=300,gateOK=false,hfix=false;
+  const prov=()=>view._fsList&&view._fsList();
+  const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
+  const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill)};
   view._fsFill=()=>{if(u>1.01)fill()};
+  const gate=on=>{panel.classList.toggle("gated",!!on)};
+  gt.querySelector('[data-g="keep"]').onclick=()=>gate(false);
+  gt.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();gate(false);set(2)};
   const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
-    const vr=view.getBoundingClientRect(),pr=panel.getBoundingClientRect(),lh=lw.getBoundingClientRect().height;
-    lmax=Math.max(180,Math.round(pr.top-vr.top+lh-(parseFloat(getComputedStyle(view).getPropertyValue("--fstop"))||96)))};
-  const tot=()=>Math.max(1,full[0]+full[1]),px=v=>v<=1?v*tot():tot()+(v-1)*lmax,inv=P=>P<=tot()?P/tot():1+(P-tot())/lmax;
-  const apply=v=>{u=Math.max(0,Math.min(2,v));if(!full)measure();const f=Math.min(1,u),g=Math.max(0,u-1);
-    parts.forEach((x,i)=>{x.style.maxHeight=(f>=1?(panel.classList.contains("fsanim")||drag?full[i]+"px":"none"):(full[i]*f)+"px");x.style.opacity=f});
-    lw.style.maxHeight=(g*lmax)+"px";lw.style.opacity=Math.min(1,g*2.2);lw.classList.toggle("on",g>.98);
+    const oh=panel.style.height;panel.style.height="";const cur=parts.reduce((a,x)=>a+x.offsetHeight,0),nat=panel.offsetHeight;panel.style.height=oh;
+    base=nat-cur+full[0]+full[1];
+    // stop just under whatever floats at the top of the map (search, tabs, locate), wherever that is on this phone
+    const pr=panel.getBoundingClientRect();let lim=0;view.querySelectorAll(".msearch,.fstabs,.mchips,.rrme,.wtop .iconbtn").forEach(x=>{const r=x.getBoundingClientRect();if(r.height&&!x.hidden)lim=Math.max(lim,r.bottom)});
+    if(!lim)lim=view.getBoundingClientRect().top+96;
+    span=Math.max(60,Math.round(pr.bottom-(lim+12)-base))};
+  const tot=()=>Math.max(1,full[0]+full[1]),px=v=>v<=1?v*tot():tot()+(v-1)*span,inv=P=>P<=tot()?P/tot():1+(P-tot())/span;
+  const cl=x=>Math.max(0,Math.min(1,x));
+  const apply=v=>{u=Math.max(0,Math.min(2,v));if(!full)measure();const f=Math.min(1,u),g=Math.max(0,u-1),an=panel.classList.contains("fsanim");
+    parts.forEach((x,i)=>{x.style.maxHeight=(f>=1?(an||g>0?full[i]+"px":"none"):(full[i]*f)+"px");x.style.opacity=f});
+    panel.style.height=(g>0||(hfix&&an&&u>=1))?Math.round(base+g*span)+"px":"";
+    const co=cl(1-g*2.2),lo=cl((g-.45)*2.2);
+    ctl.style.opacity=co;ctl.style.visibility=co<.01?"hidden":"";ctl.style.pointerEvents=g>.3?"none":"";
+    lw.style.opacity=lo;lw.style.visibility=lo<.01?"hidden":"visible";lw.style.pointerEvents=g>.9?"auto":"none";lw.classList.toggle("on",g>.98);
     panel.classList.toggle("min",u<.02);panel.classList.toggle("up",g>.02);
-    const pl=view.querySelector(".fspill");if(pl){const k=Math.min(1,g/.6);pl.style.opacity=String(1-k);pl.style.pointerEvents=g>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*18}px) scale(${1+k*.08})`}};
+    const pl=view.querySelector(".fspill");if(pl){const k=cl(g/.5);pl.style.opacity=String(1-k);pl.style.pointerEvents=k>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*10}px) scale(${1-k*.06})`}};
   const follow=ms=>{cancelAnimationFrame(anim);const t0=performance.now(),go=()=>{if(rrMap)rrMap.resize();if(performance.now()-t0<ms)anim=requestAnimationFrame(go)};go()};
-  const set=to=>{if(typeof to==="boolean")to=to?0:1;measure();parts.forEach((x,i)=>{if(x.style.maxHeight==="none")x.style.maxHeight=full[i]+"px"});void panel.offsetHeight;if(to>1&&u<=1.01)fill();panel.classList.add("fsanim");apply(to);follow(340);setTimeout(()=>{panel.classList.remove("fsanim");apply(u)},350);
+  let tm=0;
+  const set=to=>{if(typeof to==="boolean")to=to?0:1;if(to!==1)gate(false);measure();hfix=u>1.001||to>1;
+    parts.forEach((x,i)=>{if(x.style.maxHeight==="none")x.style.maxHeight=full[i]+"px"});if(hfix&&!panel.style.height)panel.style.height=Math.round(base+Math.max(0,u-1)*span)+"px";void panel.offsetHeight;
+    if(to>1&&u<=1.01)fill();if(to>1)bx.scrollTop=0;panel.classList.add("fsanim");apply(to);follow(360);clearTimeout(tm);tm=setTimeout(()=>{panel.classList.remove("fsanim");hfix=false;apply(u)},360);
     hd.setAttribute("aria-expanded",String(to>=1));hd.setAttribute("aria-label",to<1?"Show more":"Show less")};
   view._fsSet=set;
-  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(u<1?1:u>1?1:0)};
-  let y0=null,u0=1,moved=false,swiped=0;
-  panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,.fslb,button:not(.fshandle),input"))return;measure();y0=e.clientY;u0=u;moved=false;panel.classList.remove("fsanim")},{passive:true});
-  panel.addEventListener("pointermove",e=>{if(y0==null)return;const d=e.clientY-y0;if(!moved&&Math.abs(d)<6)return;if(!moved&&d<0&&u0>=1)fill();moved=true;apply(inv(Math.max(0,Math.min(px(2),px(u0)-d))));if(rrMap)rrMap.resize()},{passive:true});
-  const end=e=>{if(y0==null)return;const d=e.clientY-y0;y0=null;if(!moved)return;swiped=Date.now();
-    // settle on the next stop in the direction you were heading (a short flick is enough)
+  // the pill (and pulling up): timed mode asks about spoilers first, right where the controls are; otherwise straight to the list
+  const open=()=>{if(needGate()){if(u!==1)set(1);gate(true)}else set(2)};view._fsOpen=open;
+  hd.onclick=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gate(false);return}set(u<1?1:u>1?1:0)};
+  // dragging: from the handle, the heading or the controls the whole panel moves; inside the list it scrolls,
+  // and only a pull down from the top of the list brings the panel with it
+  let y0=null,u0=1,moved=false,swiped=0,cap=2;
+  const dStart=y=>{measure();y0=y;u0=u;moved=false;cap=u0>1.01||!needGate()?2:1;panel.classList.remove("fsanim")};
+  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved){gate(false);if(d<0&&u0>=1&&cap>1)fill()}moved=true;apply(inv(Math.max(0,Math.min(px(cap),px(u0)-d))));if(rrMap)rrMap.resize();return true};
+  const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();
+    if(d<0&&cap<2&&u>=.98){set(1);gate(true);return}
     set(d>0?Math.floor(u+.0001):Math.ceil(u-.0001))};
-  panel.addEventListener("pointerup",end,{passive:true});panel.addEventListener("pointercancel",end,{passive:true});
-  // the pill now opens the list right here
+  panel.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"&&e.target.closest(".fslb"))return;if(e.target.closest(".rrslide,.fsopts,.fslb,.fsgate,button:not(.fshandle),input"))return;dStart(e.clientY)},{passive:true});
+  panel.addEventListener("pointermove",e=>dMove(e.clientY),{passive:true});
+  panel.addEventListener("pointerup",e=>dEnd(e.clientY),{passive:true});panel.addEventListener("pointercancel",e=>dEnd(e.clientY),{passive:true});
+  let ty=null,tl=null;
+  bx.addEventListener("touchstart",e=>{ty=e.touches[0].clientY;tl=null},{passive:true});
+  bx.addEventListener("touchmove",e=>{if(ty==null)return;const y=e.touches[0].clientY;
+    if(tl==null){if(Math.abs(y-ty)<4)return;tl=y>ty&&bx.scrollTop<=0;if(tl){dStart(ty)}}
+    if(tl){e.preventDefault();dMove(y)}},{passive:false});
+  const tEnd=e=>{if(tl){const t=e.changedTouches[0];dEnd(t?t.clientY:ty)}ty=null;tl=null};
+  bx.addEventListener("touchend",tEnd,{passive:true});bx.addEventListener("touchcancel",tEnd,{passive:true});
   panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(1)});
-  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);nb.onclick=()=>view._fsSet(2)}}
-// the options live in the panel like Uber's (nothing on top but search): Spin from as a row that opens a menu, Skip as a switch.
-// No count on Skip: the open count on the map shows what it took out.
+  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);nb.onclick=()=>open()}}
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
   const sk=$("zSkipC");if(sk){sk.className="fsopt";const n0=$("zSkipN")?$("zSkipN").textContent:"";sk.innerHTML=`<span class="l">Skip bars you've been to <span class="n" id="zSkipN" ${n0&&n0!=="0"?"":"hidden"}>${esc(n0)}</span></span><span class="sw"></span>`;o.append(sk)}
