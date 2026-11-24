@@ -1262,13 +1262,15 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
-  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><div class="fsgb"><button class="btn line" type="button" data-g="show">Show me anyway</button><button class="btn" type="button" data-g="keep">Keep it a surprise</button></div>`;panel.append(gt);
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgt"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span></div><div class="fsgb"><button class="btn line" type="button" data-g="show">Show me anyway</button><button class="btn" type="button" data-g="keep">Keep it a surprise</button></div>`;panel.append(gt);
   const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
   const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill)};
   view._fsFill=()=>{if(u>1.01)fill()};
-  const gate=on=>{panel.classList.toggle("gated",!!on)};
+  // the spoiler question sits over the real list, blurred: the same list you get if you say show me
+  let gto=0;const gate=on=>{clearTimeout(gto);panel.classList.remove("gout");if(on){fill();bx.scrollTop=0}panel.classList.toggle("gated",!!on)};
+  const gateOut=()=>{clearTimeout(gto);panel.classList.add("gout");gto=setTimeout(()=>gate(false),240)};
   const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
     const oh=panel.style.height;panel.style.height="";const cur=parts.reduce((a,x)=>a+x.offsetHeight,0),nat=panel.offsetHeight;panel.style.height=oh;
     base=nat-cur+full[0]+full[1];
@@ -1302,10 +1304,10 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   // timed, before you've seen the list: the panel lifts a little, springs back and the spoiler question pops out where the controls are
   const tease1=(drag,v0)=>{measure();tease=true;anim(1,{v:drag?v0:1000,k:drag?320:300,z:drag?.55:.5,onPeak:drag?null:()=>gate(true),done:()=>{tease=false;apply(1)}});if(drag)gate(true)};
   const open=()=>{if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
-  gt.querySelector('[data-g="keep"]').onclick=()=>gate(false);
+  gt.querySelector('[data-g="keep"]').onclick=()=>gateOut();
   gt.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);panel.classList.remove("gleave")}})};
   // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
-  const tapTop=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gate(false);return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
+  const tapTop=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gateOut();return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
   hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
   // dragging: from anywhere on the panel it moves; inside the list it scrolls, and only a pull down from the top brings the panel with it
   let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[];

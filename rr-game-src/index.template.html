@@ -1817,16 +1817,28 @@ html,body{overflow-x:hidden;max-width:100%}
 .fslh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;padding:6px 0 4px;cursor:pointer}
 .fslb{flex:1;min-height:0;overflow-y:hidden;position:relative;padding-bottom:6px;touch-action:pan-y;overscroll-behavior:contain}
 .fslist.on .fslb{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:30px;bottom:calc(12px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(16px) scale(.96);transition:opacity .16s ease,transform .16s ease,visibility 0s .16s}
-.fspanel.gated>.fsgate{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .24s ease .05s,transform .42s cubic-bezier(.2,1.5,.4,1) .05s}
-.fspanel.gated.gleave>.fsgate{opacity:0;transform:translateY(-10px);transition:opacity .15s ease,transform .2s ease}
+.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:64px;bottom:calc(12px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;visibility:hidden;pointer-events:none}
+.fsgt{margin:auto 0;display:flex;flex-direction:column;gap:4px;padding:16px 6px;background:radial-gradient(closest-side,var(--bg) 60%,transparent);opacity:0;transform:translateY(14px) scale(.96);transition:opacity .16s ease,transform .16s ease}
+.fsgt b{font-size:20px;font-weight:800}.fsgt span{color:var(--muted);font-size:14.5px}
+.fsgb{display:flex;flex-direction:column;gap:10px;width:100%;transform:translateY(calc(100% + 40px));transition:transform .2s ease}
+.fsgb .btn.line{height:50px;background:var(--bg)}
+.fspanel.gated>.fsgate{visibility:visible;pointer-events:auto}
+.fspanel.gated .fsgt{opacity:1;transform:none;transition:opacity .24s ease .05s,transform .42s cubic-bezier(.2,1.5,.4,1) .05s}
+.fspanel.gated .fsgb{transform:none;transition:transform .42s cubic-bezier(.2,1.25,.4,1)}
 .fspanel.gated>.fsctl{opacity:0!important;pointer-events:none;transition:opacity .14s ease}
-.fsgate b{font-size:20px;font-weight:800}.fsgate span{color:var(--muted);font-size:14.5px}
-.fsgb{display:flex;flex-direction:column;gap:10px;width:100%;margin-top:auto}
-.fsgb .btn.line{height:50px}
+.fspanel.gated>.fslist{opacity:1!important;visibility:visible!important;pointer-events:none!important;transition:opacity .25s ease}
+.fspanel.gated>.fslist .fslb{filter:blur(6px);transition:filter .3s ease}
+/* show me anyway: the buttons drop off the bottom and the list comes into focus as the panel rises */
+.fspanel.gated.gleave>.fslist .fslb{filter:none;transition:filter .35s ease}
+.fspanel.gated.gleave .fsgt{opacity:0;transform:none;transition:opacity .15s ease}
+.fspanel.gated.gleave .fsgb,.fspanel.gated.gout .fsgb{transform:translateY(calc(100% + 40px));transition:transform .28s cubic-bezier(.5,0,.75,0)}
+/* keep it a surprise: back to the controls */
+.fspanel.gated.gout>.fslist{opacity:0!important}
+.fspanel.gated.gout>.fsctl{opacity:1!important;transition:opacity .2s ease .05s}
+.fspanel.gated.gout .fsgt{opacity:0;transition:opacity .15s ease}
 /* while the spoiler question is up it takes Start the crawl's place; Start comes back once you've chosen */
-#cta{transition:opacity .18s ease}
-.app:has(.fspanel.gated:not(.gleave)) #cta{opacity:0;pointer-events:none}
+#cta{transition:opacity .2s ease .18s}
+.app:has(.fspanel.gated:not(.gleave):not(.gout)) #cta{opacity:0;pointer-events:none;transition:opacity .15s ease}
 .fspanel h1.q{font-size:22px!important;line-height:1.15;margin:0}
 .fspanel p.sub,#v-wiz .fspanel p.sub.zmove,#v-quick .fspanel p.sub.qpace{margin:2px 0 0!important;font-size:14px!important}
 .fspanel .rrsum{margin:4px 0 0}
