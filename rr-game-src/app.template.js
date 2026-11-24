@@ -1066,7 +1066,7 @@ function renderQuick(){
   if(!here&&!S.test&&!renderQuick.asked&&navigator.geolocation){renderQuick.asked=1;permState().then(st=>{if(st!=="granted")return;
     navigator.geolocation.getCurrentPosition(p=>{here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};if(S.route==="quick"&&S.quick&&!S.quick.step)renderQuick()},()=>{},{maximumAge:600000,timeout:10000})})}
   if(step===0){
-    b.innerHTML=top+`<div><h1 class="q modename modefull">Rest <i>&amp;</i> Roulette</h1><p class="sub" style="margin:6px 0 0">Spin when you're ready.<br>Stay as long as you like.</p></div>
+    b.innerHTML=top+`<div><h1 class="q modename modefull">Rest <i>&amp;</i> Roulette</h1><p class="sub" style="margin:6px 0 0">Crawl at your own pace.</p></div>
       <div class="opts"><button class="opt" type="button" role="radio" aria-checked="${q.sel==="__me"}" id="qMe"><span class="ic">${I.pin}</span><span class="t"><b>Select an area</b><small>Set where and how far</small></span></button>
       ${apWrap("__want",listOpt(t,q.sel==="__want"))}</div>
       ${q.note?`<div class="alertbox">${esc(q.note)}</div>`:""}`;
