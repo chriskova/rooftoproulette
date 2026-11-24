@@ -1262,15 +1262,13 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
-  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn line" type="button" data-g="show">Show me anyway</button>`;panel.append(gt);
-  const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,anim=0,base=300,span=300,gateOK=false,hfix=false;
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><div class="fsgb"><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn" type="button" data-g="show">Show me anyway</button></div>`;panel.append(gt);
+  const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
   const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill)};
   view._fsFill=()=>{if(u>1.01)fill()};
   const gate=on=>{panel.classList.toggle("gated",!!on)};
-  gt.querySelector('[data-g="keep"]').onclick=()=>gate(false);
-  gt.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();gate(false);set(2)};
   const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
     const oh=panel.style.height;panel.style.height="";const cur=parts.reduce((a,x)=>a+x.offsetHeight,0),nat=panel.offsetHeight;panel.style.height=oh;
     base=nat-cur+full[0]+full[1];
@@ -1280,34 +1278,54 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
     span=Math.max(60,Math.round(pr.bottom-(lim+12)-base))};
   const tot=()=>Math.max(1,full[0]+full[1]),px=v=>v<=1?v*tot():tot()+(v-1)*span,inv=P=>P<=tot()?P/tot():1+(P-tot())/span;
   const cl=x=>Math.max(0,Math.min(1,x));
-  const apply=v=>{u=Math.max(0,Math.min(2,v));if(!full)measure();const f=Math.min(1,u),g=Math.max(0,u-1),an=panel.classList.contains("fsanim");
-    parts.forEach((x,i)=>{x.style.maxHeight=(f>=1?(an||g>0?full[i]+"px":"none"):(full[i]*f)+"px");x.style.opacity=f});
-    panel.style.height=(g>0||(hfix&&an&&u>=1))?Math.round(base+g*span)+"px":"";
-    const co=cl(1-g*2.2),lo=cl((g-.45)*2.2);
-    ctl.style.opacity=co;ctl.style.visibility=co<.01?"hidden":"";ctl.style.pointerEvents=g>.3?"none":"";
-    lw.style.opacity=lo;lw.style.visibility=lo<.01?"hidden":"visible";lw.style.pointerEvents=g>.9?"auto":"none";lw.classList.toggle("on",g>.98);
-    panel.classList.toggle("min",u<.02);panel.classList.toggle("up",g>.02);
-    const pl=view.querySelector(".fspill");if(pl){const k=cl(g/.5);pl.style.opacity=String(1-k);pl.style.pointerEvents=k>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*10}px) scale(${1-k*.06})`}};
-  const follow=ms=>{cancelAnimationFrame(anim);const t0=performance.now(),go=()=>{if(rrMap)rrMap.resize();if(performance.now()-t0<ms)anim=requestAnimationFrame(go)};go()};
-  let tm=0;
-  const set=to=>{if(typeof to==="boolean")to=to?0:1;if(to!==1)gate(false);measure();hfix=u>1.001||to>1;
-    parts.forEach((x,i)=>{if(x.style.maxHeight==="none")x.style.maxHeight=full[i]+"px"});if(hfix&&!panel.style.height)panel.style.height=Math.round(base+Math.max(0,u-1)*span)+"px";void panel.offsetHeight;
-    if(to>1&&u<=1.01)fill();if(to>1)bx.scrollTop=0;panel.classList.add("fsanim");apply(to);follow(360);clearTimeout(tm);tm=setTimeout(()=>{panel.classList.remove("fsanim");hfix=false;apply(u)},360);
+  // tease: the panel is being lifted a little above the controls (timed, before the spoiler question) with nothing crossfading yet
+  let tease=false,moving=false,raf=0;
+  const apply=v=>{u=Math.max(0,Math.min(2.3,v));if(!full)measure();const f=Math.min(1,u),g=Math.max(0,u-1),gv=tease?0:Math.min(1,g);
+    parts.forEach((x,i)=>{x.style.maxHeight=(f>=1?(moving||g>0?full[i]+"px":"none"):(full[i]*f)+"px");x.style.opacity=f});
+    panel.style.height=g>.0005?Math.round(base+g*span)+"px":"";
+    const co=cl(1-gv*2.2),lo=cl((gv-.45)*2.2);
+    ctl.style.opacity=co;ctl.style.visibility=co<.01?"hidden":"";ctl.style.pointerEvents=gv>.3?"none":"";
+    lw.style.opacity=lo;lw.style.visibility=lo<.01?"hidden":"visible";lw.style.pointerEvents=gv>.9?"auto":"none";lw.classList.toggle("on",gv>.98);
+    panel.classList.toggle("min",u<.02);panel.classList.toggle("up",gv>.02);
+    const pl=view.querySelector(".fspill");if(pl){const k=cl(gv/.5);pl.style.opacity=String(1-k);pl.style.pointerEvents=k>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*10}px) scale(${1-k*.06})`}};
+  // one spring drives everything (panel, fades, map) in the same frame, carrying on from the speed of your finger, like Google Maps
+  const anim=(to,o={})=>{cancelAnimationFrame(raf);moving=true;const X=px(to),k=o.k||340,c=2*(o.z||1)*Math.sqrt(k);let x=px(u),v=o.v||0,last=performance.now(),peaked=false;
+    const step=t=>{const dt=Math.min(.034,Math.max(.001,(t-last)/1000));last=t;
+      for(let n=0;n<4;n++){const h=dt/4,a=-k*(x-X)-c*v;const pv=v;v+=a*h;x+=v*h;if(o.onPeak&&!peaked&&pv>0&&v<=0){peaked=true;o.onPeak()}}
+      if(Math.abs(x-X)<.4&&Math.abs(v)<12){moving=false;apply(to);if(rrMap)rrMap.resize();if(o.done)o.done();return}
+      apply(inv(x));if(rrMap)rrMap.resize();raf=requestAnimationFrame(step)};
+    raf=requestAnimationFrame(step)};
+  const set=(to,o={})=>{if(typeof to==="boolean")to=to?0:1;if(to!==1&&!o.keepGate)gate(false);measure();tease=false;
+    if(to>1&&u<=1.01){fill();bx.scrollTop=0}anim(to,o);
     hd.setAttribute("aria-expanded",String(to>=1));hd.setAttribute("aria-label",to>1?"Show less":"Show more")};
   view._fsSet=set;
-  // the pill (and pulling up): timed mode asks about spoilers first, right where the controls are; otherwise straight to the list
-  const open=()=>{if(needGate()){if(u!==1)set(1);gate(true)}else set(2)};view._fsOpen=open;
+  // timed, before you've seen the list: the panel lifts a little, springs back and the spoiler question pops out where the controls are
+  const tease1=(drag,v0)=>{measure();tease=true;anim(1,{v:drag?v0:1000,k:drag?320:300,z:drag?.55:.5,onPeak:drag?null:()=>gate(true),done:()=>{tease=false;apply(1)}});if(drag)gate(true)};
+  const open=()=>{if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
+  gt.querySelector('[data-g="keep"]').onclick=()=>gate(false);
+  gt.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);panel.classList.remove("gleave")}})};
   // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
   const tapTop=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gate(false);return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
   hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
-  // dragging: from the handle, the heading or the controls the whole panel moves; inside the list it scrolls,
-  // and only a pull down from the top of the list brings the panel with it
-  let y0=null,u0=1,moved=false,swiped=0,cap=2;
-  const dStart=y=>{measure();y0=y;u0=u;moved=false;cap=u0>1.01||!needGate()?2:1;panel.classList.remove("fsanim")};
-  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved){gate(false);if(d<0&&u0>=1&&cap>1)fill()}moved=true;apply(inv(Math.max(0,Math.min(px(cap),px(u0)-d))));if(rrMap)rrMap.resize();return true};
-  const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();
-    if(d<0&&cap<2&&u>=.98){set(1);gate(true);return}
-    set(d>0?Math.floor(u+.0001):Math.ceil(u-.0001))};
+  // dragging: from anywhere on the panel it moves; inside the list it scrolls, and only a pull down from the top brings the panel with it
+  let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[];
+  const dStart=y=>{cancelAnimationFrame(raf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];cap=u0>1.01||!needGate()?2:1};
+  const rub=e=>70*(1-Math.exp(-e/160));
+  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved){gate(false);if(d<0&&u0>=1&&cap>1)fill()}moved=true;
+    const t=performance.now();smp.push([t,y]);while(smp.length>2&&t-smp[0][0]>90)smp.shift();
+    let P=Math.max(0,px(u0)-d);if(cap<2){const T=px(1);if(P>T)P=T+rub(P-T);tease=P>T+.5}else{P=Math.min(px(2)+rub(Math.max(0,P-px(2))),P);tease=false}
+    moving=true;apply(inv(P));if(rrMap)rrMap.resize();return true};
+  const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();moving=false;
+    let vy=0;if(smp.length>1){const a=smp[0],b=smp[smp.length-1];if(b[0]-a[0]>8)vy=(b[1]-a[1])/((b[0]-a[0])/1000)}
+    if(performance.now()-(smp.length?smp[smp.length-1][0]:0)>80)vy=0;
+    const vp=-vy;// panel speed, px/s, up is positive
+    if(cap<2&&u>1.0005){tease1(true,Math.min(0,vp*.3));return}
+    if(cap<2&&d<0&&vp>350&&u>=.98){tease1();return}
+    const stops=[0,1,2].filter(s=>s<=cap),X=px(u);let to;
+    if(Math.abs(vp)>300)to=vp>0?Math.min(cap,Math.floor(u+.02)+1):Math.max(0,Math.ceil(u-.02)-1);
+    else{const s0=Math.round(u0),g0=px(s0),dir=X>g0?1:-1,nx=Math.max(0,Math.min(cap,s0+dir));to=Math.abs(X-g0)>Math.abs(px(nx)-g0)*.25?nx:s0;if(!stops.includes(to))to=s0}
+    if(to===2&&cap<2)to=1;
+    set(to,{v:Math.max(-4000,Math.min(4000,vp))})};
   panel.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"&&e.target.closest(".fslb"))return;if(e.target.closest(".fslb,input,.rrrange,select,textarea"))return;dStart(e.clientY)},{passive:true});
   // a drag that started on a switch or button isn't a tap on it
   panel.addEventListener("click",e=>{if(Date.now()-swiped<400&&!e.target.closest(".fshandle")){e.stopPropagation();e.preventDefault()}},true);
