@@ -1162,7 +1162,7 @@ function renderWiz(){
   $("wSum").hidden=!picks.length;
   $("wSum").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
   if(w.step===0){
-    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New crawl</div><h1 class="q">How long's the crawl?</h1></div>
+    body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New crawl</div><h1 class="q">Pick your crawl</h1></div>
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few bars, quick drinks.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
