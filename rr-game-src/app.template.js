@@ -2690,11 +2690,15 @@ function renderPlay0(){
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
     if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
     const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":m&&m.spin?((g.wild&&g.wild.res||[]).length?wFull(m,g.wild.res):wLead(m)):txt;
-    const pl=S.wplayed||{};
-    const nAll=ALLW.filter(t=>pl[t]).length,own=anyOwned();
-    const sub=own?esc((freeOn()?[BASE_DECK]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name)).join(" + ")):`${freePlayed()} of ${WILDS.length} played`;
-    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>${g.demo?"":`<button class="dk-fold" type="button" id="wDeckRow"><span class="t"><b>${own?"Decks in play":"Your deck"}</b><small>${sub}</small></span><span class="chev">›</span></button>`}<div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
-      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=deckSheet})});
+    // the deck this card came from, with how much of it you've played (tap for its cards); other packs as their own link underneath
+    const pl=S.wplayed||{},dk=WILDS.includes(txt)?"free":(PACKS.find(p=>p.cards.some(c=>c.t===txt))||{}).id||"free";
+    const ts=deckCardsOf(dk),nP=ts.filter(t=>pl[t]).length,more=PACKS.some(p=>!packOwned(p.id));
+    const reopen=()=>w.click();
+    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>
+      ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"All "+ts.length+" played":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
+      ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard packs <span class="chev">›</span></button>`:""}`}
+      <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
+      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=deckSheet})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
