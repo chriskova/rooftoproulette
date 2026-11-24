@@ -1306,7 +1306,9 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();
     if(d<0&&cap<2&&u>=.98){set(1);gate(true);return}
     set(d>0?Math.floor(u+.0001):Math.ceil(u-.0001))};
-  panel.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"&&e.target.closest(".fslb"))return;if(e.target.closest(".rrslide,.fsopts,.fslb,.fsgate,button:not(.fshandle),input"))return;dStart(e.clientY)},{passive:true});
+  panel.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"&&e.target.closest(".fslb"))return;if(e.target.closest(".fslb,input,.rrrange,select,textarea"))return;dStart(e.clientY)},{passive:true});
+  // a drag that started on a switch or button isn't a tap on it
+  panel.addEventListener("click",e=>{if(Date.now()-swiped<400&&!e.target.closest(".fshandle")){e.stopPropagation();e.preventDefault()}},true);
   panel.addEventListener("pointermove",e=>dMove(e.clientY),{passive:true});
   panel.addEventListener("pointerup",e=>dEnd(e.clientY),{passive:true});panel.addEventListener("pointercancel",e=>dEnd(e.clientY),{passive:true});
   let ty=null,tl=null;
