@@ -902,12 +902,11 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 var rrMap=null;   // var: go() can reach it during startup
-function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;el.style.height=(innerHeight<700&&$("zSkip")&&!$("zSkip").hidden?150:200)+"px";
+function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;el.style.height="200px";
   const vv=window.visualViewport,vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0;
   let limit=vr.top+v.clientHeight-pb;if(vv&&document.body.classList.contains("mapq"))limit=Math.min(limit,vv.offsetTop+vv.height-12);
   const last=Math.max(...[...v.children].filter(x=>x.offsetParent!==null).map(x=>x.getBoundingClientRect().bottom));
-  const floor_=innerHeight<700&&$("zSkip")&&!$("zSkip").hidden?150:200;   // short phones with the Skip row: the map gives a little so nothing scrolls
-  el.style.height=Math.round(Math.max(floor_,Math.min(document.body.classList.contains("mapq")?900:620,parseFloat(el.style.height)+(limit-last)-6)))+"px";if(rrMap)rrMap.resize();
+  el.style.height=Math.round(Math.max(200,Math.min(document.body.classList.contains("mapq")?900:620,parseFloat(el.style.height)+(limit-last)-6)))+"px";if(rrMap)rrMap.resize();
   if(!again){requestAnimationFrame(()=>fitMap(v,1));setTimeout(()=>fitMap(v,1),350)}}
 if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route),1)});
 window.addEventListener("resize",()=>{if(S.route==="wiz"||S.route==="quick")fitMap($("v-"+S.route))});
@@ -1178,15 +1177,14 @@ function renderWiz(){
   if(w.step===1){
     // drag the circle where you're starting; the size moves in 100 m steps within what this game length allows
     const R1=w.len===60?{lo:.5,hi:1,step:.1,ticks:[[.5,"Less travel"],[1,"More rooftops"]]}:{lo:.5,hi:2,step:.1,ticks:[[.5,"Less travel"],[2,"More rooftops"]]};
-    R1.row=true;R1.searchHint="Search where you’re going";
+    R1.searchHint="Search where you’re going";   // search floats on the map; the open count sits beside the distance, like R&R
     const me=w.me||null;
     if(!me&&!w._loc){w._loc=1;permState().then(st=>{if(st==="granted"&&S.route==="wiz"&&S.wiz===w&&w.step===1)useMe()})}
     if(!w.z){const c0=me&&GAME_AREAS(cityAt(me)||S.city).some(a=>dist(a,me)<6000)?me:(GAME_AREAS().find(a=>a.name==="The City")||GAME_AREAS()[0]);w.z={lat:c0.lat,lng:c0.lng,r:null}}
     if(w.z.r==null||w.z.r<R1.lo||w.z.r>R1.hi){let r=recRadius(w.len);if(r<R1.lo)r=R1.lo;if(r>R1.hi)r=R1.hi;if(r===.5&&playable(inCircle(w.z,.5),false).length<4)r=1;w.z.r=r}
     w.z.r=Math.round(w.z.r*10)/10;
-    const excl=w.excl||(w.excl=[]);let beenL=[];
-    body.innerHTML=`<div><h1 class="q qmap">Set your zone</h1><p class="sub zmove">You can move it once mid-crawl.</p></div>${rrZoneHTML(R1)}
-      <div class="rlist zskip" id="zSkip" hidden><div class="rrow rskip"><button class="rskipt" type="button" id="rBeen"><span class="l">Skip bars you've been to</span><small id="rBeenS"></small></button><button class="rsw" type="button" id="newTog" role="switch" aria-checked="${!!w.newOnly}" aria-label="Skip bars you've been to"><span class="sw"></span></button></div></div>
+    const excl=w.excl||(w.excl=[]);
+    body.innerHTML=`<div><h1 class="q qmap">Set your zone</h1><p class="sub zmove">You can move it once mid-crawl.</p></div>${rrZoneHTML(R1).replace('<button class="mcard"',`<button class="mchip" type="button" id="zSkipC" aria-pressed="${!!w.newOnly}" hidden><i class="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/></svg></i><i class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i>Skip visited <span id="zSkipN"></span></button><button class="mcard"`)}
       <div class="zwarn" id="zWarn" hidden><b id="zWarnT"></b><small id="zWarnS"></small><button class="btn line sm" type="button" id="zoneSuggest" hidden></button></div>
 `;
     const pool=(z,t)=>{const all=playable(inCircle(z,z.r),!!w.newOnly).filter(v=>!excl.includes(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
@@ -1195,20 +1193,17 @@ function renderWiz(){
       const ok=P.open.length>=2,options=P.open.length?P.open:P.all;
       // not enough open: say so, offer the nearest area that works, and put the demo front and centre
       const op=!ok&&P.all.length?nextOpen(P.all,t):null,sug=$("zoneSuggest");
-      $("rrN").textContent=P.all.length?"Rooftops in your zone":"No rooftops in your zone";
-      $("rrNs").textContent=(!P.open.length&&P.all.length?(op?`Opening from ${op}`:"All closed today"):P.open.length?`${P.open.length} open now`:"Drag the map or widen the circle.");
-      $("rrNB").hidden=!P.all.length;$("rrNs").hidden=!$("rrNs").textContent;if($("newTog"))$("newTog").hidden=!ok;
+      $("rrNB").hidden=!P.open.length;
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok&&!P.open.length)$("rrNB").hidden=true;   // the warning says it all (and the setup screen has to fit without scrolling)
       if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":!P.all.length?"No rooftops here":op?`Nothing open here till ${op}`:"Nothing open here today";
         $("zWarnS").textContent="Move the circle, or try a demo crawl.";
         const c_=GAME_AREAS().map(area=>({area,open:pool({...area,r:z.r},t).open.length})).filter(x=>x.open>=2).sort((a,b)=>dist(z,a.area)-dist(z,b.area));
         if(c_.length){const {area,open}=c_[0];sug.hidden=false;sug.innerHTML=`${I.move}<span>${esc(area.name)}</span><small>${open} open</small>`;sug.setAttribute("aria-label",`Move to ${area.name}, ${open} open`);sug.onclick=()=>{w.z={lat:area.lat,lng:area.lng,r:z.r};save();renderWiz()}}}
-      // Skip bars you've been to: only when you've been to some in this zone; names them under the label
-      {const c=collectedMap(),bl=playable(inCircle(z,z.r),false).filter(v=>c[v.id]);beenL=bl;const show=!!bl.length&&(ok||!!w.newOnly);
-        if($("zSkip").hidden===show){$("zSkip").hidden=!show;fitMap($("v-wiz"))}
-        if(bl.length)$("rBeenS").textContent=bl[0].name+(bl.length>1?` + ${bl.length-1} other${bl.length>2?"s":""}`:"");
-        if(!bl.length&&w.newOnly){w.newOnly=false;$("newTog").setAttribute("aria-checked","false")}}
+      // Skip visited: a filter chip on the map, only when you've been to some bars in this zone
+      {const c=collectedMap(),bl=playable(inCircle(z,z.r),false).filter(v=>c[v.id]);
+        if(!bl.length&&w.newOnly)w.newOnly=false;
+        const ch=$("zSkipC");ch.hidden=!bl.length;ch.setAttribute("aria-pressed",String(!!w.newOnly));$("zSkipN").textContent=bl.length}
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
@@ -1217,9 +1212,7 @@ function renderWiz(){
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
-    $("newTog").onclick=()=>{w.newOnly=!w.newOnly;save();$("newTog").setAttribute("aria-checked",String(!!w.newOnly));if(zb)zb.paint(true)};
-    $("rBeen").onclick=()=>{if(!beenL.length)return;sheet(`<h3>Been here before</h3><p class="note" style="margin:2px 0 10px">Rooftops in your zone you've already been to.</p><div class="card zlist">${beenL.map(v=>`<div class="zrow"><button class="t zopen" type="button" data-b="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></button></div>`).join("")}</div><button class="btn dark" type="button" id="bDone" style="margin-top:14px">Done</button>`,()=>{
-      document.querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.b)));$("bDone").onclick=closeSheet})};
+    $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
     fitMap($("v-wiz"));
   }
   if(w.step===3){
