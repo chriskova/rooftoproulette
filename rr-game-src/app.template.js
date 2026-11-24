@@ -1213,6 +1213,8 @@ function renderWiz(){
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
     $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
+    // the open count and Skip visited sit together as pills on the map, bottom left
+    {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"),$("rrNB"));cv.append(row);$("rrNB").classList.add("mchip","mcount")}
     fitMap($("v-wiz"));
   }
   if(w.step===3){
