@@ -1107,6 +1107,10 @@ function renderQuick(){
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
+  b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
+    const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars you've been to <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
+    return {title:`${L.length} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
+      bind(root,again){const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
   fsLayout(b,b);
   b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
     // picking a list: widen the circle (if it needs to) so every open bar on it is in it
@@ -1228,6 +1232,7 @@ function renderWiz(){
     $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
     // full screen: Skip visited up top under search, the open count as the See list pill above the panel
     {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"));cv.append(row)}
+    $("v-wiz")._fsList=()=>{const r=wizRows();return {title:`${$("rrN").textContent} in your zone`,top:`<p class="note fsln">${r.note}</p>`,html:`<div class="card zlist">${r.html}</div>`,bind:r.bind,gate:()=>!w.spoiled,ungate:()=>{w.spoiled=1;save()}}};
     fsLayout($("v-wiz"),body);fsOpts();
     fitMap($("v-wiz"));
   }
@@ -1254,22 +1259,39 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const mk=()=>{const d=document.createElement("div");d.className="fsmore";return d};
   const m1=mk();if(sub){sub.after(m1);m1.append(sub)}
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
-  const parts=[m1,m2];let full=null,f=1,anim=0;
-  const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h})};
-  const apply=v=>{f=Math.max(0,Math.min(1,v));if(!full)measure();parts.forEach((x,i)=>{x.style.maxHeight=(full[i]*f)+"px";x.style.opacity=f});panel.classList.toggle("min",f<.02)};
+  // up: the rooftops in play, under everything else in the panel (the pill rides up on the panel's edge and turns into this list's heading)
+  const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
+  const parts=[m1,m2];let full=null,u=1,anim=0,lmax=300,gateOK=false,drag=false;
+  const fill=()=>{const L=view._fsList&&view._fsList();if(!L)return;lw.querySelector(".n").textContent=L.title;const bx=lw.querySelector(".fslb");
+    const gate=L.gate&&!gateOK&&L.gate();
+    bx.innerHTML=(L.top||"")+`<div class="fsrows${gate?" blur":""}">${L.html}</div>`+(gate?`<div class="fsgate"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn line" type="button" data-g="show">Show me anyway</button></div>`:"");
+    if(gate){bx.querySelector('[data-g="keep"]').onclick=()=>set(1);bx.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;if(L.ungate)L.ungate();fill()}}
+    else if(L.bind)L.bind(bx,fill)};
+  view._fsFill=()=>{if(u>1.01)fill()};
+  const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
+    const vr=view.getBoundingClientRect(),pr=panel.getBoundingClientRect(),lh=lw.getBoundingClientRect().height;
+    lmax=Math.max(180,Math.round(pr.top-vr.top+lh-(parseFloat(getComputedStyle(view).getPropertyValue("--fstop"))||96)))};
+  const tot=()=>Math.max(1,full[0]+full[1]),px=v=>v<=1?v*tot():tot()+(v-1)*lmax,inv=P=>P<=tot()?P/tot():1+(P-tot())/lmax;
+  const apply=v=>{u=Math.max(0,Math.min(2,v));if(!full)measure();const f=Math.min(1,u),g=Math.max(0,u-1);
+    parts.forEach((x,i)=>{x.style.maxHeight=(f>=1?(panel.classList.contains("fsanim")||drag?full[i]+"px":"none"):(full[i]*f)+"px");x.style.opacity=f});
+    lw.style.maxHeight=(g*lmax)+"px";lw.style.opacity=Math.min(1,g*2.2);lw.classList.toggle("on",g>.98);
+    panel.classList.toggle("min",u<.02);panel.classList.toggle("up",g>.02);
+    const pl=view.querySelector(".fspill");if(pl){const k=Math.min(1,g/.6);pl.style.opacity=String(1-k);pl.style.pointerEvents=g>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*18}px) scale(${1+k*.08})`}};
   const follow=ms=>{cancelAnimationFrame(anim);const t0=performance.now(),go=()=>{if(rrMap)rrMap.resize();if(performance.now()-t0<ms)anim=requestAnimationFrame(go)};go()};
-  const set=min=>{measure();panel.classList.add("fsanim");apply(min?0:1);follow(320);setTimeout(()=>panel.classList.remove("fsanim"),330);
-    hd.setAttribute("aria-expanded",String(!min));hd.setAttribute("aria-label",min?"Show more":"Show less");if(!min)setTimeout(()=>{if(f===1)parts.forEach(x=>x.style.maxHeight="none")},340)};
-  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(f>.5)};
-  let y0=null,f0=1,moved=false,swiped=0,tot=1;
-  panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,button:not(.fshandle),input"))return;measure();tot=Math.max(1,full[0]+full[1]);y0=e.clientY;f0=f;moved=false;panel.classList.remove("fsanim")},{passive:true});
-  panel.addEventListener("pointermove",e=>{if(y0==null)return;const d=e.clientY-y0;if(!moved&&Math.abs(d)<6)return;moved=true;apply(f0-d/tot);if(rrMap)rrMap.resize()},{passive:true});
+  const set=to=>{if(typeof to==="boolean")to=to?0:1;measure();parts.forEach((x,i)=>{if(x.style.maxHeight==="none")x.style.maxHeight=full[i]+"px"});void panel.offsetHeight;if(to>1&&u<=1.01)fill();panel.classList.add("fsanim");apply(to);follow(340);setTimeout(()=>{panel.classList.remove("fsanim");apply(u)},350);
+    hd.setAttribute("aria-expanded",String(to>=1));hd.setAttribute("aria-label",to<1?"Show more":"Show less")};
+  view._fsSet=set;
+  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(u<1?1:u>1?1:0)};
+  let y0=null,u0=1,moved=false,swiped=0;
+  panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,.fslb,button:not(.fshandle),input"))return;measure();y0=e.clientY;u0=u;moved=false;panel.classList.remove("fsanim")},{passive:true});
+  panel.addEventListener("pointermove",e=>{if(y0==null)return;const d=e.clientY-y0;if(!moved&&Math.abs(d)<6)return;if(!moved&&d<0&&u0>=1)fill();moved=true;apply(inv(Math.max(0,Math.min(px(2),px(u0)-d))));if(rrMap)rrMap.resize()},{passive:true});
   const end=e=>{if(y0==null)return;const d=e.clientY-y0;y0=null;if(!moved)return;swiped=Date.now();
-    // settle whichever way you were heading (a short flick is enough)
-    set(d>0?(f<.85):(f<.15))};
+    // settle on the next stop in the direction you were heading (a short flick is enough)
+    set(d>0?Math.floor(u+.0001):Math.ceil(u-.0001))};
   panel.addEventListener("pointerup",end,{passive:true});panel.addEventListener("pointercancel",end,{passive:true});
-  panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(false)});
-  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb)}}
+  // the pill now opens the list right here
+  panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(1)});
+  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);nb.onclick=()=>view._fsSet(2)}}
 // the options live in the panel like Uber's (nothing on top but search): Spin from as a row that opens a menu, Skip as a switch.
 // No count on Skip: the open count on the map shows what it took out.
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
@@ -1282,6 +1304,16 @@ const fsOff=()=>document.querySelectorAll(".view.fsv").forEach(v=>v.classList.re
 function wizSpoiler(then){then=typeof then==="function"?then:wizBars;const w=S.wiz;if(w&&w.spoiled){then();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>
     <div class="acts"><button class="btn" type="button" id="spKeep">Keep it a surprise</button><button class="btn line" type="button" id="spShow">Show me anyway</button></div>`,()=>{
     $("spKeep").onclick=closeSheet;$("spShow").onclick=()=>{closeSheet();setTimeout(then,200)}})}
+// the timed zone's rooftops, with veto ticks: in the panel's list, and in the sheet
+function wizRows(){const w=S.wiz;if(!w||!w.z)return {html:"",n:0,bind(){}};const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
+  const all=playable(inCircle(w.z,w.z.r),false).sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open,bx=!isNew(x.id,col),by=!isNew(y.id,col);return ox!==oy?(ox?-1:1):bx!==by?(bx?1:-1):x.name.localeCompare(y.name)});
+  const html=all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
+    const status=out?"Vetoed":skip?"Skipped":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+    const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
+    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Been</span>`:""}${tick}</div>`}).join("");
+  return {html,note:`You get ${MAXOUT} vetoes: untick a bar to sit it out this crawl.`+(excl.length?` ${excl.length} of ${MAXOUT} used.`:""),
+    bind(root,again){root.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();if(wizRepaint)wizRepaint();again()});
+      root.querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>{});warmOnHold(b,byId(b.dataset.z))})}}}
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
   const all=playable(inCircle(w.z,w.z.r),false).sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open,bx=!isNew(x.id,col),by=!isNew(y.id,col);return ox!==oy?(ox?-1:1):bx!==by?(bx?1:-1):x.name.localeCompare(y.name)});
   const rows=()=>all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
