@@ -287,16 +287,14 @@ function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">For a practic
 function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   const range={lo:.5,hi:1,ticks:[[.5,"500 m"],[.75,"750 m"],[1,"1 km"]]},cc=S.city!=="Sydney"&&CITIES.find(x=>x.live&&x.name===S.city&&x.lat),z=cc?{lat:cc.lat,lng:cc.lng,r:1}:{lat:DEMO_START.lat,lng:DEMO_START.lng,r:1};
   const pool=zz=>{const all=playable(inCircle(zz,zz.r),false);return {all,open:all}};
-  sheet(`<div class="rzsheet move-zone"><div class="lshead"><h3 tabindex="-1" autofocus style="outline:0">Pick your zone</h3>
-    <div class="nightzone" style="margin:8px 0 6px"><span>${I.clock}1 hour</span></div>
-    <p class="note" style="margin:2px 0 10px">Drag to move. Pinch or slide to change the radius.</p></div>
-    <div class="move-map-controls">${rrZoneHTML(range)}</div><p class="note" id="dzNote" style="margin:8px 0 0"></p>
-    <div class="lsfoot"><button class="btn" type="button" id="dzGo">Start the demo</button><button class="btn dark" type="button" id="dzX" style="margin-top:10px">Cancel</button></div></div>`,()=>{
-    $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    $("dzX").onclick=()=>{closeSheet();if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
-    rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("dzGo");if(!b)return;
-      $("dzNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every bar's open in the demo, whatever the time.";
-      b.disabled=n<2;b.onclick=()=>{closeSheet();if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})})}
+  const ov=document.createElement("div");ov.className="mapfull demozone";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
+  const drop=()=>{if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
+  const close=()=>{ov.classList.remove("on");setTimeout(()=>{drop();ov.remove()},220)};
+  zonePanel(ov,{range,title:"Pick your zone",sub:"1 hour. Drag to move, pinch or slide to resize.",go:"Start the demo",back:"Cancel"});
+  $("mvX").onclick=close;
+  rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("mvGo");if(!b)return;
+    $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every bar's open in the demo, whatever the time.";
+    b.disabled=n<2;b.onclick=()=>{ov.remove();drop();startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})}
 function startDemoAt(st,r){if(S.game)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(st,x)})).sort((a,b)=>a.d-b.d)[0],city=c?c.x.name:"Sydney";S.city=city;
   S.game={id:"demo"+Date.now(),demo:true,city,test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
     zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:[nearestSuburb(st)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
@@ -1249,7 +1247,7 @@ function renderWiz(){
 let wizRepaint=null,wMapRef=null;
 // Setup maps, full screen like Google Maps and Uber: back, search and locate across the top with the filters under them,
 // the open count as a "See list" pill above a fixed panel (title, line, distance, slider), Start the crawl below.
-function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelector(".rrmap");if(!box)return;
+function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.classList.add("fsv");const box=host.querySelector(".rrmap");if(!box)return;
   const panel=document.createElement("div");panel.className="fspanel";
   const ctl=document.createElement("div");ctl.className="fsctl";panel.append(ctl);
   const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)ctl.append(head);
@@ -1330,11 +1328,11 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const open=()=>{if(gated())return;if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
   gt.querySelector('[data-g="show"]').onclick=()=>{if(Date.now()-swiped<400)return;gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();cancelAnimationFrame(hraf);measure();hb=cH||panel.offsetHeight;panel.style.setProperty("--gp","0");panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);apply(2)}})};
   // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
-  const tapTop=()=>{if(Date.now()-swiped<400)return;if(gated()){gateOut(1);return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
+  const tapTop=()=>{if(Date.now()-swiped<400)return;if(gated()){gateOut(1);return}if(u<.5)set(1);else if(u>1.5)set(1);else if(noList)set(0);else open()};
   hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
   // dragging: from anywhere on the panel it moves; inside the list it scrolls, and only a pull down from the top brings the panel with it
   let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[],card=false,h0=0;
-  const dStart=y=>{cancelAnimationFrame(raf);cancelAnimationFrame(hraf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];card=gated()&&!panel.classList.contains("gleave");h0=cH;cap=u0>1.01||!needGate()?2:1};
+  const dStart=y=>{cancelAnimationFrame(raf);cancelAnimationFrame(hraf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];card=gated()&&!panel.classList.contains("gleave");h0=cH;cap=noList?1:u0>1.01||!needGate()?2:1};
   const rub=e=>70*(1-Math.exp(-e/160));
   const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved&&!card&&d<0&&u0>=1&&cap>1)fill();moved=true;
     const t=performance.now();smp.push([t,y]);while(smp.length>2&&t-smp[0][0]>90)smp.shift();
@@ -1348,6 +1346,7 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
     const vp=-vy;// panel speed, px/s, up is positive
     if(card){card=false;const H=cH,v=Math.max(-3000,Math.min(3000,vp));
       if(vp>300||(vp>-300&&H>gH+(base-gH)*.3))gateOut(1,v);else if(vp<-300||H<gH-(gH-tuckH())*.5)gateOut(0,v);else hspring(gH,{v,z:.7});return}
+    if(noList&&u>=.98){set(1,{v:Math.min(0,vp)});return}
     if(cap<2&&u>1.0005){tease1(true,Math.min(0,vp));return}
     if(cap<2&&d<0&&vp>350&&u>=.98){tease1();return}
     const stops=[0,1,2].filter(s=>s<=cap),X=px(u);let to;
@@ -1368,7 +1367,14 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const tEnd=e=>{if(tl){const t=e.changedTouches[0];dEnd(t?t.clientY:ty)}ty=null;tl=null};
   bx.addEventListener("touchend",tEnd,{passive:true});bx.addEventListener("touchcancel",tEnd,{passive:true});
   panel.addEventListener("click",e=>{if(Date.now()-swiped<400||e.target.closest(".fshandle,.fslh"))return;if(panel.classList.contains("min")||e.clientY-panel.getBoundingClientRect().top<30&&!e.target.closest("button,input,a"))tapTop()});
-  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);nb.onclick=()=>open()}}
+  const nb=box.parentElement.querySelector("#rrNB")||$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=noList?`${I.glass||""}<span id="rrN"></span>`:`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);if(noList){nb.onclick=null;nb.tabIndex=-1;nb.classList.add("fsnolist")}else nb.onclick=()=>open()}}
+// a zone picker on a full-screen map with the same pull-up panel as setup (moving your zone mid-crawl, the demo)
+function zonePanel(ov,o){
+  ov.innerHTML=`<div class="mf-move">${rrZoneHTML(o.range)}<div class="mvhead"><h1 class="q">${o.title}</h1><p class="sub">${o.sub}</p></div><p class="note mvnote" id="mvNote"></p>
+    <div class="wtop"><button class="iconbtn" id="mvX" type="button" aria-label="${o.back||"Back"}">${I.back}</button></div></div>
+    <div class="cta mvcta"><button class="btn" type="button" id="mvGo">${o.go}</button></div>`;
+  const v=ov.querySelector(".mf-move");fsLayout(v,v,{list:false});
+  const m=v.querySelectorAll(".fspanel .fsctl .fsmore");(m[m.length-1]||v.querySelector(".fsctl")).append($("mvNote"));return v}
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
   const sk=$("zSkipC");if(sk){sk.className="fsopt";const n0=$("zSkipN")?$("zSkipN").textContent:"";sk.innerHTML=`<span class="l">Skip bars you've been to <span class="n" id="zSkipN" ${n0&&n0!=="0"?"":"hidden"}>${esc(n0)}</span></span><span class="sw"></span>`;o.append(sk)}
@@ -3297,10 +3303,7 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
     const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
     const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
     if(z.r<range.lo)z.r=range.lo;
-    ov.innerHTML=`<div class="mf-move">${rrZoneHTML(range)}
-      <div class="mf-mvhead"><b>${free?"Your zone's run dry":"Move your zone"}</b><small>${free?"Nothing else is open here. This move's free.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move. Pinch or slide to change the radius."}</small></div>
-      <p class="note" id="mvNote"></p>
-      <div class="mf-mvbtns"><button class="btn" type="button" id="mvGo">Use this zone</button><button class="btn dark" type="button" id="mvX">${o.move?(free?"Close":"Stay here"):"Cancel"}</button></div></div>`;
+    zonePanel(ov,{range,title:free?"Your zone's run dry":"Move your zone",sub:free?"Nothing else is open here. This move's free.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move, pinch or slide to resize.",go:"Use this zone",back:o.move?(free?"Close":"Stay here"):"Cancel"});
     $("mvX").onclick=()=>{if(o.move)close();else view()};
     const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
     let warned=false;

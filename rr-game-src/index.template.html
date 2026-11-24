@@ -1695,19 +1695,12 @@ p,.note,.sub,small,h1,h2,h3{text-wrap:pretty}
 .mf-pill{position:absolute;right:12px;bottom:calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 122px);z-index:1001;display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px 0 14px;border:0;border-radius:999px;background:var(--s1);color:var(--text);font:700 15px/1 var(--ui);box-shadow:0 6px 18px var(--sh);cursor:pointer}
 .mf-pill svg{width:18px;height:18px;color:var(--amber-text)}
 /* moving the zone, right on the crawl map: the map stays full screen, a panel comes up from the bottom */
-.mf-move{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--s1)}
-.mf-move>.rrmap{flex:1;min-height:0;border-radius:0;order:0}
-.mf-move #rrMap{position:absolute;inset:0;height:100%}
-.mf-move>:not(.rrmap){order:2;padding-left:18px;padding-right:18px;flex:none}
-.mf-move .msearch{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px)}.mf-move .rrme{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px)}
-.mf-move .mres{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 60px)}
-.mf-move .mcard{bottom:34px}
-.mf-mvhead{order:1!important;position:relative;z-index:2;margin-top:-20px;background:var(--s1);border-radius:22px 22px 0 0;padding-top:18px;box-shadow:0 -6px 16px var(--sh)}
-.mf-mvhead b{display:block;font-size:20px;font-weight:800}.mf-mvhead small{display:block;color:var(--muted);font-size:13.5px;margin-top:3px}
-.mf-move .rrsum{margin:12px 0 6px}.mf-move .rrslide{margin-bottom:2px}
-.mf-move #mvNote{margin:6px 0 0;min-height:2.6em;font-size:13.5px}
-.mf-mvbtns{display:flex;flex-direction:column;gap:10px;padding-top:8px;padding-bottom:calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 14px)}
-@media(max-height:680px){.mf-mvbtns{flex-direction:row}.mf-mvbtns .btn{flex:1}}
+/* zone pickers on a full-screen map (move your zone mid-crawl, the demo): the same pull-up panel as setup */
+.mf-move{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.mf-move>.wtop{display:flex}
+.mvcta{z-index:700;background:none!important}
+.fspanel .mvnote{margin:4px 0 0;font-size:13.5px;min-height:1.3em}
+.fspill.fsnolist{pointer-events:none;padding:10px 16px 10px 13px}
 body:has(.mapfull.moving) .toast{z-index:3100;top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 66px);bottom:auto}
 /* big text and zoomed displays: never slide sideways, keep the header and main buttons on screen (like Uber: text grows, layout reflows) */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
