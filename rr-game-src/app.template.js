@@ -502,7 +502,7 @@ const pinIcon=cls=>L.divIcon({className:"",html:`<div class="pin ${cls||""}"></d
 const numIcon=(n,x)=>L.divIcon({className:"",html:`<div class="num sm${x?" x":""}">${n}</div>`,iconSize:[16,16]});
 const meIcon=L.divIcon({className:"",html:'<div class="me"></div>',iconSize:[18,18]});
 const zoneCircle=(c,r)=>L.circle([c.lat,c.lng],{radius:r*1000,color:"#F5B83D",weight:2,opacity:.9,fillColor:"#F5B83D",fillOpacity:.06,interactive:false});
-function fitZone(m,c,r,extra,pad,k,anim){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*(k||1.04));(extra||[]).forEach(p=>b.extend(p));const a=anim?{animate:true,duration:.45}:{animate:false};m.fitBounds(b,pad?{...a,paddingTopLeft:[8,pad],paddingBottomRight:[8,pad]}:{...a,padding:[8,8]})}
+function fitZone(m,c,r,extra,pad,k,anim){let b=L.latLng(c.lat,c.lng).toBounds(r*2000*(k||1.04));(extra||[]).forEach(p=>b.extend(p));const a=anim?{animate:true,duration:.45}:{animate:false};const pt=pad&&pad.t!=null?pad.t:pad,pb=pad&&pad.b!=null?pad.b:pad;m.fitBounds(b,pad?{...a,paddingTopLeft:[8,pt],paddingBottomRight:[8,pb]}:{...a,padding:[8,8]})}
 
 /* ---------- Google Maps + photos (falls back to the free map off the live site) ---------- */
 const GKEY=(BUNDLED&&window.RR_CONFIG.googleMapsAppKey)||window.RR_CONFIG.googleMapsBrowserKey,GMAPID="114ffde49621751bad7df10a";
@@ -542,7 +542,7 @@ function gWrap(el,o){
       if(isDark()){P("#F5B83D",.18,8);P("#F5B83D",1,3)}else{P("#7A5300",.22,11);P("#FFFFFF",1,8);P("#E99A12",1,4)}},   // light map: a white casing and a deeper amber so the line stands out
     line(pts){const P=(c,o,w)=>ov.push(new google.maps.Polyline({map,path:pts.map(LL),strokeColor:c,strokeOpacity:o,strokeWeight:w,clickable:false}));
       if(isDark()){P(themeBg(),.85,9);P("#F5B83D",1,5)}else{P("#7A5300",.22,12);P("#FFFFFF",1,9);P("#E99A12",1,5)}},
-    fitZone(c,r,extra,pad,k){const b=new google.maps.Circle({center:LL(c),radius:r*1000*(k||1.03)}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad,bottom:pad,left:4,right:4}:4);
+    fitZone(c,r,extra,pad,k){const b=new google.maps.Circle({center:LL(c),radius:r*1000*(k||1.03)}).getBounds();(extra||[]).forEach(p=>b.extend(LL(p)));const f=()=>map.fitBounds(b,pad?{top:pad.t!=null?pad.t:pad,bottom:pad.b!=null?pad.b:pad,left:4,right:4}:4);
       if(el.offsetHeight)f();else google.maps.event.addListenerOnce(map,"idle",f)},   // fit once: repeat fits used to fight a pinch that had already started
     fitPts(pts,maxZoom,pad){const b=new google.maps.LatLngBounds();pts.forEach(p=>b.extend(LL(p)));const f=()=>{map.fitBounds(b,pad||50);google.maps.event.addListenerOnce(map,"idle",()=>{if(map.getZoom()>(maxZoom||16))map.setZoom(maxZoom||16)})};f();setTimeout(f,400)},
     setView(p,z){map.panTo(LL(p));map.setZoom(z)},
@@ -895,7 +895,7 @@ async function quickNearMe(){
       const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t));
         let best=null,bn=0;O.forEach(v=>{const n=O.filter(u=>dist(u,v)<=2000);if(n.length>bn){bn=n.length;best=n}});
         const c=best?{lat:best.reduce((a,v)=>a+v.lat,0)/best.length,lng:best.reduce((a,v)=>a+v.lng,0)/best.length}:(GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city));
-        q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};setTimeout(()=>toast(best?"Nothing's open within 2 km of you. This is where most bars are open.":"Nothing's open right now. Starting in the city centre.",3500),400)}}q.step=1}
+        q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};q.far=best?`Nothing open near you. Showing ${nearestSuburb(c)}.`:"Nothing's open right now. Showing the city centre."}}q.step=1}
   catch(e){q.note="Couldn't find you just now. Try again, or spin from your Hit list."}
   save();renderQuick();
 }
@@ -907,7 +907,7 @@ const kmTxt=r=>r<1?Math.round(r*1000/50)*50+" m":(r<10?r.toFixed(1).replace(/\.0
 function rrPool(z,t,newOnly){const c_=collectedMap(),base=VENUES.filter(v=>!S.nfu[v.id]&&!v.tempClosed&&(!newOnly||isNew(v.id,c_)));
   const all=z.r?base.filter(v=>dist(z,v)<=z.r*1000):base.filter(v=>cityOf(v)===S.city);return {all,open:all.filter(v=>openOK(v,t))}}
 var rrMap=null;   // var: go() can reach it during startup
-function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;el.style.height="200px";
+function fitMap(v,again){const el=$("rrMap");if(!v||!el||v.closest("dialog"))return;if(v.classList.contains("fsv")){el.style.height="";if(rrMap)rrMap.resize();return}el.style.height="200px";
   const vv=window.visualViewport,vr=v.getBoundingClientRect(),pb=parseFloat(getComputedStyle(v).paddingBottom)||0;
   let limit=vr.top+v.clientHeight-pb;if(vv&&document.body.classList.contains("mapq"))limit=Math.min(limit,vv.offsetTop+vv.height-12);
   const last=Math.max(...[...v.children].filter(x=>x.offsetParent!==null).map(x=>x.getBoundingClientRect().bottom));
@@ -939,7 +939,10 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
 const ZONEK=1.3;   // zone maps leave a ring of map around the circle, so the bars just outside it show
-const ZPAD=()=>{const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
+const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
+    // the same room top and bottom: the circle's centre has to stay the map's centre (that's where the zone is)
+    return Math.round(Math.max(Math.max(m.top,...tops)-m.top+12,m.bottom-(pl&&pl.offsetParent?pl.getBoundingClientRect().top:m.bottom-40)+12))}
+  const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
   const moved=()=>!!me&&dist(z,me)>150;
@@ -1065,8 +1068,8 @@ function renderQuick(){
   // Looking at another city? Start in that city. Otherwise start where you are (or the city centre if we can't find you).
   const hp=S.test&&S.fake?S.fake:here,away=!!hp&&nearLive(hp)!==S.city;
   const cityStart=()=>{const a=GAME_AREAS(S.city)[0]||CITIES.find(c=>c.name===S.city);q.from={type:"pick",name:null,lat:a.lat,lng:a.lng};q.z={lat:a.lat,lng:a.lng,r:q.z&&q.z.r||2}};
-  if(q.note&&!q.from){q.note=null;cityStart();setTimeout(()=>toast("Couldn't find you just now. Drag the map to where you'll start.",3500),300)}
-  if(!q.from){
+  if(q.note&&!q.from){q.note=null;cityStart();q.far="Couldn't find you. Drag the map to where you'll start."}
+  if(!q.from){b.classList.remove("fsv");
     b.innerHTML=top+head+`<p class="note" style="margin:10px 2px">Finding you…</p>`;bindTop();
     cta(`<button class="btn" type="button" disabled>Start the crawl</button>`,()=>{});
     if(!renderQuick.busy){renderQuick.busy=1;(async()=>{try{
@@ -1084,7 +1087,7 @@ function renderQuick(){
   const listPool=(z,t,newOnly)=>{const all=wl.filter(v=>(!z.r||dist(z,v)<=z.r*1000)&&(!newOnly||isNew(v.id)));return {all,open:all.filter(v=>openOK(v,t))}};
   const tick=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
   const caret=`<svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
-  const chips=`<button class="mchip" type="button" id="qHL" aria-pressed="${!!q.list}" ${lists.length?"":"hidden"}>${q.list?`${listName(q.list)} <span class="mn">${opn(q.list)}</span>`:"Lists"}${caret}</button>`+
+  const chips=`<button class="mchip mdrop" type="button" id="qHL" aria-pressed="${!!q.list}" aria-haspopup="menu" ${lists.length?"":"hidden"}>${q.list?listName(q.list):"All rooftops"}${caret}</button>`+
     `<button class="mchip" type="button" id="zSkipC" aria-pressed="${!!q.newOnly}" hidden><i class="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/></svg></i><i class="on">${tick}</i>Skip visited <span class="mn" id="zSkipN"></span></button>`;
   b.innerHTML=top+head+rrZoneHTML({searchHint:"Search a suburb"}).replace('<button class="mcard"',chips+'<button class="mcard"');
   bindTop();
@@ -1099,14 +1102,21 @@ function renderQuick(){
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;save();startCruise()})},
     q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:undefined);
-  // the open count leads, then the filters
-  {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("rrNB"),$("qHL"),$("zSkipC"));cv.append(row);$("rrNB").classList.add("mchip","mcount")}
-  $("qHL").onclick=()=>{const opt=(k,lbl,n)=>`<button class="opt" type="button" role="radio" data-k="${k}" aria-checked="${(q.list||"")===k}"><span class="t"><b>${lbl}</b><small>${n}</small></span></button>`;
-    sheet(`<h3>Spin from</h3><div class="opts" style="margin-top:12px">${opt("","All rooftops","Everything in your circle")}${lists.map(k=>opt(k,listName(k),`${opn(k)} open`)).join("")}</div>`,()=>{
-      document.querySelectorAll("#sheetBody [data-k]").forEach(x=>x.onclick=()=>{q.list=x.dataset.k||null;closeSheet();
+  // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
+  {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("qHL"),$("zSkipC"));cv.append(row);
+    if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
+  fsLayout(b,b);
+  $("qHL").onclick=e=>{e.stopPropagation();const old=$("qMenu");if(old){old.remove();return}
+    const all=rrPool(q.z,now(),false).open.length,opt=(k,lbl,n)=>`<button type="button" data-k="${k}" aria-checked="${(q.list||"")===k}"><b>${lbl}</b><span>${n} open</span><i>${(q.list||"")===k?tick:""}</i></button>`;
+    $("rrMap").parentElement.insertAdjacentHTML("beforeend",`<div class="fsmenu" id="qMenu" role="menu">${opt("","All rooftops",all)}${lists.map(k=>opt(k,listName(k),opn(k))).join("")}</div>`);
+    const menu=$("qMenu"),r=$("qHL").getBoundingClientRect(),m=menu.parentElement.getBoundingClientRect();menu.style.top=(r.bottom-m.top+8)+"px";menu.style.left=(r.left-m.left)+"px";
+    ["pointerdown","touchstart","wheel"].forEach(ev=>menu.addEventListener(ev,x=>x.stopPropagation(),{passive:true}));
+    setTimeout(()=>document.addEventListener("pointerdown",function off(x){if(!x.target.closest("#qMenu,#qHL")){const mm=$("qMenu");if(mm)mm.remove();document.removeEventListener("pointerdown",off,true)}},true),0);
+    {
+      menu.querySelectorAll("[data-k]").forEach(x=>x.onclick=()=>{q.list=x.dataset.k||null;menu.remove();
         // picking a list: widen the circle (if it needs to) so every open bar on it is in it
         if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
-        save();renderQuick()})})};
+        save();renderQuick()})}};
   $("zSkipC").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true)};
   fitMap(b);
 }
@@ -1156,7 +1166,7 @@ const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
   const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===2)w.step=1;if(w.step===3&&(!anyOwned()||w.rr))w.step=1;   // 0 how long → 3 decks (own a pack) → 1 zone, which starts the crawl
-  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
+  $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(w.step!==1)$("v-wiz").classList.remove("fsv");if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
   stVal[3]=deckLbl();const order=anyOwned()&&!w.rr?[0,3,1]:[0,1],pos=Math.max(0,order.indexOf(w.step));
@@ -1222,8 +1232,9 @@ function renderWiz(){
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
     $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
-    // the open count (first, it opens the rooftops list) and Skip visited sit together as pills on the map, bottom left
-    {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("rrNB"),$("zSkipC"));cv.append(row);$("rrNB").classList.add("mchip","mcount")}
+    // full screen: Skip visited up top under search, the open count as the See list pill above the panel
+    {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"));cv.append(row)}
+    fsLayout($("v-wiz"),body);
     fitMap($("v-wiz"));
   }
   if(w.step===3){
@@ -1235,6 +1246,15 @@ function renderWiz(){
   }
 }
 let wizRepaint=null,wMapRef=null;
+// Setup maps, full screen like Google Maps and Uber: back, search and locate across the top with the filters under them,
+// the open count as a "See list" pill above a fixed panel (title, line, distance, slider), Start the crawl below.
+function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelector(".rrmap");if(!box)return;
+  const panel=document.createElement("div");panel.className="fspanel";
+  const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)panel.append(head);
+  ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)panel.append(x)});const zw=$("zWarn");if(zw)panel.append(zw);
+  box.after(panel);
+  const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb)}}
+const fsOff=()=>document.querySelectorAll(".view.fsv").forEach(v=>v.classList.remove("fsv"));
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
 // The bars are a surprise by default: a spoiler warning first, then the list (with vetoes) for anyone who wants it.
 function wizSpoiler(then){then=typeof then==="function"?then:wizBars;const w=S.wiz;if(w&&w.spoiled){then();return}if(w){w.spoiled=1;save()}sheet(`<h3>Spoiler alert</h3><p class="note" style="margin:6px 0 14px">This shows every rooftop in your circle. Half the fun is not knowing where you'll end up.</p>

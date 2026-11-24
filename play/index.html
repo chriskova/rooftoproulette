@@ -2404,6 +2404,44 @@ html,body{overflow-x:hidden;max-width:100%}
   #v-end .scmap{margin-bottom:-4px}
 }
 
+
+/* ---------- setup maps, full screen (Set your zone, Rest & Roulette) ---------- */
+.view.fsv{padding:0!important;gap:0!important;overflow:hidden;position:relative}
+.fsv #wSum{display:none}
+.fsv #wBody{flex:1;min-height:0;gap:0!important}
+.fsv>.wtop{position:absolute;top:0;left:0;z-index:700;padding:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px) 14px 0;pointer-events:none}
+.fsv>.wtop>*{pointer-events:auto}
+.fsv>.wtop .prog,.fsv>.wtop .wsteps,.fsv #wClose,.fsv #qClose{display:none}
+.fsv>.wtop .iconbtn{width:46px;height:46px;background:var(--s1);box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.fsv .rrmap{flex:1;min-height:0;border-radius:0;border:0}
+.fsv #rrMap{position:absolute;inset:0;height:100%!important}
+.fsv .msearch{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px);left:70px;right:70px;height:46px;border:0;box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.fsv .rrme{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px);right:14px;width:46px;height:46px;border:0;box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.fsv .mres{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 66px);left:14px;right:14px}
+:is(#v-wiz,#v-quick).fsv .rrmap .mchips{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 70px);bottom:auto;left:14px;right:14px;flex-wrap:wrap;align-items:flex-start}
+.fsv .mchip{box-shadow:0 2px 10px rgba(0,0,0,.16)!important}
+.fsv .mchip.mdrop{border-radius:12px}
+.fsv .mchip.mdrop[aria-pressed="true"]{background:var(--amber);color:#1a1206}
+.fsv .mchip .cr{width:15px;height:15px;opacity:.75}
+.fsbanner{position:absolute;left:14px;right:14px;top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 120px);z-index:600;background:var(--s1);color:var(--text);border-radius:14px;padding:10px 14px;font-size:14px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,.16)}
+.fsmenu{position:absolute;z-index:900;min-width:230px;background:var(--s1);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);padding:6px}
+.fsmenu button{appearance:none;display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;border-radius:10px;padding:11px 12px;font:inherit;color:var(--text);text-align:left;cursor:pointer}
+.fsmenu button[aria-checked="true"]{background:var(--s2)}
+.fsmenu b{flex:1;font-size:15px}.fsmenu span{color:var(--muted);font-size:13.5px}.fsmenu i{width:18px;display:flex;color:var(--amber-text)}.fsmenu i svg{width:18px;height:18px}
+.fspill{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);z-index:600;appearance:none;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:10px 16px 10px 13px;background:var(--s1);color:var(--text);font:inherit;font-size:14.5px;font-weight:700;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.18);cursor:pointer}
+.fspill[hidden]{display:none}
+.fspill svg{width:17px;height:17px;color:var(--amber-text)}.fspill .sep{width:1px;height:16px;background:var(--line)}.fspill .sl{color:var(--amber-text)}
+.fsv .mcard{bottom:90px}
+.fsv .rrmap:has(.rrme[hidden]) .msearch{right:14px}
+.fsv .rrmap:not(:has(.mchips .mchip:not([hidden]))) .fsbanner{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 70px)}
+
+.fspanel{flex:none;position:relative;z-index:650;margin-top:-20px;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -4px 22px rgba(0,0,0,.12);padding:18px 18px calc(88px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;gap:10px}
+.fspanel h1.q{font-size:22px!important;line-height:1.15;margin:0}
+.fspanel p.sub{margin:2px 0 0!important;font-size:14px!important}
+.fspanel .rrsum{margin:4px 0 0}
+.fspanel .rrslide{margin:0}
+.fsv~.cta,.app:has(.fsv:not([hidden])) .cta{background:none}
+
 /* ---------- light mode only: photo cards fade to cream with dark text (same layout as dark), light placeholders ---------- */
 .strow.stseg{padding:10px 12px;border-top:0}.stseg .seg{flex:1}
 /* (light mode only) */
