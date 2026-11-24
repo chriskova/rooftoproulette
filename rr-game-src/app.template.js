@@ -1262,7 +1262,7 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
-  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><div class="fsgb"><button class="btn" type="button" data-g="keep">Keep it a surprise</button><button class="btn" type="button" data-g="show">Show me anyway</button></div>`;panel.append(gt);
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span><div class="fsgb"><button class="btn line" type="button" data-g="show">Show me anyway</button><button class="btn" type="button" data-g="keep">Keep it a surprise</button></div>`;panel.append(gt);
   const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
