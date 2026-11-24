@@ -1455,7 +1455,7 @@ body.camon #v-play .adjz{display:none}
 .wild>svg:first-child{position:absolute;top:10px;left:12px;width:20px;height:20px}
 .wild>span{display:block}
 .wild>span>b{display:flex;align-items:center;min-height:20px;padding-left:28px;margin-bottom:4px}
-.wild .wspin{margin-top:10px}
+
 .wild.wexplain svg,.wild.wexplain b{color:var(--amber-text)}
 /* wildcard deck */
 .deckcard{appearance:none;width:100%;margin-top:10px;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:12px;text-align:left;font:inherit;color:inherit;cursor:pointer}
@@ -1480,7 +1480,7 @@ body.camon #v-play .adjz{display:none}
 .dk-pr{font-size:14px;font-weight:700;color:var(--amber-text);white-space:nowrap}
 /* wildcard packs */
 .wild small.wres{font-size:14px;font-weight:750;opacity:1;color:inherit;margin-top:4px}
-.wild .wspin{display:flex;width:auto;margin-top:10px;padding:7px 18px;font-size:14px}
+
 .wsres{height:100%;min-height:150px;display:flex;align-items:center;justify-content:center;font-family:"Big Shoulders Display",sans-serif;font-size:52px;font-weight:800;text-transform:uppercase;color:var(--amber-display,var(--amber-text));text-align:center;animation:wsPop .35s ease-out}
 @keyframes wsPop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
 .wsdemo{min-height:0}.wsland{text-align:center;font-size:17px;margin:10px 0 4px}.wsland b{color:var(--amber-text)}
@@ -1659,7 +1659,7 @@ body.camon #v-play .adjz{display:none}
 .dk-card.down svg{width:15px;height:15px}
 /* spin cards: the card starts the sentence, the spin finishes it underneath in amber */
 .wild .wfill{display:block;margin-top:4px;color:var(--amber-text);font-weight:800;font-size:1.06em}
-.wild .wspin{width:100%;justify-content:center}
+.wild .wspin,.bar .wild .wspin{display:inline-flex;align-items:center;width:auto;height:30px!important;min-height:0;line-height:1;margin:-3px 0 0 8px;padding:0 16px!important;font-size:13.5px;vertical-align:middle;border-radius:99px}
 .wild>span{flex:1;min-width:0}
 .wsfull{margin:12px 0 0;text-align:center;font-weight:600;font-size:16px}.wsfull span{color:var(--amber-text);font-weight:800}
 .rchips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.rchips::-webkit-scrollbar{display:none}.rchips .chip{flex:none}
