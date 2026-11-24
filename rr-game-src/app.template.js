@@ -939,7 +939,7 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
 const ZONEK=1.3;   // zone maps leave a ring of map around the circle, so the bars just outside it show
-const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
+const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner,.fstabs")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
     // the same room top and bottom: the circle's centre has to stay the map's centre (that's where the zone is)
     return Math.round(Math.max(Math.max(m.top,...tops)-m.top+12,m.bottom-(pl&&pl.offsetParent?pl.getBoundingClientRect().top:m.bottom-40)+12))}
   const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
@@ -979,11 +979,13 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   // the bars in the circle, in a panel from the bottom like everything else
   $("rrNB").onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
     const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
-    sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>
+    const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip bars you've been to</b></span><span class="sw"></span></button>`:"";
+    sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>${sk}
       <div class="mlr">${L.map(v=>{const st=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}" ${back?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${st.open?"Open til "+clock12(st.closeAt):st.opens!=null?"Opens "+clock12(st.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<p class="note">No rooftops in the circle. Drag or widen it.</p>`}</div>
       <button class="btn dark" type="button" id="mlBack" style="margin-top:14px">${back?"Back to the map":"Close"}</button>`,()=>{
       $("sheetBody").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.v)));
-      $("mlBack").onclick=()=>{if(back)back(z);else closeSheet()}})};
+      $("mlBack").onclick=()=>{if(back)back(z);else closeSheet()};
+      if($("mlSkip"))$("mlSkip").onclick=()=>{o.skip.set(!o.skip.get());paint(true);$("rrNB").onclick()}})};
   {const q=sfield($("rrQ")),res=$("rrRes");
     ["pointerdown","touchstart","mousedown","dblclick","wheel"].forEach(ev=>[q.parentNode,res].forEach(x=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true})));
     const show=()=>{const t=fold(q.value.trim());if(!t){res.hidden=true;return}
@@ -1087,38 +1089,29 @@ function renderQuick(){
   const listPool=(z,t,newOnly)=>{const all=wl.filter(v=>(!z.r||dist(z,v)<=z.r*1000)&&(!newOnly||isNew(v.id)));return {all,open:all.filter(v=>openOK(v,t))}};
   const tick=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
   const caret=`<svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
-  const chips=`<button class="mchip mdrop" type="button" id="qHL" aria-pressed="${!!q.list}" aria-haspopup="menu" ${lists.length?"":"hidden"}>${q.list?listName(q.list):"All rooftops"}${caret}</button>`+
-    `<button class="mchip" type="button" id="zSkipC" aria-pressed="${!!q.newOnly}" hidden><i class="off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M18 5v14"/></svg></i><i class="on">${tick}</i>Skip visited <span class="mn" id="zSkipN"></span></button>`;
+  const allN=rrPool(q.z,t,!!q.newOnly).open.length;
+  const chips=lists.length?`<div class="fstabs" role="tablist">${[["","All",allN]].concat(lists.map(k=>[k,listName(k),opn(k)])).map(([k,l,n])=>`<button type="button" role="tab" data-k="${k}" aria-selected="${(q.list||"")===k}">${l} <span>${n}</span></button>`).join("")}</div>`:"";
   b.innerHTML=top+head+rrZoneHTML({searchHint:"Search a suburb"}).replace('<button class="mcard"',chips+'<button class="mcard"');
   bindTop();
+  const visN=z=>q.list?0:rrPool(z,now(),false).all.filter(v=>!isNew(v.id)).length;
   qZB=rrZoneBind(q.z,me,()=>!q.list&&!!q.newOnly,(P,z,moved)=>{
     q.z.all=!z.r;   // remember a deliberate "All" so a redraw doesn't put the circle back
-    // Skip visited only with all rooftops, and only when it would take something out of play
-    const c=collectedMap(),vis=q.list?0:rrPool(z,t,false).all.filter(v=>!isNew(v.id,c)).length;
-    if(!vis&&q.newOnly&&!q.list)q.newOnly=false;$("zSkipC").hidden=!vis;$("zSkipC").setAttribute("aria-pressed",String(!!q.newOnly));$("zSkipN").textContent=vis;
+    if(!visN(z)&&q.newOnly&&!q.list)q.newOnly=false;
+    {const tb=document.querySelector('.fstabs [data-k=""] span');if(tb)tb.textContent=rrPool(z,now(),!!q.newOnly).open.length}
     $("rrNB").hidden=!P.open.length;
     cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Start the crawl</button>`,()=>$("qGo").onclick=()=>{
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;save();startCruise()})},
-    q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:undefined);
+    Object.assign({skip:{show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
-  {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("qHL"),$("zSkipC"));cv.append(row);
+  {const cv=$("rrMap").parentElement;
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
-  fsLayout(b,b);fsOpts();
-  $("qHL").onclick=e=>{e.stopPropagation();const old=$("qMenu");if(old){old.remove();return}
-    const all=rrPool(q.z,now(),false).open.length,opt=(k,lbl,n)=>`<button type="button" data-k="${k}" aria-checked="${(q.list||"")===k}"><b>${lbl}</b><span>${n} open</span><i>${(q.list||"")===k?tick:""}</i></button>`;
-    const host=$("qHL").closest(".fspanel")||$("rrMap").parentElement;
-    host.insertAdjacentHTML("beforeend",`<div class="fsmenu" id="qMenu" role="menu">${opt("","All rooftops",all)}${lists.map(k=>opt(k,listName(k),opn(k))).join("")}</div>`);
-    const menu=$("qMenu"),r=$("qHL").getBoundingClientRect(),m=host.getBoundingClientRect();menu.style.top=(r.top-m.top-menu.offsetHeight-6)+"px";menu.style.right=(m.right-r.right)+"px";
-    ["pointerdown","touchstart","wheel"].forEach(ev=>menu.addEventListener(ev,x=>x.stopPropagation(),{passive:true}));
-    setTimeout(()=>document.addEventListener("pointerdown",function off(x){if(!x.target.closest("#qMenu,#qHL")){const mm=$("qMenu");if(mm)mm.remove();document.removeEventListener("pointerdown",off,true)}},true),0);
-    {
-      menu.querySelectorAll("[data-k]").forEach(x=>x.onclick=()=>{q.list=x.dataset.k||null;menu.remove();
-        // picking a list: widen the circle (if it needs to) so every open bar on it is in it
-        if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
-        save();renderQuick()})}};
-  $("zSkipC").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true)};
+  fsLayout(b,b);
+  b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
+    // picking a list: widen the circle (if it needs to) so every open bar on it is in it
+    if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
+    save();renderQuick()}});
   fitMap(b);
 }
 let qZB=null;

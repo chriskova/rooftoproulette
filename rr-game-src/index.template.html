@@ -1771,6 +1771,12 @@ html,body{overflow-x:hidden;max-width:100%}
 .fspill[hidden]{display:none}
 .fspill svg{width:17px;height:17px;color:var(--amber-text)}.fspill .sep{width:1px;height:16px;background:var(--line)}.fspill .sl{color:var(--amber-text)}
 .fsv .mcard{bottom:90px}
+/* R&R: which bars, as tabs under search (pick one) */
+.fstabs{position:absolute;left:14px;right:14px;top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 70px);z-index:600;display:flex;background:var(--s1);border-radius:99px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.16)}
+.fstabs button{flex:1;appearance:none;border:0;background:none;border-radius:99px;padding:8px 6px;font:inherit;font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;cursor:pointer}
+.fstabs button span{opacity:.55}
+.fstabs button[aria-selected="true"]{background:var(--amber);color:#1a1206}
+.fsv .rrmap:has(.fstabs) .fsbanner{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 124px)}
 /* no app bar on the full-screen maps: the map runs up under the status bar with a soft fade, like Uber */
 .app:has(.view.fsv:not([hidden])) #appbar{display:none}
 .fsv .rrmap::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 64px);background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 55%,transparent) 45%,transparent);z-index:550;pointer-events:none}
