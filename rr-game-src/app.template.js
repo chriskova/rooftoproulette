@@ -1247,6 +1247,15 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)panel.append(head);
   ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)panel.append(x)});const zw=$("zWarn");if(zw)panel.append(zw);
   box.after(panel);
+  // a handle like Uber's and Google's: swipe the panel down to tuck the slider and options away (more map), up or tap to bring them back. Always opens full.
+  panel.insertAdjacentHTML("afterbegin",`<button class="fshandle" type="button" aria-label="Show less" aria-expanded="true"></button>`);
+  const hd=panel.querySelector(".fshandle"),set=min=>{panel.classList.toggle("min",min);hd.setAttribute("aria-expanded",String(!min));hd.setAttribute("aria-label",min?"Show more":"Show less");
+    const r=()=>{if(rrMap)rrMap.resize()};requestAnimationFrame(r);setTimeout(r,260)};
+  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(!panel.classList.contains("min"))};
+  let y0=null,swiped=0;panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,button:not(.fshandle),input"))return;y0=e.clientY},{passive:true});
+  panel.addEventListener("pointerup",e=>{if(y0==null)return;const d=e.clientY-y0;y0=null;if(Math.abs(d)>30){swiped=Date.now();set(d>0)}},{passive:true});
+  panel.addEventListener("pointercancel",()=>{y0=null},{passive:true});
+  panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(false)});
   const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb)}}
 // the options live in the panel like Uber's (nothing on top but search): Spin from as a row that opens a menu, Skip as a switch.
 // No count on Skip: the open count on the map shows what it took out.
