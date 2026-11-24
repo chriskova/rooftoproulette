@@ -2421,7 +2421,7 @@ html,body{overflow-x:hidden;max-width:100%}
 .fsv>.wtop .prog,.fsv>.wtop .wsteps,.fsv #wClose,.fsv #qClose{display:none}
 .fsv>.wtop .iconbtn{width:46px;height:46px;background:var(--s1);box-shadow:0 2px 12px rgba(0,0,0,.16)}
 .fsv .rrmap{flex:1;min-height:0;border-radius:0;border:0}
-.fsv #rrMap{position:absolute;inset:0;height:100%!important}
+.fsv #rrMap{position:absolute;left:0;right:0;top:0;bottom:auto;height:var(--fsmh,100%)!important;will-change:transform}
 .fsv .msearch{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px);left:70px;right:70px;height:46px;border:0;box-shadow:0 2px 12px rgba(0,0,0,.16)}
 .fsv .rrme{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 12px);right:14px;width:46px;height:46px;border:0;box-shadow:0 2px 12px rgba(0,0,0,.16)}
 .fsv .mres{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 66px);left:14px;right:14px}
@@ -2483,16 +2483,13 @@ html,body{overflow-x:hidden;max-width:100%}
 .fsgt b{font-size:22px;font-weight:800;letter-spacing:-.3px}.fsgt span{color:var(--muted);font-size:14.5px}
 .fsgshow{appearance:none;border:1.5px solid var(--line);background:none;color:var(--text);font:inherit;font-weight:700;font-size:15px;height:42px;padding:0 20px;border-radius:21px;cursor:pointer}
 .fsgate>*{opacity:0;transform:translateY(12px);transition:opacity .14s ease,transform .14s ease}
-.fspanel.gated>.fsgate{visibility:visible;pointer-events:auto}
+.fspanel.gated{overflow:hidden}.fspanel>.fshandle{flex-shrink:0}
+.fspanel.gated>.fsgate{visibility:visible;pointer-events:auto;opacity:calc(1 - var(--gp,0)*1.6)}
 .fspanel.gated>.fsgate>*{opacity:1;transform:none;transition:opacity .26s ease .1s,transform .5s cubic-bezier(.2,1.4,.4,1) .1s}
 .fspanel.gated>.fsgate>.fsgshow{transition-delay:.17s}
-.fspanel.gated>.fsctl{opacity:0!important;pointer-events:none;transition:opacity .14s ease}
-.fspanel.gsize{transition:height .5s cubic-bezier(.3,1.3,.5,1)}
-.fspanel.gated{overflow:hidden}.fspanel>.fshandle{flex-shrink:0}
-.fsv:has(.fspanel.gated:not(.gleave):not(.gout)) .fspill{opacity:0!important;pointer-events:none!important;transition:opacity .2s ease}
-.fspanel.gated.gleave>.fsgate>*,.fspanel.gated.gout>.fsgate>*{opacity:0;transform:none;transition:opacity .14s ease}
-.fspanel.gated.gout{transition:height .38s cubic-bezier(.25,.8,.3,1)}
-.fspanel.gated.gout>.fsctl{opacity:1!important;transition:opacity .22s ease .1s}
+/* the card crossfades with the controls as you drag it (--gp: 0 on the card, 1 back at the controls) */
+.fspanel.gated>.fsctl{opacity:calc(var(--gp,0)*1.4 - .4)!important;pointer-events:none}
+.fspanel.gated.gleave>.fsgate>*{opacity:0;transform:none;transition:opacity .14s ease}
 .fspanel h1.q{font-size:22px!important;line-height:1.15;margin:0}
 .fspanel p.sub,#v-wiz .fspanel p.sub.zmove,#v-quick .fspanel p.sub.qpace{margin:2px 0 0!important;font-size:14px!important}
 .fspanel .rrsum{margin:4px 0 0}

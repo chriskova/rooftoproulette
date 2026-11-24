@@ -941,7 +941,9 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
 const ZONEK=1.3;   // zone maps leave a ring of map around the circle, so the bars just outside it show
 const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner,.fstabs")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
     // the same room top and bottom: the circle's centre has to stay the map's centre (that's where the zone is)
-    return Math.round(Math.max(Math.max(m.top,...tops)-m.top+12,m.bottom-(pl&&pl.offsetParent?pl.getBoundingClientRect().top:m.bottom-40)+12))}
+    // (the map itself is screen-tall and centred on this box, so add the part of it the box doesn't show)
+    const me_=$("rrMap"),ex=me_?Math.max(0,(me_.offsetHeight-fv.clientHeight)/2):0;
+    return Math.round(ex+Math.max(Math.max(m.top,...tops)-m.top+12,m.bottom-(pl&&pl.offsetParent?pl.getBoundingClientRect().top:m.bottom-40)+12))}
   const s_=document.querySelector(".rrmap .zsearch,.rrmap .msearch,.rrmap input,.rrmap [role=searchbox]"),m_=$("rrMap");if(!s_||!m_)return 0;const d=s_.getBoundingClientRect().bottom-m_.getBoundingClientRect().top;return d>0?Math.round(d)+6:0};   // no search bar (Your zone): no extra room
 function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rrPool;
   $("rrR").value=Z.toX(z.r);
@@ -1262,20 +1264,36 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
-  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgt"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span></div><button class="fsgshow" type="button" data-g="show">Show me anyway</button>`;panel.append(gt);
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgt"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span></div><button class="fsgshow" type="button" data-g="show">See the rooftops</button>`;panel.append(gt);
   const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
   const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill)};
   view._fsFill=()=>{if(u>1.01)fill()};
-  // the spoiler question sits over the real list, blurred: the same list you get if you say show me
-  // timed, before you've seen the list: the panel settles into a small spoiler card (no list behind it, nothing to peek at)
-  let gto=0,gH=0,hb=null;
-  const flw=ms=>{const t0=performance.now(),f=()=>{if(rrMap)rrMap.resize();if(performance.now()-t0<ms)requestAnimationFrame(f)};f()};
-  const gate=on=>{clearTimeout(gto);panel.classList.remove("gout","gleave","gsize");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";return}panel.classList.add("gated")};
-  const gateIn=()=>{cancelAnimationFrame(raf);moving=false;tease=false;u=1;const h0=panel.offsetHeight;panel.style.height=h0+"px";gate(true);void panel.offsetHeight;
-    gH=Math.round(30+gt.offsetHeight+parseFloat(getComputedStyle(panel).paddingBottom)+4);panel.classList.add("gsize");panel.style.height=gH+"px";flw(560)};
-  const gateOut=()=>{clearTimeout(gto);if(!full)measure();panel.classList.add("gout");panel.style.height=base+"px";flw(420);gto=setTimeout(()=>gate(false),400)};
+  // the map never resizes while the panel moves (that's what made it stutter): it's sized to the whole screen once,
+  // and just slides so its centre (the zone's centre) stays in the middle of the visible part
+  const mapEl=box.querySelector("#rrMap");let mvh=0;
+  const mapSize=()=>{mvh=view.clientHeight||innerHeight;if(mapEl)mapEl.style.setProperty("--fsmh",mvh+"px")};
+  const mapSync=()=>{if(!mapEl)return;mapEl.style.transform=`translate3d(0,${Math.round((box.clientHeight-mvh)/2)}px,0)`};
+  mapSize();mapSync();if(window.ResizeObserver)new ResizeObserver(()=>{if(!moving)mapSync()}).observe(box);addEventListener("resize",()=>{if(!view.isConnected)return;mapSize();mapSync();if(rrMap)rrMap.resize()});
+  // timed, before you've seen the list: the panel settles into a small spoiler card (no list behind it, nothing to peek at).
+  // Everything about the card (its height, the crossfade back to the controls, the map) runs off one spring, same as the rest of the panel.
+  let gH=0,hb=null,hraf=0,cH=0;
+  const gated=()=>panel.classList.contains("gated");
+  const gate=on=>{cancelAnimationFrame(hraf);panel.classList.remove("gleave");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";panel.style.removeProperty("--gp");return}panel.classList.add("gated")};
+  const tuckH=()=>base-tot();
+  // H: the card's height. Above the card it fades back into the controls; below it, into the tucked panel
+  const cardFrame=H=>{cH=H;panel.style.height=Math.round(H)+"px";const up=cl((H-gH)/Math.max(1,base-gH)),dn=cl((gH-H)/Math.max(1,gH-tuckH())),k=Math.max(up,dn);
+    panel.style.setProperty("--gp",k.toFixed(3));const f=1-dn;parts.forEach((x,i)=>{x.style.maxHeight=(full[i]*f)+"px";x.style.opacity=f});
+    const pl=view.querySelector(".fspill");if(pl){pl.style.opacity=String(k);pl.style.pointerEvents=k>.7?"":"none";pl.style.transform="translateX(-50%)"}mapSync()};
+  const hspring=(to,o={})=>{cancelAnimationFrame(hraf);cancelAnimationFrame(raf);const k=o.k||340,c=2*(o.z||1)*Math.sqrt(k);let x=cH,v=o.v||0,last=performance.now();
+    const step=t=>{const dt=Math.min(.034,Math.max(.001,(t-last)/1000));last=t;for(let n=0;n<4;n++){const h=dt/4,a=-k*(x-to)-c*v;v+=a*h;x+=v*h}
+      if(Math.abs(x-to)<.4&&Math.abs(v)<12){cardFrame(to);if(o.done)o.done();return}cardFrame(x);hraf=requestAnimationFrame(step)};
+    hraf=requestAnimationFrame(step)};
+  const gateIn=v0=>{cancelAnimationFrame(raf);moving=false;tease=false;u=1;measure();cH=panel.offsetHeight;gate(true);
+    gH=Math.round(30+gt.offsetHeight+parseFloat(getComputedStyle(panel).paddingBottom)+4);cardFrame(cH);hspring(gH,{v:v0||0,k:300,z:.62})};
+  // back to the controls (or tucked away), landing exactly where the panel's own layout puts it
+  const gateOut=(to,v0)=>{if(!gated())return;measure();const t=to===0?tuckH():base;hspring(t,{v:v0||0,done:()=>{u=to===0?0:1;moving=true;apply(u);gate(false);moving=false;apply(u)}})};
   const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
     const oh=panel.style.height;panel.style.height="";const cur=parts.reduce((a,x)=>a+x.offsetHeight,0),nat=panel.offsetHeight;panel.style.height=oh;
     base=nat-cur+full[0]+full[1];
@@ -1294,13 +1312,13 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
     ctl.style.opacity=co;ctl.style.visibility=co<.01?"hidden":"";ctl.style.pointerEvents=gv>.3?"none":"";
     lw.style.opacity=lo;lw.style.visibility=lo<.01?"hidden":"visible";lw.style.pointerEvents=gv>.9?"auto":"none";lw.classList.toggle("on",gv>.98);
     panel.classList.toggle("min",u<.02);panel.classList.toggle("up",gv>.02);
-    const pl=view.querySelector(".fspill");if(pl){const k=cl(gv/.5);pl.style.opacity=String(1-k);pl.style.pointerEvents=k>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*10}px) scale(${1-k*.06})`}};
+    const pl=view.querySelector(".fspill");if(pl){const k=cl(gv/.5);pl.style.opacity=String(1-k);pl.style.pointerEvents=k>.3?"none":"";pl.style.transform=`translateX(-50%) translateY(${k*10}px) scale(${1-k*.06})`}mapSync()};
   // one spring drives everything (panel, fades, map) in the same frame, carrying on from the speed of your finger, like Google Maps
   const anim=(to,o={})=>{cancelAnimationFrame(raf);moving=true;const X=px(to),k=o.k||340,c=2*(o.z||1)*Math.sqrt(k);let x=px(u),v=o.v||0,last=performance.now(),peaked=false;
     const step=t=>{const dt=Math.min(.034,Math.max(.001,(t-last)/1000));last=t;
-      for(let n=0;n<4;n++){const h=dt/4,a=-k*(x-X)-c*v;const pv=v;v+=a*h;x+=v*h;if(o.onPeak&&!peaked&&pv>0&&v<=0){peaked=true;o.onPeak()}}
-      if(Math.abs(x-X)<.4&&Math.abs(v)<12){moving=false;apply(to);if(rrMap)rrMap.resize();if(o.done)o.done();return}
-      apply(inv(x));if(rrMap)rrMap.resize();raf=requestAnimationFrame(step)};
+      for(let n=0;n<4;n++){const h=dt/4,a=-k*(x-X)-c*v;const pv=v;v+=a*h;x+=v*h;if(o.onPeak&&!peaked&&pv>0&&v<=0){peaked=true;o.onPeak();return}}
+      if(Math.abs(x-X)<.4&&Math.abs(v)<12){moving=false;apply(to);if(o.done)o.done();return}
+      apply(inv(x));raf=requestAnimationFrame(step)};
     raf=requestAnimationFrame(step)};
   const set=(to,o={})=>{if(typeof to==="boolean")to=to?0:1;if(to!==1&&!o.keepGate)gate(false);measure();tease=false;
     if(to>1&&u<=1.01){fill();bx.scrollTop=0}anim(to,o);
@@ -1308,25 +1326,29 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   view._fsSet=set;
   // timed, before you've seen the list: the panel lifts a little, springs back and the spoiler question pops out where the controls are
   // the panel lifts, springs back and settles into the spoiler card
-  const tease1=(drag)=>{measure();if(drag){gateIn();return}tease=true;anim(1,{v:1000,k:300,z:.5,onPeak:()=>gateIn()})};
-  const open=()=>{if(panel.classList.contains("gated"))return;if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
-  gt.querySelector('[data-g="show"]').onclick=()=>{gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();measure();hb=panel.offsetHeight;panel.classList.remove("gsize");panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);apply(2)}})};
+  const tease1=(drag,v0)=>{measure();if(drag){gateIn(v0);return}tease=true;anim(1,{v:1000,k:300,z:.5,onPeak:()=>gateIn()})};
+  const open=()=>{if(gated())return;if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
+  gt.querySelector('[data-g="show"]').onclick=()=>{if(Date.now()-swiped<400)return;gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();cancelAnimationFrame(hraf);measure();hb=cH||panel.offsetHeight;panel.style.setProperty("--gp","0");panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);apply(2)}})};
   // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
-  const tapTop=()=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("gated")){gateOut();return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
+  const tapTop=()=>{if(Date.now()-swiped<400)return;if(gated()){gateOut(1);return}if(u<.5)set(1);else if(u>1.5)set(1);else open()};
   hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
   // dragging: from anywhere on the panel it moves; inside the list it scrolls, and only a pull down from the top brings the panel with it
-  let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[];
-  const dStart=y=>{cancelAnimationFrame(raf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];cap=u0>1.01||!needGate()?2:1};
+  let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[],card=false,h0=0;
+  const dStart=y=>{cancelAnimationFrame(raf);cancelAnimationFrame(hraf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];card=gated()&&!panel.classList.contains("gleave");h0=cH;cap=u0>1.01||!needGate()?2:1};
   const rub=e=>70*(1-Math.exp(-e/160));
-  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved){gate(false);if(d<0&&u0>=1&&cap>1)fill()}moved=true;
+  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved&&!card&&d<0&&u0>=1&&cap>1)fill();moved=true;
     const t=performance.now();smp.push([t,y]);while(smp.length>2&&t-smp[0][0]>90)smp.shift();
+    // on the spoiler card: up grows it back into the controls, down tucks it away; it never opens the list
+    if(card){let H=h0-d;const tk=tuckH();if(H>base)H=base+rub(H-base)*.6;if(H<tk)H=tk-rub(tk-H)*.4;cardFrame(H);return true}
     let P=Math.max(0,px(u0)-d);if(cap<2){const T=px(1);if(P>T)P=T+rub(P-T);tease=P>T+.5}else{P=Math.min(px(2)+rub(Math.max(0,P-px(2))),P);tease=false}
-    moving=true;apply(inv(P));if(rrMap)rrMap.resize();return true};
+    moving=true;apply(inv(P));return true};
   const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();moving=false;
     let vy=0;if(smp.length>1){const a=smp[0],b=smp[smp.length-1];if(b[0]-a[0]>8)vy=(b[1]-a[1])/((b[0]-a[0])/1000)}
     if(performance.now()-(smp.length?smp[smp.length-1][0]:0)>80)vy=0;
     const vp=-vy;// panel speed, px/s, up is positive
-    if(cap<2&&u>1.0005){tease1(true);return}
+    if(card){card=false;const H=cH,v=Math.max(-3000,Math.min(3000,vp));
+      if(vp>300||(vp>-300&&H>gH+(base-gH)*.3))gateOut(1,v);else if(vp<-300||H<gH-(gH-tuckH())*.5)gateOut(0,v);else hspring(gH,{v,z:.7});return}
+    if(cap<2&&u>1.0005){tease1(true,Math.min(0,vp));return}
     if(cap<2&&d<0&&vp>350&&u>=.98){tease1();return}
     const stops=[0,1,2].filter(s=>s<=cap),X=px(u);let to;
     if(Math.abs(vp)>300)to=vp>0?Math.min(cap,Math.floor(u+.02)+1):Math.max(0,Math.ceil(u-.02)-1);
