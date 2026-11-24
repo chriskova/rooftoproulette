@@ -1166,7 +1166,7 @@ function renderWiz(){
       <div class="opts">
         <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few bars, quick drinks.</small></span></button>
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
-        <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><b class="rrwm">R<i>&amp;</i>R</b><small>No timer, no wildcards, no jackpot</small></button>
+        <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><span class="ic"><b class="rrwm">R<i>&amp;</i>R</b></span><span class="t"><b>Rest &amp; Roulette</b><small>No timer, no wildcards, no jackpot.</small></span></button>
       </div>
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
     $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
