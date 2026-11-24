@@ -1105,11 +1105,12 @@ function renderQuick(){
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("qHL"),$("zSkipC"));cv.append(row);
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
-  fsLayout(b,b);
+  fsLayout(b,b);fsOpts();
   $("qHL").onclick=e=>{e.stopPropagation();const old=$("qMenu");if(old){old.remove();return}
     const all=rrPool(q.z,now(),false).open.length,opt=(k,lbl,n)=>`<button type="button" data-k="${k}" aria-checked="${(q.list||"")===k}"><b>${lbl}</b><span>${n} open</span><i>${(q.list||"")===k?tick:""}</i></button>`;
-    $("rrMap").parentElement.insertAdjacentHTML("beforeend",`<div class="fsmenu" id="qMenu" role="menu">${opt("","All rooftops",all)}${lists.map(k=>opt(k,listName(k),opn(k))).join("")}</div>`);
-    const menu=$("qMenu"),r=$("qHL").getBoundingClientRect(),m=menu.parentElement.getBoundingClientRect();menu.style.top=(r.bottom-m.top+8)+"px";menu.style.left=(r.left-m.left)+"px";
+    const host=$("qHL").closest(".fspanel")||$("rrMap").parentElement;
+    host.insertAdjacentHTML("beforeend",`<div class="fsmenu" id="qMenu" role="menu">${opt("","All rooftops",all)}${lists.map(k=>opt(k,listName(k),opn(k))).join("")}</div>`);
+    const menu=$("qMenu"),r=$("qHL").getBoundingClientRect(),m=host.getBoundingClientRect();menu.style.top=(r.top-m.top-menu.offsetHeight-6)+"px";menu.style.right=(m.right-r.right)+"px";
     ["pointerdown","touchstart","wheel"].forEach(ev=>menu.addEventListener(ev,x=>x.stopPropagation(),{passive:true}));
     setTimeout(()=>document.addEventListener("pointerdown",function off(x){if(!x.target.closest("#qMenu,#qHL")){const mm=$("qMenu");if(mm)mm.remove();document.removeEventListener("pointerdown",off,true)}},true),0);
     {
@@ -1234,7 +1235,7 @@ function renderWiz(){
     $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
     // full screen: Skip visited up top under search, the open count as the See list pill above the panel
     {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"));cv.append(row)}
-    fsLayout($("v-wiz"),body);
+    fsLayout($("v-wiz"),body);fsOpts();
     fitMap($("v-wiz"));
   }
   if(w.step===3){
@@ -1254,6 +1255,12 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)panel.append(x)});const zw=$("zWarn");if(zw)panel.append(zw);
   box.after(panel);
   const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb)}}
+// the options live in the panel like Uber's (nothing on top but search): Spin from as a row that opens a menu, Skip as a switch.
+// No count on Skip: the open count on the map shows what it took out.
+function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
+  const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
+  const sk=$("zSkipC");if(sk){sk.className="fsopt";sk.innerHTML=`<span class="l">Skip bars you've been to</span><span id="zSkipN" hidden></span><span class="sw"></span>`;o.append(sk)}
+  const sl=panel.querySelector(".rrslide");(sl||panel.lastChild).after(o)}
 const fsOff=()=>document.querySelectorAll(".view.fsv").forEach(v=>v.classList.remove("fsv"));
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
 // The bars are a surprise by default: a spoiler warning first, then the list (with vetoes) for anyone who wants it.

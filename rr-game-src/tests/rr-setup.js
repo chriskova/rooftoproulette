@@ -14,15 +14,15 @@ await p.waitForTimeout(700);
 if(tag==='reg')console.log('tile:',await T(()=>document.querySelector('[data-l="rr"]').innerText.replace(/\n/g,' / ')));
 await p.click('#wNext');await p.waitForTimeout(2200);
 console.log(tag,'route',await T(()=>S.route),'| h1',await T(()=>$("v-quick").querySelector('h1').textContent),'| r',await T(()=>S.quick.z&&S.quick.z.r),
-  '| pills',await T(()=>[...document.querySelectorAll('#v-quick .mchips .mchip, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim()).join(' | ')),
+  '| pills',await T(()=>[...document.querySelectorAll('#v-quick .fsopt, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim()).join(' | ')),
   '| map h',await T(()=>Math.round($("rrMap").getBoundingClientRect().height)),'scroll',await T(()=>{const v=$("v-quick");return v.scrollHeight-v.clientHeight}),'| cta',await T(()=>$("cta").innerText));
 await p.screenshot({path:`out/rr-${tag}-1.png`});
 if(tag!=='reg'){await ctx.close();return}
 await p.click('#zSkipC');await p.waitForTimeout(400);console.log('skip on →',await T(()=>$("rrN").textContent));await p.click('#zSkipC');await p.waitForTimeout(300);
 console.log('want ticked off (visited one removed):',await T(()=>!S.want[playable(inCircle({lat:-33.8688,lng:151.2093},2),false).filter(v=>openOK(v,now()))[0].id]));
 await p.click('#qHL');await p.waitForTimeout(500);console.log('picker:',await T(()=>[...document.querySelectorAll('#qMenu [data-k]')].map(x=>x.innerText.replace(/\n/g,' / ')).join(' | ')));await p.screenshot({path:'out/rr-reg-1b-picker.png'});
-await p.click('#qMenu [data-k="fav"]');await p.waitForTimeout(1500);console.log('favs →',await T(()=>[...document.querySelectorAll('#v-quick .mchips .mchip, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim().replace(/\n/g,' ')).join(' | ')));await p.screenshot({path:'out/rr-reg-1c-fav.png'});
-await p.click('#qHL');await p.waitForTimeout(500);await p.click('#qMenu [data-k="want"]');await p.waitForTimeout(1500);console.log('hit list on → r',await T(()=>S.quick.z.r),'|',await T(()=>[...document.querySelectorAll('#v-quick .mchips .mchip, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim()).join(' | ')),'| label',await T(()=>$("rrLbl").textContent));
+await p.click('#qMenu [data-k="fav"]');await p.waitForTimeout(1500);console.log('favs →',await T(()=>[...document.querySelectorAll('#v-quick .fsopt, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim().replace(/\n/g,' ')).join(' | ')));await p.screenshot({path:'out/rr-reg-1c-fav.png'});
+await p.click('#qHL');await p.waitForTimeout(500);await p.click('#qMenu [data-k="want"]');await p.waitForTimeout(1500);console.log('hit list on → r',await T(()=>S.quick.z.r),'|',await T(()=>[...document.querySelectorAll('#v-quick .fsopt, #v-quick .fspill')].filter(x=>!x.hidden).map(x=>x.innerText.trim()).join(' | ')),'| label',await T(()=>$("rrLbl").textContent));
 await p.screenshot({path:`out/rr-${tag}-2-hl.png`});
 await p.click('#qBack');await p.waitForTimeout(600);console.log('back →',await T(()=>S.route),await T(()=>S.wiz&&S.wiz.rr));
 await p.click('#wNext');await p.waitForTimeout(2000);await p.click('#qHL');await p.waitForTimeout(400);await p.click('#qMenu [data-k="fav"]');await p.waitForTimeout(1200);await p.click('#qGo');await p.waitForTimeout(1200);console.log('fav start →',await T(()=>S.route),await T(()=>S.game&&JSON.stringify(S.game.cz)),await T(()=>S.game&&S.game.areas));

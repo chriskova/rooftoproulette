@@ -2432,6 +2432,16 @@ html,body{overflow-x:hidden;max-width:100%}
 .fspill[hidden]{display:none}
 .fspill svg{width:17px;height:17px;color:var(--amber-text)}.fspill .sep{width:1px;height:16px;background:var(--line)}.fspill .sl{color:var(--amber-text)}
 .fsv .mcard{bottom:90px}
+/* no app bar on the full-screen maps: the map runs up under the status bar with a soft fade, like Uber */
+.app:has(.view.fsv:not([hidden])) #appbar{display:none}
+.fsv .rrmap::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 64px);background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 55%,transparent) 45%,transparent);z-index:550;pointer-events:none}
+/* options in the panel: Spin from (opens a menu) and Skip bars you've been to (a switch) */
+.fsopts{display:flex;flex-direction:column;border-top:1px solid var(--line);margin-top:2px}
+.fsopt{appearance:none;display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 0;font:inherit;color:var(--text);text-align:left;cursor:pointer}
+.fsopt[hidden]{display:none}
+.fsopt .l{flex:1;font-size:15px;font-weight:600}
+.fsopt b{font-size:15px;color:var(--amber-text)}.fsopt .cr{width:16px;height:16px;color:var(--amber-text)}
+.fsopt[aria-pressed="true"] .sw{background:var(--amber)}.fsopt[aria-pressed="true"] .sw::after{transform:translateX(20px)}
 .fsv .rrmap:has(.rrme[hidden]) .msearch{right:14px}
 .fsv .rrmap:not(:has(.mchips .mchip:not([hidden]))) .fsbanner{top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 70px)}
 
