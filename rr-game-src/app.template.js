@@ -290,7 +290,7 @@ function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   const ov=document.createElement("div");ov.className="mapfull demozone";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   const drop=()=>{if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{drop();ov.remove()},220)};
-  zonePanel(ov,{range,title:"Pick your zone",sub:"1 hour. Drag to move, pinch or slide to resize.",go:"Start the demo",back:"Cancel"});
+  zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the demo",back:"Cancel"});
   $("mvX").onclick=close;
   rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("mvGo");if(!b)return;
     $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every bar's open in the demo, whatever the time.";
@@ -948,7 +948,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
     {const rr=$("rrR");if(rr)rr.style.setProperty("--p",((rr.value-rr.min)/((rr.max-rr.min)||1)*100)+"%")}   // amber fill up to the thumb
-    $("rrLbl").textContent=z.r?`Within ${kmTxt(z.r)} of ${moved()||!me?nearestSuburb(z):"you"}`:(o&&o.allLbl)||`All of ${S.city}`;
+    $("rrLbl").innerHTML=z.r?`Within <strong>${kmTxt(z.r)}</strong> of ${esc(moved()||!me?nearestSuburb(z):"you")}`:esc((o&&o.allLbl)||`All of ${S.city}`);
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
     lastP=P;onPaint(P,z,moved(),full);
@@ -3303,7 +3303,7 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
     const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
     const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
     if(z.r<range.lo)z.r=range.lo;
-    zonePanel(ov,{range,title:free?"Your zone's run dry":"Move your zone",sub:free?"Nothing else is open here. This move's free.":g.started?(grow?"Once a crawl. Drag to move it, or slide to go bigger.":"Once a crawl. Drag the map to move it."):"Once a crawl. Drag to move, pinch or slide to resize.",go:"Use this zone",back:o.move?(free?"Close":"Stay here"):"Cancel"});
+    zonePanel(ov,{range,title:free?"Your zone's run dry":"Move your zone",sub:free?"Nothing's open here. This move's free.":"You get one move per crawl.",go:"Use this zone",back:o.move?(free?"Close":"Stay here"):"Cancel"});
     $("mvX").onclick=()=>{if(o.move)close();else view()};
     const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
     let warned=false;
