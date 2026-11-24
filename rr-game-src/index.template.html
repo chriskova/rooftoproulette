@@ -1794,7 +1794,9 @@ html,body{overflow-x:hidden;max-width:100%}
 .fshandle{appearance:none;align-self:center;width:44px;height:16px;margin:-10px 0 -4px;border:0;background:none;padding:0;cursor:pointer;position:relative}
 .fshandle::before{content:"";position:absolute;left:4px;right:4px;top:5px;height:5px;border-radius:9px;background:var(--line)}
 .fspanel{touch-action:pan-x}
-.fspanel.min .rrslide,.fspanel.min .fsopts,.fspanel.min p.sub,.fspanel.min #zWarn{display:none}
+.fsmore{overflow:hidden;display:flex;flex-direction:column;gap:10px;margin-top:-10px;padding-top:10px}
+.fspanel.fsanim .fsmore{transition:max-height .3s cubic-bezier(.25,.8,.3,1),opacity .25s ease}
+.fspanel.min .fsmore{pointer-events:none}
 .fspanel.min{cursor:pointer}
 .fspanel h1.q{font-size:22px!important;line-height:1.15;margin:0}
 .fspanel p.sub{margin:2px 0 0!important;font-size:14px!important}

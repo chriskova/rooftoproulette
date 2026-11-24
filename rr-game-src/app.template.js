@@ -1247,14 +1247,27 @@ function fsLayout(view,host){view.classList.add("fsv");const box=host.querySelec
   const head=[...host.children].find(x=>x.querySelector&&x.querySelector("h1"));if(head)panel.append(head);
   ["rrsum","rrslide"].forEach(c=>{const x=host.querySelector("."+c);if(x)panel.append(x)});const zw=$("zWarn");if(zw)panel.append(zw);
   box.after(panel);
-  // a handle like Uber's and Google's: swipe the panel down to tuck the slider and options away (more map), up or tap to bring them back. Always opens full.
+  // a handle like Uber's and Google's: drag the panel down to tuck the slider and options away (more map), up or tap to bring them back.
+  // The panel follows your finger and settles smoothly; the map grows and shrinks with it. Always opens full.
   panel.insertAdjacentHTML("afterbegin",`<button class="fshandle" type="button" aria-label="Show less" aria-expanded="true"></button>`);
-  const hd=panel.querySelector(".fshandle"),set=min=>{panel.classList.toggle("min",min);hd.setAttribute("aria-expanded",String(!min));hd.setAttribute("aria-label",min?"Show more":"Show less");
-    const r=()=>{if(rrMap)rrMap.resize()};requestAnimationFrame(r);setTimeout(r,260)};
-  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(!panel.classList.contains("min"))};
-  let y0=null,swiped=0;panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,button:not(.fshandle),input"))return;y0=e.clientY},{passive:true});
-  panel.addEventListener("pointerup",e=>{if(y0==null)return;const d=e.clientY-y0;y0=null;if(Math.abs(d)>30){swiped=Date.now();set(d>0)}},{passive:true});
-  panel.addEventListener("pointercancel",()=>{y0=null},{passive:true});
+  const hd=panel.querySelector(".fshandle"),sub=panel.querySelector("p.sub"),lbl=panel.querySelector(".rrsum");
+  const mk=()=>{const d=document.createElement("div");d.className="fsmore";return d};
+  const m1=mk();if(sub){sub.after(m1);m1.append(sub)}
+  const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
+  const parts=[m1,m2];let full=null,f=1,anim=0;
+  const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h})};
+  const apply=v=>{f=Math.max(0,Math.min(1,v));if(!full)measure();parts.forEach((x,i)=>{x.style.maxHeight=(full[i]*f)+"px";x.style.opacity=f});panel.classList.toggle("min",f<.02)};
+  const follow=ms=>{cancelAnimationFrame(anim);const t0=performance.now(),go=()=>{if(rrMap)rrMap.resize();if(performance.now()-t0<ms)anim=requestAnimationFrame(go)};go()};
+  const set=min=>{measure();panel.classList.add("fsanim");apply(min?0:1);follow(320);setTimeout(()=>panel.classList.remove("fsanim"),330);
+    hd.setAttribute("aria-expanded",String(!min));hd.setAttribute("aria-label",min?"Show more":"Show less");if(!min)setTimeout(()=>{if(f===1)parts.forEach(x=>x.style.maxHeight="none")},340)};
+  hd.onclick=()=>{if(Date.now()-swiped<400)return;set(f>.5)};
+  let y0=null,f0=1,moved=false,swiped=0,tot=1;
+  panel.addEventListener("pointerdown",e=>{if(e.target.closest(".rrslide,.fsopts,button:not(.fshandle),input"))return;measure();tot=Math.max(1,full[0]+full[1]);y0=e.clientY;f0=f;moved=false;panel.classList.remove("fsanim")},{passive:true});
+  panel.addEventListener("pointermove",e=>{if(y0==null)return;const d=e.clientY-y0;if(!moved&&Math.abs(d)<6)return;moved=true;apply(f0-d/tot);if(rrMap)rrMap.resize()},{passive:true});
+  const end=e=>{if(y0==null)return;const d=e.clientY-y0;y0=null;if(!moved)return;swiped=Date.now();
+    // settle whichever way you were heading (a short flick is enough)
+    set(d>0?(f<.85):(f<.15))};
+  panel.addEventListener("pointerup",end,{passive:true});panel.addEventListener("pointercancel",end,{passive:true});
   panel.addEventListener("click",e=>{if(Date.now()-swiped<400)return;if(panel.classList.contains("min")&&!e.target.closest(".fshandle"))set(false)});
   const nb=$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb)}}
 // the options live in the panel like Uber's (nothing on top but search): Spin from as a row that opens a menu, Skip as a switch.
