@@ -2478,28 +2478,21 @@ html,body{overflow-x:hidden;max-width:100%}
 .fslh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;padding:6px 0 4px;cursor:pointer}
 .fslb{flex:1;min-height:0;overflow-y:hidden;position:relative;padding-bottom:6px;touch-action:pan-y;overscroll-behavior:contain}
 .fslist.on .fslb{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:64px;bottom:calc(12px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;visibility:hidden;pointer-events:none}
-.fsgt{margin:auto 0;display:flex;flex-direction:column;gap:4px;padding:16px 6px;background:radial-gradient(closest-side,var(--bg) 60%,transparent);opacity:0;transform:translateY(14px) scale(.96);transition:opacity .16s ease,transform .16s ease}
-.fsgt b{font-size:20px;font-weight:800}.fsgt span{color:var(--muted);font-size:14.5px}
-.fsgb{display:flex;flex-direction:column;gap:10px;width:100%;transform:translateY(calc(100% + 40px));transition:transform .2s ease}
-.fsgb .btn.line{height:50px;background:var(--bg)}
+.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:30px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;visibility:hidden;pointer-events:none}
+.fsgt{display:flex;flex-direction:column;gap:4px}
+.fsgt b{font-size:22px;font-weight:800;letter-spacing:-.3px}.fsgt span{color:var(--muted);font-size:14.5px}
+.fsgshow{appearance:none;border:1.5px solid var(--line);background:none;color:var(--text);font:inherit;font-weight:700;font-size:15px;height:42px;padding:0 20px;border-radius:21px;cursor:pointer}
+.fsgate>*{opacity:0;transform:translateY(12px);transition:opacity .14s ease,transform .14s ease}
 .fspanel.gated>.fsgate{visibility:visible;pointer-events:auto}
-.fspanel.gated .fsgt{opacity:1;transform:none;transition:opacity .24s ease .05s,transform .42s cubic-bezier(.2,1.5,.4,1) .05s}
-.fspanel.gated .fsgb{transform:none;transition:transform .42s cubic-bezier(.2,1.25,.4,1)}
+.fspanel.gated>.fsgate>*{opacity:1;transform:none;transition:opacity .26s ease .1s,transform .5s cubic-bezier(.2,1.4,.4,1) .1s}
+.fspanel.gated>.fsgate>.fsgshow{transition-delay:.17s}
 .fspanel.gated>.fsctl{opacity:0!important;pointer-events:none;transition:opacity .14s ease}
-.fspanel.gated>.fslist{opacity:1!important;visibility:visible!important;pointer-events:none!important;transition:opacity .25s ease}
-.fspanel.gated>.fslist .fslb{filter:blur(6px);transition:filter .3s ease}
-/* show me anyway: the buttons drop off the bottom and the list comes into focus as the panel rises */
-.fspanel.gated.gleave>.fslist .fslb{filter:none;transition:filter .35s ease}
-.fspanel.gated.gleave .fsgt{opacity:0;transform:none;transition:opacity .15s ease}
-.fspanel.gated.gleave .fsgb,.fspanel.gated.gout .fsgb{transform:translateY(calc(100% + 40px));transition:transform .28s cubic-bezier(.5,0,.75,0)}
-/* keep it a surprise: back to the controls */
-.fspanel.gated.gout>.fslist{opacity:0!important}
-.fspanel.gated.gout>.fsctl{opacity:1!important;transition:opacity .2s ease .05s}
-.fspanel.gated.gout .fsgt{opacity:0;transition:opacity .15s ease}
-/* while the spoiler question is up it takes Start the crawl's place; Start comes back once you've chosen */
-#cta{transition:opacity .2s ease .18s}
-.app:has(.fspanel.gated:not(.gleave):not(.gout)) #cta{opacity:0;pointer-events:none;transition:opacity .15s ease}
+.fspanel.gsize{transition:height .5s cubic-bezier(.3,1.3,.5,1)}
+.fspanel.gated{overflow:hidden}.fspanel>.fshandle{flex-shrink:0}
+.fsv:has(.fspanel.gated:not(.gleave):not(.gout)) .fspill{opacity:0!important;pointer-events:none!important;transition:opacity .2s ease}
+.fspanel.gated.gleave>.fsgate>*,.fspanel.gated.gout>.fsgate>*{opacity:0;transform:none;transition:opacity .14s ease}
+.fspanel.gated.gout{transition:height .38s cubic-bezier(.25,.8,.3,1)}
+.fspanel.gated.gout>.fsctl{opacity:1!important;transition:opacity .22s ease .1s}
 .fspanel h1.q{font-size:22px!important;line-height:1.15;margin:0}
 .fspanel p.sub,#v-wiz .fspanel p.sub.zmove,#v-quick .fspanel p.sub.qpace{margin:2px 0 0!important;font-size:14px!important}
 .fspanel .rrsum{margin:4px 0 0}

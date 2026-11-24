@@ -32,8 +32,8 @@ await T(()=>document.querySelector('.view.fsv:not([hidden])')._fsSet(1));await p
 await T(()=>{S.quick=null;S.wiz={step:1,len:60,rr:false,radius:3};save();go('wiz')});await p.waitForTimeout(2200);
 const h0=await T(()=>document.querySelector('#v-wiz .fspanel').offsetHeight);
 await p.click('#v-wiz .fspill');await p.waitForTimeout(500);console.log('timed  ',await st(),'| h before',h0);await shot('p2-gate');
-await p.click('[data-g="keep"]');await p.waitForTimeout(400);console.log('keep   ',await st());
+await p.click('#v-wiz .fshandle');await p.waitForTimeout(400);console.log('keep   ',await st());
 {const bb=await (await p.$('#v-wiz .fshandle')).boundingBox();await touch(bb.x+20,bb.y+6,-200);console.log('pull up',await st())}
-await p.click('[data-g="show"]');await p.waitForTimeout(600);console.log('show   ',await st(),'ticks',await T(()=>document.querySelectorAll('#v-wiz .fslb [data-x]').length));await shot('p2-list');
+await p.waitForTimeout(700);await p.click('[data-g="show"]');await p.waitForTimeout(900);console.log('show   ',await st(),'ticks',await T(()=>document.querySelectorAll('#v-wiz .fslb [data-x]').length));await shot('p2-list');
 await T(()=>document.querySelector('#v-wiz')._fsSet(1));await p.waitForTimeout(500);await p.click('#v-wiz .fspill');await p.waitForTimeout(500);console.log('again  ',await st());
 console.log('errors',e);await b.close()})();

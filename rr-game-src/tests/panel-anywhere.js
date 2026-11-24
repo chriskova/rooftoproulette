@@ -13,6 +13,6 @@ await T(()=>document.querySelector('#v-quick')._fsSet(1));await p.waitForTimeout
 await drag('#v-quick .fspanel p.sub',-200);console.log('R&R sub up    ',await st());
 await T(()=>{S.quick=null;S.wiz={step:1,len:60,rr:false,radius:3};save();go('wiz')});await p.waitForTimeout(2000);
 const s0=await T(()=>!!S.wiz.newOnly);await drag('#zSkipC',-200);console.log('timed skip up ',await st(),'skip',s0,'→',await T(()=>!!S.wiz.newOnly));
-await p.click('[data-g="keep"]');await p.waitForTimeout(400);await drag('#zSkipC',150);console.log('timed skip dn ',await st(),'skip',await T(()=>!!S.wiz.newOnly));
+await p.click('#v-wiz .fshandle');await p.waitForTimeout(400);await drag('#zSkipC',150);console.log('timed skip dn ',await st(),'skip',await T(()=>!!S.wiz.newOnly));
 await T(()=>document.querySelector('#v-wiz')._fsSet(1));await p.waitForTimeout(500);await p.click('#zSkipC');await p.waitForTimeout(300);console.log('tap skip      ',await T(()=>!!S.wiz.newOnly));
 console.log('errors',e);await b.close()})();
