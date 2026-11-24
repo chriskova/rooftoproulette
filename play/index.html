@@ -2321,8 +2321,12 @@ body.camon #v-play .adjz{display:none}
 /* spin cards: the card starts the sentence, the spin finishes it underneath in amber */
 .wild .wfill{display:block;margin-top:4px;color:var(--amber-text);font-weight:800;font-size:1.06em}
 .wild .wspin,.bar .wild .wspin{display:inline-flex;align-items:center;width:auto;height:30px!important;min-height:0;line-height:1;margin:-3px 0 0 8px;padding:0 16px!important;font-size:13.5px;vertical-align:middle;border-radius:99px}
-.wild .wslot{display:inline-flex;align-items:center;gap:6px;height:28px;margin:-2px 0 0 2px;padding:0 12px 0 9px;border:1.5px dashed var(--amber);border-radius:99px;background:rgba(245,184,61,.16);color:var(--amber-text);font:inherit;font-size:13.5px;font-weight:700;vertical-align:middle;cursor:pointer;white-space:nowrap}
-.wild .wslot svg{position:static;width:15px!important;height:15px!important;color:currentColor!important}
+.wild:has(.wtap){padding-right:62px}
+.wild .wtap{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:var(--amber);color:var(--amber-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);animation:wtapspin 2.6s ease-in-out infinite}
+.wild .wtap svg{position:static!important;width:22px!important;height:22px!important;color:currentColor!important}
+.wild .wcap{display:block;margin-top:5px;font-size:12.5px;font-weight:600;opacity:.75}
+@keyframes wtapspin{0%,70%{transform:translateY(-50%) rotate(0)}85%{transform:translateY(-50%) rotate(200deg)}100%{transform:translateY(-50%) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.wild .wtap{animation:none}}
 .wild>span{flex:1;min-width:0}
 .wsfull{margin:12px 0 0;text-align:center;font-weight:600;font-size:16px}.wsfull span{color:var(--amber-text);font-weight:800}
 .rchips{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}.rchips::-webkit-scrollbar{display:none}.rchips .chip{flex:none}

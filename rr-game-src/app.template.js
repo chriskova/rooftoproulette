@@ -2813,7 +2813,7 @@ function renderPlay0(){
   if(pv&&phMem[pv.id]===undefined)barPhoto(pv).then(ph=>{if(!ph){if(G()===g&&g.target===pv.id)st.querySelector(".bar.loading")?.classList.remove("loading");return}afterReveal(()=>{const gg=G();if(gg&&(gg.target===pv.id||(atVisit()&&atVisit().id===pv.id))&&!spinning&&!gg.reelOpen)renderPlay()})});
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
-    if(e.target.closest("[data-wspin]")){wildSpin(txt);return}
+    if(w.querySelector("[data-wspin]")){wildSpin(txt);return}
     const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":m&&m.spin?((g.wild&&g.wild.res||[]).length?wFull(m,g.wild.res):wLead(m)):txt;
     // the deck this card came from, with how much of it you've played (tap for its cards); other packs as their own link underneath
     const pl=S.wplayed||{},dk=WILDS.includes(txt)?"free":(PACKS.find(p=>p.cards.some(c=>c.t===txt))||{}).id||"free";
@@ -2981,8 +2981,9 @@ function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
   const res=(w.res||[]).length?(m.spin?`<span class="wfill">${esc(wFill(m,w.res))}</span>`:`<small class="wres">${w.res.map(esc).join(" · ")}</small>`):"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
-  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="wslot" type="button" data-wspin="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WIC.spin}</svg>${m.multi&&(w.res||[]).length?"Next person":"Spin to reveal"}</button>`:"";
-  return `${ic}<span><b>${esc(m.n)}</b>${esc(btn&&!(w.res||[]).length&&m.lead?m.lead:wLead(m))}${btn?" ":""}${res}${walk}${lastLine(w)}${btn}</span>`}
+  // a spin card waiting to be spun: the whole card is the control, with a wheel badge and one quiet line
+  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<small class="wcap">${m.multi&&(w.res||[]).length?"Next person spins":"Spin to reveal"}</small><span class="wtap" data-wspin="1" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WIC.spin}</svg></span>`:"";
+  return `${ic}<span><b>${esc(m.n)}</b>${esc(wLead(m))}${res}${walk}${lastLine(w)}${btn}</span>`}
 const lastLine=w=>w&&w.last?`<small class="wres">Last new Rooftop Originals card</small>`:"";
 function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
 const markPlayed=t=>{if(!t||ALLW.indexOf(t)<0)return;(S.wplayed=S.wplayed||{})[t]=1};
