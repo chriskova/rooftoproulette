@@ -2981,8 +2981,8 @@ function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
   const res=(w.res||[]).length?(m.spin?`<span class="wfill">${esc(wFill(m,w.res))}</span>`:`<small class="wres">${w.res.map(esc).join(" · ")}</small>`):"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
-  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="btn sm wspin" type="button" data-wspin="1">${m.multi&&(w.res||[]).length?"Next person":"Spin"}</button>`:"";
-  return `${ic}<span><b>${esc(m.n)}</b>${esc(wLead(m))}${res}${walk}${lastLine(w)}${btn}</span>`}
+  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<button class="wslot" type="button" data-wspin="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WIC.spin}</svg>${m.multi&&(w.res||[]).length?"Next person":"Spin to reveal"}</button>`:"";
+  return `${ic}<span><b>${esc(m.n)}</b>${esc(btn&&!(w.res||[]).length&&m.lead?m.lead:wLead(m))}${btn?" ":""}${res}${walk}${lastLine(w)}${btn}</span>`}
 const lastLine=w=>w&&w.last?`<small class="wres">Last new Rooftop Originals card</small>`:"";
 function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
 const markPlayed=t=>{if(!t||ALLW.indexOf(t)<0)return;(S.wplayed=S.wplayed||{})[t]=1};
