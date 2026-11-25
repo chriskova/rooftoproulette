@@ -1290,8 +1290,12 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   // and just slides so its centre (the zone's centre) stays in the middle of the visible part
   const mapEl=box.querySelector("#rrMap");let mvh=0;
   const mapSize=()=>{mvh=view.clientHeight||innerHeight;if(mapEl)mapEl.style.setProperty("--fsmh",mvh+"px")};
-  const mapSync=()=>{if(!mapEl)return;mapEl.style.transform=`translate3d(0,${Math.round((box.clientHeight-mvh)/2)}px,0)`};
-  mapSize();mapSync();if(window.ResizeObserver)new ResizeObserver(()=>{if(!moving)mapSync()}).observe(box);addEventListener("resize",()=>{if(!view.isConnected)return;mapSize();mapSync();if(rrMap)rrMap.resize()});
+  // ...and its centre sits halfway between whatever floats on top (search, tabs) and the open pill, so the circle looks centred in the space you can see
+  const zoff=()=>{const br=box.getBoundingClientRect();let t=br.top;view.querySelectorAll(".msearch,.fstabs,.mchips").forEach(x=>{if(x.offsetParent){const r=x.getBoundingClientRect();if(r.height)t=Math.max(t,r.bottom)}});
+    const pl=box.querySelector(".fspill"),pr_=pl&&pl.getBoundingClientRect(),b=pr_&&pr_.height?pr_.top:br.bottom;const o=((t-br.top)-(br.bottom-b))/2;return Math.abs(o)<120?o:0};
+  let zo=0;
+  const mapSync=()=>{if(!mapEl)return;zo=zoff();const y=Math.round((box.clientHeight-mvh)/2+zo);mapEl.style.transform=`translate3d(0,${y}px,0)`;const pin=box.querySelector("#rrPin");if(pin)pin.style.transform=`translateY(${Math.round(zo)}px)`};
+  mapSize();mapSync();[60,300,900].forEach(t=>setTimeout(()=>{if(view.isConnected&&!moving)mapSync()},t));if(window.ResizeObserver)new ResizeObserver(()=>{if(!moving)mapSync()}).observe(box);addEventListener("resize",()=>{if(!view.isConnected)return;mapSize();mapSync();if(rrMap)rrMap.resize()});
   // timed, before you've seen the list: the panel settles into a small spoiler card (no list behind it, nothing to peek at).
   // Everything about the card (its height, the crossfade back to the controls, the map) runs off one spring, same as the rest of the panel.
   let gH=0,hb=null,hraf=0,cH=0;
