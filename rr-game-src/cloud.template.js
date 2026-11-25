@@ -348,12 +348,16 @@ async function startLivePre(){const w=S.wiz||S.quick,rr=!S.wiz;if(!w||!w.z)retur
   const pre={mode:rr?"cruise":"rush",len:rr?null:w.len,started:false,visits:[],center:{lat:w.z.lat,lng:w.z.lng},radius:rr?(w.z.r||null):(w.radius||w.z.r),city:S.city};
   await B.set(`live/${id}`,{host:ME.uid,hostName:myName(),g:JSON.stringify(pre),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
   track("live_start",{pre:true});return id}
-async function liveInvite(){
+const NOTNOW='<button class="skiplink" type="button" data-iv="later">Not now</button>';
+async function liveInvite(first){
+  if(first&&(!signedIn()||!myName())){   // the first-crawl nudge doesn't open with a sign-in: it says what it is, sign-in comes after a tap
+    sheet(`<h3>Invite friends</h3><p class="note" style="margin:4px 0 14px">Friends follow along and get the recap.</p><button class="btn" type="button" id="ivGo">${typeof MIX_INVI!=="undefined"?MIX_INVI:""} Invite friends</button>${NOTNOW}`,()=>{
+      $("ivGo").onclick=()=>liveInvite();$("sheetBody").querySelector('[data-iv="later"]').onclick=closeSheet});return}
   if(!signedIn()){track("live_invite_gate");signInSheet("Friends don't need an account to follow.","live","Sign in to share live");return}
   if(!myName()){nameSheet(()=>liveInvite());return}
   let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
   track("live_invite");const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
-  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px">${n?`${n} following. `:""}Friends follow along and get the recap.</p>`,false)}
+  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px">${n?`${n} following. `:""}Friends follow along and get the recap.</p>`,first?NOTNOW:"")}
 // The invite sheet (Who's coming? and Invite friends): friends you've crawled with as a row of faces up top (one tap each),
 // then Send link, with the QR one tap away beside it. No friends yet: the QR shows big instead, the quickest way to get the first one in.
 // The invite (Who's coming? in setup, Invite friends from the pill or menu): crawl friends' faces up top (one tap each), the QR
@@ -369,7 +373,7 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}}}
 invParts.sent={};
-async function inviteSheet(id,head){const P=await invParts(id);sheet(head+P.html,()=>P.bind($("sheetBody")))}
+async function inviteSheet(id,head,foot){const P=await invParts(id);sheet(head+P.html+(foot||""),()=>{P.bind($("sheetBody"));const l=$("sheetBody").querySelector('[data-iv="later"]');if(l)l.onclick=closeSheet})}
 
 // QR code of the follow link: for when everyone's standing together. Always black on white so cameras read it.
 const QRI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h2.5v2.5H14zM18.5 18.5h2M14 20.5h2.5M20.5 14v2.5"/></svg>';

@@ -1573,6 +1573,9 @@ const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 // Once people join it says so (and still invites more).
 const mixInvLbl=j=>j?`${MIX_PPLI} ${j} joined · Invite more`:`${MIX_INVI} Invite friends`;
 const mixInvBig=g=>mixInv(g)&&!g.visits.length?`<button class="btn invbig" type="button" data-mxinv="1">${mixInvLbl(mixJoined(g))}</button>`:"";
+// First crawl only: the invite slides up once on the spin screen so everyone learns friends can follow. After that it's just the button.
+function invFirst(){S.tips=S.tips||{};const g=G();if(S.tips.inv1||!g||g.started||!mixInv(g)||S.route!=="play"||$("sheet").open||spinning||typeof liveInvite!=="function"||!document.querySelector(".invbig"))return;
+  S.tips.inv1=1;save();track("invite_first");liveInvite(true)}
 function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.innerHTML=mixInvLbl(j)})}
 // the zone sits under the spinner before the clock starts (where Move zone goes once it has)
 const mixZoneHTML=g=>CR(g)||!mixPre(g)?"":`<div class="mixzone"><button class="mixp" type="button" data-mx="zone">${I.pin}<span class="zt">${esc(g.areas[g.areas.length-1])} · ${rLabel(g.radius)}</span>${MIX_CV}</button></div>`;
@@ -2932,7 +2935,7 @@ function renderPlay0(){
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
-  camTip();setTimeout(mapTip,900);
+  camTip();setTimeout(mapTip,900);setTimeout(invFirst,700);
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
     CAM.once=true;CAM.onceAt=Date.now();track("camera_open");document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");
