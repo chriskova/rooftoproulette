@@ -430,7 +430,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   document.body.classList.add("fvon");paintTabsFv();
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   fv.innerHTML=`<div class="fv-live" role="status"><span class="fv-eye">${EYEI}</span><span class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
-    <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Bars so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
+    <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Rooftops so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
       <div class="pbtns"><button type="button" class="iconbtn" id="fvMapB" aria-label="Crawl map">${I.map}</button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-now" id="fvNow"></div><div class="fv-act" id="fvAct"></div>`;
@@ -462,11 +462,11 @@ async function followMap(){const d=liveDoc;if(!d)return;const g=fvGame(d),t=Date
 function followBars(){const d=liveDoc;if(!d)return;const fresh=()=>{const dd=liveDoc||d;return {g:fvGame(dd),t:Date.now()+(dd.off||0),who:fvHost(dd),prev:fvPrev,fresh}};nightSheet(fresh())}
 // clock and line under it, shared by the follow screen and the minimised bar
 function fvClockTxt(d,g,t){const cr=g.mode==="cruise",fz=g.frz&&t<g.frz.until,left=fz?g.endsAt-g.frz.until:g.endsAt-t,vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),nb=vs.filter(v=>v.counted!==false).length;
-  return {clock:d.ended?"Done":!g.started?"Not started":cr?hmm(t-g.startedAt):mmss(left),sub:d.ended?plural(nb,"bar"):cr?"No timer":fz&&g.frz.start?"Clock starts at the first bar":`${plural(nb,"bar")} so far`,nb}}
+  return {clock:d.ended?"Done":!g.started?"Not started":cr?hmm(t-g.startedAt):mmss(left),sub:d.ended?plural(nb,"rooftop"):cr?"No timer":fz&&g.frz.start?"Clock starts at the first rooftop":`${plural(nb,"rooftop")} so far`,nb}}
 // the line under the clock and the bar under that, as the person spinning sees them
 function fvLabel(d,g,t){const cr=g.mode==="cruise";if(d.ended)return {lbl:"Crawl over",cls:"",pct:0};if(!g.started)return {lbl:"Not started",cls:"",pct:100};if(cr)return {lbl:"R&R · no timer",cls:"",pct:0};
   const fz=g.frz&&t<g.frz.until,left=fz?g.endsAt-g.frz.until:g.endsAt-t,pct=Math.max(0,Math.min(100,left/((g.len||60)*60000)*100));
-  if(fz)return g.frz.start?{lbl:"Starts at first bar",cls:"",pct:100}:{lbl:(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-t),cls:" frozen",pct};
+  if(fz)return g.frz.start?{lbl:"Starts at first rooftop",cls:"",pct:100}:{lbl:(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-t),cls:" frozen",pct};
   const red=left<=10*60000,warn=left<=FINAL*60000&&!red;return {lbl:left<=FINAL*60000?"Final stretch":"Left",cls:red?" red":warn?" warn":"",pct}}
 // Followers get the same ongoing notification as the person spinning (Android): where the crawl's at and the time left
 let fvNote="",fvNoteAt=0;
@@ -476,7 +476,7 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?d.hostName+"'s crawl":"Live crawl";
   const o={follower:true,title:at?`${who} · at ${byId(at.id).name}`:tgt?`${who} · heading to ${tgt.name}`:`${who} · spinning next`,text:cr?"R&R":plural(vs.filter(v=>v.counted!==false).length,"bar")+" so far"};
   const fz=g.frz&&t<g.frz.until;
-  if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first bar";
+  if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first rooftop";
   else if(!cr&&!fz){o.endsAt=Math.round(g.endsAt-(d.off||0));o.startAt=Math.round(g.startedAt-(d.off||0));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-t)/Math.max(1,g.endsAt-g.startedAt))}
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
@@ -519,15 +519,15 @@ function fvCard0(d,g,t){const el=$("fvNow");
   const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
   if(!v){const who=esc(fvHost(liveDoc));
     const J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
-    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next bar</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
+    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next rooftop</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){fvCardSig="";paintFollow()}});
   const cp0=cardPhoto(v),cp=cp0.cls?cp0:{cls:" photo blank",style:"",cr:""},o=openState(v,t),nw=isNew(v.id),an=landed?" anim":"",y=fvPrev?null:you();
   const wild=wd?wildBox(g,g.wild,at?" dark":"",{follow:true}):"";
   el.innerHTML=at
-    ?`<div class="bar at${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">At the bar${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>${v.fact?`<div class="wi">${esc(v.fact)}</div>`:""}
+    ?`<div class="bar at${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">At the rooftop${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>${v.fact?`<div class="wi">${esc(v.fact)}</div>`:""}
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="fvDwell">${mmss(t-at.arrivedAt)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>${wild}</div>`
-    :`<div class="bar tgt${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">Next bar${nw?`<span class="newpill"${cp0.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    :`<div class="bar tgt${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp0.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts">${y?`<span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>${wild}
       <a class="btn dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a></div>`}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}

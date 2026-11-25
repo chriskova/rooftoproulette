@@ -293,7 +293,7 @@ function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the demo",back:"Cancel"});
   $("mvX").onclick=close;
   rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("mvGo");if(!b)return;
-    $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every bar's open in the demo, whatever the time.";
+    $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every rooftop's open in the demo, whatever the time.";
     b.disabled=n<2;b.onclick=()=>{ov.remove();drop();startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})}
 function startDemoAt(st,r){if(S.game)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(st,x)})).sort((a,b)=>a.d-b.d)[0],city=c?c.x.name:"Sydney";S.city=city;
   S.game={id:"demo"+Date.now(),demo:true,city,test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
@@ -373,7 +373,7 @@ function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
   if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
-    Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each bar.",requestPermissions:!IOSNAT,stale:false,distanceFilter:10},(p,err)=>{
+    Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each rooftop.",requestPermissions:!IOSNAT,stale:false,distanceFilter:10},(p,err)=>{
       if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();if(locErr!==1)setTimeout(()=>locKick(true),1500);return}
       if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy,t:Date.now()};locErr=null;lastFix=Date.now();onLocation()
     })).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
@@ -741,9 +741,9 @@ const WILD_ART=()=>`<svg class="ia-wild" viewBox="0 0 48 48" fill="none" stroke=
  <g class="fr"><rect x="19" y="10" width="20" height="28" rx="3.5" stroke-dasharray="3.2 3.2"/><path d="M29 17.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z" fill="currentColor" fill-opacity=".35"/></g></svg>`;
 const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar in your zone.<br>No planning, no debating."},
- {art:GO_ART(),h:"Get to the bar",p:"Walk, ride or Uber.<br>One drink at each bar."},
+ {art:GO_ART(),h:"Get to the rooftop",p:"Walk, ride or Uber.<br>One drink at each rooftop."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
- {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some bars come with a wildcard.<br>One spin a crawl hits the jackpot."},
+ {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."},
  {art:CHEERS_ART(),h:"Or take it easy",p:"R&amp;R: Rest &amp; Roulette.<br>No timer, no wildcards."}
 ];
 function renderIntro(){
@@ -851,7 +851,7 @@ function playingSheet(next){const g=S.game;
 $("newGame").onclick=()=>{if(S.game){playingSheet(startWizard);return}if(farAway()){farSheet();return}if(firstPlayDue()){firstPlaySheet();return}startWizard()};
 // Before the first real crawl: the safety basics, agreed once.
 function safetySheet(next){sheet(`<h3>Before you head out</h3><div class="safe">
-  <p><b>Walk, don't run.</b> The clock never needs you to rush. If time's up on the way, the bar still counts.</p>
+  <p><b>Walk, don't run.</b> The clock never needs you to rush. If time's up on the way, the rooftop still counts.</p>
   <p><b>Drinking is optional.</b> Water, soft drinks or nothing all count. Know your limit.</p>
   <p><b>Eyes up at roads.</b> Check the app when you've stopped, not while you're crossing.</p>
   <p><b>Never drive after drinking.</b> Look after each other and get everyone home.</p></div>
@@ -884,7 +884,7 @@ function quickPool(q,t){const P=quickSet(q).filter(v=>openOK(v,t));const fresh=P
 const wantList=()=>VENUES.filter(v=>S.want[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
 const favList=()=>VENUES.filter(v=>S.fav[v.id]&&!v.tempClosed&&cityOf(v)===S.city);
 const listOf=k=>k==="fav"?favList():wantList(),listName=k=>k==="fav"?"Favourites":"Hit list";
-const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Bars you want to try</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
+const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Rooftops you want to try</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?listName(q.from.list):q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
 async function quickNearMe(){
   const q=S.quick;q.note=null;
@@ -979,7 +979,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   // the bars in the circle, in a panel from the bottom like everything else
   $("rrNB").onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
     const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
-    const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip bars you've been to${o.skip.n&&o.skip.n()?` <span class="skn">${o.skip.n()}</span>`:""}</b></span><span class="sw"></span></button>`:"";
+    const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip visited rooftops${o.skip.n&&o.skip.n()?` <span class="skn">${o.skip.n()}</span>`:""}</b></span><span class="sw"></span></button>`:"";
     sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>${sk}
       <div class="mlr">${L.map(v=>{const st=openState(v,t);return `<button type="button" class="${openOK(v,t)?"":"off"}" data-v="${v.id}" ${back?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.vibe||v.area)} · ${st.open?"Open til "+clock12(st.closeAt):st.opens!=null?"Opens "+clock12(st.opens):"Closed today"}</small></span>${y?`<span class="d">${mOrKm(dist(y,v))}</span>`:""}</button>`}).join("")||`<p class="note">No rooftops in the circle. Drag or widen it.</p>`}</div>
       <button class="btn dark" type="button" id="mlBack" style="margin-top:14px">${back?"Back to the map":"Close"}</button>`,()=>{
@@ -1108,7 +1108,7 @@ function renderQuick(){
   {const cv=$("rrMap").parentElement;
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
   b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
-    const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip bars you've been to <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
+    const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip visited rooftops <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
     return {title:`${L.length} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
       bind(root,again){const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
   fsLayout(b,b);
@@ -1119,7 +1119,7 @@ function renderQuick(){
   fitMap(b);
 }
 let qZB=null;
-const beenTxt=n=>n?`${plural(n,"bar")} on your Been list`:"Your Been list is empty";
+const beenTxt=n=>n?`${plural(n,"rooftop")} on your Visited list`:"Your Visited list is empty";
 // The Been list, right where you set up: yours ticked, tap to take one off, search to add more.
 // Bars from past games stay on (they're your history), like on the Rooftops tab.
 function beenInline(box,onChange){
@@ -1131,7 +1131,7 @@ function beenInline(box,onChange){
     $("bpClr").hidden=!q.value;
     $("bpItems").innerHTML=L.length?L.map(v=>{const on=has(v.id),fixed=!!c[v.id]&&!S.been[v.id];
       return `<button class="lsrow lspick" type="button" data-t="${v.id}" ${fixed?"disabled":""}><span class="t"><b>${esc(v.name)}</b><small>${esc(v.area)}${fixed?" · Visited on a crawl":""}</small></span><span class="pl${on?" on":""}">${on?TICK:I.plus}</span></button>`}).join("")
-      :`<div class="lsempty">${s_?`No rooftops match "${esc(q.value.trim())}".`:"Nothing here yet. Search to add bars you've been to."}</div>`;
+      :`<div class="lsempty">${s_?`No rooftops match "${esc(q.value.trim())}".`:"Nothing here yet. Search to add rooftops you've been to."}</div>`;
     $("bpItems").querySelectorAll("[data-t]").forEach(b=>{b.onpointerdown=e=>{if(document.activeElement===q)e.preventDefault()};
       b.onclick=()=>{const id=b.dataset.t;if(S.been[id])delete S.been[id];else{S.been[id]=1;buzz(10)}save();paint();onChange()}})};
   q.oninput=paint;$("bpClr").onclick=()=>{q.value="";paint();q.blur()};paint()}
@@ -1180,8 +1180,8 @@ function renderWiz(){
   if(w.step===0){
     body.innerHTML=`<div><div class="eyebrow" style="margin-bottom:6px">New crawl</div><h1 class="q">Pick your crawl</h1></div>
       <div class="opts">
-        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few bars, quick drinks.</small></span></button>
-        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More bars or longer stays.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="60" aria-checked="${!w.rr&&w.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few rooftops, quick drinks.</small></span></button>
+        <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More rooftops or longer stays.</small></span></button>
         <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><span class="ic"><b class="rrwm">R<i>&amp;</i>R</b></span><span class="t"><b>Rest &amp; Roulette</b><small>Your own pace. No timer or wildcards.</small></span></button>
       </div>
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
@@ -1220,7 +1220,9 @@ function renderWiz(){
       // Skip visited: a filter chip on the map, only when you've been to some bars in this zone
       {const c=collectedMap(),bl=playable(inCircle(z,z.r),false).filter(v=>c[v.id]);
         if(!bl.length&&w.newOnly)w.newOnly=false;
-        const ch=$("zSkipC"),bo=bl.filter(v=>openOK(v,now())).length;ch.hidden=!bl.length;ch.setAttribute("aria-pressed",String(!!w.newOnly));$("zSkipN").textContent=bo;$("zSkipN").hidden=!bo}
+        const ch=$("zSkipC"),bop=bl.filter(v=>openOK(v,now())).sort((x,y)=>dist(z,x)-dist(z,y)),bo=bop.length;ch.hidden=!bl.length;ch.setAttribute("aria-pressed",String(!!w.newOnly));
+        // the visited rooftops by name, in yellow: tap the words to see them all (no spoiler: you've been)
+        const lt=bo?esc(bop[0].name)+(bo>1?` + ${bo-1} other${bo>2?"s":""}`:""):"None open right now";if($("zSkipL"))$("zSkipL").innerHTML=lt;if($("zSkipN")){$("zSkipN").textContent=bo;$("zSkipN").hidden=!bo}}
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
@@ -1229,7 +1231,7 @@ function renderWiz(){
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
-    $("zSkipC").onclick=()=>{w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
+    $("zSkipC").onclick=e=>{if(e&&e.target.closest&&e.target.closest(".l")&&$("zSkipC").querySelector(".dv")){visitedSheet(w.z);return}w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
     // full screen: Skip visited up top under search, the open count as the See list pill above the panel
     {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"));cv.append(row)}
     $("v-wiz")._fsList=()=>{const r=wizRows();return {title:`${$("rrN").textContent} in your zone`,top:`<p class="note fsln">${r.note}</p>`,html:`<div class="card zlist">${r.html}</div>`,bind:r.bind,gate:()=>!w.spoiled,ungate:()=>{w.spoiled=1;save()}}};
@@ -1377,7 +1379,7 @@ function zonePanel(ov,o){
   const m=v.querySelectorAll(".fspanel .fsctl .fsmore");(m[m.length-1]||v.querySelector(".fsctl")).append($("mvNote"));return v}
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
-  const sk=$("zSkipC");if(sk){sk.className="fsopt";const n0=$("zSkipN")?$("zSkipN").textContent:"";sk.innerHTML=`<span class="l">Skip bars you've been to <span class="n" id="zSkipN" ${n0&&n0!=="0"?"":"hidden"}>${esc(n0)}</span></span><span class="sw"></span>`;o.append(sk)}
+  const sk=$("zSkipC");if(sk){sk.className="fsopt";const n0=$("zSkipN")?$("zSkipN").textContent:"";const l0=$("zSkipL")?$("zSkipL").textContent:"";sk.innerHTML=`<span class="l"><span class="lt">Skip visited rooftops</span><span class="ln" id="zSkipL">${esc(l0)}</span></span><i class="dv" aria-hidden="true"></i><span class="sw"></span>`;o.append(sk)}
   const sl=panel.querySelector(".rrslide");(sl||panel.lastChild).after(o)}
 const fsOff=()=>document.querySelectorAll(".view.fsv").forEach(v=>v.classList.remove("fsv"));
 // The bars in the circle. Everything ticked is in; up to 3 vetoes. Tap a name for its page.
@@ -1391,8 +1393,8 @@ function wizRows(){const w=S.wiz;if(!w||!w.z)return {html:"",n:0,bind(){}};const
   const html=all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
     const status=out?"Vetoed":skip?"Skipped":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
     const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
-    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Been</span>`:""}${tick}</div>`}).join("");
-  return {html,note:`You get ${MAXOUT} vetoes: untick a bar to sit it out this crawl.`+(excl.length?` ${excl.length} of ${MAXOUT} used.`:""),
+    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Visited</span>`:""}${tick}</div>`}).join("");
+  return {html,note:`You get ${MAXOUT} vetoes: untick a rooftop to sit it out this crawl.`+(excl.length?` ${excl.length} of ${MAXOUT} used.`:""),
     bind(root,again){root.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();if(wizRepaint)wizRepaint();again()});
       root.querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>{});warmOnHold(b,byId(b.dataset.z))})}}}
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
@@ -1400,9 +1402,9 @@ function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||
   const rows=()=>all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
     const status=out?"Vetoed":skip?"Skipped":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
     const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
-    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Been</span>`:""}${tick}</div>`}).join("");
+    return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Visited</span>`:""}${tick}</div>`}).join("");
   sheet(`<div class="zhead"><h3>Rooftops in your zone</h3><span class="small" id="zOut"></span></div>
-    <p class="note" style="margin:2px 0 10px">Everything ticked is in. You get ${MAXOUT} vetoes: untick a bar to sit it out this crawl.</p>
+    <p class="note" style="margin:2px 0 10px">Everything ticked is in. You get ${MAXOUT} vetoes: untick a rooftop to sit it out this crawl.</p>
     <div class="card zlist" id="zList"></div><button class="btn dark" type="button" id="zDone" style="margin-top:14px">Done</button>`,()=>{
     const paint=()=>{$("zList").innerHTML=rows();$("zOut").textContent=excl.length?`${excl.length} of ${MAXOUT} vetoes used`:"";
       $("zList").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();paint();if(wizRepaint)wizRepaint()});
@@ -1410,6 +1412,11 @@ function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||
     paint();$("zDone").onclick=closeSheet})}
 
 const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+// the rooftops in a zone you've already been to (no spoiler card: you know them)
+function visitedSheet(z){if(!z)return;const col=collectedMap(),t=now(),bl=playable(inCircle(z,z.r),false).filter(v=>col[v.id]).sort((a,b)=>{const oa=openState(a,t).open,ob=openState(b,t).open;return oa!==ob?(oa?-1:1):a.name.localeCompare(b.name)});
+  sheet(`<h3>Visited rooftops in your zone</h3><p class="note" style="margin:2px 0 10px">Switch on Skip and these won't come up.</p><div class="card zlist">${bl.map(v=>{const o=openState(v,t),st=o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+    return `<div class="zrow${o.open?"":" off"}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${st}</small></button></div>`}).join("")}</div>`,
+    ()=>{$("sheetBody").querySelectorAll("[data-z]").forEach(b=>b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>visitedSheet(z)))})}
 function zoneBarSheet(v,back){
   const w=S.wiz;if(!w){barSheet(v);return}
   const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
@@ -1453,7 +1460,7 @@ async function tryStart2(noLoc){
 
 // Location blocked as a round starts: say what that means, then let them turn it on or play without it.
 function noLocSheet(go_){
-  sheet(`<h3>Location's off</h3><p class="note" style="margin:6px 0 14px">Without it, we can't check you in at each bar. You'll tap <b>I'm here</b> when you arrive, and your crawl card will show your bars and total time, but no route or timings.</p>
+  sheet(`<h3>Location's off</h3><p class="note" style="margin:6px 0 14px">Without it, we can't check you in at each rooftop. You'll tap <b>I'm here</b> when you arrive, and your crawl card will show your rooftops and total time, but no route or timings.</p>
     <div class="acts"><button class="btn" type="button" id="nlOn">Turn on location</button><button class="btn line" type="button" id="nlGo">Play without it</button></div>`,()=>{
     $("nlOn").onclick=()=>{closeSheet();S.permNext=go_===startCruise?"cruise":"start";go("perm")};
     $("nlGo").onclick=()=>{closeSheet();go_(true)}})}
@@ -1781,7 +1788,7 @@ function reelNote(){return "Flick to spin. Harder flick, longer spin."}
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
 function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Wrap it up, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the crawl</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
 function farBarSheet(g,rushing){const v=byId(g.target),y=you();
-  sheet((rushing?`<h3>Trying it from home?</h3><p class="note">Re-spins cost time on a real crawl. The demo plays anywhere.</p>`:`<h3>You're not near this bar</h3><p class="note">${esc(v.name)} is ${mOrKm(dist(y,v))} away. Playing from home? The demo plays anywhere.</p>`)+`<div class="acts"><button class="btn" type="button" id="fbDemo">Switch to demo</button><button class="btn dark" type="button" id="fbKeep">Keep going</button></div>`,()=>{
+  sheet((rushing?`<h3>Trying it from home?</h3><p class="note">Re-spins cost time on a real crawl. The demo plays anywhere.</p>`:`<h3>You're not near this rooftop</h3><p class="note">${esc(v.name)} is ${mOrKm(dist(y,v))} away. Playing from home? The demo plays anywhere.</p>`)+`<div class="acts"><button class="btn" type="button" id="fbDemo">Switch to demo</button><button class="btn dark" type="button" id="fbKeep">Keep going</button></div>`,()=>{
     $("fbKeep").onclick=closeSheet;
     $("fbDemo").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("far_bar_demo",{});stopWatch();S.game=null;save();startDemo()}})}
 function askDrink(a0,then){const v=byId(a0.id);
@@ -1832,11 +1839,11 @@ function doSpin(force,vel){
 }
 /* ---------- the Jackpot: once a timed game, a longer gold spin that pays out one of five rewards ---------- */
 const JACKPOTS=[
-  {k:"call",t:"Your call",d:"Pick your next bar from three. You've got 20 seconds.",go:"Show me"},
-  {k:"freeze",t:"Time freeze",d:"The clock's frozen for 10 minutes. Stay for another, or go somewhere further.",go:"Spin for your bar"},
-  {k:"spins",t:"Free spins",d:"Your next 3 re-spins don't cost a thing.",go:"Spin for your bar"},
-  {k:"short",t:"Shortcut",d:"Your next bar is the closest one that's open.",go:"Show me"},
-  {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next bar.",go:"Pick it"}];
+  {k:"call",t:"Your call",d:"Pick your next rooftop from three. You've got 20 seconds.",go:"Show me"},
+  {k:"freeze",t:"Time freeze",d:"The clock's frozen for 10 minutes. Stay for another, or go somewhere further.",go:"Spin for your rooftop"},
+  {k:"spins",t:"Free spins",d:"Your next 3 re-spins don't cost a thing.",go:"Spin for your rooftop"},
+  {k:"short",t:"Shortcut",d:"Your next rooftop is the closest one that's open.",go:"Show me"},
+  {k:"dealer",t:"Dealer's choice",d:"You pick the wildcard for your next rooftop.",go:"Pick it"}];
 function jackpotSpin(vel){
   const g=G(),opts=JACKPOTS.filter(j=>j.k!==S.lastJP),j=(S.test&&S.forceJP&&JACKPOTS.find(x=>x.k===S.forceJP))||opts[Math.floor(Math.random()*opts.length)];
   g.jp={k:j.k,at:now(),leg:g.visits.length,claimed:false};S.lastJP=j.k;g.spinAt=now();spinning=true;save();track("jackpot",{kind:j.k,leg:g.visits.length});
@@ -1931,11 +1938,11 @@ function jvRun(j,card,ctx,choose){
     setTimeout(()=>cs.forEach(c=>{c.disabled=false;c.onclick=()=>{const i=+c.dataset.i;if(i===pickI)return;
       if(pickI>=0){const p=cs[pickI];p.classList.remove("picked");flip(p,`<span class="jv-face">${wildFace(ctx.wilds[pickI])}</span>`)}
       pickI=i;c.classList.add("picked");card.classList.add("haspick");sfx("flip");buzz(10);flip(c,`<span class="jv-txt"><b>${esc((WNAME[ctx.wilds[i]]||["Wildcard"])[0])}</b>${esc(wShort(ctx.wilds[i]))}</span>`);
-      if(txt)txt.textContent="That's the one for your next bar.";if(go)go.hidden=false}}),500+3*260+200);
+      if(txt)txt.textContent="That's the one for your next rooftop.";if(go)go.hidden=false}}),500+3*260+200);
     if(go){go.hidden=true;go.onclick=()=>{if(pickI>=0)choose({wild:ctx.wilds[pickI]})}}}
 }
 // what the card says under the graphic, and its button
-const jvText=j=>j.k==="call"?"Pick one before the bar runs out.":j.k==="dealer"?"Tap a card to see what you're in for.":j.d;
+const jvText=j=>j.k==="call"?"Pick one before the timer runs out.":j.k==="dealer"?"Tap a card to see what you're in for.":j.d;
 const jvActs=j=>j.k==="call"?"":j.k==="dealer"?`<button class="btn dark" type="button" id="jvGo" hidden>Lock it in</button>`:`<button class="btn dark" type="button" id="jvGo">${j.go}</button>`;
 function jackpotCtx(){   // the real numbers, for a game in progress
   const g=G(),from=fromPoint(),P=spinPool().pool.slice(),near=P.slice().sort((a,b)=>dist(from,a)-dist(from,b))[0];
@@ -2003,7 +2010,7 @@ function shortcut(){
 function dealerChoice(){
   const g=G(),cards=shuffle(deckCards()).slice(0,3);let done=false;
   const pick=text=>{if(done)return;done=true;g.dealt={leg:g.visits.length,text};save();closeSheet();renderPlay();doSpin(true)};
-  sheet(`<h3>Dealer's choice</h3><p class="note">Pick the wildcard for your next bar.</p>
+  sheet(`<h3>Dealer's choice</h3><p class="note">Pick the wildcard for your next rooftop.</p>
     <div class="acts">${cards.map((c,i)=>`<button class="opt dealt" type="button" data-dc="${i}"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[(WNAME[c]||[0,"star"])[1]]}</svg></span><span class="t"><b>${esc((WNAME[c]||["Wildcard"])[0])}</b><small>${esc(wShort(c))}</small></span></button>`).join("")}
     </div>`,()=>{
     document.querySelectorAll("[data-dc]").forEach(b=>b.onclick=()=>pick(cards[+b.dataset.dc]));
@@ -2183,7 +2190,7 @@ async function unpackCrawl(str){let raw=unb64u(str.slice(1));
     visits:o.v.filter(v=>byId(v[0])).map(v=>({id:v[0],arrivedAt:at(v[1]),leftAt:at(v[2]),counted:v[3]===1?true:v[3]===0?false:null,cant:v[4]?true:undefined})),
     barOfDay:o.b||null,jp:o.j?{k:o.j,claimed:true}:null,title:o.n||undefined,cz:o.cz||undefined,autoEnded:!!o.ae,trail:[],moves:[],bodDone:true,stillAsked:true,shared:true}}
 async function crawlLink(r){try{return SHARE_BASE+"#crawl="+(await packCrawl(r))}catch(e){return SITE}}
-const crawlLine=r=>{const st=stats(r),n=st.counted.length;return `${r.title?r.title+": ":""}${n} bar${n===1?"":"s"} on Rooftop Roulette.`};
+const crawlLine=r=>{const st=stats(r),n=st.counted.length;return `${r.title?r.title+": ":""}${n} rooftop${n===1?"":"s"} on Rooftop Roulette.`};
 let SHARED=null;
 let SHARED_CODE=null;
 async function openCrawlCode(code){if(!code)return;
@@ -2367,7 +2374,7 @@ addEventListener("resize",()=>{if(S.route==="play")fitPlay()});
 const countShown=g=>{const a=g.visits.find(v=>v.leftAt==null);return g.visits.filter(v=>v.counted===true).length+(a&&a._inCount&&a.counted!==true?1:0)};
 /* When the bar you're at goes on the board (3 minutes in, or the first time the app's open after that):
    its name pops up off the card, the drinks counter swings open like a little door, the name gets sucked
-   in, and the door snaps shut as the number ticks over. Once per bar. */
+   in, and the door snaps shut as the number ticks over. Once per rooftop. */
 /* "It counts": the name pops off the card, the pill opens like a little door, the name gets
    sucked in, the door shuts and the count ticks over. About a second, and any tap skips it
    (so tapping Spin skips it and spins). */
@@ -2473,7 +2480,7 @@ function rackUp(box,n){
   at(shut+300+(n-1)*110+520,finish);
 }
 /* Tap the drinks counter: tonight's bars, your zone, and what's left to spin.
-   Followers of a live crawl get the same sheet (fo: {g, t, who, prev}) with the host's bars, minus anything that changes the crawl. */
+   Followers of a live crawl get the same sheet (fo: {g, t, who, prev}) with the host's rooftops, minus anything that changes the crawl. */
 let ngMap=null;
 const ZONEI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="8.5" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg>';
 // when you got to a bar, on the crawl city's clock
@@ -2491,9 +2498,9 @@ function nightSheet(fo){
     return `<button class="ngrow${v.counted===false?" x":""}" type="button" data-b="${b.id}">${vthumb(b,i+1)}<span class="t"><b>${esc(b.name)}${S.fav[b.id]?`<i class="fv">${HRTF}</i>`:""}</b><small class="${ok?"ok":""}">${st}${ok?" ✓":""}</small></span><span class="d">${hmm(ms)}</span></button>`}).join("");
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">${esc(title)}</h3>
     <div class="nightzone">${area||cr?`<span>${I.pin} ${cr&&!fo?zoneTxt(g):esc(area)}</span>`:""}${cr?`<span>R&amp;R</span>`:`<span>${ZONEI}${rLabel(g.radius)}</span><span>${I.clock}${g.len===60?"1 hour":"2 hours"}</span>`}</div>
-    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> bar${c===1?"":"s"} so far${left!=null?` · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":fo?"left in the zone to spin":"left in your zone to spin"}`:""}</p>
+    <p class="note" style="margin:10px 0 6px"><b style="color:var(--amber-text)">${c}</b> rooftop${c===1?"":"s"} so far${left!=null?` · <b style="color:var(--amber-text)">${left}</b> ${cr?"open nearby":fo?"left in the zone to spin":"left in your zone to spin"}`:""}</p>
     ${arr.length?`<div class="ngmap" id="ngMap"></div>`:""}
-    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a bar to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No bars yet.${fo?"":" Get spinning."}</p>`}
+    ${rows?`<div class="nglist">${rows}</div><p class="note ngtip">Tap a rooftop to see it${arr.some(v=>!S.fav[v.id])?" or make it a favourite":""}.</p>`:`<p class="note">No rooftops yet.${fo?"":" Get spinning."}</p>`}
     <button class="btn dark" type="button" id="ngX" style="margin-top:14px">Close</button>`,()=>{
     $("ngX").onclick=closeSheet;
     const open=id=>{const v=byId(id),vi=arr.find(x=>x.id===id);if(!v)return;const here=vi&&vi.leftAt==null;
@@ -2538,10 +2545,10 @@ function moveOptions(){
    .filter(o=>o.open>=2).sort((x,y)=>x.m-y.m).slice(0,6);
 }
 /* Peek at an area before you pick it: a chevron on the option opens a map of its bars (tap a pin
-   for the bar), with the full list a tap away. One open at a time. */
+   for the rooftop), with the full list a tap away. One open at a time. */
 let apMaps=[],apOpen=null,apN=0;
 const apClear=()=>{apMaps.forEach(m=>{try{m.remove()}catch(e){}});apMaps=[]};
-const apWrap=(key,opt)=>`<div class="ap" data-apk="${esc(key)}"><div class="aprow">${opt}<button class="apx" type="button" aria-label="See the bars here" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="apbody" hidden></div></div>`;
+const apWrap=(key,opt)=>`<div class="ap" data-apk="${esc(key)}"><div class="aprow">${opt}<button class="apx" type="button" aria-label="See the rooftops here" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div><div class="apbody" hidden></div></div>`;
 let apRoot=null;
 function apBind(root,getList,getGeo){apClear();if(root!==apRoot){apRoot=root;apOpen=null}root.querySelectorAll(".ap").forEach(ap=>{const k=ap.dataset.apk;ap.querySelector(".apx").onclick=()=>apToggle(ap,k,getList,getGeo);if(apOpen===k)apToggle(ap,k,getList,getGeo,true)})}
 async function apToggle(ap,k,getList,getGeo,force){
@@ -2556,11 +2563,11 @@ async function apToggle(ap,k,getList,getGeo,force){
   if(apOpen!==k)return;
   const t=now(),L=L0.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||a.name.localeCompare(b.name)),id="apm"+(++apN);
   const st=v=>{const o=openState(v,t);return o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")};
-  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} bars as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap Pick from my Hit list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
+  body.innerHTML=`${L.length?`<div class="apmap" id="${id}"></div>`:""}${L.length?`<button class="txtbtn apl" type="button" aria-expanded="false">Show the ${L.length} rooftops as a list</button>`:`<p class="note" style="margin:10px 2px 2px">${k==="__want"?"Nothing on your list yet. Tap Pick from my Hit list to add some.":"No rooftops this close. Try a part of town instead."}</p>`}
     <div class="aplist" hidden>${L.map(v=>`<button class="aprow2${openOK(v,t)?"":" off"}" type="button" data-v="${v.id}"><span class="dot${openOK(v,t)?"":" off"}"></span><span class="t"><b>${esc(v.name)}</b><small>${st(v)}</small></span><span class="chev">›</span></button>`).join("")}</div>`;
   body.hidden=false;
   const lb=body.querySelector(".apl"),ll=body.querySelector(".aplist");
-  if(lb)lb.onclick=()=>{ll.hidden=!ll.hidden;lb.textContent=ll.hidden?`Show the ${L.length} bars as a list`:"Hide the list";lb.setAttribute("aria-expanded",String(!ll.hidden))};
+  if(lb)lb.onclick=()=>{ll.hidden=!ll.hidden;lb.textContent=ll.hidden?`Show the ${L.length} rooftops as a list`:"Hide the list";lb.setAttribute("aria-expanded",String(!ll.hidden))};
   body.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.v)));
   if(!force)setTimeout(()=>ap.scrollIntoView({block:"nearest",behavior:"smooth"}),60);
   const m=await makeMap(id);if(!m)return;apMaps.push(m);const g_=getGeo(k);
@@ -2598,16 +2605,16 @@ function bindDemo(afterHTML,landed,boxEl){
   mk();
 }
 const HOW={rush:()=>[
-    ["Spin","You get a random rooftop in your zone. The clock starts when you reach your first bar."],
-    ["Get to the bar","Walk, ride or Uber. One drink at each bar."],
+    ["Spin","You get a random rooftop in your zone. The clock starts when you reach your first rooftop."],
+    ["Get to the rooftop","Walk, ride or Uber. One drink at each rooftop."],
     ["Not feeling it?",`Spin again. The first re-spin is free, then it's ${SKIP_COST} minutes off the clock. Can't get in? That re-spin's free.`],
     ["Stuck somewhere quiet?","Move your zone once a crawl: drag it somewhere new or make it bigger. If it's far, the clock waits."],
-    ["Wildcards, and a jackpot","Some spins come with a little challenge for the next bar. And once a game, you'll hit the jackpot."],
+    ["Wildcards, and a jackpot","Some spins come with a little challenge for the next rooftop. And once a game, you'll hit the jackpot."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
   ["Spin","You get a random rooftop near you, or one from your Hit list."],
   ["Not feeling it?","Spin again. Re-spins are always free."],
-  ["Just the spin","No clock, no wildcards, no jackpot. Stay as long as you like at each bar. You still get a crawl card at the end with all your stats."],
-  ["Spin when you're ready","One bar or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
+  ["Just the spin","No clock, no wildcards, no jackpot. Stay as long as you like at each rooftop. You still get a crawl card at the end with all your stats."],
+  ["Spin when you're ready","One rooftop or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
 // How to play from settings: both modes in one sheet, three-quarters high
 function howToPlay(k){k=k||"rush";
   sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Timed</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>`,()=>{
@@ -2638,7 +2645,7 @@ function openMenu(){
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);liveMenuBind();
-    $("mEnd").onclick=()=>sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each bar.":"Your crawl card is saved. The bar you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
+    $("mEnd").onclick=()=>sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each rooftop.":"Your crawl card is saved. The rooftop you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
@@ -2724,7 +2731,7 @@ function celebrate(id){
 const mapHintDue=g=>{S.tips=S.tips||{};if(!g||S.tips.mapOpened)return false;const n=g.visits.filter(v=>v._inCount||v.counted===true).length;return n>=2||(n>=1&&!!S.tips.night)};
 function mapTip(){S.tips=S.tips||{};const g=G();if(S.tips.map2||!mapHintDue(g)||$("sheet").open||document.querySelector(".camtip,.cnudge"))return;const btn=$("pMap");if(!btn||!btn.offsetParent)return;
   const r=btn.getBoundingClientRect(),tip=document.createElement("button");tip.type="button";tip.className="camtip maptip below";tip.style.top=Math.round(Math.max(r.bottom,r.top+btn.offsetHeight,(btn.closest(".ptop")||btn).getBoundingClientRect().bottom)+8)+"px";tip.style.setProperty("--ax",Math.max(10,Math.round(innerWidth-12-(r.left+r.width/2)-8))+"px");
-  tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every bar you've hit, and what's left.</span>`;document.body.appendChild(tip);S.tips.map2=1;save();
+  tip.innerHTML=`<i class="camtipx" aria-hidden="true">${I.x}</i><b>Your crawl map</b><span>Every rooftop you've hit, and what's left.</span>`;document.body.appendChild(tip);S.tips.map2=1;save();
   const t0=Date.now(),off=()=>{tip.remove();document.removeEventListener("pointerdown",away,true)},away=e=>{if(!tip.contains(e.target)&&Date.now()-t0>1500)off()};   // a tap already on its way doesn't close it before it's read
   tip.onclick=off;document.addEventListener("pointerdown",away,true)}
 function camTip(){const cb=$("camBtn"),g_=G();let tip=document.querySelector(".camtip:not(.maptip)");
@@ -2792,7 +2799,7 @@ function renderPlay0(){
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
       ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"').replace(' data-pending="1"',''):""}</div>
-      ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>Keen to try another bar?</b> Spin whenever you're ready.</span></div>`:""}
+      ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>Keen to try another rooftop?</b> Spin whenever you're ready.</span></div>`:""}
       ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap two"><div class="snapt">${I.camera}<span><b>Grab a photo for your crawl card?</b></span><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div><div class="row2"><button class="btn sm" type="button" id="snapIn">${I.camera} Camera</button><button class="btn sm dark" type="button" id="snapGal">${GAL} Gallery</button></div></div>`
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
         :ok?`<div class="tip nob soft ok">${I.check}<span><b>This rooftop's on the board.</b> Spin whenever you're ready.</span></div>`:""}
@@ -2804,10 +2811,10 @@ function renderPlay0(){
     const cp0=cardPhoto(v),fs=g.freeSkips||0,coming=!cp0.cls&&phMem[v.id]===undefined&&phAllowed(v.id,"play")&&!gBad;
     const cp=cp0.cls?cp0:{cls:coming?" photo blank loading":" photo blank",style:"",cr:""};
     if(document.body.classList.contains("camon")){const ph=phMem[v.id];
-      st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next bar</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
+      st.innerHTML=ask+`<div class="camtgt tapmaps" data-gm="${esc(gmapsURL(v))}" role="link" tabindex="0">${ph&&ph.url?`<img class="ct-ph" src="${ph.url}" alt="">`:""}<div class="ct-t"><span class="eyebrow">Next rooftop</span><b class="ct-n">${esc(v.name)}</b><div class="ct-f"><span>${travelHTML(y,v).replace(/<\/svg>\s*/,"</svg><i>")}</i></span><span>${I.pin}<i>${mOrKm(dm)}</i></span></div></div>${wild(v.id)}</div>
       <div class="camacts"><a class="btn sm dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a><button class="btn sm line" type="button" id="skipBtn">${I.redo} Spin again</button></div>`;{const cn=st.querySelector(".ct-n");if(cn)fitLine(cn,15)}
 }
-    else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next bar${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
+    else{st.innerHTML=banner+ask+`<div class="bar tgt${cp.cls}${animateId===v.id?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
       <div class="facts"><span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dm)}</span>${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>
       ${wild(v.id)}
       <a class="btn dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a></div>
@@ -2829,7 +2836,7 @@ function renderPlay0(){
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
-      ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts at your first bar."}</p>`}
+      ${g.started?"":`<p class="note reelnote">${reelNote()}${CR(g)?"":"<br>The clock starts at your first rooftop."}</p>`}
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
@@ -2849,7 +2856,7 @@ function renderPlay0(){
   fitPlay();
   st.querySelectorAll(".wild").forEach(w=>w.onclick=e=>{e.stopPropagation();const txt=w.dataset.t||"",m=WMETA[txt];
     if(w.querySelector("[data-wspin]")){wildSpin(txt);return}
-    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the bar":m&&m.spin?((g.wild&&g.wild.res||[]).length?wFull(m,g.wild.res):wLead(m)):txt;
+    const shown=m&&m.seal&&!wOpenNow(g,g.wild)?"Opens at the rooftop":m&&m.spin?((g.wild&&g.wild.res||[]).length?wFull(m,g.wild.res):wLead(m)):txt;
     // the deck this card came from, with how much of it you've played (tap for its cards); other packs as their own link underneath
     const pl=S.wplayed||{},dk=WILDS.includes(txt)?"free":(PACKS.find(p=>p.cards.some(c=>c.t===txt))||{}).id||"free";
     const ts=deckCardsOf(dk),nP=ts.filter(t=>pl[t]).length,more=PACKS.some(p=>!packOwned(p.id));
@@ -2884,7 +2891,7 @@ function renderPlay0(){
     sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber-text)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? The demo plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to demo</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
       if($("sD"))$("sD").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("respin_demo",{});stopWatch();S.game=null;save();startDemo()};$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.respins=g.respins||[]).push(now());(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   {const dw=$("dWalk");if(dw)dw.onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()}}   // demo: arrive without walking
-  const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the bar gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
+  const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the rooftop gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
   const hb=$("hereBtn");if(hb)hb.onclick=()=>{const v=byId(g.target),far=here?dist(here,v):null;
     if(g.noLoc){if(now()<hereAt(g)){toast("Check-in opens once estimated arrival time elapses.",2600);return}buzz(30);logArrival(true);return}   // playing without location: the tap is the check-in
     sheet(`<h3>At ${esc(v.name)}?</h3><p class="note">${far!=null&&far>800?`Your phone last placed you ${mOrKm(far)} away, but GPS can be off.`:"Your location isn't coming through properly, so you can log the visit yourself."} Only tap this if you're actually there.</p><div class="acts"><button class="btn" type="button" id="hY">Yes, log my visit</button><button class="btn dark" type="button" id="hN">Not yet</button></div>`,()=>{$("hN").onclick=closeSheet;$("hY").onclick=()=>{closeSheet();logArrival(true)}})};
@@ -2964,8 +2971,8 @@ const PACKS=[
   {n:"Outfit match",ic:"shirt",t:"Everyone orders a drink that matches their outfit."},
   {n:"Odd glass",ic:"coupe",t:"Every drink comes in a different glass."},
   {n:"Last glass",ic:"two",t:"Last glass up at the cheers drinks."},
-  {n:"Walk time",ic:"walk",t:"Everyone guesses the walk to the next bar. Furthest off drinks.",walk:1},
-  {n:"Drink spin",ic:"spin",t:"At the bar, spin for what everyone orders.",seal:1,spin:SPIN_DRINKS,lead:"Everyone orders",say:DRINK_SAY},
+  {n:"Walk time",ic:"walk",t:"Everyone guesses the walk to the next rooftop. Furthest off drinks.",walk:1},
+  {n:"Drink spin",ic:"spin",t:"At the rooftop, spin for what everyone orders.",seal:1,spin:SPIN_DRINKS,lead:"Everyone orders",say:DRINK_SAY},
   {n:"Swap spin",ic:"swap",t:"Once the drinks land, spin: left, right or keep.",seal:1,spin:["Swap left","Swap right","Keep"],lead:"Once the drinks land, everyone",say:["passes their drink left","passes their drink right","keeps their own"]},
   {n:"Now playing",ic:"music",t:"Agree on one drink for the song playing as you walk in. Everyone orders it."},
   {n:"Level up",ic:"build",t:"Count the floor number through the alphabet. Order a drink starting with that letter."},
@@ -3006,13 +3013,13 @@ const deckCards=()=>deckIdx().map(i=>ALLW[i]);
 const BASE_DECK="Rooftop Originals";   // the deck everyone has, named like the packs
 const deckLbl=()=>{const on=(freeOn()?[BASE_DECK]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.name));return on.length===1?on[0]:on.length+" decks"};
 const wSealed=t=>!!(WMETA[t]&&WMETA[t].seal);
-const wShort=t=>wSealed(t)?"Opens at the bar":WMETA[t]?wLead(WMETA[t]):t;   // what a card shows before it's opened (Dealer's choice, previews)
+const wShort=t=>wSealed(t)?"Opens at the rooftop":WMETA[t]?wLead(WMETA[t]):t;   // what a card shows before it's opened (Dealer's choice, previews)
 const wOpenNow=(g,w)=>!!(g&&w&&(g.visits||[]).some(v=>v.id===w.id&&v.arrivedAt!=null&&v.leftAt==null));
 // The inside of a wildcard box: sealed on the way, the rule once you're there, then what the spin landed on
 function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   if(!m)return `${I.sparkle}<span><b>Wildcard</b>${esc(w.text)}${lastLine(w)}</span>`;
   const here=wOpenNow(g,w),open=!m.seal||here,ic=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m.ic]||WIC.star}</svg>`;
-  if(!open)return `${ic}<span><b>${esc(m.n)}</b>Opens at the bar</span>`;
+  if(!open)return `${ic}<span><b>${esc(m.n)}</b>Opens at the rooftop</span>`;
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
   const res=(w.res||[]).length?(m.spin?`<span class="wfill">${esc(wFill(m,w.res))}</span>`:`<small class="wres">${w.res.map(esc).join(" · ")}</small>`):"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
@@ -3202,13 +3209,13 @@ function renderClock(){
   $("tbar").hidden=false;
   if(g.lastOrders&&now()>=g.endsAt){$("clockT").textContent=mmss(Math.max(0,g.lastOrders-now()));$("clock").className="clock red";$("tbar").className="tbar red";$("tbarI").style.width=Math.max(0,(g.lastOrders-now())/(LAST_ORDERS*60000)*100)+"%";$("clockL")._h=null;$("clockL").textContent="Last orders";return}
   $("clockT").textContent=mmss(r);
-  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first bar";return}
+  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first rooftop";return}
   const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
   $("clock").className="clock"+(red?" red":warn?" warn":"");
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL")._h=null;$("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
-  if(frozen(g)){if(g.frz.start){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first bar"}else{$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}}
+  if(frozen(g)){if(g.frz.start){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first rooftop"}else{$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}}
 }
 
 /* ---------- stats + scorecard ---------- */
@@ -3249,7 +3256,7 @@ function awards(r,st){
   const inOut=st.counted.filter(v=>v.leftAt&&(!r.endedAt||v.leftAt<r.endedAt-60000)&&v.leftAt-v.arrivedAt<10*60000).sort((a,b)=>(a.leftAt-a.arrivedAt)-(b.leftAt-b.arrivedAt))[0];
   // every bar quick, across the whole crawl (3+ bars; the one the clock ran out at doesn't count against you)
   const runV=st.counted.filter(v=>v.leftAt&&(!r.endedAt||v.leftAt<r.endedAt-60000));
-  if(runV.length>=3&&runV.every(v=>v.leftAt-v.arrivedAt<15*60000))add("Clean Run",`${runV.length} bars, every one under 15 minutes`);
+  if(runV.length>=3&&runV.every(v=>v.leftAt-v.arrivedAt<15*60000))add("Clean Run",`${runV.length} rooftops, every one under 15 minutes`);
   if(inOut)add("In and Out",`${hmm(inOut.leftAt-inOut.arrivedAt)} at ${nm(inOut.id)}`);
   if(st.longest&&st.longest.d>=1500)add("Long Haul",`${km(st.longest.d)} to ${nm(st.longest.to.id)}`);
   const longStay=st.arrived.filter(v=>v.leftAt&&v.leftAt-v.arrivedAt>=30*60000).sort((a,b)=>(b.leftAt-b.arrivedAt)-(a.leftAt-a.arrivedAt))[0];
@@ -3311,7 +3318,7 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
       // How far is the walk? To the closest open bar in the new circle, not its middle: otherwise a circle parked
       // with its only bars on the edge nearest you would buy a free 20 minutes.
       const near=me&&P.open.length?Math.min(...P.open.map(v=>dist(me,v))):null,far=near!=null&&near>1500;
-      $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):near==null?"":far?`Closest open bar there is ${km(near)} away. The clock waits till you reach your first bar (up to 20 minutes).`:`Closest open bar there is ${mOrKm(near)} away. The clock keeps running.`;
+      $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):near==null?"":far?`Closest open rooftop there is ${km(near)} away. The clock waits till you reach your first rooftop (up to 20 minutes).`:`Closest open rooftop there is ${mOrKm(near)} away. The clock keeps running.`;
       const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Use this zone";
       b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(near||0)});if(!free)g.voluntaryUsed=true;
         if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
@@ -3368,7 +3375,7 @@ function renderEnd(){
   // just finished, 2+ bars, no pick yet: ask for bar of the day before the scorecard rolls in
   const reopen=S.bodOpen===r.id&&!r.followed;
   if(reopen||((S.rackEnd===r.id||S.bodDue===r.id)&&n>=2&&!r.barOfDay&&!r.bodDone)){
-    box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} bar${n===1?"":"s"} ${dayWord(r.startedAt)}</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Bar of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
+    box.innerHTML=`<div class="bodpick"><div><div class="bodhd"><div class="eyebrow">${n} rooftop${n===1?"":"s"} ${dayWord(r.startedAt)}</div><button class="txtbtn amber" type="button" id="bodSkip">${reopen?"Back":"Skip"}</button></div><h1 class="q" style="margin-top:6px">Rooftop of the day?</h1><p class="sub" style="margin:6px 0 0">Saved to your History, so you can look back on your favourites.</p></div>
       <div class="bodgrid" style="--rows:${Math.ceil(st.counted.length/2)}">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
     box.scrollTop=0;
     box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();if(typeof liveMeta==="function")liveMeta(r);buzz(15);renderEnd()});
@@ -3381,22 +3388,22 @@ function renderEnd(){
     <div class="sc">
       <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt&&!v.lastOrders).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
-        const K=r.noLoc?[[n,n===1?"Bar":"Bars"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Bar":"Bars"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(moving),"Travel time"]];
-        const M=r.noLoc?[]:cr?[[hmm(atBars),"Bar time",st.arrived.length&&"time"],[lng?hmm(lng):"—","Longest stay",lng&&"long"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
-          :[[hmm(atBars),"Bar time",st.arrived.length&&"time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop",stays.length&&"quick"],[st.longest?mOrKm(st.longest.d):"—","Longest leg",st.longest&&"leg"]];
+        const K=r.noLoc?[[n,n===1?"Rooftop":"Rooftops"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(moving),"Travel time"]];
+        const M=r.noLoc?[]:cr?[[hmm(atBars),"Rooftop time",st.arrived.length&&"time"],[lng?hmm(lng):"—","Longest stay",lng&&"long"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+          :[[hmm(atBars),"Rooftop time",st.arrived.length&&"time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop",stays.length&&"quick"],[st.longest?mOrKm(st.longest.d):"—","Longest leg",st.longest&&"leg"]];
         const meta=`${cr?`${I.pin} ${esc(placeOf(r))}`:`${I.pin} ${esc(placeOf(r))} · ${kmTxt(r.radius)}`}${r.jp&&!cr?`<span class="jpmini">${I.sparkle} ${(JACKPOTS.find(x=>x.k===r.jp.k)||{t:""}).t}</span>`:""}`;
         return `<div class="schead"><div class="sct"><button class="scname${r.title&&!cr?"":" add"}" type="button" id="scName">${r.title?(cr?`${IC.edit} Rename`:esc(r.title)+` <span aria-hidden="true">${IC.edit}</span>`):"+ Name this crawl"}</button><div class="aw-t">${aw[0].plain?esc(aw[0].t):aw[0].t}</div>${aw[0].why?`<div class="aw-w">${aw[0].why}</div>`:""}<div class="scmeta">${meta}</div></div>
           <button class="scph${r.photo?"":" none"}" type="button" id="scPh" aria-label="${r.photo?"Change photo":"Add photo"}">${r.photo?`<img src="${r.photo}" alt=""><span class="scph-chg" data-chg="1">${I.camera}Change</span>`:`${I.camera}<small>Add photo</small>`}</button></div>
 ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.lastOrders?"Last orders":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
-            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</div>`;
-            return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Bar of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
-          const pick=n>=2&&!r.barOfDay&&!r.followed?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your bar of the day</button>`:"";
+            if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Rooftop of the day</span>':""}</div>`;
+            return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Rooftop of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
+          const pick=n>=2&&!r.barOfDay&&!r.followed?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your rooftop of the day</button>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
           <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l,k])=>`<div${k?` class="sttap" role="button" tabindex="0" data-st="${k}" data-sl="${l}" data-sv="${esc(String(v))}"`:""}><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}${k?' <span class="chev">›</span>':""}</small></div>`).join("")}</div></div></div>
 `;
-          if(SV==="a")return `<div class="scar2" id="scar2"><section class="scp2">${mapblk}</section><section class="scp2 p2"><div class="scph-h">The bars</div><div class="sblist${arr.length>6?" many":""}">${arr.map((v,i)=>row(v,i,"row")).join("")}</div>${pick}</section></div>
-            <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The bars"></button></div>`;
+          if(SV==="a")return `<div class="scar2" id="scar2"><section class="scp2">${mapblk}</section><section class="scp2 p2"><div class="scph-h">The rooftops</div><div class="sblist${arr.length>6?" many":""}">${arr.map((v,i)=>row(v,i,"row")).join("")}</div>${pick}</section></div>
+            <div class="scdots dots" id="scdots2"><button type="button" data-p="0" aria-pressed="true" aria-label="Map and stats"></button><button type="button" data-p="1" aria-pressed="false" aria-label="The rooftops"></button></div>`;
           return mapblk+`<div class="bstrip">${arr.map((v,i)=>row(v,i,"strip")).join("")}</div>${pick}`})()}`})()}
     </div>
     ${isShared?`<div class="row2"><button class="btn" type="button" id="addTab">${IC.tab||I.check} Add to My Tab</button><button class="btn dark" type="button" id="shareBtn">${I.share} Save card</button></div>${ANDROID_WEB&&SHARED_CODE?`<button class="txtbtn amber openapp" type="button" id="openApp">Open in the app</button>`:""}`
@@ -3455,7 +3462,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
 }
 // ---------- story cards (9:16) ----------
 // Two looks, Strava style: the crew photo with the route in a corner, or the map on its own.
-async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.filter(x=>x[1]==="Bars"||x[1]==="Total time");if(!o.some(x=>x[1]==="Total time"))o.push([hmm(stats(r).dur),"Total time","clock"]);return o};
+async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.filter(x=>x[1]==="Rooftops"||x[1]==="Total time");if(!o.some(x=>x[1]==="Total time"))o.push([hmm(stats(r).dur),"Total time","clock"]);return o};
   await Promise.all([document.fonts.load('800 100px "Big Shoulders Display"'),document.fonts.load('500 40px "Big Shoulders Display"')]).catch(()=>{});
   const W=1080,Hh=1920,c=document.createElement("canvas");c.width=W;c.height=Hh;const x=c.getContext("2d");
   const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,aw=awardsFor(r,st),D='"Big Shoulders Display","Arial Narrow",Impact,sans-serif',U='system-ui,-apple-system,Roboto,Arial,sans-serif';
@@ -3611,7 +3618,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
     const top4=listTop-265;
     if(RV==="photo"&&r.photo){const f0=top4-170,g5=x.createLinearGradient(0,f0,0,Hh);g5.addColorStop(0,"rgba(11,13,18,0)");g5.addColorStop(Math.min(.9,180/(Hh-f0)),"rgba(11,13,18,.5)");g5.addColorStop(Math.min(.95,(listTop-50-f0)/(Hh-f0)),"rgba(11,13,18,.8)");g5.addColorStop(1,"rgba(11,13,18,.93)");x.fillStyle=g5;x.fillRect(0,f0,W,Hh-f0)}
     x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=16;where(top4-94);x.fillStyle=INK;x.fillText(t4,64,top4);x.font=`600 27px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,top4+42);
-    NLs(cr?[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"]]:[[n,"Bars","glass"],[hmm(atBars),"Bar time","clock"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
+    NLs(cr?[[n,"Rooftops","glass"],[hmm(atBars),"Rooftop time","clock"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"]]:[[n,"Rooftops","glass"],[hmm(atBars),"Rooftop time","clock"],[hmm(moving),"Travel time","walk"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,top4+135,60));
     x.strokeStyle="rgba(244,241,234,.12)";x.lineWidth=2;x.beginPath();x.moveTo(64,listTop-62);x.lineTo(W-64,listTop-62);x.stroke();
     list.forEach((v,i)=>{const Y=listTop+i*gap4,b=byId(v.id),ok=v.counted===true,stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),tm=v.cant?"No entry":v.counted===false?"—":r.noLoc?"":hmm(Math.max(0,stay));
       x.fillStyle=ok?"rgba(244,241,234,.14)":"rgba(107,114,128,.2)";x.beginPath();x.arc(88,Y-12,24,0,7);x.fill();x.fillStyle=ok?INK:"#6B7280";x.font=`800 24px ${U}`;x.textAlign="center";x.fillText(String(i+1),88,Y-3);x.textAlign="left";
@@ -3627,7 +3634,7 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
       bars.forEach((v,i)=>{const nm=byId(v.id).name.replace(/ (Hotel|Rooftop|Bar)$/,""),w=x.measureText(nm).width;if(X+w>W-64){X=64;Y+=50}x.fillStyle=INK;x.font=`700 32px ${U}`;x.fillText(nm,X,Y);
         if(r.barOfDay===v.id){x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const tw2=x.measureText("BAR OF THE DAY").width+16;x.letterSpacing="0px";tagAt(Math.min(X+w-50,W-64-tw2),Y-34,4);x.font=`700 32px ${U}`}X+=w+14;if(i<bars.length-1){if(X+30>W-64){X=64;Y+=50}gl(X+11,Y-2);X+=36}});
       sy=Y+96}
-    NLs(cr?[[n,"Bars","glass"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"],[hmm(atBars),"Bar time","clock"]]:[[n,"Bars","glass"],[km(st.total),"Distance","route"],[hmm(atBars),"Bar time","clock"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
+    NLs(cr?[[n,"Rooftops","glass"],[hmm(st.dur),"Total time",isEve(r.startedAt)?"moon":"sun"],[hmm(atBars),"Rooftop time","clock"]]:[[n,"Rooftops","glass"],[km(st.total),"Distance","route"],[hmm(atBars),"Rooftop time","clock"]]).forEach(([v,l,ic],i)=>stat(v,l,ic,64+i*320,sy,64));
     if(!FV&&r.barOfDay&&byId(r.barOfDay)){x.font=`700 34px ${U}`;x.fillStyle=INK;const bn=fit(byId(r.barOfDay).name,W-128-120);x.fillText(bn,64,1508);const ex=64+x.measureText(bn).width;
       x.save();x.font=`800 15px ${U}`;x.letterSpacing="1.6px";const t="BAR OF THE DAY",w=x.measureText(t).width+16;x.translate(Math.min(ex-w*.3,W-64-w),1508-38);x.rotate(5*Math.PI/180);
       x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle=AMB;roundRect(x,0,-17,w,27,7);x.fill();x.shadowColor="transparent";x.fillStyle=BG;x.fillText(t,8,2);x.restore()}
@@ -3636,9 +3643,9 @@ async function storyCard(r,look){const NLs=a=>{if(!r.noLoc)return a;const o=a.fi
   let fs=84;x.font=`800 ${fs}px ${D}`;const at=aw[0].t.toUpperCase();while(x.measureText(at).width>W-128&&fs>44){fs-=4;x.font=`800 ${fs}px ${D}`}
   x.fillStyle=SCH==="c"?AMB:INK;where(943);x.fillStyle=SCH==="c"?AMB:INK;x.fillText(at,64,1035);x.font=`600 28px ${U}`;x.fillStyle="#C9CDD4";x.fillText(fit(plain(aw[0].why),W-128),64,1092);
   // stats
-  const S6=cr?[[n,"Bars"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"],[hmm(atBars),"Bar time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
-    :[[n,"Bars"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Bar time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
-  if(r.noLoc){S6.splice(0,S6.length,[n,"Bars"],[hmm(st.dur),"Total time"])}
+  const S6=cr?[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(st.dur),"Total time"],[hmm(atBars),"Rooftop time"],[lng?hmm(lng):"—","Longest stay"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
+    :[[n,"Rooftops"],[km(st.total),"Distance"],[hmm(moving),"Travel time"],[hmm(atBars),"Rooftop time"],[stays.length?hmm(Math.min(...stays)):"—","Quickest stop"],[st.longest?mOrKm(st.longest.d):"—","Longest leg"]];
+  if(r.noLoc){S6.splice(0,S6.length,[n,"Rooftops"],[hmm(st.dur),"Total time"])}
   const SIC=r.noLoc?["glass","clock"]:cr?["glass","route",isEve(r.startedAt)?"moon":"sun","clock","hour","span"]:["glass","route","walk","clock","bolt","span"];
   S6.forEach(([v,l],i)=>stat(v,l,SIC[i],64+(i%3)*320,1205+Math.floor(i/3)*118,68));
   // bars, two columns, with time at each
@@ -3865,7 +3872,7 @@ function bindRows(root){
 }
 function paintLists(){
   const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nFav=VENUES.filter(v=>S.fav[v.id]&&inCity(v)).length;
-  $("barsLists").innerHTML=[["want","Hit list",nWant],["fav","Favourites",nFav],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
+  $("barsLists").innerHTML=[["want","Hit list",nWant],["fav","Favourites",nFav],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
 function sfield(el){if(!el||el._sf)return el;el._sf=1;
@@ -3900,7 +3907,7 @@ function paintSearch(){
   const here=VENUES.filter(v=>inCityNow(v)&&hit(v)).sort(sortR),away=VENUES.filter(v=>!inCityNow(v)&&hit(v)).sort(sortR);
   const row=v=>rowHTML(v,openState(v,t),barStatus(v,c),inCityNow(v)?y:null);
   box.innerHTML=(here.length?`<div class="card list" style="padding:4px 16px">${here.map(row).join("")}</div>`
-      :`<div class="nores"><b>No rooftop called "${esc(q.value.trim())}" in ${esc(cityIn(S.city))}</b><span>If it's a rooftop bar, it's not on Rooftop Roulette yet. Every bar here has been checked, so if it's missing we haven't got to it.</span></div>`)
+      :`<div class="nores"><b>No rooftop called "${esc(q.value.trim())}" in ${esc(cityIn(S.city))}</b><span>If it's a rooftop bar, it's not on Rooftop Roulette yet. Every rooftop here has been checked, so if it's missing we haven't got to it.</span></div>`)
     +(away.length?`<div class="shd">In ${[...new Set(away.map(cityOf))].join(" and ")}</div><div class="card list" style="padding:4px 16px">${away.map(row).join("")}</div>`:"");
   bindRows(box);
 }
@@ -3932,7 +3939,7 @@ function renderBars(){tickOff();
   $("barsCity").innerHTML=cityBtn();
   const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
   paintLists();
-  if(false)$("barsLists").innerHTML=[["want","Hit list",nWant],["been","Been",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
+  if(false)$("barsLists").innerHTML=[["want","Hit list",nWant],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   const today=new Date().toDateString(),ct=sydAt(t,TZ[S.city]);
   const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
@@ -3974,7 +3981,7 @@ function renderBars(){tickOff();
     const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
     intro=`Rooftops you'd never go to. These never come up in a spin. Tap one to bring it back.`;
     rows=list.map(v=>rowHTML(v,os(v),"nfu",y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No bars hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Pass".</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No rooftops hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Pass".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
     const rg=S.barsRegion||"all";
@@ -4027,9 +4034,9 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     ${v.fact&&!opt.lite?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
-      ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
+      ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this rooftop of the day</button>`:""}
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
-      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Add to bars you want to try</small></span><span class="sw"></span></button>`}
+      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Add to rooftops you want to try</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
@@ -4075,10 +4082,10 @@ function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
-  const L={want:{t:"Hit list",d:"Bars you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
-    been:{t:"Been",d:"Bars you've been to before. Turn on <b>Skip bars you've been to</b> when you set up and they won't come up."},
-    nfu:{t:"Pass",d:"Bars you'd never go to. These never come up in R&amp;R."},
-    fav:{t:"Favourites",d:"Bars you love. Tap the heart on any bar to add it here."}}[k];
+  const L={want:{t:"Hit list",d:"Rooftops you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
+    been:{t:"Visited",d:"Rooftops you've been to before. Turn on <b>Skip visited rooftops</b> when you set up and they won't come up."},
+    nfu:{t:"Pass",d:"Rooftops you'd never go to. These never come up in R&amp;R."},
+    fav:{t:"Favourites",d:"Rooftops you love. Tap the heart on any rooftop to add it here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been"){S.been[id]=1;delete S.want[id]}else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
@@ -4129,10 +4136,10 @@ function records(){
   const R=[],best=(lbl,ic,list,val,fmt,sub,lowest,open)=>{const c=list.filter(x=>val(x)!=null&&val(x)>0);if(!c.length)return;c.sort((x,y)=>lowest?val(x)-val(y):val(y)-val(x));const w=c[0];
     R.push({lbl,ic,v:fmt(val(w)),sub:sub(w),id:w.r.id,open:open?()=>open(w,lbl,fmt(val(w))):null})};
   const nights=H.map(r=>({r,st:stats(r)})),tn=nights.filter(x=>!x.r.noLoc);
-  [[60,"Most bars · 1 hr"],[120,"Most bars · 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l)));
-  best("Most bars · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l));
-  best("Most bar time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r),false,(w,l)=>crawlStatSheet("time",w.r.id,l));
-  best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" bar"+(x.st.counted.length===1?"":"s"),false,(w,l)=>crawlStatSheet("dist",w.r.id,l));
+  [[60,"Most rooftops · 1 hr"],[120,"Most rooftops · 2 hr"]].forEach(([l,t])=>best(t,"glass",nights.filter(x=>x.r.mode!=="cruise"&&x.r.len===l),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l)));
+  best("Most rooftops · R&amp;R","glass",nights.filter(x=>x.r.mode==="cruise"),x=>x.st.counted.length,n=>n,x=>dateTxt(rt(x.r,x.r.startedAt)),false,(w,l)=>crawlStatSheet("bars",w.r.id,l));
+  best("Most rooftop time in a crawl","moon",tn.filter(x=>x.st.counted.length),x=>x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt||x.r.endsAt)-v.arrivedAt),0),hmm,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+modeTxt(x.r),false,(w,l)=>crawlStatSheet("time",w.r.id,l));
+  best("Furthest crawl","route",tn,x=>x.st.total,km,x=>dateTxt(rt(x.r,x.r.startedAt))+" · "+x.st.counted.length+" rooftop"+(x.st.counted.length===1?"":"s"),false,(w,l)=>crawlStatSheet("dist",w.r.id,l));
   const vs=allVisits().filter(x=>x.v.leftAt!=null&&!x.r.noLoc);
   best("Longest stay","clock",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),false,(w,l,v)=>staySheet(w.r,w.v,l,v));
   best("Quickest stay","bolt",vs,x=>x.ms,hmm,x=>esc(x.b.name)+" · "+dateTxt(x.t),true,(w,l,v)=>staySheet(w.r,w.v,l,v));
@@ -4152,9 +4159,9 @@ function renderHist(){
     ${typeof tabSignIn==="function"?tabSignIn():""}
     <div class="grid2 hstats">
       <button class="stat tap" type="button" id="hCrawls"><small>Crawls <span class="chev">›</span></small><b>${games}</b><em>${thisMonth?thisMonth+" this month":"Last: "+dateTxt(rt(H[0],H[0].startedAt))}</em></button>
-      <button class="stat tap" type="button" id="hVisits"><small>Bars visited <span class="chev">›</span></small><b>${uniq}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
+      <button class="stat tap" type="button" id="hVisits"><small>Rooftops visited <span class="chev">›</span></small><b>${uniq}</b><em>Avg ${+(bars/games).toFixed(1)} a crawl</em></button>
       <button class="stat tap" type="button" id="hDist"><small>Distance <span class="chev">›</span></small><b>${TI.some(Boolean)?km(dist_):"—"}</b><em>${TI.some(Boolean)?"Avg "+km(dist_/tracked)+" a crawl":"Needs location"}</em></button>
-      <button class="stat tap" type="button" id="hTime"><small>Time at bars <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a bar":"Needs location"}</em></button>
+      <button class="stat tap" type="button" id="hTime"><small>Time at rooftops <span class="chev">›</span></small><b>${tv.length?hmm(atBars):"—"}</b><em>${tv.length?"Avg "+hmm(atBars/tv.length)+" a rooftop":"Needs location"}</em></button>
     </div>
     ${deckCardHTML()}
     ${recs.length?`<div class="eyebrow hsec">Personal bests</div><div class="recs">${recs.map((x,ri)=>`<button class="rec" type="button" ${x.bar?`data-bar="${x.bar}"`:`data-id="${x.id}" data-ri="${ri}"`}><span class="t"><small>${x.lbl}</small><span>${x.sub}</span></span><b>${x.v}</b><span class="chev">›</span></button>`).join("")}</div>`:""}
@@ -4172,7 +4179,7 @@ const IC={edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
   swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg>',
   bin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>'};
 function crawlMenu(r){const n=stats(r).counted.length,isT=!!r.test;
-  sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} bar${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
+  sheet(`<h3>${r.title?esc(r.title):dateTxt(rt(r,r.startedAt))}</h3><p class="note">${modeTxt(r)} · ${n} rooftop${n===1?"":"s"}${r.title?" · "+dateTxt(rt(r,r.startedAt)):""}</p>
     <div class="menu">
       <button type="button" id="cmMedia" hidden>${I.camera}<span>Photos &amp; clips<small id="cmMediaS"></small></span></button>
       <button type="button" id="cmName"${r.followed?" hidden":""}>${IC.edit}<span>${r.title?"Rename":"Name this crawl"}<small>Shows on your tab instead of the date</small></span></button>
@@ -4208,9 +4215,9 @@ function visitsSheet(){
   const vs=allVisits(),uniq=new Set(vs.map(x=>x.b.id)).size,atBars=vs.reduce((s,x)=>s+x.ms,0),yr=String(new Date(now()).getFullYear());let m=null;
   const list=vs.map(x=>{const mm=monthTxt(x.t),[mo,y]=mm.split(" "),head=mm!==m?`<div class="vmon"><span>${mo}${y!==yr?" "+y:""}</span></div>`:"";m=mm;
     return head+`<button class="vrow" type="button" data-b="${x.b.id}">${vthumb(x.b)}<span class="t"><b>${esc(x.b.name)}${S.fav[x.b.id]?` <i class="fv">${HRTF}</i>`:""}</b><small>${dateTxt(x.t)} · ${clock12(sydAt(x.t).min)} · ${x.r.mode==="cruise"?"R&amp;R":LEN(x.r.len)}</small></span><span class="chev vch">›</span></button>`}).join("");
-  sheet(`<h3>Bars visited</h3><div class="vstats"><div><b>${uniq}</b><small>Bar${uniq===1?"":"s"}</small></div><div><b>${vs.length}</b><small>Total visit${vs.length===1?"":"s"}</small></div></div><div class="vlist2">${list}</div>`,()=>{
+  sheet(`<h3>Rooftops visited</h3><div class="vstats"><div><b>${uniq}</b><small>Rooftop${uniq===1?"":"s"}</small></div><div><b>${vs.length}</b><small>Total visit${vs.length===1?"":"s"}</small></div></div><div class="vlist2">${list}</div>`,()=>{
     $("sheet").classList.add("full");$("sheet").scrollTop=0;
-    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Bars visited"})});
+    $("sheetBody").querySelectorAll("[data-b]").forEach(x=>x.onclick=()=>{const v=byId(x.dataset.b);if(v)barSheet(v,null,{back:visitsSheet,backTxt:"Rooftops visited"})});
   });
 }
 function crawlsSheet(){const N=H.map(stats);let m=null;const yr=String(new Date(now()).getFullYear());
@@ -4221,19 +4228,19 @@ function crawlsSheet(){const N=H.map(stats);let m=null;const yr=String(new Date(
     $("sheetBody").querySelectorAll(".hrow").forEach(x=>{x.onclick=()=>{closeSheet();S.lastEnd=x.dataset.id;go("end")};longPress(x,()=>{const r=H.find(y=>y.id===x.dataset.id);if(r)crawlMenu(r)})})})}
 // Distance or time, crawl by crawl. Tap a crawl for its legs (distance) or its bars (time).
 function crawlStatSheet(kind,id,rec){
-  const isD=kind==="dist",isB=kind==="bars",N=H.filter(r=>isB||!r.noLoc).map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at bars";
+  const isD=kind==="dist",isB=kind==="bars",N=H.filter(r=>isB||!r.noLoc).map(r=>({r,st:stats(r)})),val=x=>isD?x.st.total:x.st.counted.reduce((s,v)=>s+Math.max(0,(v.leftAt||x.r.endedAt)-v.arrivedAt),0),fmt=isD?km:hmm,lbl=isD?"Distance":"Time at rooftops";
   const name=r=>r.title?esc(r.title):dateTxt(rt(r,r.startedAt));
   if(id){const x=N.find(o=>o.r.id===id);if(!x){crawlStatSheet(kind);return}const r=x.r,st=x.st;
     let rows;
     if(isD){rows=st.arrived.slice(1).map((v,i)=>{const a=byId(st.arrived[i].id),d=dist(a,byId(v.id))*1.3;
-        return `<div class="srow"><span class="t"><small>${esc(a.name)} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")||`<div class="srow"><span class="t"><b>Just the one bar, no walking yet</b></span></div>`}
+        return `<div class="srow"><span class="t"><small>${esc(a.name)} →</small><b>${esc(byId(v.id).name)}</b></span><span class="d">${mOrKm(d)}</span></div>`}).join("")||`<div class="srow"><span class="t"><b>Just the one rooftop, no walking yet</b></span></div>`}
     else if(isB)rows=st.arrived.map((v,i)=>{const b_=byId(v.id),ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt);
-        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${r.noLoc?"":hmm(ms)}</span></div>`}).join("");
+        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Rooftop ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${r.noLoc?"":hmm(ms)}</span></div>`}).join("");
     else rows=st.arrived.map((v,i)=>{const ms=Math.max(0,(v.leftAt||r.endedAt)-v.arrivedAt),b_=byId(v.id);
-        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${hmm(ms)}</span></div>`}).join("");
-    const sub=isB?`${r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${st.counted.length} bar${st.counted.length===1?"":"s"}`:`${rec&&r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" bar"+(st.counted.length===1?"":"s")}`;
+        return `<div class="srow${v.counted===true?"":" x"}"><span class="t"><small>Rooftop ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b_.name)}</b></span><span class="d">${hmm(ms)}</span></div>`}).join("");
+    const sub=isB?`${r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${st.counted.length} rooftop${st.counted.length===1?"":"s"}`:`${rec&&r.title?dateTxt(rt(r,r.startedAt))+" · ":""}${modeTxt(r)} · ${fmt(val(x))}${isD?"":" at "+st.counted.length+" rooftop"+(st.counted.length===1?"":"s")}`;
     sheet(`${rec?`<div class="eyebrow">${rec}</div>`:`<button class="txtbtn bsback" type="button" id="csBack">‹ ${lbl}</button>`}<h3>${name(r)}</h3><p class="note vsum">${sub}</p>
-      <div class="slist">${rows||'<p class="note">No bars on this one.</p>'}</div><button class="btn line" type="button" id="csOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
+      <div class="slist">${rows||'<p class="note">No rooftops on this one.</p>'}</div><button class="btn line" type="button" id="csOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
       if($("csBack"))$("csBack").onclick=()=>crawlStatSheet(kind);$("csOpen").onclick=()=>{closeSheet();S.lastEnd=r.id;go("end")}});
     return}
   const tot=N.reduce((s,x)=>s+val(x),0);
@@ -4251,7 +4258,7 @@ function removeVisit(r,vis,live){const i=r.visits.indexOf(vis);if(i<0)return;con
   const sk=live&&!(r.skipped||[]).includes(vis.id);if(sk)(r.skipped=r.skipped||[]).push(vis.id);   // and it won't come up again this crawl
   const redo=()=>{if(live){save();if(S.route==="play")renderPlay();if($("sheet").open&&$("ngMap"))nightSheet()}else{reNew();saveH();if(S.route==="end")renderEnd();if(S.route==="hist")renderHist()}};
   redo();buzz(15);
-  toast(`<span>${esc(b?b.name:"Bar")} removed</span><button type="button" class="tundo">Undo</button>`,5000,t=>{t.querySelector(".tundo").onclick=()=>{
+  toast(`<span>${esc(b?b.name:"Rooftop")} removed</span><button type="button" class="tundo">Undo</button>`,5000,t=>{t.querySelector(".tundo").onclick=()=>{
     r.visits.splice(Math.min(i,r.visits.length),0,vis);if(bod)r.barOfDay=vis.id;if(sk)r.skipped=r.skipped.filter(x=>x!==vis.id);hideToast();redo()}})}
 function removeAsk(r,vis,live){const b=byId(vis.id);if(!b)return;
   sheet(`<h3>Remove ${esc(b.name)}?</h3><p class="note">It comes off this crawl and your stats.</p><div class="acts"><button class="btn" type="button" id="rmGo">Remove from crawl</button><button class="btn dark" type="button" id="rmX">Keep it</button></div>`,()=>{
@@ -4298,7 +4305,7 @@ function staySheet(r,v,lbl,val,back){
   const b=byId(v.id),st=stats(r),i=st.arrived.indexOf(v);if(!b){S.lastEnd=r.id;go("end");return}
   const cp=cardPhoto(b);
   sheet(`${back?`<button class="txtbtn bsback" type="button" id="syBack">‹ ${back.t}</button>`:""}<div class="eyebrow">${lbl}</div><h3 class="lgv">${val}</h3>
-    <button type="button" class="systay${cp.cls}" id="syBar"${cp.style}><span class="t"><small>Bar ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b.name)}</b></span><span class="chev">›</span></button>
+    <button type="button" class="systay${cp.cls}" id="syBar"${cp.style}><span class="t"><small>Rooftop ${i+1}${v.counted===true?"":" · didn't count"}</small><b>${esc(b.name)}</b></span><span class="chev">›</span></button>
     <p class="note vsum" style="margin-top:10px">${r.title?esc(r.title)+" · ":""}${dateTxt(rt(r,r.startedAt))} · ${clock12(sydAt(rt(r,v.arrivedAt)).min)} · ${modeTxt(r)}</p>
     <button class="btn line" type="button" id="syOpen" style="margin-top:14px">See the whole crawl</button>`,()=>{
     if($("syBack"))$("syBack").onclick=back.fn;
@@ -4443,7 +4450,7 @@ $("testFab").onclick=()=>{
    ${F?followSimHTML(F):""}
    ${G()?`<div class="eyebrow" style="margin:14px 0 8px">Move me</div><div class="trow"><button class="btn sm dark" type="button" id="tA">Arrive at target</button><button class="btn sm dark" type="button" id="tL">Leave (200 m)</button></div><div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tCT">Play the "it counts" animation</button></div>${!CR(G())?`<div class="trow" style="margin-top:8px"><button class="btn sm dark" type="button" id="tJP">${G().jp?"Jackpot used · reset it":"Jackpot on next spin"}</button><button class="btn sm dark" type="button" id="tWC">Wildcard on next spin</button></div>`:""}`:""}
    ${liveModeHTML()}${simHTML()}
-   <div class="eyebrow" style="margin:14px 0 8px">${F?`Put ${esc(F.fh.n)} at a bar`:"Put me at a bar"}</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
+   <div class="eyebrow" style="margin:14px 0 8px">${F?`Put ${esc(F.fh.n)} at a rooftop`:"Put me at a rooftop"}</div><select id="tJ"><option value="">Choose…</option>${VENUES.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(v=>`<option value="${v.id}">${esc(v.name)}</option>`).join("")}</select>
    <div class="trow" style="margin-top:14px"><button class="btn sm line" type="button" id="tSB">Wheel sandbox</button><button class="btn sm line" type="button" id="tJD">Play the jackpot</button><button class="btn sm line" type="button" id="tR">Real time</button><button class="btn sm line" type="button" id="tF">Replay intro</button><button class="btn sm line" type="button" id="tP">Reset photo limit</button><button class="btn sm line" type="button" id="tX">Reset all</button><button class="btn sm line" type="button" id="tO">Test off</button></div>`,()=>{
     if(F){followSimBind(F);
       $("sheetBody").querySelectorAll("[data-ff]").forEach(b=>b.onclick=()=>{simAct(F.k,(g,o)=>{o.off+= +b.dataset.ff*60000});closeSheet()});
@@ -4495,7 +4502,7 @@ function followSimHTML(F){let g={};try{g=JSON.parse(F.d.g)}catch(e){}const a=sim
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;
   const where=a?`At ${esc(byId(a.id).name)}${a._inCount?", on the board":""}`:tg?`Heading to ${esc(tg.name)}`:"Waiting to spin";
   return `<div class="eyebrow" style="margin:14px 0 8px">${n}'s crawl</div><p class="note" style="margin:0 0 8px">${where}.</p>
-    <div class="trow">${tg?b("fA","Arrive at bar")+b("fR","Spin again"):b("fS","Spin for the next bar")}${a?b("fL","Leave (200 m)")+(a._inCount?"":b("fC","Count this bar")):""}</div>
+    <div class="trow">${tg?b("fA","Arrive at rooftop")+b("fR","Spin again"):b("fS","Spin for the next rooftop")}${a?b("fL","Leave (200 m)")+(a._inCount?"":b("fC","Count this rooftop")):""}</div>
     <div class="trow" style="margin-top:8px">${b("fW",g.wnext?"Wildcard on next spin · on":"Wildcard on next spin")}${b("fZ","Move their zone")}</div>
     <div class="trow" style="margin-top:8px">${b("fG","Give me the spin")}</div>`}
 function followSimBind(F){const k=F.k,re=()=>setTimeout(()=>$("testFab").onclick(),150),on=(id,fn,stay)=>{const el=$(id);if(el)el.onclick=()=>{simAct(k,fn);if(stay)re();else closeSheet()}};
@@ -4519,7 +4526,7 @@ function simBind(){liveModeBind();if(typeof testReal==='function'&&testReal())re
 
 /* ---------- notifications (phone app only) ----------
    Live: one silent, ongoing notification while a crawl is on (CrawlNotify, our own small Android plugin).
-     The timed game counts down with a bar that shrinks; R&R counts up from when you got to the bar.
+     The timed game counts down with a bar that shrinks; R&R counts up from when you got to the rooftop.
    Alerts (LocalNotifications, set ahead so they arrive with the app closed): 10 minutes left and time's up in the timed game,
      check-in open when you're checking in by hand, and the day after a crawl, a look back at it. */
 const NOTE={live:"",liveAt:0,alerts:"",ready:false};
@@ -4553,7 +4560,7 @@ async function notifEnsure(key,noWait){if(!NATIVE||notifKey===key)return;notifKe
   track("notif_state",{on:!!r.enabled,app:!!r.app,channel:r.channel!==false,ios:IOSNAT});
   if(r.enabled||(S.notifNo||0)>=2)return;
   if($("sheet").open){notifKey=null;return}   // try again on the next update
-  sheet(`<h3>Turn on ${IOSNAT?"Live Activities":"notifications"}?</h3><p class="note">Shows the time left and the next bar on your lock screen.</p>
+  sheet(`<h3>Turn on ${IOSNAT?"Live Activities":"notifications"}?</h3><p class="note">Shows the time left and the next rooftop on your lock screen.</p>
     <div class="acts"><button class="btn" type="button" id="nfOn">Turn on</button><button class="btn dark" type="button" id="nfNo">Not now</button></div>`,()=>{
     $("nfOn").onclick=()=>{closeSheet();track("notif_settings");natCall("CrawlNotify","openSettings").catch(()=>{});
       const back=()=>{if(document.visibilityState!=="visible")return;document.removeEventListener("visibilitychange",back);NOTE.live="";fvNote="";notifKey=null};document.addEventListener("visibilitychange",back)};
@@ -4566,9 +4573,9 @@ function liveNote(){
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
   if(a){title=`At ${byId(a.id).name}`;text=cr?mode:`${mode} · here ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`}
   else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode+(y?` · ${kmTxt(dist(y,v)/1000)} away`:"")}
-  else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"bar")}`}
+  else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"rooftop")}`}
   const o={title,text};
-  if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first bar"}
+  if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first rooftop"}
   else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.startAt=Math.round(realAt(g.startedAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
   else if(a)o.since=Math.round(realAt(a.arrivedAt));
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);
@@ -4577,7 +4584,7 @@ function liveNote(){
 function alertSync(){
   if(!NATIVE)return;const g=G(),on=g&&!g.demo&&g.started&&!g.ended,want=[];
   if(on&&!CR(g)){const n=countShown(g);
-    if(g.endsAt-now()>10.5*60000)want.push({id:101,title:"10 minutes left",body:`${plural(n,"bar")} so far.`,at:realAt(g.endsAt-600000)});
+    if(g.endsAt-now()>10.5*60000)want.push({id:101,title:"10 minutes left",body:`${plural(n,"rooftop")} so far.`,at:realAt(g.endsAt-600000)});
     want.push({id:102,title:"Time's up",body:"Tap to see how you went.",at:realAt(g.endsAt)})}
   if(on&&g.noLoc&&g.target&&!atVisit()){const t=hereAt(g);if(t>now())want.push({id:103,title:"Check-in's open",body:`Tap I'm here once you're at ${byId(g.target).name}.`,at:realAt(t)})}
   const key=JSON.stringify(want.map(w=>[w.id,w.body,Math.round(w.at/10000)]));if(key===NOTE.alerts)return;NOTE.alerts=key;noteSetup();
