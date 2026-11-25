@@ -273,9 +273,8 @@ function farSheet(){track("far_from_city",{});const live=CITIES.filter(x=>x.live
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});farCitySheet()})})}
 function farCitySheet(){const c=S.city;
-  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a practice crawl from home, or look around before you go.</p>
-    <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Demo crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>
-    <p class="note" style="margin:12px 2px 0;font-size:13px">Demo crawls don't go on your tab.</p>`,()=>{
+  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a practice crawl from home, or build your Hit list before you go.</p>
+    <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Demo crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>`,()=>{
     $("fcDemo").onclick=()=>{closeSheet();track("demo_from_far",{city:c});startDemo()};
     $("fcBrowse").onclick=()=>{closeSheet();go("bars")}})}
 // Explore another city: pick one, then its rooftops open on the Rooftops tab.
@@ -900,10 +899,9 @@ const quickLabel=q=>q.from.type==="list"?listName(q.from.list):q.from.type==="me
 async function quickNearMe(){
   const q=S.quick;q.note=null;
   try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};
-      // nothing open within 2 km of you: start on the spot with the most bars open (or the city centre if nothing's open)
-      const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t));
-        let best=null,bn=0;O.forEach(v=>{const n=O.filter(u=>dist(u,v)<=2000);if(n.length>bn){bn=n.length;best=n}});
-        const c=best?{lat:best.reduce((a,v)=>a+v.lat,0)/best.length,lng:best.reduce((a,v)=>a+v.lng,0)/best.length}:(GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city));
+      // nothing open within 2 km of you: start on the closest city's CBD, same as timed
+      const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t)),best=O.length;
+        const c=GAME_AREAS(city).find(a=>a.name==="The City")||GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city);
         q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};if(!best)q.far="Nothing's open right now. Showing the city centre."}}q.step=1}
   catch(e){q.note="Couldn't find you just now. Try again, or spin from your Hit list."}
   save();renderQuick();
