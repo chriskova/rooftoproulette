@@ -1112,7 +1112,9 @@ function renderQuick(){
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;q.z=z;if(whoOn()){q.who=1;save();renderQuick()}else{save();startCruise()}})},
-    Object.assign({skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
+    Object.assign({locate:me?null:()=>{const h=S.test&&S.fake?S.fake:here;if(h&&nearLive(h)===S.city){q.from={type:"me",lat:h.lat,lng:h.lng};q.z={lat:h.lat,lng:h.lng,r:q.z&&q.z.r||2};save();renderQuick();return}
+      if(h){toast("You're not near "+esc(S.city)+" right now.",3000);return}q.from=null;save();renderQuick()},   // the locate button, same as timed: back to where you are
+      skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
     // a one-off message (nothing open near you, couldn't find you): the same note as everywhere else, gone on its own or with a swipe
@@ -1277,10 +1279,11 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
   const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgh">${I.glass||""}<span class="n"></span></div><div class="fsgc"><div class="fsgt"><b>Spoiler alert</b><span>This shows all the rooftops you could land on.</span></div><button class="fsgshow" type="button" data-g="show">See the rooftops</button></div>`;panel.append(gt);
-  const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
+  const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,spanMax=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
-  const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill)};
+  const fill=()=>{const L=prov();if(!L)return;lw.querySelector(".n").textContent=L.title;bx.innerHTML=(L.top||"")+`<div class="fsrows">${L.html}</div>`;if(L.bind)L.bind(bx,fill);
+    if(full){const s=listSpan();if(s!==span){span=s;if(u>1)apply(u)}}};
   view._fsFill=()=>{if(u>1.01)fill()};
   // the map never resizes while the panel moves (that's what made it stutter): it's sized to the whole screen once,
   // and just slides so its centre (the zone's centre) stays in the middle of the visible part
@@ -1318,7 +1321,13 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
     // stop just under whatever floats at the top of the map (search, tabs, locate), wherever that is on this phone
     const pr=panel.getBoundingClientRect();let lim=0;view.querySelectorAll(".msearch,.fstabs,.mchips,.rrme,.wtop .iconbtn").forEach(x=>{const r=x.getBoundingClientRect();if(r.height&&!x.hidden)lim=Math.max(lim,r.bottom)});
     if(!lim)lim=view.getBoundingClientRect().top+96;
-    span=Math.max(60,Math.round(pr.bottom-(lim+12)-base))};
+    // the list ends just above the button, wherever that sits on this phone (the bottom inset differs a lot between phones)
+    {const c=document.querySelector("#cta:not([hidden])");if(c&&c.offsetHeight){const ct=c.getBoundingClientRect().top;if(ct>pr.top)lw.style.bottom=Math.max(0,Math.round(pr.bottom-ct+2))+"px"}}
+    spanMax=Math.max(60,Math.round(pr.bottom-(lim+18)-base));span=listSpan()};
+  // the list only rises as high as it needs: a short list stops lower (more map above, no empty space under it)
+  const listSpan=()=>{try{if(!bx.firstChild)fill();const hh=lw.querySelector(".fslh"),cs=getComputedStyle(lw);
+    const content=(hh?hh.offsetHeight+parseFloat(getComputedStyle(hh).marginBottom||0):0)+bx.scrollHeight;
+    const need=parseFloat(cs.top)+parseFloat(cs.bottom)+content+8;return Math.max(60,Math.min(spanMax,Math.round(need-base)))}catch(e){return spanMax}};
   const tot=()=>Math.max(1,full[0]+full[1]),px=v=>v<=1?v*tot():tot()+(v-1)*span,inv=P=>P<=tot()?P/tot():1+(P-tot())/span;
   const cl=x=>Math.max(0,Math.min(1,x));
   // tease: the panel is being lifted a little above the controls (timed, before the spoiler question) with nothing crossfading yet
@@ -1581,18 +1590,35 @@ function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.qu
 // the zone sits under the spinner before the clock starts (where Move zone goes once it has)
 const mixZoneHTML=g=>CR(g)||!mixPre(g)?"":`<div class="mixzone"><button class="mixp" type="button" data-mx="zone">${I.pin}<span class="zt">${esc(g.areas[g.areas.length-1])} · ${rLabel(g.radius)}</span>${MIX_CV}</button></div>`;
 const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const on=(freeOn()?["free"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.id));return on.length===1?esc(deckName(on[0])):on.length+" decks"};
-const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
+// R&R's zone pill: where (or Anywhere) and how far
+const crZone=g=>{const cz=g.cz;if(cz.type==="all"||(cz.type==="list"&&!(cz.r&&cz.lat!=null)))return {a:"Anywhere",r:""};
+  return {a:cz.type==="me"?"Near you":esc(nearestSuburb(cz.lat!=null?cz:fromPoint())),r:rLabel(cz.r||g.radius||2)}};
+const crPoolLbl=g=>g.cz.type==="list"?listName(g.cz.list):"All rooftops";
+const mixlineHTML=g=>{if(CR(g)){if(g.demo||g.follow||g.ended)return "";const z=crZone(g);
+    return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${z.a}</span>${z.r?`<span class="zr">· ${z.r}</span>`:""}${MIX_DD}</button><button class="mixp" type="button" data-mx="pool">${crPoolLbl(g)}${MIX_DD}</button></div>`}const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
   if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
   const inv="";
   // one row: where (suburb shortens first on a small phone, the radius never does), how long, wildcards, invite
   return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${area}</span><span class="zr">· ${rLabel(g.radius)}</span>${MIX_DD}</button><button class="mixp" type="button" data-mx="len">${g.len===60?"1 hour":"2 hours"}${MIX_DD}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}${MIX_DD}</button>${inv}</div>`};
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mxinv],[data-mx]");if(!t)return;const g=G();if(!g)return;
   if(t.dataset.mxinv){if(typeof liveInvite==="function")liveInvite();return}
-  if(!mixPre(g))return;const k=t.dataset.mx;
+  const k=t.dataset.mx;
+  if(CR(g)){if(g.ended||g.demo||g.follow)return;if(k==="zone")crawlMap({move:true,pre:true});else if(k==="pool")crPoolSheet(g);return}
+  if(!mixPre(g))return;
   if(k==="zone")crawlMap({move:true,pre:true});
   else if(k==="len")lenSheet(g);
   // the same Wildcards sheet as My Tab; the pill catches up when it closes
   else if(k==="deck"){deckSheet();$("sheet").addEventListener("close",()=>{const d=document.querySelector('[data-mx="deck"]');if(d)d.innerHTML=mixDeckLbl()+MIX_CV},{once:true})}});
+// R&R: what the wheel spins from. Your lists show when 2+ on them are open.
+function crPoolSheet(g){const t=now(),opn=k=>listOf(k).filter(v=>openOK(v,t)).length,cur=g.cz.type==="list"?g.cz.list:"";
+  const rows=[["","All rooftops","Every open rooftop in your zone"]].concat(["want","fav"].filter(k=>opn(k)>=2||cur===k).map(k=>[k,listName(k),`${opn(k)} open now`]));
+  sheet(`<h3>What spins?</h3><div class="opts" style="margin-top:10px">${rows.map(([k,l,s])=>`<button class="opt" type="button" role="radio" data-pl="${k}" aria-checked="${cur===k}"><span class="t"><b>${l}</b><small>${s}</small></span></button>`).join("")}</div>
+    ${rows.length<2?`<p class="note" style="margin:12px 2px 0">Add a couple of rooftops to your Hit list and you can spin just those.</p>`:""}`,()=>{
+    $("sheetBody").querySelectorAll("[data-pl]").forEach(b=>b.onclick=()=>{const k=b.dataset.pl;if(G()!==g){closeSheet();return}if(k===cur){closeSheet();return}
+      if(k){if(g.cz.type!=="list")g.czArea=Object.assign({},g.cz);g.cz={type:"list",list:k,name:listName(k),r:null,lat:null,lng:null}}
+      else g.cz=g.czArea||{type:"me",name:null,r:g.radius||2};
+      const label=k?listName(k):g.cz.type==="all"?"Anywhere":g.cz.type==="spot"?g.cz.name:"Near you";if(g.areas[g.areas.length-1]!==label)g.areas.push(label);
+      g.target=null;g.reelOpen=false;save();closeSheet();renderPlay();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{})})})}
 // 1 hour or 2, before the clock starts
 function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-top:10px">
     <button class="opt" type="button" role="radio" data-l="60" aria-checked="${g.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few rooftops, quick drinks.</small></span></button>
@@ -2704,7 +2730,7 @@ function openMenu(){
     ${liveMenuRows(g)}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${g.started?"End crawl":"Cancel crawl"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
   </div>`,()=>{
-    $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
+    $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>crawlMap({move:true,pre:true});
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;if($("mWild"))$("mWild").onclick=deckSheet;
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
@@ -2716,7 +2742,7 @@ function openMenu(){
   });
 }
 $("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))rrZoneSheet()});
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))crawlMap({move:true,pre:true})});
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
@@ -2898,7 +2924,7 @@ function renderPlay0(){
   }else{
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
-      ${g.started?"":mixlineHTML(g)}
+      ${g.started&&!CR(g)?"":mixlineHTML(g)}
       <div id="reelBox"></div>${g.started?"":mixInvBig(g)}<button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
@@ -3270,8 +3296,8 @@ function rollWild(g,id){
 function renderClock(){
   const g=G();if(!g)return;{const lt=$("lvT"),d=leaving();if(lt&&d)lt.textContent=mmss(now()-d.arrivedAt)}const r=remaining(),tot=g.len*60000;
   if(CR(g)){$("clock").className="clock cruise";$("tbar").hidden=true;
-    if(!g.started){$("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
-    $("clockT").textContent="";{const h='<span class="rrt">R<i>&amp;</i>R</span><button class="rrz" type="button" id="mixZone">'+zoneTxt(g,1)+' <span class="zchev">›</span></button>',el=$("clockL");if(el._h!==h){el._h=h;el.innerHTML=h;fitZoneLbl()}}return}
+    // laid out like timed: R&R big where the clock goes, one short line under it. The zone and the pool are pills under that.
+    {const ct=$("clockT"),h='R<i>&amp;</i>R';if(ct._h!==h){ct._h=h;ct.innerHTML=h}const el=$("clockL");if(el._h!=="pace"){el._h="pace";el.textContent="Your own pace"}}return}
   $("tbar").hidden=false;
   if(g.lastOrders&&now()>=g.endsAt){$("clockT").textContent=mmss(Math.max(0,g.lastOrders-now()));$("clock").className="clock red";$("tbar").className="tbar red";$("tbarI").style.width=Math.max(0,(g.lastOrders-now())/(LAST_ORDERS*60000)*100)+"%";$("clockL")._h=null;$("clockL").textContent="Last orders";return}
   $("clockT").textContent=mmss(r);
@@ -3356,17 +3382,19 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
   const view=async()=>{drop();const my=gen,free=freeNow(),canMove=!CR(g)&&(free||!g.voluntaryUsed);
     const t0=now(),been0=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),left=CR(g)?0:playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id)&&!been0.includes(v.id)&&openOK(v,t0)).length;
     ov.classList.remove("moving");
-    ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?"":`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
+    const crOpen=CR(g)?cruiseSet(g).filter(v=>openOK(v,t0)&&!visited(v.id)).length:0,crZ=CR(g)?crZone(g):null;
+    ov.innerHTML=`<div id="crawlMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>${CR(g)?`<button class="mf-pill" type="button" id="cmMove">${I.move}Change zone</button><div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Spin zone</b><small>${crZ.a}${crZ.r?" · "+crZ.r:""} · ${crPoolLbl(g)} · ${crOpen} open</small></div></div>`:`${canMove?`<button class="mf-pill" type="button" id="cmMove">${I.move}Move zone</button>`:""}<div class="mf-card"><span class="mf-ring" aria-hidden="true"></span><div class="t"><b>Your zone</b><small>${esc(g.areas[g.areas.length-1]||nearestSuburb(g.center))} · ${kmTxt(g.radius)} · ${plural(left,"rooftop")} left</small>${canMove?"":`<small>Zone move used</small>`}</div></div>`}`;
     ov.querySelector(".mf-x").onclick=close;
-    if($("cmMove"))$("cmMove").onclick=()=>move(free);
+    if($("cmMove"))$("cmMove").onclick=()=>CR(g)?crMove():move(free);
     const mm=await makeMap("crawlMap",{greedy:true});if(!mm)return;if(my!==gen||!ov.isConnected){try{mm.remove()}catch(e){}return}m=mm;
     const t=now(),been=g.visits.filter(v=>v.arrivedAt!=null).map(v=>v.id),inZ=CR(g)?cruiseSet(g):playable(inCircle(g.center,g.radius),false).filter(v=>!(g.excluded||[]).includes(v.id));
-    if(!CR(g))m.circle(g.center,g.radius);
+    const crz=CR(g)?crCircle(g):null;
+    if(!CR(g))m.circle(g.center,g.radius);else if(crz)m.circle(crz,crz.r);
     inZ.filter(v=>!been.includes(v.id)&&v.id!==g.target).forEach(v=>m.pin(v,openOK(v,t)?"":"off",()=>barSheet(v)));
     been.map(byId).filter(Boolean).forEach(v=>m.pin(v,"seen",()=>barSheet(v)));
     if(g.target){const v=byId(g.target);if(v)m.pin(v,"big",()=>barSheet(v))}
     setMe(m);
-    if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}};
+    if(!CR(g))m.fitZone(g.center,g.radius,g.target?[byId(g.target)]:[],60);else if(crz)m.fitZone(crz,crz.r,g.target?[byId(g.target)]:[],60);else{const pts=inZ.concat(you()?[you()]:[]);if(pts.length)m.fitPts(pts,16,{top:80,left:30,right:30,bottom:60})}};
   // the same map, with the circle loose: drag the map under it, pinch or slide to make it bigger
   const move=free=>{drop();ov.classList.add("moving");
     const me=you()||fromPoint(),z={lat:g.center.lat,lng:g.center.lng,r:g.radius};
@@ -3394,8 +3422,27 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
         g.target=null;g.reelOpen=false;save();renderPlay();renderClock();if(o.move)close();else view()}},
       {...range,pool,onShrink:()=>{if(warned||!g.started)return;warned=true;toast("Your zone can only get bigger once the clock's running.",2600)}});
   };
-  if(o.move)move(o.free);else view();
+  const crMove=()=>{drop();ov.classList.add("moving");
+    const me=you()||fromPoint(),c=crCircle(g),z=c?{lat:c.lat,lng:c.lng,r:c.r}:{lat:me.lat,lng:me.lng,r:0},lst=g.cz.type==="list"?g.cz.list:null;
+    zonePanel(ov,{title:"Set your zone",sub:lst?"Spinning your "+listName(lst)+". Pick All on the slider for the whole list.":"",go:"Use this zone",back:o.move?"Cancel":"Back"});
+    $("mvX").onclick=()=>{if(o.move)close();else view()};
+    const pool=(zz,t)=>{if(lst){const all=listOf(lst).filter(v=>!zz.r||dist(zz,v)<=zz.r*1000);return {all,open:all.filter(v=>openOK(v,t))}}return rrPool(zz,t,!!g.newOnly)};
+    rrZoneBind(z,me,()=>!!g.newOnly,(P,zz,moved)=>{if(!$("mvNote"))return;$("mvNote").textContent="";
+      const b=$("mvGo");b.disabled=!P.open.length;b.textContent=P.open.length?"Use this zone":"Nothing open here";
+      b.onclick=()=>{const near=!moved;let nc,label;
+        if(lst){nc={type:"list",list:lst,name:listName(lst),r:zz.r||null,lat:zz.r?zz.lat:null,lng:zz.r?zz.lng:null};label=listName(lst)}
+        else if(!zz.r){nc={type:"all",name:null,r:null};label="Anywhere"}
+        else if(near){nc={type:"me",name:null,r:zz.r};label="Near you"}
+        else{label="Around "+nearestSuburb(zz);nc={type:"spot",name:label,r:zz.r,lat:zz.lat,lng:zz.lng}}
+        g.cz=nc;if(zz.r)g.radius=zz.r;if(g.areas[g.areas.length-1]!==label)g.areas.push(label);g.target=null;g.reelOpen=false;save();renderPlay();
+        if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{});if(o.move)close();else view()}},
+      {pool,locate:null,allLbl:lst?"Your whole "+listName(lst):undefined,pinSet:lst?()=>listOf(lst):undefined});
+  };
+  if(o.move&&CR(g))crMove();else if(o.move)move(o.free);else view();
 }
+// R&R's circle on a map (none for Anywhere, or a whole list)
+function crCircle(g){const cz=g.cz;if(cz.type==="me"){const p=fromPoint();return p?{lat:p.lat,lng:p.lng,r:cz.r||g.radius||2}:null}
+  if((cz.type==="spot"||cz.type==="list")&&cz.r&&cz.lat!=null)return {lat:cz.lat,lng:cz.lng,r:cz.r};return null}
 // the night's route, full screen
 async function bigMap(r,st){
   const ov=document.createElement("div");ov.className="mapfull";ov.innerHTML=`<div id="bigMap"></div><button class="shv-x mf-x" type="button" aria-label="Close">${I.x}</button>`;
