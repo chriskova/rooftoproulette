@@ -352,18 +352,26 @@ async function liveInvite(){
   if(!signedIn()){track("live_invite_gate");signInSheet("Friends don't need an account to follow.","live","Sign in to share live");return}
   if(!myName()){nameSheet(()=>liveInvite());return}
   let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
-  const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;track("live_invite");
-  const [mates,svg]=await Promise.all([matesList(),qrSVG(link)]);
-  const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
-  sheet(`<h3>Invite friends</h3><p class="note">${n?`${n} following. `:""}They follow every spin and the timer from their own phones. You keep the spin.</p>
-    ${svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:""}
-    <div class="acts row2"><button class="btn" type="button" id="liSend">${I.share} Send link</button><button class="btn dark" type="button" id="liCopy">${I.link} Copy link</button></div>
-    ${mates.length?`<div class="eyebrow hsec">Friends</div><div class="mates">${mates.map(m=>`<button type="button" class="mate" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Invite</span></button>`).join("")}</div>`:""}`,()=>{
-
-    $("liSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
-    $("liCopy").onclick=async()=>{try{await navigator.clipboard.writeText(link);toast("Link copied.",2000)}catch(e){toast("Couldn't copy the link.",2500)}};
-    document.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const B=await cloud();
-      try{await B.set(`users/${b.dataset.mu}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});b.querySelector(".mst").textContent="Invited";b.disabled=true;track("live_invite_mate")}catch(e){toast("Couldn't send that one.",2500)}})})}
+  track("live_invite");const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
+  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px">${n?`${n} following. `:""}Friends follow along and get the recap.</p>`,false)}
+// The invite sheet (Who's coming? and Invite friends): friends you've crawled with as a row of faces up top (one tap each),
+// then Send link, with the QR one tap away beside it. No friends yet: the QR shows big instead, the quickest way to get the first one in.
+async function inviteSheet(id,head,skip){const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;
+  let mates=[],svg="";try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}
+  const sent=inviteSheet.sent[id]||(inviteSheet.sent[id]={});
+  const row=()=>mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(m.n||"Friend")}</span></button>`).join("")}</div>`:"";
+  const bigQR=!mates.length&&svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
+  const main=()=>sheet(head+row()+bigQR+`<div class="invacts"><button class="btn" type="button" id="ivSend">${I.share} Send link</button>${mates.length&&svg?`<button class="btn dark qrbtn" type="button" id="ivQR" aria-label="Show QR code">${QRI}</button>`:!skip?`<button class="btn dark qrbtn" type="button" id="ivCopy" aria-label="Copy link">${I.link}</button>`:""}</div>
+    ${skip?`<button class="btn dark" type="button" id="ivSkip" style="margin-top:10px">Skip</button>`:""}`,()=>{
+    $("ivSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
+    if($("ivCopy"))$("ivCopy").onclick=async()=>{try{await navigator.clipboard.writeText(link);toast("Link copied.",2000)}catch(e){toast("Couldn't copy the link.",2500)}};
+    if($("ivSkip"))$("ivSkip").onclick=closeSheet;
+    if($("ivQR"))$("ivQR").onclick=()=>sheet(`<div class="qrhead"><button class="iconbtn" type="button" id="ivBack" aria-label="Back">${I.back}</button><h3>Scan to follow</h3></div><div class="qrbox">${svg}</div><p class="note qrnote">Hold your phone up for whoever's joining.</p>`,()=>{$("ivBack").onclick=main});
+    $("sheetBody").querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
+      try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate")}
+      catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})});
+  main()}
+inviteSheet.sent={};
 // QR code of the follow link: for when everyone's standing together. Always black on white so cameras read it.
 const QRI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h2.5v2.5H14zM18.5 18.5h2M14 20.5h2.5M20.5 14v2.5"/></svg>';
 let qrP=null;

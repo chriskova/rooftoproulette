@@ -1591,15 +1591,7 @@ async function whoSheet(){const ok=()=>{const g=G();return g&&!g.demo&&!g.follow
     ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}});
   if(!(typeof signedIn==="function"&&signedIn()&&myName())){plain();return}
   let id=null;try{id=await startLive()}catch(e){console.warn(e)}if(!ok())return;if(!id){plain();return}
-  const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;let svg="",mates=[];try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}if(!ok())return;
-  track("live_invite",{from:"who"});
-  sheet(head+`${svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:""}
-    <div class="acts"><button class="btn" type="button" id="whoSend">${I.share} Send link</button><button class="btn dark" type="button" id="whoNo">Skip</button></div>
-    ${mates.length?`<div class="eyebrow hsec">Friends</div><div class="mates">${mates.map(m=>`<button type="button" class="mate" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Invite</span></button>`).join("")}</div>`:""}`,()=>{
-    $("whoNo").onclick=closeSheet;
-    $("whoSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
-    $("sheetBody").querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const B=await cloud();
-      try{await B.set(`users/${b.dataset.mu}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});b.querySelector(".mst").textContent="Invited";b.disabled=true;track("live_invite_mate")}catch(e){toast("Couldn't send that one.",2500)}})})}
+  if(!ok())return;track("live_invite",{from:"who"});inviteSheet(id,head,true)}
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);
   // first spin from a rooftop: don't send them to the one they're already standing in
