@@ -1432,8 +1432,8 @@ function wizRows(){const w=S.wiz;if(!w||!w.z)return {html:"",n:0,bind(){}};const
     const tick=skip||!o.open?"":`<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=MAXOUT?"disabled":""}>${out?"":TICK}</button>`;
     return `<div class="zrow${dim?" off":""}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${status}</small></button>${been?`<span class="beentag">Visited</span>`:""}${tick}</div>`}).join("");
   return {html,note:`You get ${MAXOUT} vetoes: untick a rooftop to sit it out this crawl.`+(excl.length?` ${excl.length} of ${MAXOUT} used.`:""),
-    bind(root,again){root.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{const id=b.dataset.x,i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<MAXOUT)excl.push(id);save();if(wizRepaint)wizRepaint();again()});
-      root.querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>{});warmOnHold(b,byId(b.dataset.z))})}}}
+    bind(root,again){root.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{vetoToggle(b.dataset.x);again()});
+      root.querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z));warmOnHold(b,byId(b.dataset.z))})}}}
 function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||(w.excl=[]),col=collectedMap(),t=now();
   const all=playable(inCircle(w.z,w.z.r),false).sort((x,y)=>{const ox=openState(x,t).open,oy=openState(y,t).open,bx=!isNew(x.id,col),by=!isNew(y.id,col);return ox!==oy?(ox?-1:1):bx!==by?(bx?1:-1):x.name.localeCompare(y.name)});
   const rows=()=>all.map(v=>{const o=openState(v,t),out=excl.includes(v.id),been=!isNew(v.id,col),skip=w.newOnly&&!!col[v.id],dim=out||skip||!o.open;
@@ -1448,19 +1448,30 @@ function wizBars(){const w=S.wiz;if(!w||!w.z)return;const MAXOUT=3,excl=w.excl||
       $("zList").querySelectorAll("[data-z]").forEach(b=>{b.onclick=()=>zoneBarSheet(byId(b.dataset.z),wizBars);warmOnHold(b,byId(b.dataset.z))})};
     paint();$("zDone").onclick=closeSheet})}
 
+// Vetoes (timed setup): up to 3 rooftops sat out of this crawl. The tick in the list, the button on a rooftop's card and the tick in
+// Visited rooftops all flip the same thing, so they always agree and it can't be used twice.
+const VETOS=3;
+function vetoToggle(id){const w=S.wiz;if(!w)return;const excl=w.excl||(w.excl=[]),i=excl.indexOf(id);if(i>=0)excl.splice(i,1);else if(excl.length<VETOS)excl.push(id);else return;
+  save();buzz(10);if(wizRepaint)wizRepaint();const vw=$("v-wiz");if(vw&&vw._fsFill)vw._fsFill()}
+const vetoUsed=()=>{const n=((S.wiz&&S.wiz.excl)||[]).length;return n?`${n} of ${VETOS} vetoes used`:`You get ${VETOS} vetoes`};
+const vetoTick=(v,o,skip)=>{const w=S.wiz,excl=(w&&w.excl)||[],out=excl.includes(v.id);if(skip||!o.open)return "";
+  return `<button class="tickbtn${out?"":" on"}" type="button" data-x="${v.id}" aria-pressed="${!out}" aria-label="${out?"Put "+esc(v.name)+" back in":"Sit "+esc(v.name)+" out"}" ${!out&&excl.length>=VETOS?"disabled":""}>${out?"":TICK}</button>`};
 const TICK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 // the rooftops in a zone you've already been to (no spoiler card: you know them)
-function visitedSheet(z){if(!z)return;const col=collectedMap(),t=now(),bl=playable(inCircle(z,z.r),false).filter(v=>col[v.id]).sort((a,b)=>{const oa=openState(a,t).open,ob=openState(b,t).open;return oa!==ob?(oa?-1:1):a.name.localeCompare(b.name)});
-  sheet(`<h3>Visited rooftops in your zone</h3><p class="note" style="margin:2px 0 10px">Switch on Skip and these won't come up.</p><div class="card zlist">${bl.map(v=>{const o=openState(v,t),st=o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
-    return `<div class="zrow${o.open?"":" off"}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${st}</small></button></div>`}).join("")}</div>`,
-    ()=>{$("sheetBody").querySelectorAll("[data-z]").forEach(b=>b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>visitedSheet(z)))})}
+function visitedSheet(z){if(!z)return;const col=collectedMap(),t=now(),w=S.wiz,skip=!!(w&&w.newOnly),bl=playable(inCircle(z,z.r),false).filter(v=>col[v.id]).sort((a,b)=>{const oa=openState(a,t).open,ob=openState(b,t).open;return oa!==ob?(oa?-1:1):a.name.localeCompare(b.name)});
+  const out=id=>((w&&w.excl)||[]).includes(id);
+  sheet(`<h3>Visited rooftops in your zone</h3><p class="note" style="margin:2px 0 10px">${skip?"Skip visited is on. None of these will come up.":"Untick one to sit it out.<br>"+vetoUsed()+"."}</p><div class="card zlist">${bl.map(v=>{const o=openState(v,t),st=out(v.id)?"Vetoed":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today");
+    return `<div class="zrow${o.open&&!out(v.id)&&!skip?"":" off"}"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${st}</small></button>${w?vetoTick(v,o,skip):""}</div>`}).join("")}</div>`,
+    ()=>{$("sheetBody").querySelectorAll("[data-z]").forEach(b=>b.onclick=()=>zoneBarSheet(byId(b.dataset.z),()=>visitedSheet(z)));
+      $("sheetBody").querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{vetoToggle(b.dataset.x);visitedSheet(z)})})}
 function zoneBarSheet(v,back){
   const w=S.wiz;if(!w){barSheet(v);return}
-  const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now());
-  const zf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
+  const excl=w.excl||(w.excl=[]),out=excl.includes(v.id),o=openState(v,now()),full=!out&&excl.length>=VETOS;
+  const zf=`<span>${I.clock} ${out?"Vetoed for this crawl":o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>`;
   sheet(`${sheetCard(v,zf)}
-    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${!out&&excl.length>=3?"disabled":""}>${out?"Put it back in":"Sit this one out"}</button>`:""}<button class="btn line" type="button" id="zc">Close</button></div>`,()=>{
-    $("zc").onclick=()=>{if(back)back();else closeSheet()};bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{const i=excl.indexOf(v.id);if(i>=0)excl.splice(i,1);else excl.push(v.id);save();if(wizRepaint)wizRepaint();if(back)back();else closeSheet()}});
+    <div class="acts">${o.open?`<button class="btn ${out?"":"dark"}" type="button" id="zx" ${full?"disabled":""}>${out?"Put it back in":"Sit this one out"}</button>`:""}<button class="btn line" type="button" id="zc">${back?"Back":"Close"}</button></div>
+    ${o.open?`<p class="note" style="text-align:center;margin:10px 0 0">${full?"All "+VETOS+" vetoes used":vetoUsed()}</p>`:""}`,()=>{
+    $("zc").onclick=()=>{if(back)back();else closeSheet()};bindSheetCard(v,zf);if($("zx"))$("zx").onclick=()=>{vetoToggle(v.id);zoneBarSheet(v,back)}});
 }
 async function useMe(){
   const w=S.wiz;
