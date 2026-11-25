@@ -1816,9 +1816,11 @@ html,body{overflow-x:hidden;max-width:100%}
 .fslh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;padding:6px 0 4px;cursor:pointer}
 .fslb{flex:1;min-height:0;overflow-y:hidden;position:relative;padding-bottom:6px;touch-action:pan-y;overscroll-behavior:contain}
 .fslist.on .fslb{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:26px;bottom:calc(84px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));justify-content:center;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;visibility:hidden;pointer-events:none}
+.fspanel>.fsgate{position:absolute;left:18px;right:18px;top:22px;bottom:calc(84px + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)));display:flex;flex-direction:column;align-items:stretch;visibility:hidden;pointer-events:none}
+.fsgh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px;padding:6px 0 4px}.fsgh svg{width:20px;height:20px;color:var(--amber-text)}
+.fsgc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center}
 .fsgt{display:flex;flex-direction:column;gap:4px}
-.fsgt b{font-size:22px;font-weight:800;letter-spacing:-.3px}.fsgt span{color:var(--muted);font-size:14.5px}
+.fsgt b{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--red)}.fsgt span{color:var(--muted);font-size:14.5px}
 .fsgshow{appearance:none;border:1.5px solid var(--line);background:none;color:var(--text);font:inherit;font-weight:700;font-size:15px;height:42px;padding:0 20px;border-radius:21px;cursor:pointer}
 .fsgate>*{opacity:0;transform:translateY(12px);transition:opacity .14s ease,transform .14s ease}
 .fspanel.gated{overflow:hidden}.fspanel>.fshandle{flex-shrink:0}

@@ -1109,7 +1109,7 @@ function renderQuick(){
     if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
   b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
     const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip visited rooftops <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
-    return {title:`${L.length} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
+    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
       bind(root,again){const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
   fsLayout(b,b);
   b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
@@ -1234,7 +1234,7 @@ function renderWiz(){
     $("zSkipC").onclick=e=>{if(e&&e.target.closest&&e.target.closest(".l")&&$("zSkipC").querySelector(".dv")){visitedSheet(w.z);return}w.newOnly=!w.newOnly;save();if(zb)zb.paint(true)};
     // full screen: Skip visited up top under search, the open count as the See list pill above the panel
     {const cv=$("rrMap").parentElement,row=document.createElement("div");row.className="mchips";row.append($("zSkipC"));cv.append(row)}
-    $("v-wiz")._fsList=()=>{const r=wizRows();return {title:`${$("rrN").textContent} in your zone`,top:`<p class="note fsln">${r.note}</p>`,html:`<div class="card zlist">${r.html}</div>`,bind:r.bind,gate:()=>!w.spoiled,ungate:()=>{w.spoiled=1;save()}}};
+    $("v-wiz")._fsList=()=>{const r=wizRows();return {title:(n=>`${n} rooftop${n===1?"":"s"} open in your zone`)(parseInt($("rrN").textContent)||0),top:`<p class="note fsln">${r.note}</p>`,html:`<div class="card zlist">${r.html}</div>`,bind:r.bind,gate:()=>!w.spoiled,ungate:()=>{w.spoiled=1;save()}}};
     fsLayout($("v-wiz"),body);fsOpts();
     fitMap($("v-wiz"));
   }
@@ -1264,7 +1264,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   const m2=mk();if(lbl){lbl.after(m2);let n=m2.nextSibling;while(n){const x=n.nextSibling;m2.append(n);n=x}}
   const lw=document.createElement("div");lw.className="fslist";lw.innerHTML=`<div class="fslh">${I.glass||""}<span class="n"></span></div><div class="fslb"></div>`;panel.append(lw);
   // timed mode: the spoiler question takes the controls' place at the same size, before the list ever shows
-  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgt"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span></div><button class="fsgshow" type="button" data-g="show">See the rooftops</button>`;panel.append(gt);
+  const gt=document.createElement("div");gt.className="fsgate";gt.innerHTML=`<div class="fsgh">${I.glass||""}<span class="n"></span></div><div class="fsgc"><div class="fsgt"><b>Spoiler alert</b><span>Half the fun is not knowing where you'll end up.</span></div><button class="fsgshow" type="button" data-g="show">See the rooftops</button></div>`;panel.append(gt);
   const bx=lw.querySelector(".fslb"),parts=[m1,m2];let full=null,u=1,base=300,span=300,gateOK=false;
   const prov=()=>view._fsList&&view._fsList();
   const needGate=()=>{if(gateOK)return false;const L=prov();return !!(L&&L.gate&&L.gate())};
@@ -1284,7 +1284,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   const ctaSwap=on=>{const b=document.querySelector("#cta:not([hidden]) .btn");if(!b)return;if(on===!!b._gk)return;const fade=()=>{try{b.animate([{opacity:1},{opacity:0,offset:.45},{opacity:0,offset:.55},{opacity:1}],{duration:260,easing:"ease"})}catch(e){}};
     if(on){b._gk={h:b.innerHTML,c:b.onclick,d:b.disabled};fade();setTimeout(()=>{b.innerHTML="Keep it a surprise"},110);b.disabled=false;b.onclick=e=>{e.stopPropagation();gateOut(1)}}
     else{const k=b._gk;b._gk=null;fade();setTimeout(()=>{b.innerHTML=k.h},110);b.onclick=k.c;b.disabled=k.d}};
-  const gate=on=>{cancelAnimationFrame(hraf);panel.classList.remove("gleave");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";panel.style.removeProperty("--gp");ctaSwap(false);return}panel.classList.add("gated");ctaSwap(true)};
+  const gate=on=>{cancelAnimationFrame(hraf);panel.classList.remove("gleave");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";panel.style.removeProperty("--gp");ctaSwap(false);return}const L_=prov();gt.querySelector(".fsgh .n").textContent=L_?L_.title:"";panel.classList.add("gated");ctaSwap(true)};
   const tuckH=()=>base-tot();
   // H: the card's height. Above the card it fades back into the controls; below it, into the tucked panel
   // (the card is the same height as the controls: dragging it up fades back to them over the first 70px, gp can also be driven directly)
@@ -1342,13 +1342,15 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   let y0=null,u0=1,moved=false,swiped=0,cap=2,smp=[],card=false,h0=0;
   const dStart=y=>{cancelAnimationFrame(raf);cancelAnimationFrame(hraf);moving=false;measure();y0=y;u0=u;moved=false;smp=[];card=gated()&&!panel.classList.contains("gleave");h0=cH;cap=noList?1:u0>1.01||!needGate()?2:1};
   const rub=e=>70*(1-Math.exp(-e/160));
-  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved&&!card&&d<0&&u0>=1&&cap>1)fill();moved=true;
+  const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<10)return false;if(!moved&&!card&&d<0&&u0>=1&&cap>1)fill();moved=true;
     const t=performance.now();smp.push([t,y]);while(smp.length>2&&t-smp[0][0]>90)smp.shift();
     // on the spoiler card: up grows it back into the controls, down tucks it away; it never opens the list
     if(card){let H=h0-d;const tk=tuckH();if(H>gH){const e=H-gH;cardFrame(gH+rub(e)*.5,cl(e/90));return true}if(H<tk)H=tk-rub(tk-H)*.4;cardFrame(H);return true}
     let P=Math.max(0,px(u0)-d);if(cap<2){const T=px(1);if(P>T)P=T+rub(P-T);tease=P>T+.5}else{P=Math.min(px(2)+rub(Math.max(0,P-px(2))),P);tease=false}
     moving=true;apply(inv(P));return true};
-  const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();moving=false;
+  const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;
+    // a tap (or a tap with a wobble) on the card mustn't leave its settle half done, or swallow the tap
+    if(!moved){if(card&&gated()&&Math.abs(cH-gH)>.5)hspring(gH,{z:.8});card=false;return}if(Math.abs(d)>=16)swiped=Date.now();moving=false;
     let vy=0;if(smp.length>1){const a=smp[0],b=smp[smp.length-1];if(b[0]-a[0]>8)vy=(b[1]-a[1])/((b[0]-a[0])/1000)}
     if(performance.now()-(smp.length?smp[smp.length-1][0]:0)>80)vy=0;
     const vp=-vy;// panel speed, px/s, up is positive
