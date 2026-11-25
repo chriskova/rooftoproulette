@@ -4,8 +4,8 @@ await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(300);cons
 await T(()=>{const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Australia/Sydney'}));const t=new Date(d);t.setHours(17,0,0,0);S.onboarded=true;S.test=true;S.ff=t-d;S.seenHow={rush:1,rr:1};S.fake={lat:-33.8688,lng:151.2093};S.packs=Object.assign({},S.packs||{});save();go('home')});
 await T(()=>{S.wiz={step:0};save();go('wiz')});await p.waitForTimeout(500);
 await p.click('[data-l="60"]');await p.click('#wNext');await p.waitForTimeout(1500);console.log('after Next: step',await T(()=>S.wiz.step),'| title',await T(()=>document.querySelector('#v-wiz h1').textContent));
-await p.click('#wNext');await p.waitForTimeout(1500);console.log('started: route',await T(()=>S.route),'| sheet',await T(()=>$('sheet').open&&$('sheetBody').querySelector('h3').textContent));await p.screenshot({path:'out/ps-who.png'});
-await p.click('#whoNo');await p.waitForTimeout(500);
+await p.click('#wNext');await p.waitForTimeout(1500);if(await p.$('#whoGo')){await p.click('#whoGo');await p.waitForTimeout(1500)}console.log('started: route',await T(()=>S.route),'| sheet',await T(()=>$('sheet').open&&$('sheetBody').querySelector('h3').textContent));await p.screenshot({path:'out/ps-who.png'});
+
 console.log('pills:',await T(()=>[...document.querySelectorAll('.mixline.pre > *')].map(x=>x.textContent.trim()).join(' | ')));await p.screenshot({path:'out/ps-pills.png'});
 await p.click('[data-mx="len"]');await p.waitForTimeout(500);await p.screenshot({path:'out/ps-len.png'});await p.click('#sheetBody [data-l="120"]');await p.waitForTimeout(600);console.log('len →',await T(()=>G().len),await T(()=>document.querySelector('[data-mx="len"]').textContent));
 await p.click('[data-mx="deck"]');await p.waitForTimeout(500);console.log('deck sheet:',await T(()=>$('sheetBody').querySelector('h3').textContent));await p.screenshot({path:'out/ps-deck.png'});await T(()=>closeSheet());await p.waitForTimeout(400);

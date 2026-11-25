@@ -1067,6 +1067,9 @@ function renderQuick(){
   if(farAway()&&!S.game){S.quick=null;go("home");setTimeout(farSheet,150);return}
   const q=S.quick||(S.quick={step:1,from:null}),b=$("v-quick"),t=now();
   if(!S.game)$("stage").innerHTML="";
+  if(q.who&&whoOn()){if(rrMap){rrMap.remove();rrMap=null}b.classList.remove("fsv");
+    b.innerHTML=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:100%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div><div id="qWho" style="display:flex;flex-direction:column;gap:16px;padding:0 20px"></div>`;
+    $("qBack").onclick=()=>{q.who=0;save();renderQuick()};$("qClose").onclick=()=>{S.quick=null;go("home")};whoStep($("qWho"),q,()=>startCruise());return}
   if(q.newOnly===undefined)q.newOnly=!!(S.last&&S.last.rrNew);
   apClear();
   const top=`<div class="wtop"><button class="iconbtn" id="qBack" type="button" aria-label="Back">${I.back}</button><div class="prog"><i style="width:100%"></i></div><button class="iconbtn" id="qClose" type="button" aria-label="Close">${I.x}</button></div>`;
@@ -1107,7 +1110,7 @@ function renderQuick(){
     cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Start the crawl</button>`,()=>$("qGo").onclick=()=>{
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
-      q.r=z.r||null;save();startCruise()})},
+      q.r=z.r||null;q.z=z;if(whoOn()){q.who=1;save();renderQuick()}else{save();startCruise()}})},
     Object.assign({skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
@@ -1149,7 +1152,8 @@ async function startCruise(noLoc){
   zoneCity(c);S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,list:f.type==="list"?(f.list||"want"):undefined,name:f.name||null,r:q.r||null,lat:f.type==="spot"||(f.type==="list"&&q.r)?f.lat:null,lng:f.type==="spot"||(f.type==="list"&&q.r)?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:pos?{lat:pos.lat,lng:pos.lng}:{lat:c.lat,lng:c.lng},noLoc:noLoc||undefined,areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
-  S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");whoSheetSoon();
+  if(q.live){S.game.live=q.live;try{liveAttach()}catch(e){}}
+  S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 function quickSpin(vel){
   const q=S.quick;if(spinning||!q||!q.from)return false;ac();
@@ -1168,11 +1172,11 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===2)w.step=1;if(w.step===3)w.step=1;   // 0 how long → 1 zone, which starts the crawl (decks are a pill on the spin screen now)
+  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===2&&!whoOn())w.step=1;if(w.step===3)w.step=1;   // 0 how long → 1 zone → 2 who's coming (when it's on) → start. Decks are a pill on the spin screen.
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(w.step!==1)$("v-wiz").classList.remove("fsv");if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
-  stVal[3]=deckLbl();const order=[0,1],pos=Math.max(0,order.indexOf(w.step));
+  stVal[3]=deckLbl();const order=whoOn()?[0,1,2]:[0,1],pos=Math.max(0,order.indexOf(w.step));
   // one bar that fills as you go
   $("wSteps").innerHTML=`<div class="prog"><i style="width:${Math.round((pos+1)/order.length*100)}%"></i></div>`;
   $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
@@ -1231,8 +1235,8 @@ function renderWiz(){
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
-        cta(ok?`<button class="btn" id="wNext" type="button">Start the crawl</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
-          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});save();sawHow("rush");tryStart()};
+        cta(ok?`<button class="btn" id="wNext" type="button">${whoOn()?"Next":"Start the crawl"}</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
+          if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});save();sawHow("rush");if(whoOn()){w.step=2;save();renderWiz()}else tryStart()};
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
     wizRepaint=()=>{if(zb&&S.route==="wiz")zb.paint(true)};
@@ -1243,6 +1247,7 @@ function renderWiz(){
     fsLayout($("v-wiz"),body);fsOpts();
     fitMap($("v-wiz"));
   }
+  if(w.step===2){body.classList.remove("fsv");whoStep(body,w,()=>tryStart())}
   if(w.step===3){
     const toAdd=PACKS.filter(p=>!packOwned(p.id));
     body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">Wildcards land at random along the way.</p></div>${deckSwHTML()}
@@ -1446,7 +1451,7 @@ async function useMe(){
   }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }
-$("wBack").onclick=()=>{const w=S.wiz;if(w.step===1||w.step===3){w.step=0;save();renderWiz();return}if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step===2){w.step=1;save();renderWiz();return}if(w.step===1||w.step===3){w.step=0;save();renderWiz();return}if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
   ac();noLoc=noLoc===true;if(tryStart.busy)return;
@@ -1468,7 +1473,7 @@ async function tryStart2(noLoc){
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   if(noLoc)S.game.noLoc=true;
   if(w.live){S.game.live=w.live;try{liveAttach()}catch(e){}}   // friends invited from setup keep following
-  spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");whoSheetSoon();
+  spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
 }
 
 // Location blocked as a round starts: say what that means, then let them turn it on or play without it.
@@ -1586,17 +1591,21 @@ function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-to
     <button class="opt" type="button" role="radio" data-l="60" aria-checked="${g.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few rooftops, quick drinks.</small></span></button>
     <button class="opt" type="button" role="radio" data-l="120" aria-checked="${g.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More rooftops or longer stays.</small></span></button></div>`,
   ()=>{$("sheetBody").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{const l=+b.dataset.l;if(G()!==g||!mixPre(g)){closeSheet();return}g.len=l;S.last=Object.assign({},S.last||{},{len:l});save();closeSheet();renderPlay();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{})})})}
-// Who's coming: straight after Start (the clock waits for the first rooftop), a nudge to bring friends in. Skip is one tap.
-// Signed in: the QR and Send link are right there (the group's standing together). Not signed in: Invite asks to sign in
-// only once you've said you want to, so sign-in never sits in front of the first spin.
-function whoSheetSoon(){setTimeout(whoSheet,450)}
-async function whoSheet(){const ok=()=>{const g=G();return g&&!g.demo&&!g.follow&&!g.started&&cloudOn()&&S.route==="play"&&!$("sheet").open};if(!ok())return;
-  const head=`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 12px">Friends follow along and get the recap.</p>`;
-  const plain=()=>sheet(head+`<div class="acts"><button class="btn" type="button" id="whoInv">${MIX_INVI} Invite friends</button><button class="btn dark" type="button" id="whoNo">Skip</button></div>`,
-    ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}});
-  if(!(typeof signedIn==="function"&&signedIn()&&myName())){plain();return}
-  let id=null;try{id=await startLive()}catch(e){console.warn(e)}if(!ok())return;if(!id){plain();return}
-  if(!ok())return;track("live_invite",{from:"who"});inviteSheet(id,head,true)}
+// Who's coming?: the last step of setup (after the zone), so it never gets between you and the first spin.
+// Starting the crawl is the skip; skip it three crawls running and it stops asking (the Invite pill's always on the spin screen).
+const whoOn=()=>{try{return cloudOn()&&(S.whoSkips||0)<3&&!S.follow}catch(e){return false}};
+function whoStep(host,st,start){
+  host.innerHTML=`<div><h1 class="q">Who's coming?</h1><p class="sub" style="margin:6px 0 0">Friends follow along and get the recap.</p></div><div class="whobox" id="whoBox"></div>`;
+  cta(`<button class="btn" id="whoGo" type="button">Start the crawl</button>`,()=>{$("whoGo").onclick=()=>{let j=0;try{j=Object.keys((liveDoc&&liveDoc.members)||{}).length}catch(e){}
+    S.whoSkips=st.invited||j?0:(S.whoSkips||0)+1;save();start()}});
+  whoFill(st)}
+async function whoFill(st){const box=$("whoBox");if(!box)return;const acted=()=>{st.invited=1;S.whoSkips=0;save()};
+  const gate=()=>{box.innerHTML=`<button class="btn dark" type="button" id="whoInv">${MIX_INVI} Invite friends</button>`;
+    $("whoInv").onclick=()=>{acted();liveInvite();$("sheet").addEventListener("close",()=>setTimeout(()=>whoFill(st),200),{once:true})}};
+  if(!(typeof signedIn==="function"&&signedIn()&&myName())){gate();return}
+  box.innerHTML=`<div class="whold"></div>`;let id=null;try{id=st.live||await startLivePre()}catch(e){console.warn(e)}
+  if(!$("whoBox"))return;if(!id){gate();return}track("live_invite",{from:"setup"});
+  const P=await invParts(id,acted);if(!$("whoBox"))return;box.innerHTML=P.html;P.bind(box);const sb=box.querySelector('[data-iv="send"]');if(sb)sb.classList.add("dark")}   // Start the crawl is the one amber button here
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);
   // first spin from a rooftop: don't send them to the one they're already standing in
