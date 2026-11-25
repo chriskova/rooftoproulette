@@ -166,7 +166,7 @@ const canApple=()=>!!(FB_CFG&&IOSNAT);
 function onUserChange(was,u){
   if(u&&!u.anon&&(!was||was.anon||was.uid!==u.uid)){tabSyncAll();watchInvites()}
   if(u&&u.anon&&was&&!was.anon){if(inviteUnsub){inviteUnsub();inviteUnsub=null}}
-  if($("setPage"))settingsSheet();if($("acctPage")){if(u&&!u.anon)accountPage();else closeAcct()}if(S.route==="hist")renderHist();if(u&&!u.anon){if($("siNudge"))$("siNudge").remove();if($("rcIn"))$("rcIn").remove()}
+  if($("setPage"))settingsSheet();if($("apOut")){if(u&&!u.anon)accountPage();else closeAcct()}if(S.route==="hist")renderHist();if(u&&!u.anon){if($("siNudge"))$("siNudge").remove();if($("rcIn"))$("rcIn").remove()}
   if(S.follow||(S.game&&S.game.live))liveAttach();
 }
 
@@ -226,20 +226,12 @@ function afterSignIn(from){let k=0;const go=()=>{const first=((ME&&ME.name)||"")
 // Account: a full page like Settings, for when you're signed in. Who you are, who you crawl with, your tab's backup.
 // App preferences (look, sound, creator mode) stay in Settings: they're for this phone and work signed out too.
 const fmtD=t=>new Date(t).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:new Date(t).getFullYear()===new Date().getFullYear()?undefined:"numeric"});
+// Account is a slide-up: who you're signed in as, Sign out, Delete account. Nothing else lives here.
 function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
-  let pg=$("acctPage");const fresh=!pg;
-  if(fresh){pg=document.createElement("div");pg.id="acctPage";pg.className="setpage";document.body.appendChild(pg);
-    try{history.pushState({acctPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
-  if($("sheet").open)closeSheet();
-  pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="apBack" aria-label="Back">${I.back}</button><b>Account</b></div><div class="spbody">
-    <div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||myName()||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
-    <div class="sgrp" style="margin-top:22px">
-      <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
-      <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>
-  </div>`;
-  $("apBack").onclick=()=>{try{if(history.state&&history.state.acctPage)history.back();else closeAcct()}catch(e){closeAcct()}};
-  if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
-function closeAcct(){const pg=$("acctPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
+  sheet(`<div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||myName()||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
+    <div class="acts"><button class="btn dark" type="button" id="apOut">Sign out</button><button class="txtbtn" type="button" id="apDel" style="color:var(--red)">Delete account</button></div>`,()=>{
+    if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet})}
+function closeAcct(){if($("apOut")&&$("sheet").open)closeSheet()}
 function accountSheet(){if(signedIn())accountPage();else signInSheet(null,"acct")}
 // the account button on My Tab: your initial when signed in, an outline when not
 function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
