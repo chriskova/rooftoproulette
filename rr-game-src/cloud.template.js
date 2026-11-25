@@ -234,7 +234,7 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
     <div class="sgh">My Tab</div><div class="sgrp">
       <div class="strow"><span class="t"><b>Backed up</b><small>Sign in on any phone and it comes back</small></span><span class="sval">${n} crawl${n===1?"":"s"}</span></div></div>
     <div class="sgh">Friends</div><div class="sgrp" id="apMates"><div class="strow"><span class="t"><small>Loading…</small></span></div></div>
-    ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard packs, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
+    ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard decks, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
     <div class="sgh">Account</div><div class="sgrp">
       <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
       <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>

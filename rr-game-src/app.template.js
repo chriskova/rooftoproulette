@@ -1241,7 +1241,7 @@ function renderWiz(){
   if(w.step===3){
     const toAdd=PACKS.filter(p=>!packOwned(p.id));
     body.innerHTML=`<div><h1 class="q">Pick your decks</h1><p class="sub" style="margin:6px 0 0">Wildcards land at random along the way.</p></div>${deckSwHTML()}
-      ${toAdd.length?`<div><div class="eyebrow dk-ph">More wildcard packs</div><div class="dk-packs">${toAdd.map(p=>`<button class="dk-pack" type="button" data-dp="${p.id}"><span class="dk-logo">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><span class="chev">›</span></button>`).join("")}</div></div>`:""}`;
+      ${toAdd.length?`<div><div class="eyebrow dk-ph">More wildcard decks</div><div class="dk-packs">${toAdd.map(p=>`<button class="dk-pack" type="button" data-dp="${p.id}"><span class="dk-logo">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><span class="chev">›</span></button>`).join("")}</div></div>`:""}`;
     bindDeckSw(body);body.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,closeSheet));
     cta(`<button class="btn" id="wNext" type="button">Next</button>`,()=>{$("wNext").onclick=()=>{w.step=1;save();renderWiz()}});
   }
@@ -2902,7 +2902,7 @@ function renderPlay0(){
     const reopen=()=>w.click();
     sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>
       ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"All "+ts.length+" played":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
-      ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard packs <span class="chev">›</span></button>`:""}`}
+      ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard decks <span class="chev">›</span></button>`:""}`}
       <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
       $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=deckSheet})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
@@ -3078,7 +3078,7 @@ function wildSpin(t,trial,back){const m=WMETA[t];if(!m||!m.spin)return;const g=G
         R.spinTo(pick,vel===undefined?-(30+Math.random()*20):vel,()=>{buzz(20);box.innerHTML=`<div class="wsres">${esc(pick)}</div>`;
           if(!trial&&G()&&G().wild&&G().wild.text===t){const ww=G().wild;ww.res=m.multi?(ww.res||[]).concat([pick]):[pick];save();if(S.route==="play")renderPlay()}
           const more=m.multi||trial;
-          $("wsOut").innerHTML=`${m.multi?"":`<p class="wsfull">${esc(m.lead)} <span>${esc(wSay(m,pick))}.</span></p>`}<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the pack":"Done"}</button></div>`;
+          $("wsOut").innerHTML=`${m.multi?"":`<p class="wsfull">${esc(m.lead)} <span>${esc(wSay(m,pick))}.</span></p>`}<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the deck":"Done"}</button></div>`;
           if($("wsAgain"))$("wsAgain").onclick=draw;$("wsDone").onclick=()=>{if(trial&&back)back();else closeSheet()}})};
       $("wsOut").innerHTML=`<button class="btn" type="button" id="wsGo">Spin the wildcard</button>`;$("wsGo").onclick=()=>{$("wsOut").innerHTML="";go_()};
     })};
@@ -3144,7 +3144,7 @@ async function buyPack(id){const P=await rcInit();if(!P)throw new Error("store")
   const r=await P.getProducts({productIdentifiers:[PK_PRODUCT[id]],type:"NON_SUBSCRIPTION"}),prod=(r.products||[])[0];if(!prod)throw new Error("product");
   const res=await P.purchaseStoreProduct({product:prod});rcApply(res.customerInfo);return packOwned(id)}
 async function restorePacks(){const P=await rcInit();if(!P)return;
-  try{const {customerInfo}=await P.restorePurchases();rcApply(customerInfo);const n=PACKS.filter(p=>packOwned(p.id)).length;toast(n?`Restored ${n} pack${n===1?"":"s"}`:"No packs to restore",2200)}catch(e){toast("Couldn't reach the store. Try again soon.",2400)}}
+  try{const {customerInfo}=await P.restorePurchases();rcApply(customerInfo);const n=PACKS.filter(p=>packOwned(p.id)).length;toast(n?`Restored ${n} deck${n===1?"":"s"}`:"No decks to restore",2200)}catch(e){toast("Couldn't reach the store. Try again soon.",2400)}}
 if(NATIVE)setTimeout(()=>rcInit(),2500);
 // ---------- The deck: one draw pile that carries across crawls ----------
 // Every crawl deals from cards you haven't had yet. When the pile runs out it's reshuffled. A pack you buy shuffles its cards in.
@@ -3168,7 +3168,7 @@ function deckSheet(){const pl=S.wplayed||{};
   const pack=p=>`<button class="dk-pack" type="button" data-dp="${p.id}"><span class="dk-logo">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><span class="chev">›</span></button>`;
   sheet(`<h3>Wildcards</h3>
     ${owned.length?`<div class="eyebrow dk-ph first">Your decks</div>`:""}${deckSwHTML()}
-    ${toAdd.length?`<div class="eyebrow dk-ph">${owned.length?"More wildcard packs":"Packs"}</div><div class="dk-packs">${toAdd.map(pack).join("")}</div>`:""}
+    ${toAdd.length?`<div class="eyebrow dk-ph">${owned.length?"More wildcard decks":"Decks"}</div><div class="dk-packs">${toAdd.map(pack).join("")}</div>`:""}
     ${canBuy()?`<button class="txtbtn wmore" type="button" id="dkRestore">Restore purchases</button>`:""}`,()=>{
     $("sheet").classList.add("tq");
     document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
@@ -3202,14 +3202,14 @@ const anyOwned=()=>PACKS.some(p=>packOwned(p.id));
 // just bought a pack: play it on its own, or mix it in
 function afterBuy(id,back){const p=packById(id),g=G();
   sheet(`<h3>${esc(p.name)} is in</h3><p class="note" style="margin:6px 0 14px">How do you want to play it?</p>
-    <div class="acts"><button class="btn" type="button" id="abMix">With ${BASE_DECK}</button><button class="btn line" type="button" id="abOnly">Only this pack</button></div>`,()=>{
+    <div class="acts"><button class="btn" type="button" id="abMix">With ${BASE_DECK}</button><button class="btn line" type="button" id="abOnly">Only this deck</button></div>`,()=>{
     $("abMix").onclick=()=>{delete S.freeOff;if(S.packOff)delete S.packOff[id];if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)};
     $("abOnly").onclick=()=>{S.freeOff=true;S.packOff={};PACKS.forEach(q=>{if(q.id!==id)S.packOff[q.id]=true});if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)}})}
 // the day after, on the recap: where your deck's at, once per crawl
 function recapDeck(r){if(r.demo||r.deckAsked||!H.length)return "";const n=freePlayed(),tot=WILDS.length;if(n>=tot&&PACKS.every(p=>packOwned(p.id)))return "";
-  return `<button class="sinudge" type="button" id="rcDeck">${I.sparkle}<span><b>${n>=tot?BASE_DECK+" done":"Wildcards: "+n+" of "+tot+" played"}</b><small>${n>=tot?"Two packs to add when you're ready":(tot-n)+" you haven't had yet"}</small></span></button>`}
+  return `<button class="sinudge" type="button" id="rcDeck">${I.sparkle}<span><b>${n>=tot?BASE_DECK+" done":"Wildcards: "+n+" of "+tot+" played"}</b><small>${n>=tot?"Two decks to add when you're ready":(tot-n)+" you haven't had yet"}</small></span></button>`}
 // My Tab: your packs, then the ones you could add
-function tabPacksHTML(){return `<div class="eyebrow hsec">Wildcard packs</div><div class="recs">${PACKS.map(p=>{const own=packOwned(p.id),pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
+function tabPacksHTML(){return `<div class="eyebrow hsec">Wildcard decks</div><div class="recs">${PACKS.map(p=>{const own=packOwned(p.id),pl=S.wplayed||{},n=p.cards.filter(c=>pl[c.t]).length;
   return `<button class="rec" type="button" data-tpk="${p.id}"><span class="t"><small>${own?(packOn(p.id)?"In play":"Switched off"):p.cards.length+" wildcards"}</small><span>${esc(p.name)}</span></span><b>${own?n+"/"+p.cards.length:"Preview"}</b><span class="chev">›</span></button>`}).join("")}</div>`}
 // Wildcards: a set number per game (1 hour: 2, 2 hours: 3 or 4), on random bars, never the first and never two in a row.
 // Cards come off a shuffled deck: no repeats in a game, and the ones you saw last game go to the bottom.

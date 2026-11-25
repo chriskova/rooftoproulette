@@ -30,7 +30,7 @@ footer{margin-top:40px;color:var(--muted);font-size:14px}footer a{margin-right:1
 <h2>Your account (optional)</h2>
 <p>You can play without an account. If you sign in with Google, with Apple (on iPhone) or with an email and password:</p>
 <ul>
-<li><b>What we store:</b> your name, email address and, for Google sign-in, your profile photo; a backup of your tab (crawls with their bars, times, route, stats, names and the photos you added to them, plus your Hit list, Favourites, Pass list and the bars you've been to, but not clips); the people you've been on crawls with, so you can invite them again; and the wildcard packs you've bought. If you sign in with Apple and choose to hide your email, we only get Apple's private relay address.</li>
+<li><b>What we store:</b> your name, email address and, for Google sign-in, your profile photo; a backup of your tab (crawls with their bars, times, route, stats, names and the photos you added to them, plus your Hit list, Favourites, Pass list and the bars you've been to, but not clips); the people you've been on crawls with, so you can invite them again; and the wildcard decks you've bought. If you sign in with Apple and choose to hide your email, we only get Apple's private relay address.</li>
 <li><b>Passwords</b> are handled by Firebase Authentication (Google). They're stored scrambled (hashed), so nobody can read them, including us.</li>
 <li><b>Where:</b> Google Firebase. Your crawl backups are stored in Sydney, Australia.</li>
 <li><b>Who can see it:</b> you. Other users can't see your backup. It's encrypted in transit and at rest by Google, and access to our database is limited to the Rooftop Roulette team. We only look at an account's data to help with a request you've made or if the law requires it.</li>
@@ -41,15 +41,15 @@ footer{margin-top:40px;color:var(--muted);font-size:14px}footer a{margin-right:1
 <p>When you invite people to follow your crawl, the crawl is sent to our database (Firebase) while it runs: the bars you've been to and where you're heading, the times, the crawl zone you picked, any wildcards, your crawl's name, your first name, and the first names of people following. Anyone with the invite link can see it. Your exact GPS position and route aren't shared. When it ends, people who followed get a copy on their tab, so the crawl's record stays in our database afterwards. Email us if you want one removed. Invites to people you've crawled with before appear in their app.</p>
 <h2>Camera and microphone</h2>
 <p>Only used when you film a spin or take a photo for your crawl card. Clips stay on your phone, and in your photo gallery if you've chosen to save them there. Photos do too, and if you're signed in, the ones on your crawls are also backed up to your account.</p>
-<h2>Wildcard packs</h2>
-<p>Purchases are made through the App Store or Google Play. Apple or Google handles the payment, and we never see your card or bank details. RevenueCat manages purchases for us: it receives a purchase ID (your account ID if you're signed in, otherwise a random one), what you bought and when, and your device type, so your packs unlock and can be restored.</p>
+<h2>Wildcard decks</h2>
+<p>Purchases are made through the App Store or Google Play. Apple or Google handles the payment, and we never see your card or bank details. RevenueCat manages purchases for us: it receives a purchase ID (your account ID if you're signed in, otherwise a random one), what you bought and when, and your device type, so your decks unlock and can be restored.</p>
 <h2>Services the app relies on</h2>
 <ul>
 <li><b>Google Maps Platform</b> shows maps and loads bar photos and details. Google receives those requests, like any map you open. See <a href="https://policies.google.com/privacy">Google's privacy policy</a>.</li>
 <li><b>A walking-route service</b> (OpenStreetMap routing, run from Germany) can be used to draw your route along real streets on your crawl card. It receives the locations of the bars on that route.</li>
 <li><b>Google Firebase</b> (Authentication and Firestore) runs sign-in, account backups and live crawls. See <a href="https://firebase.google.com/support/privacy">Firebase privacy and security</a>.</li>
 <li><b>Apple</b> runs Sign in with Apple and App Store purchases, and <b>Google</b> runs Google sign-in and Google Play purchases.</li>
-<li><b>RevenueCat</b> manages wildcard pack purchases. See <a href="https://www.revenuecat.com/privacy">RevenueCat's privacy policy</a>.</li>
+<li><b>RevenueCat</b> manages wildcard deck purchases. See <a href="https://www.revenuecat.com/privacy">RevenueCat's privacy policy</a>.</li>
 <li><b>PostHog</b> (hosted in the EU) receives the usage stats below.</li>
 </ul>
 <h2>Usage stats and crash reports</h2>
