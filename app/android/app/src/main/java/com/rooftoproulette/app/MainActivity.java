@@ -2,10 +2,14 @@ package com.rooftoproulette.app;
 
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.Window;
+import android.view.WindowManager;
 import android.os.SystemClock;
 import android.webkit.WebView;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
@@ -31,6 +35,11 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(ShareToPlugin.class);
         registerPlugin(GoogleAuthPlugin.class);    // our own: "Continue with Google" for the optional account       // our own: the crawl card share row (Stories, WhatsApp, Messages)
         super.onCreate(savedInstanceState);
+
+        // Draw the app under the status and navigation bars on every Android version, the way Android 15+
+        // does on its own. Without this, Android 14 and older put the page below the status bar AND the page
+        // still added the status bar's height on top (a doubled strip at the top, e.g. on a Galaxy S20).
+        edgeToEdge();
 
         // The app's own background behind everything from the first frame: window, status bar, navigation bar
         // and the web view itself. Cream with dark icons by default, black with light icons in dark mode.
@@ -67,12 +76,28 @@ public class MainActivity extends BridgeActivity {
         boolean night = appDark != null ? appDark : isNight(c);
         int bg = night ? BG_DARK : BG_LIGHT;
         getWindow().getDecorView().setBackgroundColor(bg);
-        getWindow().setStatusBarColor(bg);
-        getWindow().setNavigationBarColor(bg);
+        // Bars stay see-through so the page shows behind them (same as Android 15+). Android 7 can't draw dark
+        // navigation buttons, so it gets a light dim behind them on the cream background.
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        getWindow().setNavigationBarColor(Build.VERSION.SDK_INT < 26 && !night ? Color.parseColor("#66000000") : Color.TRANSPARENT);
         WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         bars.setAppearanceLightStatusBars(!night);
         bars.setAppearanceLightNavigationBars(!night);
         try { getBridge().getWebView().setBackgroundColor(bg); } catch (Exception ignored) {}
+    }
+
+    void edgeToEdge() {
+        Window w = getWindow();
+        WindowCompat.setDecorFitsSystemWindows(w, false);
+        if (Build.VERSION.SDK_INT >= 28) {
+            // Punch-hole and notch phones: let the page run up behind the camera cut-out too
+            WindowManager.LayoutParams lp = w.getAttributes();
+            lp.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= 30
+                ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            w.setAttributes(lp);
+        }
+        if (Build.VERSION.SDK_INT >= 29) w.setStatusBarContrastEnforced(false);   // no grey film over the status bar
     }
 
     // The phone switched between light and dark while the app was open (the page follows it on its own)
