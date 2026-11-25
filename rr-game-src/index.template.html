@@ -498,7 +498,7 @@ dialog.sheet.tq{height:75dvh;max-height:75dvh}
 .lsalso button{background:none;border:0;color:var(--amber-text);font:inherit;font-weight:700;padding:2px;cursor:pointer}
 .lsclr{flex:none;width:28px;height:28px;border-radius:50%;border:0;background:var(--line);color:var(--text);display:grid;place-items:center;cursor:pointer}
 .lsclr svg{width:12px;height:12px}
-dialog.sheet::backdrop{background:var(--scrim);top:var(--safe-area-inset-top,env(safe-area-inset-top,0px))}   /* leave the phone's status bar undimmed */
+dialog.sheet::backdrop{background:var(--scrim)}   /* dims the status bar strip too, like any app's bottom sheet */
 dialog.sheet[open]{animation:up .25s ease-out}
 @keyframes up{from{transform:translateY(40%)}to{transform:none}}
 .grab{width:40px;height:5px;border-radius:99px;background:var(--s3);margin:0 auto 14px}
