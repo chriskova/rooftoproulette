@@ -1,0 +1,16 @@
+// Setup: crawl → zone → Start (no decks step), then Who's coming?; before the clock starts the pills change one setting each; Cancel crawl.
+const {chromium,devices}=require('playwright');(async()=>{const b=await chromium.launch();const e=[];const ctx=await b.newContext({...devices['Pixel 7'],viewport:{width:412,height:860}});const p=await ctx.newPage();p.on('pageerror',x=>e.push(x.message));
+await p.goto('file://'+process.argv[2]+'?test');await p.waitForTimeout(300);const T=f=>p.evaluate(f);
+await T(()=>{const d=new Date(new Date().toLocaleString('en-US',{timeZone:'Australia/Sydney'}));const t=new Date(d);t.setHours(17,0,0,0);S.onboarded=true;S.test=true;S.ff=t-d;S.seenHow={rush:1,rr:1};S.fake={lat:-33.8688,lng:151.2093};S.packs=Object.assign({},S.packs||{});save();go('home')});
+await T(()=>{S.wiz={step:0};save();go('wiz')});await p.waitForTimeout(500);
+await p.click('[data-l="60"]');await p.click('#wNext');await p.waitForTimeout(1500);console.log('after Next: step',await T(()=>S.wiz.step),'| title',await T(()=>document.querySelector('#v-wiz h1').textContent));
+await p.click('#wNext');await p.waitForTimeout(1500);console.log('started: route',await T(()=>S.route),'| sheet',await T(()=>$('sheet').open&&$('sheetBody').querySelector('h3').textContent));await p.screenshot({path:'out/ps-who.png'});
+await p.click('#whoNo');await p.waitForTimeout(500);
+console.log('pills:',await T(()=>[...document.querySelectorAll('.mixline.pre > *')].map(x=>x.textContent.trim()).join(' | ')));await p.screenshot({path:'out/ps-pills.png'});
+await p.click('[data-mx="len"]');await p.waitForTimeout(500);await p.screenshot({path:'out/ps-len.png'});await p.click('#sheetBody [data-l="120"]');await p.waitForTimeout(600);console.log('len →',await T(()=>G().len),await T(()=>document.querySelector('[data-mx="len"]').textContent));
+await p.click('[data-mx="deck"]');await p.waitForTimeout(500);console.log('deck sheet:',await T(()=>$('sheetBody').querySelector('h3').textContent));await p.screenshot({path:'out/ps-deck.png'});await T(()=>closeSheet());await p.waitForTimeout(400);
+await p.click('[data-mx="zone"]');await p.waitForTimeout(2500);console.log('zone panel:',await T(()=>document.querySelector('.mf-move h1').textContent),'| sub',await T(()=>!!document.querySelector('.mf-move .fspanel p.sub')));await p.screenshot({path:'out/ps-zone.png'});
+const r0=await T(()=>G().radius);await T(()=>{const r=$('rrR');r.value=r.max;r.dispatchEvent(new Event('input',{bubbles:true}));r.dispatchEvent(new Event('change',{bubbles:true}))});await p.waitForTimeout(800);
+await p.click('#mvGo');await p.waitForTimeout(800);console.log('zone →',r0,'→',await T(()=>G().radius),'| move used',await T(()=>!!G().voluntaryUsed),'moves',await T(()=>G().moves.length),'| pill',await T(()=>document.querySelector('[data-mx="zone"]').textContent));
+await p.click('#pMenu');await p.waitForTimeout(500);console.log('menu:',await T(()=>$('mEnd').innerText.replace(/\n/g,' / ')));await p.click('#mEnd');await p.waitForTimeout(500);console.log('confirm:',await T(()=>$('sheetBody').querySelector('h3').textContent));await p.click('#eY');await p.waitForTimeout(800);console.log('cancelled → route',await T(()=>S.route),'game',await T(()=>!!G()),'history',await T(()=>H.length));
+console.log('errors',e);await b.close()})();

@@ -1144,7 +1144,7 @@ async function startCruise(noLoc){
   zoneCity(c);S.game={id:"g"+now(),city:S.city,test:!!S.test,mode:"cruise",cz:{type:f.type,list:f.type==="list"?(f.list||"want"):undefined,name:f.name||null,r:q.r||null,lat:f.type==="spot"||(f.type==="list"&&q.r)?f.lat:null,lng:f.type==="spot"||(f.type==="list"&&q.r)?f.lng:null},nudge:60,started:false,startedAt:null,endsAt:null,len:1440,radius:q.r||2,newOnly:!!q.newOnly,
     center:c,startPos:pos?{lat:pos.lat,lng:pos.lng}:{lat:c.lat,lng:c.lng},noLoc:noLoc||undefined,areas:[label],moves:[],voluntaryUsed:true,freeSkips:999,excluded:[],zone:{lat:c.lat,lng:c.lng,name:label},
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:true};
-  S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");
+  S.quick=null;save();if(!noLoc)startWatch();buzz(30);go("play");whoSheetSoon();
 }
 function quickSpin(vel){
   const q=S.quick;if(spinning||!q||!q.from)return false;ac();
@@ -1163,11 +1163,11 @@ const recRadius=len=>len===60?0.5:2;
 const rLabel=r=>r<1?Math.round(r*1000)+" m":r+" km";
 let zMap=null;
 function renderWiz(){
-  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===2)w.step=1;if(w.step===3&&(!anyOwned()||w.rr))w.step=1;   // 0 how long → 3 decks (own a pack) → 1 zone, which starts the crawl
+  const w=S.wiz;if(!w){go("home");return}if(farAway()){S.wiz=null;go("home");setTimeout(farSheet,150);return}if(w.step===2)w.step=1;if(w.step===3)w.step=1;   // 0 how long → 1 zone, which starts the crawl (decks are a pill on the spin screen now)
   $("wBack").innerHTML=I.back;$("wClose").innerHTML=I.x;if(w.step!==1)$("v-wiz").classList.remove("fsv");if(rrMap&&w.step!==1){rrMap.remove();rrMap=null}if(wMapRef){wMapRef.remove();wMapRef=null}
   // steps across the top: done ones show your pick and take you back to change it
   const stVal=[w.rr?"R&R":w.len===60?"1 hr":"2 hrs",w.start?(w.start.type==="me"?(w.z?nearestSuburb(w.z):"Near you"):w.start.name):"Zone"];
-  stVal[3]=deckLbl();const order=anyOwned()&&!w.rr?[0,3,1]:[0,1],pos=Math.max(0,order.indexOf(w.step));
+  stVal[3]=deckLbl();const order=[0,1],pos=Math.max(0,order.indexOf(w.step));
   // one bar that fills as you go
   $("wSteps").innerHTML=`<div class="prog"><i style="width:${Math.round((pos+1)/order.length*100)}%"></i></div>`;
   $("wSteps").querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{w.step=+b.dataset.s;save();renderWiz()});
@@ -1189,7 +1189,7 @@ function renderWiz(){
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
-      w.step=anyOwned()?3:1;save();renderWiz()}});
+      w.step=1;save();renderWiz()}});
   }
   if(w.step===1){
     // drag the circle where you're starting; the size moves in 100 m steps within what this game length allows
@@ -1380,7 +1380,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   const nb=box.parentElement.querySelector("#rrNB")||$("rrNB");if(nb){nb.className="fspill";nb.innerHTML=noList?`${I.glass||""}<span id="rrN"></span>`:`${I.glass||""}<span id="rrN"></span><i class="sep"></i><span class="sl">See list</span>`;box.append(nb);if(noList){nb.onclick=null;nb.tabIndex=-1;nb.classList.add("fsnolist")}else nb.onclick=()=>open()}}
 // a zone picker on a full-screen map with the same pull-up panel as setup (moving your zone mid-crawl, the demo)
 function zonePanel(ov,o){
-  ov.innerHTML=`<div class="mf-move">${rrZoneHTML(o.range)}<div class="mvhead"><h1 class="q">${o.title}</h1><p class="sub">${o.sub}</p></div><p class="note mvnote" id="mvNote"></p>
+  ov.innerHTML=`<div class="mf-move">${rrZoneHTML(o.range)}<div class="mvhead"><h1 class="q">${o.title}</h1>${o.sub?`<p class="sub">${o.sub}</p>`:""}</div><p class="note mvnote" id="mvNote"></p>
     <div class="wtop"><button class="iconbtn" id="mvX" type="button" aria-label="${o.back||"Back"}">${I.back}</button></div></div>
     <div class="cta mvcta"><button class="btn" type="button" id="mvGo">${o.go}</button></div>`;
   const v=ov.querySelector(".mf-move");fsLayout(v,v,{list:false});
@@ -1441,7 +1441,7 @@ async function useMe(){
   }catch(e){w.meNote="Couldn't find you just now."}
   save();go("wiz");
 }
-$("wBack").onclick=()=>{const w=S.wiz;if(w.step===1&&anyOwned()&&!w.rr){w.step=3;save();renderWiz();return}if(w.step===1||w.step===3){w.step=0;save();renderWiz();return}if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
+$("wBack").onclick=()=>{const w=S.wiz;if(w.step===1||w.step===3){w.step=0;save();renderWiz();return}if(w.step>0)w.step--;else{go("home");return}save();renderWiz()};
 $("wClose").onclick=()=>{S.wiz=null;go("home")};
 async function tryStart(noLoc){
   ac();noLoc=noLoc===true;if(tryStart.busy)return;
@@ -1463,7 +1463,7 @@ async function tryStart2(noLoc){
     visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false};
   if(noLoc)S.game.noLoc=true;
   if(w.live){S.game.live=w.live;try{liveAttach()}catch(e){}}   // friends invited from setup keep following
-  spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");
+  spinning=false;S.wiz=null;save();if(!noLoc)startWatch();buzz(30);go("play");whoSheetSoon();
 }
 
 // Location blocked as a round starts: say what that means, then let them turn it on or play without it.
@@ -1553,9 +1553,36 @@ function fitZoneLbl(){const b=$("mixZone");if(!b)return;b.style.fontSize="";let 
 window.addEventListener("resize",()=>fitZoneLbl());
 // before the first spin: the crawl's zone, size and length, with Invite beside them (everyone's together, the clock hasn't started)
 const mixInv=g=>{try{return !g.visits.length&&!g.demo&&!g.follow&&cloudOn()}catch(e){return false}};
-const mixlineHTML=g=>CR(g)?""
-  :`<div class="mixline"><span>${esc(g.areas[g.areas.length-1])}</span><span>${rLabel(g.radius)}</span><span>${g.len===60?"1 hour":"2 hours"}</span>${mixInv(g)?`<button class="mixinv" type="button" data-mxinv="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><path d="M19 8v6M16 11h6"/></svg>Invite</button>`:""}</div>`;
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-mxinv]")&&typeof liveInvite==="function")liveInvite()});
+// Before the clock starts, the pills are the crawl's settings: tap one to change just that (a sheet, or the zone map), nothing else.
+const mixPre=g=>!g.started&&!g.visits.length&&!g.demo&&!g.follow;
+const mixJoined=g=>{try{return g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0}catch(e){return 0}};
+const MIX_CV='<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+const MIX_INVI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><path d="M19 8v6M16 11h6"/></svg>';
+const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.4c2.4.3 4 1.9 4.6 5"/></svg>';
+// someone joins or leaves: just the Invite pill changes
+function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.classList.toggle("on",!!j);b.innerHTML=j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"})}
+const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const n=(freeOn()?1:0)+PACKS.filter(p=>packOn(p.id)).length;return n===1?"1 deck":n+" decks"};
+const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
+  if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
+  const j=mixJoined(g),inv=mixInv(g)?`<button class="mixinv${j?" on":""}" type="button" data-mxinv="1">${j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"}</button>`:"";
+  return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${zone}</span>${MIX_CV}</button><button class="mixp" type="button" data-mx="len">${len}${MIX_CV}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}${MIX_CV}</button>${inv}</div>`};
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mxinv],[data-mx]");if(!t)return;const g=G();if(!g)return;
+  if(t.dataset.mxinv){if(typeof liveInvite==="function")liveInvite();return}
+  if(!mixPre(g))return;const k=t.dataset.mx;
+  if(k==="zone")crawlMap({move:true,pre:true});
+  else if(k==="len")lenSheet(g);
+  // the same Wildcards sheet as My Tab; the pill catches up when it closes
+  else if(k==="deck"){deckSheet();$("sheet").addEventListener("close",()=>{const d=document.querySelector('[data-mx="deck"]');if(d)d.innerHTML=mixDeckLbl()+MIX_CV},{once:true})}});
+// 1 hour or 2, before the clock starts
+function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-top:10px">
+    <button class="opt" type="button" role="radio" data-l="60" aria-checked="${g.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few rooftops, quick drinks.</small></span></button>
+    <button class="opt" type="button" role="radio" data-l="120" aria-checked="${g.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More rooftops or longer stays.</small></span></button></div>`,
+  ()=>{$("sheetBody").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{const l=+b.dataset.l;if(G()!==g||!mixPre(g)){closeSheet();return}g.len=l;S.last=Object.assign({},S.last||{},{len:l});save();closeSheet();renderPlay();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{})})})}
+// Who's coming: straight after Start (the clock waits for the first rooftop), a nudge to bring friends in. One tap to skip.
+function whoSheetSoon(){setTimeout(()=>{const g=G();if(!g||g.demo||g.follow||g.started||!cloudOn()||S.route!=="play"||$("sheet").open)return;
+  sheet(`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 14px">Friends follow every spin and the timer from their own phones.</p>
+    <div class="acts"><button class="btn" type="button" id="whoInv">${MIX_INVI} Invite friends</button><button class="btn dark" type="button" id="whoNo">Just me</button></div>`,
+    ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}})},450)}
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);
   // first spin from a rooftop: don't send them to the one they're already standing in
@@ -2645,7 +2672,7 @@ function openMenu(){
     ${S.film!==false?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>`:""}
     ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
     ${liveMenuRows(g)}
-    <button type="button" class="danger" id="mEnd">${I.flag}<span>End crawl<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"Nothing's been played yet"}</small></span></button>
+    <button type="button" class="danger" id="mEnd">${I.flag}<span>${g.started?"End crawl":"Cancel crawl"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>rrZoneSheet();
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
@@ -2653,7 +2680,8 @@ function openMenu(){
     $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
     if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);liveMenuBind();
-    $("mEnd").onclick=()=>sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each rooftop.":"Your crawl card is saved. The rooftop you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
+    $("mEnd").onclick=()=>!g.started?sheet(`<h3>Cancel the crawl?</h3><p class="note">It hasn't started yet, so there's nothing to save.</p>
+      <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">Cancel crawl</button><button class="btn dark" type="button" id="eN">Keep it</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}}):sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each rooftop.":"Your crawl card is saved. The rooftop you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">End crawl</button><button class="btn dark" type="button" id="eN">${cr?"Keep going":"Keep playing"}</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}});
   });
 }
@@ -2665,7 +2693,7 @@ function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sh
 function endGame(at){
   const g=G();if(!g||g.ended)return;
   document.querySelectorAll(".jpx").forEach(o=>o.remove());spinning=false;   // a jackpot card still up when the clock runs out (or the crawl's ended from the notification) mustn't sit over the crawl card
-  if(!g.started){S.game=null;save();stopWatch();go("home");return}
+  if(!g.started){if(g.live&&typeof liveCancel==="function")liveCancel(g.live);S.game=null;save();stopWatch();go("home");return}
   track("crawl_end",{mode:CR(g)?"rr":"rush",bars:g.visits.filter(v=>v.counted===true||(v.leftAt==null&&v.arrivedAt!=null)).length,minutes:Math.round((Math.min(at,g.endsAt)-g.startedAt)/60000),ended_early:at<g.endsAt,city:g.city||null});
   const before=collectedMap();
   const t=Math.min(at,g.endsAt),early=at<g.endsAt;if(early)g.endsAt=at;
@@ -3318,7 +3346,7 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
     const lo=g.started?Math.max(range0.lo,Math.round(g.radius*20)/20):range0.lo,grow=lo<range0.hi-.01;
     const range=Object.assign({},range0,{lo:Math.min(lo,range0.hi),hi:Math.max(range0.hi,Math.min(lo,range0.hi)+.001),ticks:[[lo,kmTxt(lo)]].concat(range0.ticks.filter(([r])=>r>lo+.1)),fixed:!grow});
     if(z.r<range.lo)z.r=range.lo;
-    zonePanel(ov,{range,title:free?"Your zone's run dry":"Move your zone",sub:free?"Nothing's open here. This move's free.":"You get one move per crawl.",go:"Use this zone",back:o.move?(free?"Close":"Stay here"):"Cancel"});
+    zonePanel(ov,{range,title:o.pre?"Set your zone":free?"Your zone's run dry":"Move your zone",sub:o.pre?"":free?"Nothing's open here. This move's free.":"You get one move per crawl.",go:"Use this zone",back:o.move?(free?"Close":"Stay here"):"Cancel"});
     $("mvX").onclick=()=>{if(o.move)close();else view()};
     const pool=(zz,t)=>{const all=playable(inCircle(zz,zz.r),g.newOnly).filter(v=>!visited(v.id));return {all,open:all.filter(v=>openOK(v,t))}};
     let warned=false;
@@ -3328,7 +3356,10 @@ async function crawlMap(o){o=o||{};const g=G();if(!g)return;S.tips=S.tips||{};if
       const near=me&&P.open.length?Math.min(...P.open.map(v=>dist(me,v))):null,far=near!=null&&near>1500;
       $("mvNote").textContent=same?(range.fixed?"That's your zone now. Drag to move it.":"That's your zone now. Drag or resize it."):near==null?"":far?`Closest open rooftop there is ${km(near)} away. The clock waits till you reach your first rooftop (up to 20 minutes).`:`Closest open rooftop there is ${mOrKm(near)} away. The clock keeps running.`;
       const b=$("mvGo");b.disabled=same||P.open.length<2;b.textContent=!same&&P.open.length<2?"Not enough open here":"Use this zone";
-      b.onclick=()=>{const name=nearestSuburb(zz);g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(near||0)});if(!free)g.voluntaryUsed=true;
+      b.onclick=()=>{const name=nearestSuburb(zz);
+        // before the clock starts it's still setup: change the zone, no move used, nothing logged
+        if(o.pre){g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas[g.areas.length-1]=name;g.zoneN=P.all.length;g.target=null;g.reelOpen=false;S.last=Object.assign({},S.last||{},{radius:zz.r});save();renderPlay();close();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{});return}
+        g.center={lat:zz.lat,lng:zz.lng};g.radius=zz.r;g.areas.push(name);g.moves.push({at:now(),to:name,free:!!free,m:Math.round(near||0)});if(!free)g.voluntaryUsed=true;
         if(far){endTripFreeze(g,true);startFreeze(g,20*60000,true);g.frz.zone=true}   // the clock waits till the first bar in the new zone
         g.target=null;g.reelOpen=false;save();renderPlay();renderClock();if(o.move)close();else view()}},
       {...range,pool,onShrink:()=>{if(warned||!g.started)return;warned=true;toast("Your zone can only get bigger once the clock's running.",2600)}});
