@@ -170,7 +170,10 @@ const authErr=e=>AUTH_ERR[e&&e.code]||"Couldn't sign in. Try again.";
 const isCancel=e=>/cancel|popup-closed|user.?cancel/i.test(String(e&&(e.code||e.message)||e));
 async function signIn(from,via){via=via||"google";track("sign_in_tap",{from,via});
   try{const B=await cloud();await(via==="apple"?B.apple():B.google());track("signed_in",{from,via});afterSignIn(from);return true}
-  catch(e){console.warn("sign in",e);if(!isCancel(e))toast(esc(authErr(e)),3500);return false}}
+  catch(e){console.warn("sign in",e);if(!isCancel(e)){
+    // RR Dev only: show the real reason under the toast so sign-in problems can be diagnosed on the phone
+    const dev=NATIVE&&/(^|\.)rooftoproulette\.com$/.test(location.hostname),why=dev?String((e&&(e.code||e.message))||e).slice(0,160):"";
+    toast(esc(authErr(e))+(why?"<br><small>"+esc(why)+"</small>":""),dev?9000:3500)}return false}}
 // one sign-in sheet everywhere: Apple (iPhone), Google or email
 // Signing in from Settings or the account button lists the perks; from an action, just the line that action needs.
 const PERK_TAB=()=>`<div>${I.check}<span><b>Save your tab</b><small>Keep your crawls, photos and saved lists across devices</small></span></div>`;
