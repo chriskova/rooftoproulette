@@ -1586,7 +1586,7 @@ function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-to
 // only once you've said you want to, so sign-in never sits in front of the first spin.
 function whoSheetSoon(){setTimeout(whoSheet,450)}
 async function whoSheet(){const ok=()=>{const g=G();return g&&!g.demo&&!g.follow&&!g.started&&cloudOn()&&S.route==="play"&&!$("sheet").open};if(!ok())return;
-  const head=`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 12px">Friends follow every spin and the timer from their own phones.</p>`;
+  const head=`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 12px">Friends follow along and get the crawl recap at the end.</p>`;
   const plain=()=>sheet(head+`<div class="acts"><button class="btn" type="button" id="whoInv">${MIX_INVI} Invite friends</button><button class="btn dark" type="button" id="whoNo">Skip</button></div>`,
     ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}});
   if(!(typeof signedIn==="function"&&signedIn()&&myName())){plain();return}
