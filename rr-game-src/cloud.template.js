@@ -658,9 +658,9 @@ let batAsked=false;
 function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().then(b=>{const chk=()=>{const g=G();
   // one follower: name them and hand straight over; more than one: pick who
   const ms=Object.entries((liveDoc&&liveDoc.members)||{});
-  // 14%, not 15: Android's own low-battery warning shows at 15% (iPhone's at 20% and 10%), so ours comes just after it, never on top of it,
+  // 12%: clear of the phone's own low-battery warnings (Android 15%, iPhone 20% and 10%), so ours never lands on top of them,
   // and only while the app's on screen (if it isn't, it waits till you come back)
-  if(!batAsked&&g&&g.live&&!g.ended&&isHost()&&!b.charging&&b.level<0.15&&ms.length&&document.visibilityState==="visible"){batAsked=true;track("battery_handoff_ask",{n:ms.length});
+  if(!batAsked&&g&&g.live&&!g.ended&&isHost()&&!b.charging&&b.level<=0.12&&ms.length&&document.visibilityState==="visible"){batAsked=true;track("battery_handoff_ask",{n:ms.length});
     const one=ms.length===1?ms[0]:null,nm=one?esc(one[1].n||"your friend"):"";
     sheet(`<h3>Battery's low</h3><p class="note">${one?`Hand the spin to ${nm} before your phone dies?`:"Hand the spin to someone before your phone dies?"}</p><div class="acts"><button class="btn" type="button" id="bGive">${one?`Give it to ${nm}`:"Give the spin"}</button><button class="btn dark" type="button" id="bNo">Keep it</button></div>`,
       ()=>{$("bGive").onclick=()=>{if(one)giveSpinTo(one[0]);else giveSpinSheet()};$("bNo").onclick=closeSheet})}};
