@@ -153,6 +153,11 @@ const testReal=()=>!!(S.test&&S.testLive&&(FB_CFG||FAKE_CLOUD));
 function cloud(){if(!CLP){CLP=(S.test&&!testReal()?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
 const myName=()=>(ME&&ME.name)||S.myName||"";
+// Other people only ever get your first name (plus your last initial, kept to tell two Sams apart). Never the full name.
+const crawlName=()=>{const p=String(myName()).trim().split(/\s+/).filter(Boolean);return p.length?p[0]+(p.length>1?" "+p[p.length-1][0].toUpperCase():""):""};
+const nFirst=n=>String(n||"").trim().split(/\s+/)[0]||"";
+// a name in a list: first name, or "Sam K." when someone else in the same list is also a Sam
+const nIn=(n,all)=>{const f=nFirst(n),p=String(n||"").trim().split(/\s+/);if(!f)return "";const dup=(all||[]).filter(x=>nFirst(x).toLowerCase()===f.toLowerCase()).length>1;return dup&&p.length>1?f+" "+p[p.length-1][0].toUpperCase()+".":f};
 const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId)||(IOSNAT&&RR_CONFIG.googleIosClientId))));
 // Sign in with Apple: on iPhone (Apple requires it next to Google there)
 const canApple=()=>!!(FB_CFG&&IOSNAT);
@@ -229,36 +234,25 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="apBack" aria-label="Back">${I.back}</button><b>Account</b></div><div class="spbody">
     <div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
     <div class="sgh">Profile</div><div class="sgrp">
-      <button class="strow" type="button" id="apName"><span class="t"><b>Name</b><small>Shown to friends on live crawls</small></span><span class="sval">${esc(myName()||"Add")}</span><i class="chev">›</i></button>
+      <button class="strow" type="button" id="apName"><span class="t"><b>Name</b><small>Friends only see your first name</small></span><span class="sval">${esc(myName()||"Add")}</span><i class="chev">›</i></button>
       ${via?`<div class="strow"><span class="t"><b>Signed in with</b></span><span class="sval">${via}</span></div>`:""}</div>
     <div class="sgh">My Tab</div><div class="sgrp">
       <div class="strow"><span class="t"><b>Backed up</b><small>Sign in on any phone and it comes back</small></span><span class="sval">${n} crawl${n===1?"":"s"}</span></div></div>
-    <div class="sgh">Friends</div><div class="sgrp" id="apMates"><div class="strow"><span class="t"><small>Loading…</small></span></div></div>
     ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard decks, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
     <div class="sgh">Account</div><div class="sgrp">
       <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
       <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>
   </div>`;
   $("apBack").onclick=()=>{try{if(history.state&&history.state.acctPage)history.back();else closeAcct()}catch(e){closeAcct()}};
-  $("apName").onclick=renameSheet;if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;
-  matesList(true).then(L=>{const el=$("apMates");if(!el)return;
-    el.innerHTML=L.length?L.map(m=>`<button class="strow apmate" type="button" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0].toUpperCase())}</span><span class="t"><b>${esc(m.n||"Friend")}</b><small>${m.t?"Last crawled "+fmtD(m.t):""}</small></span><i class="chev">›</i></button>`).join("")
-      :`<div class="strow"><span class="t"><b>No friends here yet</b><small>People from your live crawls show up here</small></span></div>`;
-    el.querySelectorAll("[data-mu]").forEach(b=>b.onclick=()=>{const m=L.find(x=>x.uid===b.dataset.mu);if(m)mateSheet(m)})})}
+  $("apName").onclick=renameSheet;if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
 function closeAcct(){const pg=$("acctPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
 function renameSheet(){
-  sheet(`<h3>Your name</h3><p class="note">Shown to friends on live crawls.</p><input class="cnin" id="rnIn" maxlength="24" autocomplete="given-name" placeholder="Name" value="${esc(myName())}">
+  sheet(`<h3>Your name</h3><p class="note">Friends only see your first name.</p><input class="cnin" id="rnIn" maxlength="24" autocomplete="given-name" placeholder="Name" value="${esc(myName())}">
     <div class="acts"><button class="btn" type="button" id="rnOk">Save</button></div>`,()=>{
     const ok=async()=>{const v=$("rnIn").value.trim();if(!v)return;$("rnOk").disabled=true;
       try{const B=await cloud();await B.rename(v);ME=Object.assign({},ME,{name:v});S.myName=v;save();track("rename");closeSheet();accountPage();if($("setPage"))settingsSheet()}
       catch(e){console.warn(e);$("rnOk").disabled=false;toast("Couldn't save that. Try again.",2600)}};
     $("rnOk").onclick=ok;$("rnIn").onkeydown=e=>{if(e.key==="Enter")ok()};setTimeout(()=>$("rnIn").focus(),60)})}
-function mateSheet(m){
-  sheet(`<h3>${esc(m.n||"Friend")}</h3><p class="note">${m.t?"Last crawled together "+fmtD(m.t)+". ":""}Removing them takes them off your Friends list.</p>
-    <div class="acts"><button class="btn dark" type="button" id="mtKeep">Keep</button><button class="txtbtn" type="button" id="mtDel" style="color:var(--red)">Remove</button></div>`,()=>{
-    $("mtKeep").onclick=closeSheet;
-    $("mtDel").onclick=async()=>{try{const B=await cloud(),cur=(await B.get(`users/${ME.uid}`))||{},ms=Object.assign({},cur.mates||{});delete ms[m.uid];
-      await B.set(`users/${ME.uid}`,Object.assign({},cur,{mates:ms}));track("mate_removed");closeSheet();accountPage()}catch(e){console.warn(e);toast("Couldn't remove them. Try again.",2600)}}})}
 function accountSheet(){if(signedIn())accountPage();else signInSheet(null,"acct")}
 // the account button on My Tab: your initial when signed in, an outline when not
 function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
@@ -340,13 +334,13 @@ const isHost=()=>!!(liveDoc&&ME&&liveDoc.host===ME.uid);
 
 async function startLive(){const g=G();if(!g)return startLivePre();if(g.live)return g.live;const B=await cloud();
   const id=liveId(),me=ME.uid;g.live=id;save();
-  await B.set(`live/${id}`,{host:me,hostName:myName(),g:gameForCloud(g),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
+  await B.set(`live/${id}`,{host:me,hostName:crawlName(),g:gameForCloud(g),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
   liveLastSig=liveSig(g);liveLastPut=Date.now();track("live_start");liveAttach();return id}
 // invited before the crawl starts: the follow link works straight away and shows "Not started" until the first spin
 async function startLivePre(){const w=S.wiz||S.quick,rr=!S.wiz;if(!w||!w.z)return null;if(w.live)return w.live;const B=await cloud();
   const id=liveId();w.live=id;save();
   const pre={mode:rr?"cruise":"rush",len:rr?null:w.len,started:false,visits:[],center:{lat:w.z.lat,lng:w.z.lng},radius:rr?(w.z.r||null):(w.radius||w.z.r),city:S.city};
-  await B.set(`live/${id}`,{host:ME.uid,hostName:myName(),g:JSON.stringify(pre),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
+  await B.set(`live/${id}`,{host:ME.uid,hostName:crawlName(),g:JSON.stringify(pre),beat:Date.now(),upd:Date.now(),members:{},ended:false,v:1});
   track("live_start",{pre:true});return id}
 async function liveInvite(){
   if(!signedIn()){track("live_invite_gate");signInSheet("Friends don't need an account to follow.","live","Sign in to share live");return}
@@ -361,12 +355,12 @@ async function liveInvite(){
 async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;
   let mates=[],svg="";try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}
   const sent=invParts.sent[id]||(invParts.sent[id]={});
-  const row=mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(m.n||"Friend")}</span></button>`).join("")}</div>`:"";
+  const row=mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,mates.map(x=>x.n))||"Friend")}</span></button>`).join("")}</div>`:"";
   const qr=svg?`<div class="qrbox ${mates.length?"xs":"sm"}">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
   return {html:row+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`,bind:root=>{
     root.querySelector('[data-iv="send"]').onclick=()=>{if(onAct)onAct();if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
-      try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
+      try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}}}
 invParts.sent={};
 async function inviteSheet(id,head,foot){const P=await invParts(id);sheet(head+P.html+(foot||""),()=>{P.bind($("sheetBody"));const l=$("sheetBody").querySelector('[data-iv="later"]');if(l)l.onclick=closeSheet})}
@@ -406,9 +400,9 @@ function onLive(id,d){
   if(!d){if(S.follow===id){S.follow=null;save();closeFollow();if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}toast("That crawl's not live any more.",3000)}return}
   const me=ME&&ME.uid,g=G();
   if(g&&g.live===id&&d.host!==me){   // the spin was handed over or taken: this phone becomes a follower
-    if(fv&&fvPrev)closeFollow();g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(d.hostName||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
+    if(fv&&fvPrev)closeFollow();g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(nFirst(d.hostName)||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
-  if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(d.hostName||"The host")} called off the crawl.`,3500);go("home");return}
+  if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
   if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
   if(g&&g.live===id)paintMembers(d)}
 function paintMembers(d){const n=Object.keys(d.members||{}).length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople();if(typeof paintMixInv==="function")paintMixInv()}
@@ -427,8 +421,8 @@ async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest 
   if(!myName()){nameSheet(()=>followLive(id),"follow");return}   // so the host sees who's following, not "Friend"
   S.follow=id;S.liveInv=null;save();track("live_follow");openFollow();
   const B=await cloud();
-  try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid)return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===myName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:myName()||"",j:Date.now(),b:(gg.visits||[]).length}}
-    m[ME.uid].n=myName()||m[ME.uid].n||"";return Object.assign({},d,{members:m})})}catch(e){console.warn("join",e)}
+  try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid)return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===crawlName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:crawlName()||"",j:Date.now(),b:(gg.visits||[]).length}}
+    m[ME.uid].n=crawlName()||m[ME.uid].n||"";return Object.assign({},d,{members:m})})}catch(e){console.warn("join",e)}
   liveAttach()}
 let fv=null,fvMap=null,fvLayer=null,fvT=null,fvPrev=false;
 const CHEVD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -484,7 +478,7 @@ let fvNote="",fvNoteAt=0;
 function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   if(!d||d.ended||!g.started){if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}return}
   noteSetup();notifEnsure("f"+S.follow,true);
-  const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?d.hostName+"'s crawl":"Live crawl";
+  const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?nFirst(d.hostName)+"'s crawl":"Live crawl";
   const o={follower:true,title:at?`${who} · at ${byId(at.id).name}`:tgt?`${who} · heading to ${tgt.name}`:`${who} · spinning next`,text:cr?"R&R":plural(vs.filter(v=>v.counted!==false).length,"bar")+" so far"};
   const fz=g.frz&&t<g.frz.until;
   if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first rooftop";
@@ -559,24 +553,24 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const stale=!d.ended&&g.started&&Date.now()-(d.beat||0)>STALE_MS,   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
-    act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(d.hostName||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
+    act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(nFirst(d.hostName)||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
       :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOver;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
   try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||Date.now()-(d.beat||0)<=STALE_MS)return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
     m[d.host]={n:d.hostName||"",j:(me&&me.j)||Date.now(),b:0,was:1};
-    return Object.assign({},d,{host:ME.uid,hostName:myName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
+    return Object.assign({},d,{host:ME.uid,hostName:crawlName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
   if(!ok){toast("Someone else got there first.",2500);return}track("live_takeover")}
 function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
   const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=!!S.test;
   S.game=g;save();liveLastSig=liveSig(g);startWatch();buzz(30);go("play");toast("You've got the spin.",2500);liveSync(true)}
 // host hands the spin to a follower
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
-  sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
+  sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(nIn(m.n,ms.map(x=>x[1].n))||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
     document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>giveSpinTo(b.dataset.gs))})}
 async function giveSpinTo(u){const d=liveDoc,m=d&&d.members&&d.members[u],g=G();if(!g||!m)return;await liveSync(true);const B=await cloud();
-  const members=Object.assign({},d.members);delete members[u];members[ME.uid]={n:myName(),j:g.startedAt||Date.now(),b:0,was:1};
+  const members=Object.assign({},d.members);delete members[u];members[ME.uid]={n:crawlName(),j:g.startedAt||Date.now(),b:0,was:1};
   try{await B.set(`live/${g.live}`,{host:u,hostName:m.n||"",members,beat:Date.now()},true);closeSheet();track("live_handover")}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}}
 // the end: the host's final crawl goes to the doc; followers copy it to their tab from the bar they joined
 // called off before the clock started: followers go home, nothing's saved
@@ -602,7 +596,7 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   // fill in anything an older host version left out, so the crawl card and tab can always draw it
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
-  r.id="f"+id;r.liveId=id;r.followed=d.hostName||"";if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
+  r.id="f"+id;r.liveId=id;r.followed=nFirst(d.hostName);if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
   delete r.newIds;r.bodDone=true;r.test=!!S.test;
   let gT={};try{gT=JSON.parse(d.g)}catch(e){}if(gT.test&&!S.test){leaveFollow();closeSheet();toast("That was a test crawl, so it's not on your tab.",3500);go("home");return}   // a test crawl stays out of a real tab
   pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
@@ -612,9 +606,9 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   if(!["home","bars","hist"].includes(S.route))go("home");S.route="play";go("end");   // as if from the crawl screen, so "Play again" shows like it does for the host
   ding();buzz([100,60,100,60,200]);confetti()}
 async function matesFrom(d){if(!d||!signedIn())return;const B=await cloud(),me=ME.uid,add={};
-  const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me)add[u]={n:m.n||"",t:Date.now()}});
+  const all=Object.assign({},d.members||{});if(d.host)all[d.host]={n:d.hostName};Object.entries(all).forEach(([u,m])=>{if(u!==me){const p=String(m.n||"").trim().split(/\s+/);add[u]={n:p[0]?p[0]+(p.length>1?" "+p[p.length-1][0].toUpperCase():""):"",t:Date.now()}}});
   if(Object.keys(add).length)try{const cur=(await B.get(`users/${me}`))||{};await B.set(`users/${me}`,{mates:Object.assign({},cur.mates||{},add)},true)}catch(e){console.warn(e)}}
-async function matesList(all){try{const B=await cloud(),u=await B.get(`users/${ME.uid}`);return Object.entries((u&&u.mates)||{}).map(([uid,m])=>({uid,n:m.n,t:m.t})).sort((a,b)=>b.t-a.t).slice(0,all?200:12)}catch(e){return []}}
+async function matesList(all){try{const B=await cloud(),u=await B.get(`users/${ME.uid}`);const since=Date.now()-120*864e5;return Object.entries((u&&u.mates)||{}).map(([uid,m])=>({uid,n:m.n,t:m.t})).filter(m=>(m.t||0)>since).sort((a,b)=>b.t-a.t).slice(0,12)}catch(e){return []}}
 // invites from mates (while the app's open)
 async function watchInvites(){if(!signedIn()||inviteUnsub)return;const B=await cloud(),seen=new Set(JSON.parse(localStorage.getItem("rr-inv-seen")||"[]"));
   inviteUnsub=B.watchList(`users/${ME.uid}/invites`,L=>{L.filter(x=>!seen.has(x._id)&&Date.now()-x.at<6*3600000).forEach(x=>{seen.add(x._id);localStorage.setItem("rr-inv-seen",JSON.stringify([...seen].slice(-50)));
@@ -668,7 +662,7 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
   // 12%: clear of the phone's own low-battery warnings (Android 15%, iPhone 20% and 10%), so ours never lands on top of them,
   // and only while the app's on screen (if it isn't, it waits till you come back)
   if(!batAsked&&g&&g.live&&!g.ended&&isHost()&&!b.charging&&b.level<=0.12&&ms.length&&document.visibilityState==="visible"){batAsked=true;track("battery_handoff_ask",{n:ms.length});
-    const one=ms.length===1?ms[0]:null,nm=one?esc(one[1].n||"your friend"):"";
+    const one=ms.length===1?ms[0]:null,nm=one?esc(nFirst(one[1].n)||"your friend"):"";
     sheet(`<h3>Battery's low</h3><p class="note">${one?`Hand the spin to ${nm} before your phone dies?`:"Hand the spin to someone before your phone dies?"}</p><div class="acts"><button class="btn" type="button" id="bGive">${one?`Give it to ${nm}`:"Give the spin"}</button><button class="btn dark" type="button" id="bNo">Keep it</button></div>`,
       ()=>{$("bGive").onclick=()=>{if(one)giveSpinTo(one[0]);else giveSpinSheet()};$("bNo").onclick=closeSheet})}};
   b.addEventListener("levelchange",chk);document.addEventListener("visibilitychange",()=>setTimeout(chk,1500));chk()}).catch(()=>{})}
