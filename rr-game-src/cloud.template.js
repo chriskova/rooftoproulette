@@ -360,13 +360,11 @@ async function inviteSheet(id,head,skip){const link=liveLink(id),text=`Follow ou
   let mates=[],svg="";try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}
   const sent=inviteSheet.sent[id]||(inviteSheet.sent[id]={});
   const row=()=>mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(m.n||"Friend")}</span></button>`).join("")}</div>`:"";
-  const bigQR=!mates.length&&svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
-  const main=()=>sheet(head+row()+bigQR+`<div class="invacts"><button class="btn" type="button" id="ivSend">${I.share} Send link</button>${mates.length&&svg?`<button class="btn dark qrbtn" type="button" id="ivQR" aria-label="Show QR code">${QRI}</button>`:!skip?`<button class="btn dark qrbtn" type="button" id="ivCopy" aria-label="Copy link">${I.link}</button>`:""}</div>
-    ${skip?`<button class="btn dark" type="button" id="ivSkip" style="margin-top:10px">Skip</button>`:""}`,()=>{
+  // like Spotify Jam: the QR's always there (smaller when the faces row is); one button to share the link; Skip as plain text
+  const qr=svg?`<div class="qrbox ${mates.length?"xs":"sm"}">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
+  const main=()=>sheet(head+row()+qr+`<button class="btn" type="button" id="ivSend">${I.share} Share link</button>${skip?`<button class="skiplink" type="button" id="ivSkip">Skip</button>`:""}`,()=>{
     $("ivSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
-    if($("ivCopy"))$("ivCopy").onclick=async()=>{try{await navigator.clipboard.writeText(link);toast("Link copied.",2000)}catch(e){toast("Couldn't copy the link.",2500)}};
     if($("ivSkip"))$("ivSkip").onclick=closeSheet;
-    if($("ivQR"))$("ivQR").onclick=()=>sheet(`<div class="qrhead"><button class="iconbtn" type="button" id="ivBack" aria-label="Back">${I.back}</button><h3>Scan to follow</h3></div><div class="qrbox">${svg}</div><p class="note qrnote">Hold your phone up for whoever's joining.</p>`,()=>{$("ivBack").onclick=main});
     $("sheetBody").querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate")}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})});
