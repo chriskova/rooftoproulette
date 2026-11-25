@@ -1563,7 +1563,7 @@ const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.classList.toggle("on",!!j);b.innerHTML=j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"})}
 // the zone sits under the spinner before the clock starts (where Move zone goes once it has)
 const mixZoneHTML=g=>CR(g)||!mixPre(g)?"":`<div class="mixzone"><button class="mixp" type="button" data-mx="zone">${I.pin}<span class="zt">${esc(g.areas[g.areas.length-1])} · ${rLabel(g.radius)}</span>${MIX_CV}</button></div>`;
-const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const n=(freeOn()?1:0)+PACKS.filter(p=>packOn(p.id)).length;return n===1?"1 deck":n+" decks"};
+const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const on=(freeOn()?["free"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.id));return on.length===1?esc(deckName(on[0])):on.length+" decks"};
 const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
   if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
   const j=mixJoined(g),inv=mixInv(g)?`<button class="mixinv${j?" on":""}" type="button" data-mxinv="1">${j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"}</button>`:"";
