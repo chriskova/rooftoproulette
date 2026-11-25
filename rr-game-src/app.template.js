@@ -3273,13 +3273,13 @@ function renderClock(){
   $("tbar").hidden=false;
   if(g.lastOrders&&now()>=g.endsAt){$("clockT").textContent=mmss(Math.max(0,g.lastOrders-now()));$("clock").className="clock red";$("tbar").className="tbar red";$("tbarI").style.width=Math.max(0,(g.lastOrders-now())/(LAST_ORDERS*60000)*100)+"%";$("clockL")._h=null;$("clockL").textContent="Last orders";return}
   $("clockT").textContent=mmss(r);
-  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first rooftop";return}
+  if(!g.started){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").innerHTML="Starts at <br>first rooftop";return}
   const warn=r<=FINAL*60000&&r>10*60000,red=r<=10*60000;
   $("clock").className="clock"+(red?" red":warn?" warn":"");
   $("tbar").className="tbar"+(red?" red":warn?" warn":"");
   $("tbarI").style.width=Math.max(0,Math.min(100,r/tot*100))+"%";
   $("clockL")._h=null;$("clockL").textContent=r<=FINAL*60000?"Final stretch":"Left";
-  if(frozen(g)){if(g.frz.start){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").textContent="Starts at first rooftop"}else{$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}}
+  if(frozen(g)){if(g.frz.start){$("clock").className="clock";$("tbar").className="tbar";$("tbarI").style.width="100%";$("clockL")._h=null;$("clockL").innerHTML="Starts at <br>first rooftop"}else{$("clock").className="clock frozen";$("tbar").className="tbar frozen";$("clockL")._h=null;$("clockL").textContent=(g.frz.trip?"Free trip · ":"Frozen · ")+mmss(g.frz.until-now())}}
 }
 
 /* ---------- stats + scorecard ---------- */
