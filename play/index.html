@@ -2446,6 +2446,7 @@ html,body{overflow-x:hidden;max-width:100%}
 .fsopts{display:flex;flex-direction:column;border-top:1px solid var(--line);margin-top:2px}
 .fsopt{appearance:none;display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;border-bottom:1px solid var(--line);padding:11px 0;font:inherit;color:var(--text);text-align:left;cursor:pointer}
 .fsopt[hidden]{display:none}
+.fsopts>.fsopt:last-of-type{border-bottom:0}
 .fsopt .l{flex:1;font-size:15px;font-weight:600}
 /* Skip visited: the words (and the yellow names) open the list, the switch past the divider toggles */
 .fsopt .l:has(.lt){display:flex;flex-direction:column;gap:2px;min-width:0}
