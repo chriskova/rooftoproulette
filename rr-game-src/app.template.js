@@ -4426,7 +4426,7 @@ function settingsSheet(){
   if($("stHow"))$("stHow").onclick=()=>{closeSettings(true);S.intro=0;S.introReplay=true;save();go("intro")};
   // Contact us shows the address first: copy it, or start an email (with the app details at the bottom for us)
   $("stSup").onclick=()=>{const body=`\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
-    sheet(`<h3>Contact us</h3><p class="note">Questions, bugs or a rooftop we're missing.</p><div class="supmail">${esc(SUPPORT)}</div>
+    sheet(`<h3>Contact us</h3><p class="note">Questions, bugs or a rooftop we're missing.</p><p class="supmail">${esc(SUPPORT)}</p>
       <div class="acts"><button class="btn" type="button" id="suMail">Send an email</button><button class="btn dark" type="button" id="suCopy">Copy address</button></div>`,()=>{
       $("suMail").onclick=()=>{track("support_email");location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
       $("suCopy").onclick=()=>{try{navigator.clipboard.writeText(SUPPORT)}catch(e){}toast("Copied.",1800)}})};
