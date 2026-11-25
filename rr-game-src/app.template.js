@@ -807,13 +807,9 @@ function colCardHTML(){
     <span class="small" style="text-align:right">${st.col?"rooftops collected":"Every rooftop you hit<br>gets stamped here"}</span></div>
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
-// (cloud code loads after this file's first render, so it calls homeLinks() again once it's in: no "How it works" flash)
-// Join shows whenever accounts are set up. Decided from the config alone, so it's the same on every load:
-// it used to ask the accounts code, which isn't ready on the very first draw (and says no during a How it works demo), so How it works showed instead.
-function homeLinks(){const j=!!(window.RR_CONFIG&&RR_CONFIG.firebase)||!!S.test||/[?&]fakecloud\b/.test(location.search);$("homeJoin").hidden=!j;$("homeHow").hidden=j;$("homeJoin").onclick=()=>joinScan()}
+// the one small link under Play: join a friend's crawl (How to play lives in Settings)
+function homeLinks(){$("homeJoin").onclick=()=>joinScan()}
 function renderHome(){
-  $("homeHow").onclick=()=>{S.intro=0;S.introReplay=true;save();go("intro")};
-  // home has one small link under Play: joining a friend's crawl when accounts are on (How to play lives in Settings), else How it works
   homeLinks();
   homeOpen();
   homeAt();
