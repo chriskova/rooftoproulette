@@ -1569,14 +1569,17 @@ const mixJoined=g=>{try{return g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!l
 const MIX_CV='<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const MIX_INVI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><path d="M19 8v6M16 11h6"/></svg>';
 const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.4c2.4.3 4 1.9 4.6 5"/></svg>';
-// someone joins or leaves: just the Invite pill changes
-function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.classList.toggle("on",!!j);b.innerHTML=j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"})}
+// Before the first spin, the space under the spinner is a big Invite button: spinning is the skip, and nothing else big competes.
+// Once people join it says so (and still invites more).
+const mixInvLbl=j=>j?`${MIX_PPLI} ${j} joined · Invite more`:`${MIX_INVI} Invite friends`;
+const mixInvBig=g=>mixInv(g)&&!g.visits.length?`<button class="btn invbig" type="button" data-mxinv="1">${mixInvLbl(mixJoined(g))}</button>`:"";
+function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.innerHTML=mixInvLbl(j)})}
 // the zone sits under the spinner before the clock starts (where Move zone goes once it has)
 const mixZoneHTML=g=>CR(g)||!mixPre(g)?"":`<div class="mixzone"><button class="mixp" type="button" data-mx="zone">${I.pin}<span class="zt">${esc(g.areas[g.areas.length-1])} · ${rLabel(g.radius)}</span>${MIX_CV}</button></div>`;
 const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const on=(freeOn()?["free"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.id));return on.length===1?esc(deckName(on[0])):on.length+" decks"};
 const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
   if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
-  const j=mixJoined(g),inv=mixInv(g)?`<button class="mixinv${j?" on":""}" type="button" data-mxinv="1">${j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"}</button>`:"";
+  const inv="";
   // one row: where (suburb shortens first on a small phone, the radius never does), how long, wildcards, invite
   return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${area}</span><span class="zr">· ${rLabel(g.radius)}</span></button><button class="mixp" type="button" data-mx="len">${g.len===60?"1 hr":"2 hrs"}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}</button>${inv}</div>`};
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mxinv],[data-mx]");if(!t)return;const g=G();if(!g)return;
@@ -1593,7 +1596,7 @@ function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-to
   ()=>{$("sheetBody").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{const l=+b.dataset.l;if(G()!==g||!mixPre(g)){closeSheet();return}g.len=l;S.last=Object.assign({},S.last||{},{len:l});save();closeSheet();renderPlay();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{})})})}
 // Who's coming?: the last step of setup (after the zone), so it never gets between you and the first spin.
 // Starting the crawl is the skip; skip it three crawls running and it stops asking (the Invite pill's always on the spin screen).
-const whoOn=()=>{try{return cloudOn()&&(S.whoSkips||0)<3&&!S.follow}catch(e){return false}};
+const whoOn=()=>false;   // (the Who's coming? step is retired: the spin screen's big Invite button does the nudge)
 function whoStep(host,st,start){
   host.innerHTML=`<div><h1 class="q">Who's coming?</h1><p class="sub" style="margin:6px 0 0">Friends follow along and get the recap.</p></div><div class="whobox" id="whoBox"></div>`;
   cta(`<button class="btn" id="whoGo" type="button">Start the crawl</button>`,()=>{$("whoGo").onclick=()=>{let j=0;try{j=Object.keys((liveDoc&&liveDoc.members)||{}).length}catch(e){}
@@ -2892,7 +2895,7 @@ function renderPlay0(){
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started?"":mixlineHTML(g)}
-      <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
+      <div id="reelBox"></div>${g.started?"":mixInvBig(g)}<button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
 
