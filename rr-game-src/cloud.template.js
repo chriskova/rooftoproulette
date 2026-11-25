@@ -156,8 +156,9 @@ const myName=()=>(ME&&ME.name)||S.myName||"";
 // Other people only ever get your first name (plus your last initial, kept to tell two Sams apart). Never the full name.
 const crawlName=()=>{const p=String(myName()).trim().split(/\s+/).filter(Boolean);return p.length?p[0]+(p.length>1?" "+p[p.length-1][0].toUpperCase():""):""};
 const nFirst=n=>String(n||"").trim().split(/\s+/)[0]||"";
-// a name in a list: first name, or "Sam K." when someone else in the same list is also a Sam
-const nIn=(n,all)=>{const f=nFirst(n),p=String(n||"").trim().split(/\s+/);if(!f)return "";const dup=(all||[]).filter(x=>nFirst(x).toLowerCase()===f.toLowerCase()).length>1;return dup&&p.length>1?f+" "+p[p.length-1][0].toUpperCase()+".":f};
+// how people are shown: first name and last initial ("Sam K."). In a sentence ("Sam's crawl") it's just the first name.
+const nShort=n=>{const p=String(n||"").trim().split(/\s+/).filter(Boolean);return p.length>1?p[0]+" "+p[p.length-1][0].toUpperCase()+".":p[0]||""};
+const nIn=n=>nShort(n);
 const canGoogle=()=>!!(FAKE_CLOUD||(FB_CFG&&(!NATIVE||(CAPX.getPlatform()==="android"&&RR_CONFIG.googleWebClientId)||(IOSNAT&&RR_CONFIG.googleIosClientId))));
 // Sign in with Apple: on iPhone (Apple requires it next to Google there)
 const canApple=()=>!!(FB_CFG&&IOSNAT);
@@ -230,29 +231,16 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
   if(fresh){pg=document.createElement("div");pg.id="acctPage";pg.className="setpage";document.body.appendChild(pg);
     try{history.pushState({acctPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
   if($("sheet").open)closeSheet();
-  const n=readH(HKEY).filter(r=>!r.demo).length,via=ME.via==="google"?"Google":ME.via==="apple"?"Apple":ME.via==="password"?"Email":"";
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="apBack" aria-label="Back">${I.back}</button><b>Account</b></div><div class="spbody">
-    <div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
-    <div class="sgh">Profile</div><div class="sgrp">
-      <button class="strow" type="button" id="apName"><span class="t"><b>Name</b><small>Friends only see your first name</small></span><span class="sval">${esc(myName()||"Add")}</span><i class="chev">›</i></button>
-      ${via?`<div class="strow"><span class="t"><b>Signed in with</b></span><span class="sval">${via}</span></div>`:""}</div>
-    <div class="sgh">My Tab</div><div class="sgrp">
-      <div class="strow"><span class="t"><b>Backed up</b><small>Sign in on any phone and it comes back</small></span><span class="sval">${n} crawl${n===1?"":"s"}</span></div></div>
+    <div class="acct aphead">${avatarHTML(true)}<h3>${esc(nShort(ME.name||myName())||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
     ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard decks, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
-    <div class="sgh">Account</div><div class="sgrp">
+    <div class="sgrp" style="margin-top:22px">
       <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
       <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>
   </div>`;
   $("apBack").onclick=()=>{try{if(history.state&&history.state.acctPage)history.back();else closeAcct()}catch(e){closeAcct()}};
-  $("apName").onclick=renameSheet;if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
+  if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
 function closeAcct(){const pg=$("acctPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
-function renameSheet(){
-  sheet(`<h3>Your name</h3><p class="note">Friends only see your first name.</p><input class="cnin" id="rnIn" maxlength="24" autocomplete="given-name" placeholder="Name" value="${esc(myName())}">
-    <div class="acts"><button class="btn" type="button" id="rnOk">Save</button></div>`,()=>{
-    const ok=async()=>{const v=$("rnIn").value.trim();if(!v)return;$("rnOk").disabled=true;
-      try{const B=await cloud();await B.rename(v);ME=Object.assign({},ME,{name:v});S.myName=v;save();track("rename");closeSheet();accountPage();if($("setPage"))settingsSheet()}
-      catch(e){console.warn(e);$("rnOk").disabled=false;toast("Couldn't save that. Try again.",2600)}};
-    $("rnOk").onclick=ok;$("rnIn").onkeydown=e=>{if(e.key==="Enter")ok()};setTimeout(()=>$("rnIn").focus(),60)})}
 function accountSheet(){if(signedIn())accountPage();else signInSheet(null,"acct")}
 // the account button on My Tab: your initial when signed in, an outline when not
 function acctChip(){if(!(FB_CFG||FAKE_CLOUD))return "";
