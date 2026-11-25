@@ -199,7 +199,7 @@ const writeH=(k,L)=>{try{localStorage.setItem(k,JSON.stringify(L))}catch(e){for(
 try{const R=readH(HKEY),sim=R.filter(r=>/^SIM/.test(r.liveId||""));if(sim.length){writeH(HKEY,R.filter(r=>!/^SIM/.test(r.liveId||"")));const T=readH(TKEY);sim.forEach(r=>{r.test=true;if(!T.some(x=>x.id===r.id))T.unshift(r)});writeH(TKEY,T)}}catch(e){}
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof liveKick==="function"&&S.game&&S.game.live)liveKick()};   // a live crawl: friends see the change straight away
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{if(typeof liveKick==="function"&&S.game&&S.game.live)liveKick()}catch(e){}};   // a live crawl: friends see the change straight away
 const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon()};
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}

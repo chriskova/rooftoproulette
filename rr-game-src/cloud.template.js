@@ -383,7 +383,7 @@ function nameSheet(after,why){
 // host: push the crawl when something happened, plus a "still here" every 2 minutes
 // Anything friends would see (a spin starting, the bar it lands on, arriving, a bar counting) goes out as soon as it
 // happens, at most one write a second; otherwise a "still here" every 2 minutes.
-let liveKickT=0;
+var liveKickT=0;   // var: save() can kick a live crawl while the app is still starting, before this line has run
 function liveKick(){if(liveKickT)return;liveKickT=setTimeout(()=>{liveKickT=0;liveSync(false)},120)}
 async function liveSync(force){const g=G();if(!g||!g.live||!CLP||!isHost())return;if(liveBusy){liveKick();return}
   const sig=liveSig(g)+"|"+Math.round((now()-Date.now())/5000),t=Date.now();if(!force&&sig===liveLastSig&&t-liveLastPut<BEAT_MS)return;
