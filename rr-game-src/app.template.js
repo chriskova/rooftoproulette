@@ -267,12 +267,13 @@ const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||
 const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
 // Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
-function farSheet(){track("far_from_city",{});
-  sheet(`<h3>Try a Sydney crawl from anywhere</h3><p class="note" style="margin:4px 0 14px">We don’t cover your area yet. Pick a zone in Sydney, spin for real rooftops and tap “I’m here” to play from home.</p>
-    <div class="acts"><button class="btn" type="button" id="fsDemo">${I.dice} Start demo crawl</button>
-    <button class="btn line" type="button" id="fsTrip">${I.pin} Browse cities</button></div>`,()=>{
-    $("fsDemo").onclick=()=>askDemo();
-    $("fsTrip").onclick=tripSheet})}
+// Not near a city we cover (yet): lead with the cities, closest first, so they can look around and plan before they go. The demo's a small link under them.
+function farSheet(){track("far_from_city",{});const live=CITIES.filter(x=>x.live).map(c=>({c,d:here?dist(here,c):0})).sort((a,b)=>a.d-b.d);
+  sheet(`<h3>Pick a city</h3><p class="note" style="margin:4px 0 12px">See the rooftops and plan your crawl.</p><div class="opts">${live.map(({c})=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
+    return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>
+    <button class="txtbtn" type="button" id="fsDemo" style="margin:14px auto 0;display:block">Or try a demo crawl from home</button>`,()=>{
+    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});closeSheet();go("bars")});
+    $("fsDemo").onclick=()=>askDemo()})}
 // Explore another city: pick one, then its rooftops open on the Rooftops tab.
 function tripSheet(){const live=CITIES.filter(x=>x.live);
   sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
@@ -899,7 +900,7 @@ async function quickNearMe(){
       const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t));
         let best=null,bn=0;O.forEach(v=>{const n=O.filter(u=>dist(u,v)<=2000);if(n.length>bn){bn=n.length;best=n}});
         const c=best?{lat:best.reduce((a,v)=>a+v.lat,0)/best.length,lng:best.reduce((a,v)=>a+v.lng,0)/best.length}:(GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city));
-        q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};q.far=best?`Nothing open near you. Showing ${nearestSuburb(c)}.`:"Nothing's open right now. Showing the city centre."}}q.step=1}
+        q.z={lat:c.lat,lng:c.lng,r:2};q.from={type:"pick",name:null,lat:c.lat,lng:c.lng};if(!best)q.far="Nothing's open right now. Showing the city centre."}}q.step=1}
   catch(e){q.note="Couldn't find you just now. Try again, or spin from your Hit list."}
   save();renderQuick();
 }
