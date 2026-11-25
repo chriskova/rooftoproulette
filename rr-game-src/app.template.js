@@ -943,8 +943,9 @@ const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id
 `};
 // room the suburb search takes at the top of a zone map (used top and bottom so the circle stays in the middle)
 const ZONEK=1.3;   // zone maps leave a ring of map around the circle, so the bars just outside it show
-const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner,.fstabs")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
+const ZPAD=()=>{const fv=document.querySelector(".fsv .rrmap");if(fv){const m=fv.getBoundingClientRect(),tops=[...fv.querySelectorAll(".msearch,.mchips,.fsbanner")].filter(x=>x.offsetParent).map(x=>x.getBoundingClientRect().bottom),pl=fv.querySelector(".fspill");
     // the same room top and bottom: the circle's centre has to stay the map's centre (that's where the zone is)
+    // (R&R's All / Hit list tabs don't count: they'd make its circle smaller than timed's, and the ring of map around it clears them)
     // (the map itself is screen-tall and centred on this box, so add the part of it the box doesn't show)
     const me_=$("rrMap"),ex=me_?Math.max(0,(me_.offsetHeight-fv.clientHeight)/2):0;
     return Math.round(ex+Math.max(Math.max(m.top,...tops)-m.top+12,m.bottom-(pl&&pl.offsetParent?pl.getBoundingClientRect().top:m.bottom-40)+12))}
