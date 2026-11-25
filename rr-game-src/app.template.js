@@ -1280,20 +1280,26 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   // Everything about the card (its height, the crossfade back to the controls, the map) runs off one spring, same as the rest of the panel.
   let gH=0,hb=null,hraf=0,cH=0;
   const gated=()=>panel.classList.contains("gated");
-  const gate=on=>{cancelAnimationFrame(hraf);panel.classList.remove("gleave");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";panel.style.removeProperty("--gp");return}panel.classList.add("gated")};
+  // while the card's up, the main button becomes Keep it a surprise (same place, its words crossfade): that's the pick we want
+  const ctaSwap=on=>{const b=document.querySelector("#cta:not([hidden]) .btn");if(!b)return;if(on===!!b._gk)return;const fade=()=>{try{b.animate([{opacity:1},{opacity:0,offset:.45},{opacity:0,offset:.55},{opacity:1}],{duration:260,easing:"ease"})}catch(e){}};
+    if(on){b._gk={h:b.innerHTML,c:b.onclick,d:b.disabled};fade();setTimeout(()=>{b.innerHTML="Keep it a surprise"},110);b.disabled=false;b.onclick=e=>{e.stopPropagation();gateOut(1)}}
+    else{const k=b._gk;b._gk=null;fade();setTimeout(()=>{b.innerHTML=k.h},110);b.onclick=k.c;b.disabled=k.d}};
+  const gate=on=>{cancelAnimationFrame(hraf);panel.classList.remove("gleave");if(!on){hb=null;panel.classList.remove("gated");panel.style.height="";panel.style.removeProperty("--gp");ctaSwap(false);return}panel.classList.add("gated");ctaSwap(true)};
   const tuckH=()=>base-tot();
   // H: the card's height. Above the card it fades back into the controls; below it, into the tucked panel
-  const cardFrame=H=>{cH=H;panel.style.height=Math.round(H)+"px";const up=cl((H-gH)/Math.max(1,base-gH)),dn=cl((gH-H)/Math.max(1,gH-tuckH())),k=Math.max(up,dn);
+  // (the card is the same height as the controls: dragging it up fades back to them over the first 70px, gp can also be driven directly)
+  const cardFrame=(H,gp)=>{cH=H;panel.style.height=Math.round(H)+"px";const up=gp!=null?gp:cl((H-gH)/70),dn=cl((gH-H-4)/Math.max(1,gH-tuckH()-4)),k=Math.max(up,dn);
     panel.style.setProperty("--gp",k.toFixed(3));const f=1-dn;parts.forEach((x,i)=>{x.style.maxHeight=(full[i]*f)+"px";x.style.opacity=f});
     const pl=view.querySelector(".fspill");if(pl){pl.style.opacity=String(k);pl.style.pointerEvents=k>.7?"":"none";pl.style.transform="translateX(-50%)"}mapSync()};
-  const hspring=(to,o={})=>{cancelAnimationFrame(hraf);cancelAnimationFrame(raf);const k=o.k||340,c=2*(o.z||1)*Math.sqrt(k);let x=cH,v=o.v||0,last=performance.now();
+  const hspring=(to,o={})=>{cancelAnimationFrame(hraf);cancelAnimationFrame(raf);const k=o.k||340,c=2*(o.z||1)*Math.sqrt(k);let x=cH,v=o.v||0,last=performance.now();const t0=last;
     const step=t=>{const dt=Math.min(.034,Math.max(.001,(t-last)/1000));last=t;for(let n=0;n<4;n++){const h=dt/4,a=-k*(x-to)-c*v;v+=a*h;x+=v*h}
-      if(Math.abs(x-to)<.4&&Math.abs(v)<12){cardFrame(to);if(o.done)o.done();return}cardFrame(x);hraf=requestAnimationFrame(step)};
+      const g=o.gp?o.gp(t-t0):null;if(Math.abs(x-to)<.4&&Math.abs(v)<12&&(g==null||g>=1)){cardFrame(to,g);if(o.done)o.done();return}cardFrame(x,g);hraf=requestAnimationFrame(step)};
     hraf=requestAnimationFrame(step)};
   const gateIn=v0=>{cancelAnimationFrame(raf);moving=false;tease=false;u=1;measure();cH=panel.offsetHeight;gate(true);
-    gH=Math.round(30+gt.offsetHeight+parseFloat(getComputedStyle(panel).paddingBottom)+4);cardFrame(cH);hspring(gH,{v:v0||0,k:300,z:.62})};
+    gH=base;cardFrame(cH,0);hspring(gH,{v:v0||0,k:300,z:.55})};
   // back to the controls (or tucked away), landing exactly where the panel's own layout puts it
-  const gateOut=(to,v0)=>{if(!gated())return;measure();const t=to===0?tuckH():base;hspring(t,{v:v0||0,done:()=>{u=to===0?0:1;moving=true;apply(u);gate(false);moving=false;apply(u)}})};
+  const gateOut=(to,v0)=>{if(!gated())return;measure();const t=to===0?tuckH():base,g0=+(panel.style.getPropertyValue("--gp")||0);ctaSwap(false);
+    hspring(t,{v:v0||0,gp:to===0?null:el=>Math.max(g0,cl(el/240)),done:()=>{u=to===0?0:1;moving=true;apply(u);gate(false);moving=false;apply(u)}})};
   const measure=()=>{full=parts.map(x=>{const o=x.style.maxHeight;x.style.maxHeight="none";const h=x.scrollHeight;x.style.maxHeight=o;return h});
     const oh=panel.style.height;panel.style.height="";const cur=parts.reduce((a,x)=>a+x.offsetHeight,0),nat=panel.offsetHeight;panel.style.height=oh;
     base=nat-cur+full[0]+full[1];
@@ -1328,7 +1334,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   // the panel lifts, springs back and settles into the spoiler card
   const tease1=(drag,v0)=>{measure();if(drag){gateIn(v0);return}tease=true;anim(1,{v:1000,k:300,z:.5,onPeak:()=>gateIn()})};
   const open=()=>{if(gated())return;if(needGate()){if(Math.abs(u-1)>.01)set(1,{done:()=>tease1()});else tease1()}else set(2)};view._fsOpen=open;
-  gt.querySelector('[data-g="show"]').onclick=()=>{if(Date.now()-swiped<400)return;gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();cancelAnimationFrame(hraf);measure();hb=cH||panel.offsetHeight;panel.style.setProperty("--gp","0");panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);apply(2)}})};
+  gt.querySelector('[data-g="show"]').onclick=()=>{if(Date.now()-swiped<400)return;gateOK=true;const L=prov();if(L&&L.ungate)L.ungate();cancelAnimationFrame(hraf);measure();hb=cH||panel.offsetHeight;panel.style.setProperty("--gp","0");ctaSwap(false);panel.classList.add("gleave");set(2,{keepGate:1,done:()=>{gate(false);apply(2)}})};
   // tapping the top of the panel moves it a stop: tucked → controls, controls → list (spoiler first in timed), list → controls
   const tapTop=()=>{if(Date.now()-swiped<400)return;if(gated()){gateOut(1);return}if(u<.5)set(1);else if(u>1.5)set(1);else if(noList)set(0);else open()};
   hd.onclick=tapTop;lw.querySelector(".fslh").addEventListener("click",tapTop);
@@ -1339,7 +1345,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
   const dMove=y=>{if(y0==null)return false;const d=y-y0;if(!moved&&Math.abs(d)<6)return false;if(!moved&&!card&&d<0&&u0>=1&&cap>1)fill();moved=true;
     const t=performance.now();smp.push([t,y]);while(smp.length>2&&t-smp[0][0]>90)smp.shift();
     // on the spoiler card: up grows it back into the controls, down tucks it away; it never opens the list
-    if(card){let H=h0-d;const tk=tuckH();if(H>base)H=base+rub(H-base)*.6;if(H<tk)H=tk-rub(tk-H)*.4;cardFrame(H);return true}
+    if(card){let H=h0-d;const tk=tuckH();if(H>gH){const e=H-gH;cardFrame(gH+rub(e)*.5,cl(e/90));return true}if(H<tk)H=tk-rub(tk-H)*.4;cardFrame(H);return true}
     let P=Math.max(0,px(u0)-d);if(cap<2){const T=px(1);if(P>T)P=T+rub(P-T);tease=P>T+.5}else{P=Math.min(px(2)+rub(Math.max(0,P-px(2))),P);tease=false}
     moving=true;apply(inv(P));return true};
   const dEnd=y=>{if(y0==null)return;const d=y-y0;y0=null;if(!moved)return;swiped=Date.now();moving=false;
@@ -1347,7 +1353,7 @@ function fsLayout(view,host,opt){opt=opt||{};const noList=opt.list===false;view.
     if(performance.now()-(smp.length?smp[smp.length-1][0]:0)>80)vy=0;
     const vp=-vy;// panel speed, px/s, up is positive
     if(card){card=false;const H=cH,v=Math.max(-3000,Math.min(3000,vp));
-      if(vp>300||(vp>-300&&H>gH+(base-gH)*.3))gateOut(1,v);else if(vp<-300||H<gH-(gH-tuckH())*.5)gateOut(0,v);else hspring(gH,{v,z:.7});return}
+      if(vp>300||(vp>-300&&H>gH+8))gateOut(1,v);else if(vp<-300||H<gH-(gH-tuckH())*.5)gateOut(0,v);else hspring(gH,{v,z:.7});return}
     if(noList&&u>=.98){set(1,{v:Math.min(0,vp)});return}
     if(cap<2&&u>1.0005){tease1(true,Math.min(0,vp));return}
     if(cap<2&&d<0&&vp>350&&u>=.98){tease1();return}
