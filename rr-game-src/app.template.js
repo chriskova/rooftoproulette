@@ -372,11 +372,13 @@ function bgGeo(){const C=window.Capacitor;if(!(C&&C.isNativePlatform&&C.isNative
 function startWatch(){
   if(S.test||DEMO())return;
   const BG=bgGeo();
-  if(BG&&S.game){if(bgWatch!==null)return;bgWatch="pending";
+  // a watcher left over from before the page reloaded (an update, Android restarting the web view) still holds the
+  // background-location notification; we can only remove it by its id, so the id is kept outside the page
+  if(BG&&S.game){if(bgWatch!==null)return;bgOrphan(BG);bgWatch="pending";
     Promise.resolve().then(()=>BG.addWatcher({backgroundTitle:"Active crawl",backgroundMessage:"Checking you in when you reach each rooftop.",requestPermissions:!IOSNAT,stale:false,distanceFilter:10},(p,err)=>{
       if(err){locErr=err.code==="NOT_AUTHORIZED"?1:2;if(S.route==="play")renderPlay();if(locErr!==1)setTimeout(()=>locKick(true),1500);return}
       if(!p)return;here={lat:p.latitude,lng:p.longitude,acc:p.accuracy,t:Date.now()};locErr=null;lastFix=Date.now();onLocation()
-    })).then(id=>{if(bgWatch==="pending")bgWatch=id;else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
+    })).then(id=>{if(bgWatch==="pending"){bgWatch=id;try{localStorage.setItem("rr_bgw",id)}catch(e){}}else BG.removeWatcher({id}).catch(()=>{})}).catch(()=>{bgWatch=null;webWatch()});
     return}
   webWatch()}
 function webWatch(){
@@ -386,8 +388,11 @@ function webWatch(){
       locErr=e.code;if(S.route==="play")renderPlay();if(e.code!==1)setTimeout(()=>locKick(true),1500)},{enableHighAccuracy:true,maximumAge:10000,timeout:30000});
 }
 function stopWatch(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
-  if(NATIVE){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}
-  const BG=bgGeo();if(BG&&bgWatch!==null){const id=bgWatch;bgWatch=null;if(id!=="pending")BG.removeWatcher({id}).catch(()=>{})}}
+  // clear now, and again a moment later in case an update was already on its way to the phone
+  if(NATIVE){NOTE.live="";NOTE.gone=true;natCall("CrawlNotify","clear").catch(()=>{});setTimeout(()=>{if(!G()||G().ended)natCall("CrawlNotify","clear").catch(()=>{})},1500)}
+  const BG=bgGeo();if(BG&&bgWatch!==null){const id=bgWatch;bgWatch=null;if(id!=="pending")BG.removeWatcher({id}).catch(()=>{})}
+  if(BG)bgOrphan(BG);try{localStorage.removeItem("rr_bgw")}catch(e){}}
+function bgOrphan(BG){let o=null;try{o=localStorage.getItem("rr_bgw")}catch(e){}if(o&&o!==bgWatch){BG.removeWatcher({id:o}).catch(()=>{});try{localStorage.removeItem("rr_bgw")}catch(e){}}}
 function getOnce(){
   if(S.test&&S.fake){pickCity(S.fake);return Promise.resolve(S.fake)}
   return new Promise((res,rej)=>{
@@ -4615,7 +4620,8 @@ async function notifEnsure(key,noWait){if(!NATIVE||notifKey===key)return;notifKe
     $("nfNo").onclick=()=>{S.notifNo=(S.notifNo||0)+1;save();closeSheet()}})}
 function liveNote(){
   if(!NATIVE)return;const g=G();
-  if(!g||g.demo||!g.started||g.ended){if(NOTE.live){NOTE.live="";natCall("CrawlNotify","clear").catch(()=>{})}return}
+  if(!g||g.demo||!g.started||g.ended){if(NOTE.live||!NOTE.gone){NOTE.live="";NOTE.gone=true;natCall("CrawlNotify","clear").catch(()=>{})}return}
+  NOTE.gone=false;
   noteSetup();
   notifEnsure(g.id);
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
@@ -4686,6 +4692,8 @@ document.addEventListener("visibilitychange",()=>{
 
 /* ---------- boot ---------- */
 if(S.game&&!S.test&&!S.game.demo)startWatch();
+// no crawl on: nothing of ours should be sitting in the notification shade (left over from a crawl that ended while the page was elsewhere)
+else if(NATIVE&&!S.game){natCall("CrawlNotify","clear").catch(()=>{});const BG=bgGeo();if(BG)bgOrphan(BG)}
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
