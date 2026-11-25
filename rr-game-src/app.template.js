@@ -273,8 +273,8 @@ function farSheet(){track("far_from_city",{});const live=CITIES.filter(x=>x.live
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});farCitySheet()})})}
 function farCitySheet(){const c=S.city;
-  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a demo or build your Hit list.</p>
-    <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Demo crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>`,()=>{
+  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a practice crawl or build your Hit list.</p>
+    <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Practice crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>`,()=>{
     $("fcDemo").onclick=()=>{closeSheet();track("demo_from_far",{city:c});startDemo()};
     $("fcBrowse").onclick=()=>{closeSheet();go("bars")}})}
 // Explore another city: pick one, then its rooftops open on the Rooftops tab.
@@ -284,7 +284,7 @@ function tripSheet(){const live=CITIES.filter(x=>x.live);
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city});closeSheet();go("bars")})})}
 // The demo: a 1-hour timed game in a zone you pick (it opens on Circular Quay, or your own city's centre). "I'm here" stands in for the walk, "Skip 3 min" for the wait.
 const DEMO_START={lat:-33.8612,lng:151.2110,name:"Circular Quay"};let DEMO_REC=null;
-function askDemo(before){sheet(`<h3>Demo crawl</h3><p class="note">For a practice run from home. This won't appear in “My&nbsp;Tab” as a completed&nbsp;crawl.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start demo</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
+function askDemo(before){sheet(`<h3>Practice crawl</h3><p class="note">For a practice run from home. This won't appear in “My&nbsp;Tab” as a completed&nbsp;crawl.</p><div class="acts"><button class="btn" type="button" id="dmGo">Start practice crawl</button><button class="btn dark" type="button" id="dmNo">Cancel</button></div>`,()=>{
   $("dmNo").onclick=closeSheet;$("dmGo").onclick=()=>{closeSheet();if(before)before();startDemo()}})}
 // The demo starts with picking a zone, same as a real crawl: drag the map, pinch or slide the radius, then go.
 // It's practice from anywhere, any hour, so every bar counts as open and you're dropped in the middle of it.
@@ -294,17 +294,17 @@ function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   const ov=document.createElement("div");ov.className="mapfull demozone";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   const drop=()=>{if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{drop();ov.remove()},220)};
-  zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the demo",back:"Cancel"});
+  zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the practice crawl",back:"Cancel"});
   $("mvX").onclick=close;
   rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("mvGo");if(!b)return;
-    $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every rooftop's open in the demo, whatever the time.";
+    $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every rooftop's open in a practice crawl, whatever the time.";
     b.disabled=n<2;b.onclick=()=>{ov.remove();drop();startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})}
 function startDemoAt(st,r){if(S.game)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(st,x)})).sort((a,b)=>a.d-b.d)[0],city=c?c.x.name:"Sydney";S.city=city;
   S.game={id:"demo"+Date.now(),demo:true,city,test:false,started:false,startedAt:null,endsAt:null,len:60,radius:r,newOnly:false,
     zoneN:playable(inCircle(st,r),false).length,center:{lat:st.lat,lng:st.lng},startPos:{lat:st.lat,lng:st.lng},areas:[nearestSuburb(st)],moves:[],voluntaryUsed:false,freeSkips:1,excluded:[],
     zone:{lat:st.lat,lng:st.lng,name:nearestArea(st)},visits:[],target:null,targetAt:null,targetFrom:null,ended:false,shownFinal:false,dpos:{lat:st.lat,lng:st.lng,acc:5},dff:0};
   track("demo_start",{});save();buzz(30);go("play")}
-function demoBar(g){return `<div class="demobar"><span class="dtag">Demo</span><span>Practice run</span><button class="btn sm line" type="button" id="dEnd">End demo</button></div>`}
+function demoBar(g){return `<div class="demobar"><span class="dtag">Practice</span><span>From home, any time</span><button class="btn sm line" type="button" id="dEnd">End practice</button></div>`}
 function bindDemoBar(g){
   if($("dWalk"))$("dWalk").onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()};
   if($("dSkip"))$("dSkip").onclick=()=>{const a=atVisit();if(!a)return;g.dff=(g.dff||0)+Math.max(0,DWELL_MIN*60000+2000-(now()-a.arrivedAt));save();loop();renderPlay()};
@@ -724,7 +724,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   const cr=CR(g),a=atVisit(),y=you();let left,sm=false,line;
   if(!g.started){left="Ready";sm=true}else if(cr){if(a)left=now()-a.arrivedAt>=3600000?hmm(now()-a.arrivedAt):mmss(now()-a.arrivedAt);else{left="R&R";sm=true}}else left=mmss(remaining());
   if(!g.started)line="Spin to start";else if(a)line="At "+byId(a.id).name;else if(g.target){const v=byId(g.target);line="Heading to "+v.name+(y?" · "+kmTxt(dist(y,v)/1000):"")}else line="Spin for the next one";
-  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${g.demo?"Demo · "+LEN(g.len):cr?"R&amp;R":LEN(g.len)}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
+  const h=`<span class="mt${sm?" sm":""}">${esc(left)}</span><span class="ml"><b>${esc(line)}</b><small>${g.demo?"Practice · "+LEN(g.len):cr?"R&amp;R":LEN(g.len)}</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
   if(m._h!==h){m._h=h;m.innerHTML=h}
   if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(prevRoute==="play"){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
@@ -868,7 +868,7 @@ function safetySheet(next){sheet(`<h3>Before you head out</h3><div class="safe">
   <div class="acts"><button class="btn" type="button" id="sfOk">I'm 18+ and I agree</button></div>`,()=>{$("sfOk").onclick=()=>{S.safeOK=Date.now();save();track("safety_ok");closeSheet();next()}})}
 // Before anyone's played anything: ask straight up whether they're heading out or trying it first.
 function firstPlayDue(){return !S.firstPlay&&!S.test&&!readH(HKEY).length}
-function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying it from home first? The demo plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fpOut">Heading out now</button><button class="btn line" type="button" id="fpDemo">Try a demo crawl</button></div>`,()=>{
+function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying it from home first? A practice crawl plays anywhere.</p><div class="acts"><button class="btn" type="button" id="fpOut">Heading out now</button><button class="btn line" type="button" id="fpDemo">Try a practice crawl</button></div>`,()=>{
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
 if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{if(!S.safeOK&&!S.test){safetySheet(()=>{S.quick={step:0,from:null};go("quick")});return}S.quick={step:0,from:null};go("quick")})};
@@ -1201,7 +1201,7 @@ function renderWiz(){
         <button class="opt" type="button" role="radio" data-l="120" aria-checked="${!w.rr&&w.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More rooftops or longer stays.</small></span></button>
         <button class="opt optrr" type="button" role="radio" data-l="rr" aria-checked="${!!w.rr}"><span class="ic"><b class="rrwm">R<i>&amp;</i>R</b></span><span class="t"><b>Rest &amp; Roulette</b><small>Your own pace. No timer or wildcards.</small></span></button>
       </div>
-      <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a demo crawl</span></button>`;
+      <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a practice crawl</span></button>`;
     $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
     cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
@@ -1231,7 +1231,7 @@ function renderWiz(){
       $("zWarn").hidden=ok;sug.hidden=true;
       if(!ok&&!P.open.length)$("rrNB").hidden=true;   // the warning says it all (and the setup screen has to fit without scrolling)
       if(!ok){$("zWarnT").textContent=P.open.length===1?"Only 1 open here right now":!P.all.length?"No rooftops here":op?`Nothing open here till ${op}`:"Nothing open here today";
-        $("zWarnS").textContent="Move the circle, or try a demo crawl.";
+        $("zWarnS").textContent="Move the circle, or try a practice crawl.";
         const c_=GAME_AREAS().map(area=>({area,open:pool({...area,r:z.r},t).open.length})).filter(x=>x.open>=2).sort((a,b)=>dist(z,a.area)-dist(z,b.area));
         if(c_.length){const {area,open}=c_[0];sug.hidden=false;sug.innerHTML=`${I.move}<span>${esc(area.name)}</span><small>${open} open</small>`;sug.setAttribute("aria-label",`Move to ${area.name}, ${open} open`);sug.onclick=()=>{w.z={lat:area.lat,lng:area.lng,r:z.r};save();renderWiz()}}}
       // Skip visited: a filter chip on the map, only when you've been to some bars in this zone
@@ -1243,7 +1243,7 @@ function renderWiz(){
       w.start={type:me&&!moved?"me":"area",name:me&&!moved?"you":nearestSuburb(z),lat:z.lat,lng:z.lng};
       w.radius=z.r;w.zN={open:P.open.length,all:P.all.length};
       {
-        cta(ok?`<button class="btn" id="wNext" type="button">${whoOn()?"Next":"Start the crawl"}</button>`:`<button class="btn" id="wDemo" type="button">Try a demo crawl</button>`,()=>{
+        cta(ok?`<button class="btn" id="wNext" type="button">${whoOn()?"Next":"Start the crawl"}</button>`:`<button class="btn" id="wDemo" type="button">Try a practice crawl</button>`,()=>{
           if($("wNext"))$("wNext").onclick=()=>{w.radius=w.z.r;w.excl=excl.filter(id=>{const v=byId(id);return v&&dist(w.z,v)<=w.z.r*1000});save();sawHow("rush");if(whoOn()){w.step=2;save();renderWiz()}else tryStart()};
           if($("wDemo"))$("wDemo").onclick=()=>askDemo(()=>{S.wiz=null})})}},
       Object.assign({pool,listSheet:()=>wizSpoiler(),locate:me?null:async()=>{const st=await permState();if(st!=="granted"){S.permNext="wiz-me";go("perm");return}useMe()}},R1));
@@ -1887,7 +1887,7 @@ function reelNote(){return "Flick to spin. Harder flick, longer spin."}
 // Leaving a bar inside 3 minutes: ask whether it counts before heading on.
 function noneLeft(){const g=G();sheet(`<h3>Nothing else open nearby</h3><p class="note">${g.cz.type==="me"||g.cz.type==="spot"?`No other rooftops are open within ${kmTxt(g.cz.r)} of ${g.cz.type==="me"?"you":esc(g.cz.name.replace(/^Around /,""))} right now.`:"No other rooftops are open in this part of town right now."} Wrap it up, or stay where you are.</p><div class="acts"><button class="btn" type="button" id="nlE">End the crawl</button><button class="btn dark" type="button" id="nlS">Stay put</button></div>`,()=>{$("nlS").onclick=closeSheet;$("nlE").onclick=()=>{closeSheet();endGame(now())}})}
 function farBarSheet(g,rushing){const v=byId(g.target),y=you();
-  sheet((rushing?`<h3>Trying it from home?</h3><p class="note">Re-spins cost time on a real crawl. The demo plays anywhere.</p>`:`<h3>You're not near this rooftop</h3><p class="note">${esc(v.name)} is ${mOrKm(dist(y,v))} away. Playing from home? The demo plays anywhere.</p>`)+`<div class="acts"><button class="btn" type="button" id="fbDemo">Switch to demo</button><button class="btn dark" type="button" id="fbKeep">Keep going</button></div>`,()=>{
+  sheet((rushing?`<h3>Trying it from home?</h3><p class="note">Re-spins cost time on a real crawl. A practice crawl plays anywhere.</p>`:`<h3>You're not near this rooftop</h3><p class="note">${esc(v.name)} is ${mOrKm(dist(y,v))} away. Playing from home? A practice crawl plays anywhere.</p>`)+`<div class="acts"><button class="btn" type="button" id="fbDemo">Switch to a practice crawl</button><button class="btn dark" type="button" id="fbKeep">Keep going</button></div>`,()=>{
     $("fbKeep").onclick=closeSheet;
     $("fbDemo").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("far_bar_demo",{});stopWatch();S.game=null;save();startDemo()}})}
 function askDrink(a0,then){const v=byId(a0.id);
@@ -2947,7 +2947,7 @@ function renderPlay0(){
   if($("poolMove"))$("poolMove").onclick=()=>openMove(basePool().length<2);
   if($("adjZone"))$("adjZone").onclick=()=>openMove(basePool().length<2);
   st.querySelectorAll("#camBtn").forEach(b=>{if(S.film===false||!b.classList.contains("ontop"))b.remove()});
-  if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a demo crawl?</h3><p class="note">This ends your current crawl and starts a Sydney demo.</p><div class="acts"><button class="btn" id="confirmDemo">Start demo crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
+  if($("homeDemo"))$("homeDemo").onclick=()=>sheet('<h3>Switch to a practice crawl?</h3><p class="note">This ends your current crawl and starts a Sydney practice crawl.</p><div class="acts"><button class="btn" id="confirmDemo">Start practice crawl</button><button class="btn dark" id="keepCrawl">Keep playing</button></div>',()=>{
     $("keepCrawl").onclick=closeSheet;$("confirmDemo").onclick=()=>{if(G()!==g||g.visits.length){closeSheet();return}closeSheet();stopWatch();S.game=null;startDemo()}
   });
   g._man=g.target?needManual(g)+"|"+locWeak(g)+"|"+hereLink(g):false;
@@ -2988,7 +2988,7 @@ function renderPlay0(){
     const free=(g.freeSkips||0)>0;
     // Second re-spin within a minute of the first spin, before reaching any bar: probably trying it from home.
     const home=!g.noLoc&&!g.visits.length&&!g.farAsked&&(g.respins||[]).length>=1&&now()-g.startedAt<=60000;if(home){g.farAsked=1;save()}
-    sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber-text)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? The demo plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to demo</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
+    sheet(`<h3>Spin again?</h3><p class="note">${free?"This one's free.":`This re-spin costs <b style="color:var(--amber-text)">${SKIP_COST} minutes</b> off the clock${g.skipCost?` (you've used ${g.skipCost} so far)`:""}.`}${home?"<br>Trying it from home? A practice crawl plays anywhere.":""}</p><div class="acts"><button class="btn" type="button" id="sY">${free?"Spin again, free":"Spin again (−"+SKIP_COST+" min)"}</button><button class="btn dark" type="button" id="sN">Keep ${esc(byId(g.target).name)}</button>${home?'<button class="btn line" type="button" id="sD">Switch to a practice crawl</button>':""}</div>`,()=>{$("sN").onclick=closeSheet;
       if($("sD"))$("sD").onclick=()=>{closeSheet();if(G()!==g||g.visits.length)return;track("respin_demo",{});stopWatch();S.game=null;save();startDemo()};$("sY").onclick=()=>{closeSheet();if(free)g.freeSkips--;else{g.endsAt-=SKIP_COST*60000;g.skipCost=(g.skipCost||0)+SKIP_COST}(g.respins=g.respins||[]).push(now());(g.skipped=g.skipped||[]).push(g.target);g.target=null;save();if(remaining()<=0){loop();return}renderPlay()}})};
   {const dw=$("dWalk");if(dw)dw.onclick=()=>{const v=byId(g.target);if(!v)return;g.dpos={lat:v.lat+.0002,lng:v.lng,acc:5};save();animateId="at:"+v.id;onLocation()}}   // demo: arrive without walking
   const cg=$("cantBtn");if(cg)cg.onclick=()=>{const v=byId(a.id);sheet(`<h3>Couldn't get in to ${esc(v.name)}?</h3><p class="note">Closed, full, or not letting groups in. You get a free re-spin${CR(g)?"":" and no time is lost"}. We'll note it so the rooftop gets checked.</p><div class="acts"><button class="btn" type="button" id="cY">Yes, free re-spin</button><button class="btn dark" type="button" id="cN">We're in</button></div>`,()=>{$("cN").onclick=closeSheet;$("cY").onclick=()=>{closeSheet();a.leftAt=now();a.counted=false;a.cant=true;S.reports.push({id:a.id,at:now()});(g.skipped=g.skipped||[]).push(a.id);save();renderPlay()}})};
@@ -3562,7 +3562,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   fitLine(box.querySelector(".scttl"),9);
   // an old crawl: no "Play again", Share takes the row
   if(S.endBack!=="play"&&!r.demo){const rb=$("runBack");if(rb)rb.remove()}if($("addTab"))$("addTab").onclick=addSharedToTab;endSignInBind();if($("rcDeck"))$("rcDeck").onclick=()=>{r.deckAsked=true;saveH();$("rcDeck").remove();deckSheet()};if($("rcIn"))$("rcIn").onclick=()=>{r.recapAsked=true;saveH();signInSheet("Keep your crawls and saved lists across devices.","recap","Save your crawls")};if(S.recapOpen===r.id&&$("rcIn")){r.recapAsked=true;saveH()}delete S.recapOpen;if($("openApp"))$("openApp").onclick=openInApp;
-  if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Demo crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
+  if(r.demo){const nm=$("scName");if(nm)nm.outerHTML=`<span class="scname scdemo">Practice crawl · not saved</span>`;const mo=$("scMore");if(mo)mo.remove();
     const rb=$("runBack");if(rb){rb.innerHTML=`${I.back} Done`;rb.id="demoDone";rb.onclick=()=>{DEMO_REC=null;S.lastEnd=null;save();go("home")}}}
   if(isShared||r.followed){const nm=$("scName");if(nm&&!r.title)nm.remove();else if(nm){nm.onclick=null;const ic=nm.querySelector("span");if(ic)ic.remove()}const mo=$("scMore");if(mo&&isShared)mo.remove()}   // someone else's crawl: look, add, save the card
   if($("scMore"))$("scMore").onclick=()=>crawlMenu(r);if($("scName")&&!isShared&&!r.followed&&!r.demo)$("scName").onclick=()=>nameCrawl(r);
