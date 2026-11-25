@@ -868,8 +868,8 @@ function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
 if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{if(!S.safeOK&&!S.test){safetySheet(()=>{S.quick={step:0,from:null};go("quick")});return}S.quick={step:0,from:null};go("quick")})};
-// Test mode is hidden: tap the logo 5 times fast to switch it on or off. Settings only shows Testing while it's on (or test crawls are left).
-(()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=5){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();if(CLP)location.reload();else render()}}))})();
+// Test mode is hidden: tap the logo 10 times fast to switch it on or off. Settings only shows Testing while it's on (or test crawls are left).
+(()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=10){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();if(CLP)location.reload();else render()}}))})();
 if($("rrIcon"))$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
 
