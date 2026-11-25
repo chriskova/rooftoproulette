@@ -567,9 +567,10 @@ function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
 // host hands the spin to a follower
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
   sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
-    document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=async()=>{const u=b.dataset.gs,m=d.members[u],g=G();if(!g)return;await liveSync(true);const B=await cloud();
-      const members=Object.assign({},d.members);delete members[u];members[ME.uid]={n:myName(),j:g.startedAt||Date.now(),b:0,was:1};
-      try{await B.set(`live/${g.live}`,{host:u,hostName:m.n||"",members,beat:Date.now()},true);closeSheet();track("live_handover")}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}})})}
+    document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>giveSpinTo(b.dataset.gs))})}
+async function giveSpinTo(u){const d=liveDoc,m=d&&d.members&&d.members[u],g=G();if(!g||!m)return;await liveSync(true);const B=await cloud();
+  const members=Object.assign({},d.members);delete members[u];members[ME.uid]={n:myName(),j:g.startedAt||Date.now(),b:0,was:1};
+  try{await B.set(`live/${g.live}`,{host:u,hostName:m.n||"",members,beat:Date.now()},true);closeSheet();track("live_handover")}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}}
 // the end: the host's final crawl goes to the doc; followers copy it to their tab from the bar they joined
 // called off before the clock started: followers go home, nothing's saved
 async function liveCancel(id){try{const B=await cloud();await B.set(`live/${id}`,{ended:true,cancelled:true,beat:Date.now()},true)}catch(e){console.warn(e)}}
@@ -655,8 +656,12 @@ async function joinScan(){track("join_scan_open");
 // low battery: offer to hand the spin over before the phone dies
 let batAsked=false;
 function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().then(b=>{const chk=()=>{const g=G();
-  if(!batAsked&&g&&g.live&&isHost()&&!b.charging&&b.level<=0.1&&Object.keys((liveDoc&&liveDoc.members)||{}).length){batAsked=true;
-    sheet(`<h3>Battery's low</h3><p class="note">Hand the spin to someone before your phone dies?</p><div class="acts"><button class="btn" type="button" id="bGive">Give the spin</button><button class="btn dark" type="button" id="bNo">Keep it</button></div>`,()=>{$("bGive").onclick=giveSpinSheet;$("bNo").onclick=closeSheet})}};
+  // one follower: name them and hand straight over; more than one: pick who
+  const ms=Object.entries((liveDoc&&liveDoc.members)||{});
+  if(!batAsked&&g&&g.live&&!g.ended&&isHost()&&!b.charging&&b.level<=0.15&&ms.length){batAsked=true;track("battery_handoff_ask",{n:ms.length});
+    const one=ms.length===1?ms[0]:null,nm=one?esc(one[1].n||"your friend"):"";
+    sheet(`<h3>Battery's low</h3><p class="note">${one?`Hand the spin to ${nm} before your phone dies?`:"Hand the spin to someone before your phone dies?"}</p><div class="acts"><button class="btn" type="button" id="bGive">${one?`Give it to ${nm}`:"Give the spin"}</button><button class="btn dark" type="button" id="bNo">Keep it</button></div>`,
+      ()=>{$("bGive").onclick=()=>{if(one)giveSpinTo(one[0]);else giveSpinSheet()};$("bNo").onclick=closeSheet})}};
   b.addEventListener("levelchange",chk);chk()}).catch(()=>{})}
 
 // menu rows during a crawl
