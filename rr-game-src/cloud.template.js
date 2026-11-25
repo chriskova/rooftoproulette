@@ -232,14 +232,13 @@ function accountPage(){if(!signedIn()){signInSheet(null,"acct");return}
     try{history.pushState({acctPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
   if($("sheet").open)closeSheet();
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="apBack" aria-label="Back">${I.back}</button><b>Account</b></div><div class="spbody">
-    <div class="acct aphead">${avatarHTML(true)}<h3>${esc(nShort(ME.name||myName())||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
-    ${typeof canBuy==="function"&&canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="apRestore"><span class="t"><b>Restore purchases</b><small>Wildcard decks, kept with your account</small></span><i class="chev">›</i></button></div>`:""}
+    <div class="acct aphead">${avatarHTML(true)}<h3>${esc(ME.name||myName()||"Signed in")}</h3>${ME.email?`<p class="note">${esc(ME.email)}</p>`:""}</div>
     <div class="sgrp" style="margin-top:22px">
       <button class="strow" type="button" id="apOut"><span class="t"><b>Sign out</b></span></button>
       <button class="strow danger" type="button" id="apDel"><span class="t"><b>Delete account</b></span></button></div>
   </div>`;
   $("apBack").onclick=()=>{try{if(history.state&&history.state.acctPage)history.back();else closeAcct()}catch(e){closeAcct()}};
-  if($("apRestore"))$("apRestore").onclick=()=>restorePacks();if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
+  if(typeof rcSync==="function"&&canBuy())rcInit().then(()=>rcSync());$("apOut").onclick=()=>signOutNow();$("apDel").onclick=deleteAccountSheet;}
 function closeAcct(){const pg=$("acctPage");if(!pg)return;pg.id="";pg.classList.remove("on");setTimeout(()=>pg.remove(),260)}
 function accountSheet(){if(signedIn())accountPage();else signInSheet(null,"acct")}
 // the account button on My Tab: your initial when signed in, an outline when not

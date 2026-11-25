@@ -20,7 +20,7 @@ m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 m['start_url']='play/';m['scope']='./'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v98-166";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v98-167";
 const ASSETS=["play/","./","browser-config.js","rooftop-app.js","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png","icons/logo-pin.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
