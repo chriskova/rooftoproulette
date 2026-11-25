@@ -273,7 +273,7 @@ function farSheet(){track("far_from_city",{});const live=CITIES.filter(x=>x.live
     return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
     $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});farCitySheet()})})}
 function farCitySheet(){const c=S.city;
-  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a practice crawl from home, or build your Hit list before you go.</p>
+  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a demo or build your Hit list.</p>
     <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Demo crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>`,()=>{
     $("fcDemo").onclick=()=>{closeSheet();track("demo_from_far",{city:c});startDemo()};
     $("fcBrowse").onclick=()=>{closeSheet();go("bars")}})}
