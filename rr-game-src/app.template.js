@@ -1115,7 +1115,8 @@ function renderQuick(){
     Object.assign({skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
-    if(q.far){cv.insertAdjacentHTML("beforeend",`<div class="fsbanner" id="qFar">${esc(q.far)}</div>`);const gone=()=>{if(!q.far)return;q.far=null;save();const x=$("qFar");if(x)x.remove()};$("rrMap").addEventListener("pointerdown",gone,{once:true});$("rrR").addEventListener("input",gone,{once:true})}}
+    // a one-off message (nothing open near you, couldn't find you): the same note as everywhere else, gone on its own or with a swipe
+    if(q.far){const m=q.far;q.far=null;save();setTimeout(()=>toast(esc(m),4500),350)}}
   b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
     const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip visited rooftops <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
     return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
@@ -4134,11 +4135,12 @@ function swipeHide(el,handle){let x0=null,y0=0,dx=0,dy=0;
     if(Math.abs(dx)>70||dy>50){el.style.opacity="0";el.style.transform=Math.abs(dx)>dy?`translateX(${dx>0?120:-120}%)`:"translateY(120%)";setTimeout(()=>{el.hidden=true;el.style.transform="";el.style.opacity="";el.style.transition=""},180)}
     else{el.style.transform="";el.style.opacity=""}})}
 // drag a toast sideways (or down) to get rid of it
-function swipeAway(t){let x0=null,y0=0,dx=0,dy=0;
-  t.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;y0=e.clientY;dx=dy=0;t.style.transition="none";t.setPointerCapture(e.pointerId)});
-  t.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;dy=Math.max(0,e.clientY-y0);t.style.translate=Math.abs(dx)>dy?`${dx}px 0`:`0 ${dy}px`;t.style.opacity=String(1-Math.min(.8,Math.max(Math.abs(dx),dy)/220))});
+// swipe a note away: sideways, or towards the edge it sits on (down at the bottom, up when it's at the top)
+function swipeAway(t){let x0=null,y0=0,dx=0,dy=0,up=false;
+  t.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;x0=e.clientX;y0=e.clientY;dx=dy=0;up=t.getBoundingClientRect().top<innerHeight/2;t.style.transition="none";t.setPointerCapture(e.pointerId)});
+  t.addEventListener("pointermove",e=>{if(x0===null)return;dx=e.clientX-x0;dy=Math.max(0,up?y0-e.clientY:e.clientY-y0);t.style.translate=Math.abs(dx)>dy?`${dx}px 0`:`0 ${up?-dy:dy}px`;t.style.opacity=String(1-Math.min(.8,Math.max(Math.abs(dx),dy)/220))});
   const end=()=>{if(x0===null)return;x0=null;t.style.transition="translate .2s ease, opacity .2s ease";
-    if(Math.abs(dx)>70||dy>40){t.style.translate=Math.abs(dx)>dy?`${dx>0?"110%":"-110%"} 0`:"0 120%";t.style.opacity="0";clearTimeout(toastT);setTimeout(()=>{t.classList.remove("on");t.style.translate="";t.style.opacity=""},220)}
+    if(Math.abs(dx)>70||dy>40){t.style.translate=Math.abs(dx)>dy?`${dx>0?"110%":"-110%"} 0`:`0 ${up?"-120%":"120%"}`;t.style.opacity="0";clearTimeout(toastT);setTimeout(()=>{t.classList.remove("on");t.style.translate="";t.style.opacity=""},220)}
     else{t.style.translate="";t.style.opacity=""}};
   t.addEventListener("pointerup",end);t.addEventListener("pointercancel",end);t.style.touchAction="none"}
 const hideToast=()=>{const t=$("toast");if(t)t.classList.remove("on");clearTimeout(toastT)};

@@ -1711,6 +1711,8 @@ p,.note,.sub,small,h1,h2,h3{text-wrap:pretty}
 .fspanel #rrLbl{font-weight:400}.fspanel #rrLbl strong{font-weight:700}
 .fspill.fsnolist{pointer-events:none;padding:10px 16px 10px 13px}
 body:has(.mapfull.moving) .toast{z-index:3100;top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 66px);bottom:auto}
+/* setup maps: the panel fills the bottom, so a note drops in under the search bar instead */
+body:has(.view.fsv:not([hidden])) .toast:not(dialog .toast){top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 70px);bottom:auto}
 /* big text and zoomed displays: never slide sideways, keep the header and main buttons on screen (like Uber: text grows, layout reflows) */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{overflow-x:hidden;max-width:100%}
