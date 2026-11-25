@@ -1567,7 +1567,8 @@ const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const n=(freeOn()?1:0)+P
 const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.areas.length-1]),zone=`${area} · ${rLabel(g.radius)}`,len=g.len===60?"1 hour":"2 hours";
   if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
   const j=mixJoined(g),inv=mixInv(g)?`<button class="mixinv${j?" on":""}" type="button" data-mxinv="1">${j?MIX_PPLI+j+" joined":MIX_INVI+"Invite"}</button>`:"";
-  return `<div class="mixline pre"><button class="mixp" type="button" data-mx="len">${len}${MIX_CV}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}${MIX_CV}</button>${inv}</div>`};
+  // one row: where (suburb shortens first on a small phone, the radius never does), how long, wildcards, invite
+  return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${area}</span><span class="zr">· ${rLabel(g.radius)}</span></button><button class="mixp" type="button" data-mx="len">${g.len===60?"1 hr":"2 hrs"}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}</button>${inv}</div>`};
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mxinv],[data-mx]");if(!t)return;const g=G();if(!g)return;
   if(t.dataset.mxinv){if(typeof liveInvite==="function")liveInvite();return}
   if(!mixPre(g))return;const k=t.dataset.mx;
@@ -2874,7 +2875,7 @@ function renderPlay0(){
       <div id="reelBox"></div><button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
-      ${g.started?"":mixZoneHTML(g)}
+
       ${a?`<button class="btn line" type="button" id="reelBack">Back to ${esc(byId(a.id).name)}</button>`:""}</div>`;
   }
   {const lb=$("lockBtn");if(lb)lb.onclick=()=>{buzz(15);toast(`Unlocks when you get to <b>${esc(byId(g.target).name)}</b>.`,2600)}}
