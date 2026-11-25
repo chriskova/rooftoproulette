@@ -752,10 +752,9 @@ const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar for your crawl.<br>No planning, no debating."},
  {art:GO_ART(),h:"Get to the rooftop",p:"One drink at each rooftop."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
- {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."},
- {art:CHEERS_ART(),h:"Or take it easy",p:"R&amp;R: Rest &amp; Roulette.<br>No timer, no wildcards."}
-];
-function renderIntro(){
+ {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."}
+];   // (R&R isn't in the intro: setup offers Rest & Roulette right where you choose)
+function renderIntro(){if((S.intro||0)>=SLIDES.length)S.intro=SLIDES.length-1;
   const i=S.intro||0,b=$("introBody");
   let t=b.querySelector(".itrack");
   if(!t){
