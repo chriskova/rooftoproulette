@@ -267,13 +267,17 @@ const cityOf=v=>v.city||"Sydney",cityC=c=>CITIES.find(x=>x.name===(c||S.city))||
 const RUN=Date.now()+":"+Math.random();
 const nearLive=p=>{if(!p)return null;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(p,x)})).sort((a,b)=>a.d-b.d)[0];return c&&c.d<80000?c.x.name:null};
 // Somewhere we don't cover yet: say so, offer the demo, or a look around a city we do.
-// Not near a city we cover (yet): lead with the cities, closest first, so they can look around and plan before they go. The demo's a small link under them.
+// Not near a city we cover (yet), tapped Play: pick a city first (closest first), then a demo crawl there or a look around before you go.
 function farSheet(){track("far_from_city",{});const live=CITIES.filter(x=>x.live).map(c=>({c,d:here?dist(here,c):0})).sort((a,b)=>a.d-b.d);
-  sheet(`<h3>Pick a city</h3><p class="note" style="margin:4px 0 12px">See the rooftops and plan your crawl.</p><div class="opts">${live.map(({c})=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
-    return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>
-    <button class="txtbtn" type="button" id="fsDemo" style="margin:14px auto 0;display:block">Or try a demo crawl from home</button>`,()=>{
-    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});closeSheet();go("bars")});
-    $("fsDemo").onclick=()=>askDemo()})}
+  sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(({c})=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
+    return `<button class="opt" type="button" data-fc="${c.name}"><span class="ic">${I.city}</span><span class="t"><b>${c.name}</b><small>${n} rooftop bars</small></span></button>`}).join("")}</div>`,()=>{
+    $("sheetBody").querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{S.city=b.dataset.fc;S.cityManual=true;S.cityManualRun=RUN;save();track("explore_city",{city:S.city,from:"far"});farCitySheet()})})}
+function farCitySheet(){const c=S.city;
+  sheet(`<h3>${esc(c)}</h3><p class="note" style="margin:4px 0 16px">Try a practice crawl from home, or look around before you go.</p>
+    <div class="acts"><button class="btn" type="button" id="fcDemo">${I.dice} Demo crawl</button><button class="btn dark" type="button" id="fcBrowse">See the rooftops</button></div>
+    <p class="note" style="margin:12px 2px 0;font-size:13px">Demo crawls don't go on your tab.</p>`,()=>{
+    $("fcDemo").onclick=()=>{closeSheet();track("demo_from_far",{city:c});startDemo()};
+    $("fcBrowse").onclick=()=>{closeSheet();go("bars")}})}
 // Explore another city: pick one, then its rooftops open on the Rooftops tab.
 function tripSheet(){const live=CITIES.filter(x=>x.live);
   sheet(`<h3>Pick a city</h3><div class="opts" style="margin-top:12px">${live.map(c=>{const n=VENUES.filter(v=>cityOf(v)===c.name).length;
