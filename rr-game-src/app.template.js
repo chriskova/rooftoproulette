@@ -1581,11 +1581,25 @@ function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-to
     <button class="opt" type="button" role="radio" data-l="60" aria-checked="${g.len===60}"><span class="ic">${I.pair}</span><span class="t"><b>1 hour <span class="ppl">Best for 2–3</span></b><small>A few rooftops, quick drinks.</small></span></button>
     <button class="opt" type="button" role="radio" data-l="120" aria-checked="${g.len===120}"><span class="ic">${I.group}</span><span class="t"><b>2 hours <span class="ppl">Best for 4+</span></b><small>More rooftops or longer stays.</small></span></button></div>`,
   ()=>{$("sheetBody").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{const l=+b.dataset.l;if(G()!==g||!mixPre(g)){closeSheet();return}g.len=l;S.last=Object.assign({},S.last||{},{len:l});save();closeSheet();renderPlay();if(typeof liveSync==="function"&&g.live)liveSync(true).catch(()=>{})})})}
-// Who's coming: straight after Start (the clock waits for the first rooftop), a nudge to bring friends in. One tap to skip.
-function whoSheetSoon(){setTimeout(()=>{const g=G();if(!g||g.demo||g.follow||g.started||!cloudOn()||S.route!=="play"||$("sheet").open)return;
-  sheet(`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 14px">Friends follow every spin and the timer from their own phones.</p>
-    <div class="acts"><button class="btn" type="button" id="whoInv">${MIX_INVI} Invite friends</button><button class="btn dark" type="button" id="whoNo">Just me</button></div>`,
-    ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}})},450)}
+// Who's coming: straight after Start (the clock waits for the first rooftop), a nudge to bring friends in. Skip is one tap.
+// Signed in: the QR and Send link are right there (the group's standing together). Not signed in: Invite asks to sign in
+// only once you've said you want to, so sign-in never sits in front of the first spin.
+function whoSheetSoon(){setTimeout(whoSheet,450)}
+async function whoSheet(){const ok=()=>{const g=G();return g&&!g.demo&&!g.follow&&!g.started&&cloudOn()&&S.route==="play"&&!$("sheet").open};if(!ok())return;
+  const head=`<h3>Who's coming?</h3><p class="note" style="margin:4px 0 12px">Friends follow every spin and the timer from their own phones.</p>`;
+  const plain=()=>sheet(head+`<div class="acts"><button class="btn" type="button" id="whoInv">${MIX_INVI} Invite friends</button><button class="btn dark" type="button" id="whoNo">Skip</button></div>`,
+    ()=>{$("whoNo").onclick=closeSheet;$("whoInv").onclick=()=>{closeSheet();setTimeout(()=>{if(typeof liveInvite==="function")liveInvite()},220)}});
+  if(!(typeof signedIn==="function"&&signedIn()&&myName())){plain();return}
+  let id=null;try{id=await startLive()}catch(e){console.warn(e)}if(!ok())return;if(!id){plain();return}
+  const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;let svg="",mates=[];try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}if(!ok())return;
+  track("live_invite",{from:"who"});
+  sheet(head+`${svg?`<div class="qrbox sm">${svg}</div><p class="note qrnote">Scan to follow</p>`:""}
+    <div class="acts"><button class="btn" type="button" id="whoSend">${I.share} Send link</button><button class="btn dark" type="button" id="whoNo">Skip</button></div>
+    ${mates.length?`<div class="eyebrow hsec">Friends</div><div class="mates">${mates.map(m=>`<button type="button" class="mate" data-mu="${m.uid}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(m.n||"Friend")}</span><span class="mst">Invite</span></button>`).join("")}</div>`:""}`,()=>{
+    $("whoNo").onclick=closeSheet;
+    $("whoSend").onclick=()=>{if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
+    $("sheetBody").querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const B=await cloud();
+      try{await B.set(`users/${b.dataset.mu}/invites/${id}`,{from:myName(),fromUid:ME.uid,at:Date.now()});b.querySelector(".mst").textContent="Invited";b.disabled=true;track("live_invite_mate")}catch(e){toast("Couldn't send that one.",2500)}})})}
 function fromPoint(){const y=you();if(y)return y;const a=atVisit();if(a)return byId(a.id);const g=G();return g.visits.length?byId(g.visits[g.visits.length-1].id):g.startPos}
 function basePool(){const g=G(),t=now(),skipped=(g.skipped||[]).concat(g.excluded||[]);
   // first spin from a rooftop: don't send them to the one they're already standing in
