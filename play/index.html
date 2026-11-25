@@ -923,7 +923,7 @@ a.btn{text-decoration:none}
 .count b{color:var(--amber-text)}
 .clock{text-align:center;line-height:1}
 .clock b{display:block;font-family:var(--display);font-weight:800;font-size:46px;letter-spacing:.02em;font-variant-numeric:tabular-nums}
-.clock small{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.clock small{display:block;margin-top:8px;font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .clock.cruise{align-self:center}.clock.cruise b{display:none}.clock.cruise small{font-size:12.5px;letter-spacing:.1em}
 .rrmap{position:relative;border-radius:var(--r);overflow:hidden}#rrMap{height:min(300px,38vh)}
 .rrnote{display:none}
@@ -1093,7 +1093,7 @@ dialog.sheet:not([open]):has(.move-zone){display:none}
 .clock .rrt{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em;line-height:1;color:var(--text)}.clock .rrt i{font-style:normal;color:var(--amber-text)}
 .clock.warn b,.clock.warn small{color:var(--amber-text)}
 .clock.red b,.clock.red small{color:var(--red)}
-.tbar{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:-6px}
+.tbar{height:5px;background:var(--s2);border-radius:99px;overflow:hidden;margin-top:8px}
 .tbar i{display:block;height:100%;background:var(--text);border-radius:99px;transition:width 1s linear}
 .tbar.warn i{background:var(--amber)}.tbar.red i{background:var(--red)}
 .strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px;padding:0 18px}
@@ -1272,7 +1272,7 @@ body.recspun .camfab.ontop{visibility:hidden}
 body.camon .camacts .btn.line{background:rgba(11,13,18,.62)}
 body.camon .app.has-tabs .view{padding-bottom:calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 18px)}
 body.camon #v-play .clock{background:rgba(11,13,18,.62);border-radius:99px;padding:6px 14px;display:flex;align-items:baseline;gap:6px}
-body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{display:none}body.camon #v-play .clock b{font-size:20px}body.camon #v-play .clock small{font-size:11px}
+body.camon #v-play .clock{white-space:nowrap}body.camon #v-play .clock small br{display:none}body.camon #v-play .clock b{font-size:20px}body.camon #v-play .clock small{font-size:11px;margin-top:0}
 body.camon #v-play #pMenu{background:rgba(11,13,18,.62)}
 body.camon #v-play .stage{flex:1}
 body.camon #v-play .ready{flex:1}
@@ -1542,7 +1542,8 @@ body:not(.camon) #appbar .logo{display:none}
 .wexplain+.wxdeck{margin-top:12px}.wxdeck{margin-bottom:0}.wxmore{display:block;margin:12px auto 0;color:var(--amber-text);font-weight:700}.wxmore .chev{font-size:17px}#v-wiz .zskip .l{color:var(--text);font-weight:700;font-size:15.5px}
 .mixp{appearance:none;display:inline-flex;align-items:center;gap:3px;font:inherit;font-size:12px;font-weight:650;color:var(--text);background:var(--s1);border:1px solid var(--line);border-radius:99px;padding:5px 9px;cursor:pointer;white-space:nowrap}
 .mixp .cv{flex:none;width:10px;height:10px;color:var(--muted)}
-.mixline.pre{gap:5px;flex-wrap:nowrap;max-width:100%}.mixline.pre>*{flex-shrink:0}.mixline.pre .mz{flex-shrink:1;min-width:0}.mixline .mixp .zr{background:none;border:0;padding:0;color:inherit;font-size:inherit;font-weight:inherit;flex:none}.mixzone{display:flex;justify-content:center}.mixzone .mixp svg:first-child{width:13px;height:13px;color:var(--amber-text)}.mixzone .mixp{padding:6px 9px 6px 10px;font-size:12.5px}.mixline .mixp .zt{overflow:hidden;text-overflow:ellipsis;min-width:0;background:none;border:0;padding:0;color:inherit;font-size:inherit;font-weight:inherit;border-radius:0}.mixline.pre .mixinv{padding:5px 9px 5px 7px;white-space:nowrap;font-size:12px}
+.mixline.pre{gap:6px;margin:8px 0 4px;flex-wrap:nowrap;max-width:100%}.mixline.pre>*{flex-shrink:0}.mixline.pre .mz{flex-shrink:1;min-width:0}.mixline .mixp .zr{background:none;border:0;padding:0;color:inherit;font-size:inherit;font-weight:inherit;flex:none}.mixzone{display:flex;justify-content:center}.mixzone .mixp svg:first-child{width:13px;height:13px;color:var(--amber-text)}.mixzone .mixp{padding:6px 9px 6px 10px;font-size:12.5px}.mixline .mixp .zt{overflow:hidden;text-overflow:ellipsis;min-width:0;background:none;border:0;padding:0;color:inherit;font-size:inherit;font-weight:inherit;border-radius:0}.mixline.pre .mixp{font-size:12.5px;padding:7px 8px 7px 12px;gap:4px}.mixline.pre .mixp .dd{flex:none;width:12px;height:12px;color:var(--muted)}.mixline.pre .mz{overflow:hidden}.mixline.pre .mz .zt{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.mixline.pre .mixinv{padding:5px 9px 5px 7px;white-space:nowrap;font-size:12px}
 /* Invite has its own step now: here it sits with the other settings, the amber person-plus says it does something */
 .mixline.pre .mixinv{background:var(--s1);color:var(--text);border-color:var(--line)}.mixline.pre .mixinv svg{color:var(--amber-text)}
 .mixinv.on{background:var(--s1);color:var(--text);border-color:var(--line)}.mixinv.on svg{color:var(--amber-text)}
@@ -2598,7 +2599,7 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 @keyframes fvlive{0%{transform:scale(.8);opacity:.8}100%{transform:scale(1.25);opacity:0}}
 .fv-live .fv-test{margin-left:auto}
 .fv-ptop .count{appearance:none;font:inherit;font-weight:700;font-size:14px;color:var(--text);cursor:pointer}.fv-ptop .count{display:inline-flex;align-items:center;gap:6px}.fv-ptop .count .cv{font-style:normal;display:inline-flex;opacity:.55;margin-left:-2px}.fv-ptop .count .cv svg{width:14px;height:14px}
-.followv>.tbar{margin-top:-4px}
+.followv>.tbar{margin-top:6px}
 .mf-follow{position:absolute;top:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 14px);left:14px;right:72px;z-index:1001;box-shadow:0 4px 14px var(--sh);padding:8px 12px;background:var(--s1)}.mf-follow::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--green-soft);pointer-events:none}.mf-follow>*{position:relative}.mf-follow .fv-eye{width:26px;height:26px}
 .fv-top{display:flex;align-items:center;justify-content:space-between;min-height:40px}.fv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.fv-count{appearance:none;display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--s1);color:var(--text);font:inherit;font-size:17px}.fv-count svg{color:var(--amber-text)}.fv-count .cv{font-style:normal;color:var(--muted)}.fv-ic{appearance:none;width:44px;height:44px;border-radius:50%;border:0;background:var(--s2);color:var(--text);display:grid;place-items:center;margin-left:8px}.fv-ic svg{width:22px;height:22px}#fvMapB{margin-left:auto}.fv-test+#fvMapB{margin-left:0}.fv-test{margin-left:auto;appearance:none;border:1.5px dashed var(--blue);background:transparent;color:var(--blue);border-radius:99px;padding:6px 11px;font-size:12px;font-weight:800;letter-spacing:.08em}
 .fv-clock{font-family:var(--display);font-weight:800;font-size:60px;line-height:.9;letter-spacing:.01em;color:var(--amber-display)}

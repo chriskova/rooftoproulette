@@ -1564,6 +1564,8 @@ window.addEventListener("resize",()=>fitZoneLbl());
 // before the first spin: the crawl's zone, size and length, with Invite beside them (everyone's together, the clock hasn't started)
 const mixInv=g=>{try{return !g.visits.length&&!g.demo&&!g.follow&&cloudOn()}catch(e){return false}};
 // Before the clock starts, the pills are the crawl's settings: tap one to change just that (a sheet, or the zone map), nothing else.
+// a small down arrow on each pill: tap to change it
+const MIX_DD='<svg class="dd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 const mixPre=g=>!g.started&&!g.visits.length&&!g.demo&&!g.follow;
 const mixJoined=g=>{try{return g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0}catch(e){return 0}};
 const MIX_CV='<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -1581,7 +1583,7 @@ const mixlineHTML=g=>{if(CR(g))return "";const pre=mixPre(g),area=esc(g.areas[g.
   if(!pre)return `<div class="mixline"><span>${area}</span><span>${rLabel(g.radius)}</span><span>${len}</span></div>`;
   const inv="";
   // one row: where (suburb shortens first on a small phone, the radius never does), how long, wildcards, invite
-  return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${area}</span><span class="zr">· ${rLabel(g.radius)}</span></button><button class="mixp" type="button" data-mx="len">${g.len===60?"1 hr":"2 hrs"}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}</button>${inv}</div>`};
+  return `<div class="mixline pre"><button class="mixp mz" type="button" data-mx="zone"><span class="zt">${area}</span><span class="zr">· ${rLabel(g.radius)}</span>${MIX_DD}</button><button class="mixp" type="button" data-mx="len">${g.len===60?"1 hour":"2 hours"}${MIX_DD}</button><button class="mixp" type="button" data-mx="deck">${mixDeckLbl()}${MIX_DD}</button>${inv}</div>`};
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mxinv],[data-mx]");if(!t)return;const g=G();if(!g)return;
   if(t.dataset.mxinv){if(typeof liveInvite==="function")liveInvite();return}
   if(!mixPre(g))return;const k=t.dataset.mx;
