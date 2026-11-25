@@ -2871,7 +2871,8 @@
    ]
   ],
   "pid": "ChIJY0p97IWJtAER-iCXGhiYGpA",
-  "vibe": "Tacos"
+  "vibe": "Tacos",
+  "tempClosed": true
  },
  {
   "id": "kiln",
@@ -4063,46 +4064,6 @@
   "city": "Brisbane"
  },
  {
-  "id": "bne-cielo",
-  "name": "Cielo Rooftop",
-  "area": "Fortitude Valley",
-  "lat": -27.456548,
-  "lng": 153.032166,
-  "rating": 4.3,
-  "address": "209 Brunswick St",
-  "hours": [
-   [],
-   [],
-   [],
-   [
-    [
-     960,
-     1290
-    ]
-   ],
-   [
-    [
-     960,
-     1320
-    ]
-   ],
-   [
-    [
-     720,
-     1440
-    ]
-   ],
-   [
-    [
-     720,
-     1200
-    ]
-   ]
-  ],
-  "pid": "ChIJs71iG2lZkWsRt5uvaatHFKw",
-  "city": "Brisbane"
- },
- {
   "id": "bne-siroco",
   "name": "Siroco Rooftop",
   "area": "Fortitude Valley",
@@ -4407,46 +4368,6 @@
    ]
   ],
   "pid": "ChIJ65wGYghakWsRpod_nTOYBnw",
-  "city": "Brisbane"
- },
- {
-  "id": "bne-eagles-nest",
-  "name": "Eagles Nest",
-  "area": "Kangaroo Point",
-  "lat": -27.473997,
-  "lng": 153.036515,
-  "rating": 4.3,
-  "address": "Level 12, The Point Hotel, 21 Lambert St",
-  "hours": [
-   [],
-   [],
-   [],
-   [
-    [
-     900,
-     1260
-    ]
-   ],
-   [
-    [
-     900,
-     1260
-    ]
-   ],
-   [
-    [
-     900,
-     1260
-    ]
-   ],
-   [
-    [
-     900,
-     1260
-    ]
-   ]
-  ],
-  "pid": "ChIJKzsw9BhakWsRuyLCEllKvwI",
   "city": "Brisbane"
  },
  {
