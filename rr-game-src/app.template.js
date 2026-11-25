@@ -4424,8 +4424,12 @@ function settingsSheet(){
   $("stPriv").onclick=()=>docPage("privacy.html","Privacy policy");$("stTerms").onclick=()=>docPage("terms.html","Terms of use");
   // replays the first-open walkthrough, the same screens the home link used to show
   if($("stHow"))$("stHow").onclick=()=>{closeSettings(true);S.intro=0;S.introReplay=true;save();go("intro")};
+  // Contact us shows the address first: copy it, or start an email (with the app details at the bottom for us)
   $("stSup").onclick=()=>{const body=`\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
-    location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
+    sheet(`<h3>Contact us</h3><p class="note">Questions, bugs or a rooftop we're missing.</p><div class="supmail">${esc(SUPPORT)}</div>
+      <div class="acts"><button class="btn" type="button" id="suMail">Send an email</button><button class="btn dark" type="button" id="suCopy">Copy address</button></div>`,()=>{
+      $("suMail").onclick=()=>{track("support_email");location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
+      $("suCopy").onclick=()=>{try{navigator.clipboard.writeText(SUPPORT)}catch(e){}toast("Copied.",1800)}})};
   $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
   $("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(history.state,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
   if($("stTips"))$("stTips").onclick=()=>{S.tips={};S.seenHow={};save();document.querySelectorAll(".camtip").forEach(t=>t.remove());toast("Tips reset. They'll show again as you play.",2600)};   // test mode: see every first-time hint again
