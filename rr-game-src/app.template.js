@@ -749,7 +749,7 @@ const WILD_ART=()=>`<svg class="ia-wild" viewBox="0 0 48 48" fill="none" stroke=
  <rect class="bk" x="9" y="9" width="20" height="28" rx="3.5" transform="rotate(-14 19 23)"/>
  <g class="fr"><rect x="19" y="10" width="20" height="28" rx="3.5" stroke-dasharray="3.2 3.2"/><path d="M29 17.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z" fill="currentColor" fill-opacity=".35"/></g></svg>`;
 const SLIDES=[
- {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar in your zone.<br>No planning, no debating."},
+ {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar for your crawl.<br>No planning, no debating."},
  {art:GO_ART(),h:"Get to the rooftop",p:"One drink at each rooftop."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."},
