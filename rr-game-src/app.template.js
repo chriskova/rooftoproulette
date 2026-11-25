@@ -868,7 +868,7 @@ function firstPlaySheet(){sheet(`<h3>Heading out now?</h3><p class="note">Trying
   $("fpOut").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"out"});startWizard()};
   $("fpDemo").onclick=()=>{S.firstPlay=1;save();closeSheet();track("first_play",{pick:"demo"});startDemo()}})}
 if($("quickGo"))$("quickGo").onclick=()=>{if(S.game){playingSheet(()=>firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")}));return}if(farAway()){farSheet();return}firstRules("rr",cruiseHow,()=>{if(!S.safeOK&&!S.test){safetySheet(()=>{S.quick={step:0,from:null};go("quick")});return}S.quick={step:0,from:null};go("quick")})};
-// Test mode is hidden: tap the logo 10 times fast to switch it on or off. Settings only shows Testing while it's on (or test crawls are left).
+// Test mode is hidden: tap the logo 10 times fast to switch it on or off. Settings only shows Testing while it's on.
 (()=>{let n=0,t0=0;[$("logo"),$("heroBrand")].forEach(el=>el.addEventListener("click",()=>{const t=Date.now();n=t-t0<700?n+1:1;t0=t;if(n>=10){n=0;S.test=!S.test;if(!S.test){S.ff=0;S.fake=null}save();if(CLP)location.reload();else render()}}))})();
 if($("rrIcon"))$("rrIcon").innerHTML=CHEERS_ART().replace('class="ia-cheers"','class="ia-cheers mcheers"').replace('viewBox="0 0 48 48"','viewBox="4 0 40 40"');
 document.querySelector(".city").innerHTML=document.querySelector(".city").innerHTML.replace("${PIN}",I.pin.replace('<svg','<svg width="16" height="16"'));
@@ -4404,7 +4404,7 @@ function settingsSheet(){
     ${grp("Account",accountRows(lk))}
     ${grp("Privacy",[tg("stAn",!S.anOff,"Share usage data","Anonymous. Never names, locations, photos or clips"),lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
-    ${S.test||nT?grp("Testing",[tg("stTest",S.test,"Test mode","Tap the map to move. Test crawls stay off your tab"),S.test?lk("stTips","Reset tips"):"",nT?lk("stClr","Clear test crawls",String(nT),"danger"):""]):""}
+    ${S.test?grp("Testing",[tg("stTest",S.test,"Test mode","Tap the map to move. Test crawls stay off your tab"),S.test?lk("stTips","Reset tips"):"",nT?lk("stClr","Clear test crawls",String(nT),"danger"):""]):""}
     <div class="spfoot"><div class="spsoc"><button type="button" id="stIG" aria-label="Instagram">${IGI}</button><button type="button" id="stTT" aria-label="TikTok">${TTI}</button></div>
       ${plat==="android"?`<button class="txtbtn sprate" type="button" id="stRate">Rate Rooftop Roulette</button>`:""}
       <p class="setv">Rooftop Roulette · __VERSION__</p></div></div>`;
