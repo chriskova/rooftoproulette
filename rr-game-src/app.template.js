@@ -1974,7 +1974,8 @@ function doSpin(force,vel){
   }
   const T_=reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation();dealWild(900)});
   // followers' reels stop on it at the same moment as this one (their screens don't show it any earlier)
-  if(g.live&&T_){g.spinRes={at:g.spinAt,id:pick.id,land:g.spinAt+Math.round(T_*1000)};save();if(typeof liveSync==="function")liveSync(true)}
+  // counted from when the reel actually starts moving (redrawing and the camera can hold it up a moment after the tap)
+  if(g.live&&T_){g.spinRes={at:g.spinAt,id:pick.id,land:now()+Math.round(T_*1000)};save();if(typeof liveSync==="function")liveSync(true)}
 }
 /* ---------- the Jackpot: once a timed game, a longer gold spin that pays out one of five rewards ---------- */
 const JACKPOTS=[
@@ -2009,7 +2010,8 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   const ov=document.createElement("div");ov.className="jpx";
   ov.innerHTML=`<i class="jpx-bg"></i><i class="jpx-glow l"></i><i class="jpx-glow r"></i><div class="jpx-streaks"></div>`;
   document.body.appendChild(ov);
-  if(!calm){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<18;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
+  const filming=!!CAM.rec;   // filming a jackpot on an older phone: drop the streaks (they're not in the clip) and go lighter on confetti
+  if(!calm&&!filming){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<18;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
     Object.assign(e.style,{left:left+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.25+Math.random()*.5});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
@@ -2020,7 +2022,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
   let stopRiser=()=>{};
   const T=R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
-    ov.classList.add("won");confetti(ov);ctx.onLand&&ctx.onLand();
+    ov.classList.add("won");confetti(ov,filming?18:0);ctx.onLand&&ctx.onLand();
     const fl=document.createElement("i");fl.className="jpx-flash";ov.appendChild(fl);fl.animate([{opacity:.9},{opacity:0}],{duration:600,easing:"ease-out",fill:"forwards"}).onfinish=()=>fl.remove();
     // the card, in the middle of the screen, built the same way as a bar's card
     const wrap=document.createElement("div");wrap.className="jpcard-wrap";
@@ -2215,10 +2217,10 @@ setInterval(()=>{
   {const g=G(),spot=!!g&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen));if(CAM.once&&!CAM.rec&&!spinning&&g&&!spot&&!($("sheet")&&$("sheet").open)&&Date.now()-(CAM.onceAt||0)>1500)CAM.once=false}   // backed out (closed the re-spin or drink question): no camera next time
   camSync();
   if(!CAM.stream){camRecPill();camLight(false);return}   // camera closed: the recording pill and light go with it
-  const busy=spinning||!!document.querySelector(".jpx");
-  if(!CAM.rec&&spinning){camStart();CAM.spun=true}
+  const jpDone=!!document.querySelector(".jpx.won"),busy=!jpDone&&(spinning||!!document.querySelector(".jpx"));   // a jackpot's done once its card is up (spinning stays on until it's claimed)
+  if(!CAM.rec&&spinning&&!jpDone){camStart();CAM.spun=true}
   else if(!CAM.rec&&CAM.once&&CAM.vid&&CAM.vid.videoWidth&&CAM.vid.currentTime>0&&!CAM.vid.paused&&!document.hidden){camStart();CAM.spun=false}
-  else if(CAM.rec){if(spinning)CAM.spun=true;
+  else if(CAM.rec){if(spinning&&!jpDone)CAM.spun=true;
     if(!CAM.spun){if(Date.now()-CAM.t0>8000&&!document.querySelector("#v-play .reel .row")?.closest(".reel")?.matches(":active"))camStop(true)}   // touched the reel but never spun: no clip
     else{if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
       if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}}
@@ -2440,7 +2442,7 @@ function camDraw(){
     const fe=document.body.classList.contains("camon")&&!rb.closest(".jpx")?.3:.24,fade=y=>{const u=(y-R_.top)/R_.height;return u<fe?Math.max(0,u/fe):u>1-fe?Math.max(0,(1-u)/fe):1};
     rb.querySelectorAll(".row").forEach(row=>{const ro=parseFloat(row.style.opacity||"1");if(ro<.02||row.style.visibility==="hidden")return;[...row.children].forEach(sp=>{const a=ro*parseFloat(sp.style.opacity===""?"1":sp.style.opacity);if(a<.02)return;
       const r=sp.getBoundingClientRect(),f=fade(r.top+r.height/2);if(f<.02)return;const col=getComputedStyle(sp).color,snap={getBoundingClientRect:()=>r,textContent:sp.textContent,offsetWidth:sp.offsetWidth,offsetHeight:sp.offsetHeight},cs=getComputedStyle(sp),font={fw:cs.fontWeight,fs:cs.fontSize,ff:cs.fontFamily};
-      ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=10*k;x.shadowOffsetY=2*k;x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
+      ops.push(()=>{x.save();x.font=`${font.fw} ${font.fs} ${font.ff}`;x.globalAlpha=a*f;x.fillStyle=col;if(!jp){x.shadowColor="rgba(0,0,0,.55)";x.shadowBlur=10*k;x.shadowOffsetY=2*k}x.textBaseline="middle";x.textAlign="center";const t=snap.textContent.toUpperCase(),m=x.measureText(t).width||1;
         x.translate((r.left+r.width/2)*k,(r.top+r.height/2)*k);x.scale(k*r.width/m,k*r.height/(snap.offsetHeight||r.height));x.fillText(t,0,0);x.restore()})})});
     CAM.last=ops}
   const ct=document.querySelector(".camtgt"),flying=document.querySelector(".flybox,.flyname,.wfly,.punch");
@@ -3044,9 +3046,9 @@ function renderPlay0(){
   // The phone app tracks with the screen locked. Only a browser (or the app if background tracking failed to start) needs the app left open.
   else gn.textContent=g.target&&!(NATIVE&&bgWatch!==null)?"Keep the app open on the way so your visit logs the moment you arrive.":"";
 }
-function confetti(host){
+function confetti(host,n){
   const app=host||$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
-  for(let i=0;i<46;i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
+  for(let i=0;i<(n||46);i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
 }
 const PICK3="Pick from 3. Your next spin lands on three rooftops and you choose.";
 // a short name and a picture for each wildcard, for Dealer's choice

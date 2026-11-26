@@ -9,7 +9,7 @@
    Nothing here runs, and none of it shows, until one of those is set. */
 const FB_CFG=(window.RR_CONFIG&&RR_CONFIG.firebase)||null,FAKE_CLOUD=/[?&]fakecloud\b/.test(location.search);
 const cloudOn=()=>((!!FB_CFG&&!S.test)||FAKE_CLOUD||S.test)&&!DEMO();   // test mode: friends and live crawls are simulated on the phone (simBackend)
-const BEAT_MS=120000,STALE_MS=300000;
+const BEAT_MS=40000,STALE_MS=150000;   // the host checks in every 40 s; nothing for 2½ minutes and followers are offered the spin
 let ME=null,CLP=null,liveUnsub=null,liveDoc=null,inviteUnsub=null;
 
 // ----- backend: Firebase -----
@@ -333,23 +333,35 @@ async function liveInvite(){
   if(!myName()){nameSheet(()=>liveInvite());return}
   let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
   track("live_invite");const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
-  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px">${n?`${n} following. `:""}Friends follow along and get the recap.</p>`)}
+  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px"><span id="invN">${n?`<span class="invn">${n} following.</span> `:""}</span>Friends follow along and get the recap.</p>`)}
 // The invite sheet (Who's coming? and Invite friends): friends you've crawled with as a row of faces up top (one tap each),
 // then Send link, with the QR one tap away beside it. No friends yet: the QR shows big instead, the quickest way to get the first one in.
 // The invite (Who's coming? in setup, Invite friends from the pill or menu): crawl friends' faces up top (one tap each), the QR
 // always there (smaller when the faces are), one Share link button.
 async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl on Rooftop Roulette:\n${link}`;
   let mates=[],svg="";try{[mates,svg]=await Promise.all([matesList(),qrSVG(link)])}catch(e){}
-  const sent=invParts.sent[id]||(invParts.sent[id]={});
-  const row=mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,mates.map(x=>x.n))||"Friend")}</span></button>`).join("")}</div>`:"";
+  const sent=invParts.sent[id]||(invParts.sent[id]={});invParts.mates=mates;invParts.id=id;
   const qr=svg?`<div class="qrbox ${mates.length?"xs":"sm"}">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
   const real=testSimOn()?`<button class="btn line" type="button" data-iv="real" style="margin-top:8px">Test: invite a real phone</button><p class="note" style="margin:6px 0 0">This code only works for Sam and Jess. Switches to two real phones.</p>`:"";
-  return {html:row+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`+real,bind:root=>{
+  return {html:`<div id="invRow">${invRowHTML(id)}</div>`+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`+real+`<button class="btn dark" type="button" data-iv="done" style="margin-top:10px">Done</button>`,bind:root=>{
+    root.querySelector('[data-iv="done"]').onclick=closeSheet;
     const rb=root.querySelector('[data-iv="real"]');if(rb)rb.onclick=()=>testGoReal({invite:1});
     root.querySelector('[data-iv="send"]').onclick=()=>{if(onAct)onAct();if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
+    invBindRow(root,id,onAct)}}}
+// The faces row: people following now (green tick, their name, "Following") first, then crawl friends to tap and invite.
+// It redraws as people join, so the host watches each one tick over.
+function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
+  const inn=Object.entries(mem).filter(([u])=>u!==me).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
+  const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
+  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
+  const rest=mates.filter(m=>!inU.has(m.uid)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
+  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
+function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
+  const n=$("invN"),c=Object.keys((liveDoc&&liveDoc.members)||{}).length;if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
+function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
-      catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}}}
+      catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}
 invParts.sent={};
 async function inviteSheet(id,head,foot){const P=await invParts(id);sheet(head+P.html+(foot||""),()=>{P.bind($("sheetBody"));const l=$("sheetBody").querySelector('[data-iv="later"]');if(l)l.onclick=closeSheet})}
 
@@ -392,8 +404,13 @@ function onLive(id,d){
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
   if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
   if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
-  if(g&&g.live===id)paintMembers(d)}
-function paintMembers(d){const n=Object.keys(d.members||{}).length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople();if(typeof paintMixInv==="function")paintMixInv()}
+  if(g&&g.live===id)paintMembers(d,id)}
+let memSeen=null;
+function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
+  memSeen={id,s:new Set(ids)};
+  if(fresh.size){buzz([30,60,30]);const nm=[...fresh].map(u=>nFirst(d.members[u].n)||"A friend");
+    if(!($("sheet").open&&$("invRow")&&$("sheet").contains($("invRow"))))toast(nm.length>1?`${nm.length} friends joined your crawl`:`${esc(nm[0])} joined your crawl`,3000);invRefresh(fresh)}
+  const n=ids.length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople();if(typeof paintMixInv==="function")paintMixInv()}
 // the people button on the crawl screen: a plus until someone follows, then how many are following
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
 function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn()&&g&&!g.ended&&!g.demo;b.hidden=!on;if(!on)return;
@@ -504,17 +521,25 @@ const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spin
 let fvReel=null,fvLanding=false,fvDone=0;   // fvDone: the spin (its spinAt) this phone has already landed
 function fvReelNames(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
   return P.length?P:VENUES.map(v=>v.name)}
-function fvReelStart(g){const el=$("fvNow");
-  el.innerHTML=`<div class="fv-spin"><span class="eyebrow">${esc(fvHost(liveDoc))} is spinning</span><div id="fvReelBox"></div></div>`;
+// Before the first spin, followers see the host's reel sitting still, waiting on them (the host's says "Spin to start").
+// The first spin then rolls that same reel.
+let fvIdle=false;
+function fvReelIdle(g){const el=$("fvNow");if(fvIdle&&fvReel&&$("fvReelBox"))return;fvReelDrop();
+  el.innerHTML=`<div class="fv-spin"><span class="eyebrow" id="fvSpinLbl">&nbsp;</span><div id="fvReelBox"></div></div>`;
+  fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true,ph:"Waiting on "+fvHost(liveDoc)});fvIdle=true}
+function fvReelStart(g){const el=$("fvNow"),who=esc(fvHost(liveDoc));
+  if(fvIdle&&fvReel&&$("fvReelBox")){fvIdle=false;$("fvSpinLbl").textContent=fvHost(liveDoc)+" is spinning";fvReel.roll(20);return}
+  el.innerHTML=`<div class="fv-spin"><span class="eyebrow" id="fvSpinLbl">${who} is spinning</span><div id="fvReelBox"></div></div>`;
   fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true});fvReel.roll(20)}
 // sec: when to stop. Given the host's landing time it stops with the host; otherwise (the result came in after) it winds down in about a second.
 function fvReelLand(v,sec,spinAt){const R=fvReel;fvLanding=true;
   R.spinTo(v.name,20,info=>{fvReel=null;fvLanding=false;fvDone=spinAt||0;fvCardSig="";const d=liveDoc;if(!fv||!d)return;
     let g={};try{g=JSON.parse(d.g)}catch(e){}fvCard0(d,g,Date.now()+(d.off||0));try{reveal(info,$("fvNow"))}catch(e){}},{dur:sec?sec+.42:1.1})}   // +.42: spinTo's wind-down runs that much shorter than dur at this speed
-function fvReelDrop(){if(fvReel){fvReel.stop();fvReel=null}fvLanding=false}
+function fvReelDrop(){if(fvReel){fvReel.stop();fvReel=null}fvLanding=false;fvIdle=false}
 function fvCard(d,g,t){if(fvLanding)return;const had=!!$("fvReelBox"),pv=had?null:cardSnap($("fvNow"));fvCard0(d,g,t);if(pv&&!$("fvReelBox"))try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
-  if(d.ended||!g.started){fvReelDrop();el.innerHTML="";fvCardSig="";return}
+  if(d.ended){fvReelDrop();el.innerHTML="";fvCardSig="";return}
+  if(!g.started&&!g.target&&!(g.visits||[]).length&&!fvSpinning(g,t)){fvCardSig="";fvReelIdle(g);return}
   // this phone's reel already stopped on the host's result, but the host's "landed" hasn't arrived yet: show that bar
   const SR=g.spinRes&&g.spinRes.at===g.spinAt&&fvDone===g.spinAt&&fvSpinning(g,t)&&!fvJack(g)?byId(g.spinRes.id):null;
   const spin=!SR&&(fvSpinning(g,t)||!!fvJack(g)),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=SR||g.target||spin?null:at0,v=SR||(spin?null:g.target?byId(g.target):at?byId(at.id):null);   // spun from the bar: the next bar, like the host sees
@@ -522,11 +547,11 @@ function fvCard0(d,g,t){const el=$("fvNow");
   const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:fvSpinning(g,t)?"spin":fvJack(g)?"jp":g.reelOpen?"open":null,wd,g.wild&&g.wild.res,wd&&wOpenNow(g,g.wild),v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
   // the host's spin just landed on a bar: wind the rolling reel down onto it (it draws the card when it's done)
-  const live=fvReel&&$("fvReelBox")&&document.contains($("fvReelBox"));
+  const live=!fvIdle&&fvReel&&$("fvReelBox")&&document.contains($("fvReelBox"));
   if(v&&live&&!at){fvCardSig=sig;fvReelLand(v,0,g.spinAt);return}
   if(!v&&fvSpinning(g,t)){fvCardSig=sig;if(!live)fvReelStart(g);
-    // the host sent where it'll land and when: stop with them (if there's still time to wind down nicely)
-    const R=g.spinRes;if(R&&R.at===g.spinAt&&!fvJack(g)&&byId(R.id)){const left=(R.land-t)/1000;if(left>.7)fvReelLand(byId(R.id),left,g.spinAt);else fvReelLand(byId(R.id),0,g.spinAt)}
+    // the host sent where it'll land and when: stop a beat after them (a busy host phone, filming the spin, can land a little late; a follower must never be first)
+    const R=g.spinRes;if(R&&R.at===g.spinAt&&!fvJack(g)&&byId(R.id)){const left=(R.land-t)/1000+.35;if(left>.7)fvReelLand(byId(R.id),left,g.spinAt);else fvReelLand(byId(R.id),0,g.spinAt)}
     return}
   fvReelDrop();
   fvCardSig=sig;
@@ -553,13 +578,15 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const tb=$("fvBar");tb.hidden=cr||!g.started||d.ended;tb.className="tbar"+L.cls;$("fvBarI").style.width=L.pct+"%";
   fvCard(d,g,t);
   // the bar they're at counts: the same "it counts" animation as the host's phone, into this counter
-  const atv=vs.find(v=>!v.leftAt),ak=atv?atv.id+"@"+atv.arrivedAt:null;let nb=vs.filter(v=>v.counted===true||(!v.leftAt&&v._inCount)).length;
-  if(ak&&atv._inCount&&fvCnt&&fvCnt.k===ak&&!fvCnt.c&&!fvFly&&!document.hidden&&$("fvNow").querySelector(".bar.at h2")){fvFly=true;
+  // the bar counts 3 minutes in, worked out here: the host's own "it counts" moment only happens with their crawl screen open
+  const inC=v=>!v.leftAt&&(v._inCount||(!g.demo&&t-v.arrivedAt>=DWELL_MIN*60000));
+  const atv=vs.find(v=>!v.leftAt),ak=atv?atv.id+"@"+atv.arrivedAt:null;let nb=vs.filter(v=>v.counted===true||inC(v)).length;
+  if(ak&&inC(atv)&&fvCnt&&fvCnt.k===ak&&!fvCnt.c&&!fvFly&&!document.hidden&&$("fvNow").querySelector(".bar.at h2")){fvFly=true;
     const fc0=$("fvCount");countFly({pc:fc0,lead:250,z:1700,bump:true,getH:()=>$("fvNow")&&$("fvNow").querySelector(".bar.at h2"),done:()=>{fvFly=false;fc0._h="";paintFollow()}})}
-  fvCnt=ak?{k:ak,c:!!atv._inCount}:null;
+  fvCnt=ak?{k:ak,c:inC(atv)}:null;
   if(fvFly)nb--;
   const fc=$("fvCount"),fch=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${nb}</b><i class="cv">${I.chev||"›"}</i>`;if(!fvFly&&fc._h!==fch){fc._h=fch;fc.innerHTML=fch}
-  const stale=!d.ended&&g.started&&Date.now()-(d.beat||0)>STALE_MS,   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
+  const stale=!d.ended&&Date.now()-(d.beat||0)>STALE_MS,   // before the clock's started too: a phone can die before the first spin   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(nFirst(d.hostName)||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
