@@ -78,36 +78,55 @@ footer a{color:var(--muted);text-decoration:none}
 .soc svg{width:22px;height:22px}
 @media (min-width:700px){.pin{right:max(-90px,calc(50vw - 520px));height:min(560px,64vh)}main{padding-top:56px}}
 @media (max-height:700px){main{padding-top:calc(env(safe-area-inset-top) + 24px)}form{padding-top:24px}.pin{top:40px}}
-/* phones and tablets: .lead is just a wrapper and the phone mockup is hidden */
+/* phones and tablets: .lead is just a wrapper and the phone mockup is desktop only */
 .lead{display:contents}
 .device{display:none}
-/* desktop: copy and signup on the left, the app on a phone on the right */
+/* desktop */
 @media (min-width:960px) and (min-height:600px){
-  .bg{display:none}
-  main{max-width:1180px;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:1fr auto;column-gap:clamp(56px,8vw,140px);
-    padding:clamp(28px,5vh,48px) 64px 24px;min-height:100vh}
-  .lead{display:flex;flex-direction:column;align-self:center;max-width:470px;padding:24px 0}
-  .kick{font-size:13px;margin-bottom:18px}
-  .brand{font-size:min(clamp(88px,8.2vw,124px),13vh)}
-  .line{font-size:23px;margin-top:22px}
-  form,.done{margin-top:clamp(28px,4.5vh,44px);padding-top:0;max-width:420px}
-  .device{display:block;position:relative;align-self:center;margin:0;width:min(330px,calc((100vh - 190px) * .47))}
-  .pin2{position:absolute;left:50%;top:50%;width:150%;transform:translate(-50%,-50%);opacity:var(--pin);pointer-events:none;user-select:none}
-  .phone{position:relative;border-radius:46px;padding:11px;background:#15120E;
-    box-shadow:0 0 0 1px rgba(0,0,0,.08),0 40px 80px -24px rgba(40,26,6,.45),0 18px 36px -18px rgba(40,26,6,.35)}
-  .phone img{display:block;width:100%;height:auto;border-radius:36px}
-  footer{grid-column:1/-1;margin-top:24px;padding-top:14px;border-top:1px solid var(--line)}
-  /* signed up: keep the name and the phone, swap the form for the confirmation */
+  /* the faded pin: big, behind the name, running off the left edge (the phone version runs off the right) */
+  .bg{position:fixed;inset:0;overflow:hidden}
+  /* the faded pin: big, from the bottom-left corner, just its tip running off the bottom; the app's amber glow top left */
+  .bg{background:radial-gradient(60% 55% at 0% 0%,rgba(245,184,61,.22),transparent 70%)}
+  .pin{right:auto;top:auto;left:-9vh;bottom:-6vh;height:94vh}
+  main{max-width:1200px;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(56px,7vw,120px);align-items:center;
+    padding:0 64px 28px;min-height:0}
+  main{min-height:100vh;grid-template-rows:1fr auto}
+  .lead{display:flex;flex-direction:column;justify-content:center;padding:40px 0;max-width:620px}
+  .kick{font-size:13px;margin-bottom:20px}
+  .brand{font-size:min(clamp(96px,9.4vw,144px),15.5vh);letter-spacing:.03em}
+  .line{font-size:clamp(22px,1.9vw,26px);margin-top:24px;font-weight:700}
+  /* signup on one row: email, phone, button */
+  form{margin-top:clamp(32px,5vh,52px);padding-top:0;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:10px;max-width:620px}
+  input[type=email]{flex:1 1 200px;min-width:0;width:auto;height:58px}
+  .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .phones{display:flex;gap:0;padding:5px;border:1.5px solid var(--line);border-radius:16px;background:var(--s1);height:58px}
+  .phones span{height:100%;padding:0 16px;border:0;border-radius:11px;background:transparent;font-size:15px}
+  .phones label+label{border-left:1.5px solid var(--line);margin-left:4px;padding-left:4px}
+  .phones label:has(input:checked),.phones label:has(input:checked)+label{border-left-color:transparent}
+  .phones input:checked+span{background:var(--amber-soft);box-shadow:inset 0 0 0 1.5px var(--amber)}
+  .err{order:5;flex-basis:100%;text-align:left;margin:2px 2px 0}
+  .btn{width:auto;flex:0 0 auto;padding:0 28px;height:58px;margin:0}
+  /* the app on a phone */
+  .device{display:block;position:relative;margin:0;z-index:0;width:min(350px,calc((100vh - 110px) * .462))}
+  .phone{position:relative;z-index:1;border-radius:50px;padding:11px;background:#15120E;
+    box-shadow:0 0 0 1px rgba(0,0,0,.08),0 50px 90px -28px rgba(40,26,6,.5),0 18px 36px -18px rgba(40,26,6,.35)}
+  .phone img{display:block;width:100%;height:auto;border-radius:40px}
+  footer{grid-column:1/-1;margin-top:0;padding-top:18px;border-top:1px solid var(--line)}
+  /* signed up: keep everything, swap the form for the confirmation */
   body.sent{overflow:auto}
-  body.sent main{height:auto;min-height:100vh}
-  body.sent .lead>.brand{display:block}
+  body.sent main{height:auto;min-height:0}
+  body.sent .lead>.kick,body.sent .lead>.line,body.sent .lead>.brand{display:block}
   body.sent footer{display:flex}
-  body.sent .lead>.kick,body.sent .lead>.line{display:block}
-  body.sent .done{margin:44px 0 0;text-align:left;align-items:flex-start}
-  body.sent .done .btn{max-width:280px}
+  body.sent .done{margin:clamp(32px,5vh,52px) 0 0;padding:0;text-align:left;align-items:flex-start}
+  body.sent .done .btn{padding:0 28px}
+}
+/* narrower desktops: email on its own row, phone choice and button underneath */
+@media (min-width:960px) and (max-width:1199px) and (min-height:600px){
+  input[type=email]{flex-basis:100%}
+  .btn{flex:1 1 auto}
 }
 @media (min-width:960px) and (min-height:600px) and (prefers-color-scheme:dark){
-  .phone{background:#000;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 80px -24px rgba(0,0,0,.7)}
+  .phone{background:#1A1E26;box-shadow:0 0 0 1.5px rgba(255,255,255,.14),0 50px 90px -28px rgba(0,0,0,.8)}
 }
 </style>
 </head>
@@ -138,9 +157,9 @@ footer a{color:var(--muted);text-decoration:none}
  </div>
 
   <figure class="device" aria-hidden="true">
-    <img class="pin2" src="icons/logo-pin.png" alt="">
-    <div class="phone"><img src="img/app-screen.jpg" alt="" width="720" height="1487" loading="lazy"></div>
+    <div class="phone"><img src="img/spin.jpg" alt="" width="780" height="1618" loading="lazy"></div>
   </figure>
+
 
   <footer>
     <div class="soc">
