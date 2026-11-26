@@ -1118,11 +1118,24 @@ function renderQuick(){
   b.innerHTML=top+head+rrZoneHTML({searchHint:"Search a suburb"}).replace('<button class="mcard"',chips+'<button class="mcard"');
   bindTop();
   const visN=z=>q.list?0:rrPool(z,now(),false).all.filter(v=>!isNew(v.id)).length;
+  // Skip visited on the panel under the distance, like timed setup's Skip row:
+  // label, the rooftops named in amber underneath, then the control. Each only when it has rooftops in the circle.
+  function rrOpts(z){const panel=b.querySelector(".fspanel"),sl=panel&&panel.querySelector(".rrslide");if(!sl)return;
+    let o=$("rrOpts");if(!o){o=document.createElement("div");o.id="rrOpts";o.className="fsopts";sl.after(o)}
+    const t=now(),y=me||you()||z,byD=a=>a.slice().sort((u,w)=>dist(y,u)-dist(y,w)),
+      nm=a=>esc(a[0].name)+(a.length>1?` + ${a.length-1} other${a.length>2?"s":""}`:"");
+    const vis=q.list?[]:byD(rrPool(z,t,false).open.filter(v=>!isNew(v.id))),
+      pas=[];   // the Pass list is a standing choice, not a per-crawl one: it's set on the rooftop or when skipping, not here
+    o.innerHTML=(vis.length?`<button class="fsopt" id="rrSkip" type="button" role="switch" aria-checked="${!!q.newOnly}" aria-pressed="${!!q.newOnly}"><span class="l"><span class="lt">Skip visited rooftops</span><span class="ln">${nm(vis)}</span></span><i class="dv" aria-hidden="true"></i><span class="sw"></span></button>`:"")
+      +(pas.length?`<button class="fsopt fspass" id="rrPass" type="button"><span class="l"><span class="lt">Pass list</span><span class="ln">${nm(pas)}</span></span><i class="dv" aria-hidden="true"></i><svg class="cr chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`:"");
+    o.hidden=!o.innerHTML;
+    if($("rrSkip"))$("rrSkip").onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true)};
+    if($("rrPass"))$("rrPass").onclick=()=>listSheet("nfu",null,()=>{if(qZB)qZB.paint(true)})}
   qZB=rrZoneBind(q.z,me,()=>!q.list&&!!q.newOnly,(P,z,moved)=>{
     q.z.all=!z.r;   // remember a deliberate "All" so a redraw doesn't put the circle back
     if(!visN(z)&&q.newOnly&&!q.list)q.newOnly=false;
     {const tb=document.querySelector('.fstabs [data-k=""] span');if(tb)tb.textContent=rrPool(z,now(),!!q.newOnly).open.length}
-    $("rrNB").hidden=!P.open.length;
+    $("rrNB").hidden=!P.open.length;rrOpts(z);
     cta(`<button class="btn" id="qGo" type="button" ${P.open.length?"":"disabled"}>Start the crawl</button>`,()=>$("qGo").onclick=()=>{
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
@@ -1135,13 +1148,9 @@ function renderQuick(){
     // a one-off message (nothing open near you, couldn't find you): the same note as everywhere else, gone on its own or with a swipe
     if(q.far){const m=q.far;q.far=null;save();setTimeout(()=>toast(esc(m),4500),350)}}
   b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
-    const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip visited rooftops <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
-    // rooftops on your Pass list inside the circle: R&R leaves them out, so say how many and let you change it
-    const np=q.list?0:VENUES.filter(v=>S.nfu[v.id]&&!v.tempClosed&&(!z.r||dist(z,v)<=z.r*1000)).length,
-      pr=np?`<button class="toggle fspass" type="button"><span class="t"><b>Pass list</b></span><span class="pv">${np} left out <span class="chev">›</span></span></button>`:"";
-    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:sk+pr,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
+    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:"",html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
       bind(root,again){const pb=root.querySelector(".fspass");if(pb)pb.onclick=()=>listSheet("nfu",null,()=>{if(qZB)qZB.paint(true);again()});const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
-  fsLayout(b,b);
+  fsLayout(b,b);rrOpts(q.z);
   b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
     // picking a list: widen the circle (if it needs to) so every open bar on it is in it
     if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
