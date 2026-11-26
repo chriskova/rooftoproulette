@@ -87,8 +87,8 @@ footer a{color:var(--muted);text-decoration:none}
      1200px tall), so it looks the same on every desktop: "Early access" and the top of the phone line up 9% down,
      the phone always shows about three quarters of itself before running off the bottom, and the pin always tucks
      60px under the phone's left edge. On taller screens than that everything stops growing. */
-  :root{--u:min(1vh,12px);--top:calc(var(--u) * 9);--pw:calc(var(--u) * 57);--col:calc(var(--u) * 52);--gap:calc(var(--u) * 9);
-    --left:max(56px,calc(var(--u) * 16),calc((100vw - var(--u) * 140) / 2))}
+  :root{--u:min(1vh,9px);--top:max(calc(var(--u) * 9),calc((100vh - var(--u) * 122) / 2));--pw:calc(var(--u) * 57);--col:calc(var(--u) * 52);--gap:calc(var(--u) * 9);
+    --left:max(56px,calc(var(--u) * 16),min(calc((100vw - var(--u) * 140) / 2),calc((100vh + 50px) / 1.183 - var(--u) * 61 - 60px - 2vh)))}
   .bg{position:fixed;inset:0;overflow:hidden;
     background:radial-gradient(70% 55% at 85% 0%,rgba(245,184,61,.24),transparent 70%),radial-gradient(55% 45% at 0% 0%,rgba(245,184,61,.1),transparent 70%)}
   /* the faded pin comes up from the bottom-left corner, its tip just running off the bottom, right edge 60px under the phone */
