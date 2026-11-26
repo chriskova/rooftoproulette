@@ -4551,10 +4551,10 @@ function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),out=L.length-inGal.le
   // all in their photos: one safe button. Some not: clear the safe ones, or all (confirmed). None: clear all (confirmed).
   const note=!out?"Saved to gallery":inGal.length?`${inGal.length} saved to gallery`:"Not saved to gallery";
   sheet(`<h3>Storage</h3><p class="note">${cn(L.length)} · ${sz(L)} · ${note}</p>
-    <div class="acts">${!out?`<button class="btn" type="button" id="ccSafe">Clear clips</button>`:`${inGal.length?`<button class="btn" type="button" id="ccSafe">Clear ${inGal.length} saved clip${inGal.length===1?"":"s"}</button>`:""}<button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all clips</button>`}<button class="btn line" type="button" id="ccNo">Cancel</button></div>`,()=>{
+    <div class="acts">${!out?`<button class="btn" type="button" id="ccSafe">Clear clips</button>`:`${inGal.length?`<button class="btn" type="button" id="ccSafe">Clear saved clips</button>`:""}<button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all clips</button>`}<button class="btn line" type="button" id="ccNo">Cancel</button></div>`,()=>{
     const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${cn(a.length)}`,2500);closeSheet();if($("setPage"))settingsSheet();if(S.route==="end")renderEnd()});
     if($("ccSafe"))$("ccSafe").onclick=()=>del(inGal);
-    if($("ccAll"))$("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${out} unsaved clip${out===1?"":"s"} will be permanently deleted.</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear all clips</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
+    if($("ccAll"))$("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${out} unsaved clip${out===1?"":"s"} can't be recovered.</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear all</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
     $("ccNo").onclick=closeSheet})}
 // What the app is allowed to use, and a way to change it.
 // Call a native plugin method whether or not its JS object was set up (the bridge always has nativePromise).
