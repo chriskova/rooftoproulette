@@ -1136,8 +1136,11 @@ function renderQuick(){
     if(q.far){const m=q.far;q.far=null;save();setTimeout(()=>toast(esc(m),4500),350)}}
   b._fsList=()=>{const z=q.z,t=now(),y=me||you()||z,P=q.list?listPool(z,t,false):rrPool(z,t,!!q.newOnly),L=P.open.slice().sort((a,c)=>dist(y,a)-dist(y,c));
     const n=rrPool(z,t,false).open.filter(v=>!isNew(v.id)).length,sk=!q.list&&n?`<button class="toggle fsskip" type="button" role="switch" aria-checked="${!!q.newOnly}"><span class="t"><b>Skip visited rooftops <span class="skn">${n}</span></b></span><span class="sw"></span></button>`:"";
-    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:sk,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
-      bind(root,again){const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
+    // rooftops on your Pass list inside the circle: R&R leaves them out, so say how many and let you change it
+    const np=q.list?0:VENUES.filter(v=>S.nfu[v.id]&&!v.tempClosed&&(!z.r||dist(z,v)<=z.r*1000)).length,
+      pr=np?`<button class="toggle fspass" type="button"><span class="t"><b>Pass list</b></span><span class="pv">${np} left out <span class="chev">›</span></span></button>`:"";
+    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:sk+pr,html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
+      bind(root,again){const pb=root.querySelector(".fspass");if(pb)pb.onclick=()=>listSheet("nfu",null,()=>{if(qZB)qZB.paint(true);again()});const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
   fsLayout(b,b);
   b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
     // picking a list: widen the circle (if it needs to) so every open bar on it is in it
@@ -4222,9 +4225,9 @@ function swipeAway(t){let x0=null,y0=0,dx=0,dy=0,up=false;
   t.addEventListener("pointerup",end);t.addEventListener("pointercancel",end);t.style.touchAction="none"}
 const hideToast=()=>{const t=$("toast");if(t)t.classList.remove("on");clearTimeout(toastT)};
 function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
-  toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Pass</button>`,6000,()=>$("tNfu").onclick=()=>{
+  toast(`<span>Skipped <b>${esc(v.name)}</b></span><button type="button" id="tNfu">Add to Pass list</button>`,6000,()=>$("tNfu").onclick=()=>{
     S.nfu[id]=1;const w=!!S.want[id];delete S.want[id];save();buzz(15);
-    toast(`<span><b>${esc(v.name)}</b> won't come up again</span><button type="button" id="tUndo">Undo</button>`,4500,()=>$("tUndo").onclick=()=>{delete S.nfu[id];if(w)S.want[id]=1;save();hideToast()})})}
+    toast(`<span><b>${esc(v.name)}</b> added to Pass list</span><button type="button" id="tUndo">Undo</button>`,4500,()=>$("tUndo").onclick=()=>{delete S.nfu[id];if(w)S.want[id]=1;save();hideToast()})})}
 /* One of your lists: search to add (suggests as you type), ✕ to take one off */
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
