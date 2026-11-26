@@ -2744,13 +2744,15 @@ const HOW={rush:()=>[
     ["Stuck somewhere quiet?","Move your zone once a crawl: drag it somewhere new or make it bigger. If it's far, the clock waits."],
     ["Wildcards, and a jackpot","Some spins come with a little challenge for the next rooftop. And once a game, you'll hit the jackpot."],
     ["Beat the clock","Get to your last rooftop before zero and it counts. How many can you fit in?"]],rr:()=>[
-  ["Spin","You get a random rooftop near you, or one from your Hit list."],
-  ["Not feeling it?","Spin again. Re-spins are always free."],
-  ["Just the spin","No clock, no wildcards, no jackpot. Stay as long as you like at each rooftop. You still get a crawl card at the end with all your stats."],
-  ["Spin when you're ready","One rooftop or five. End the crawl from the menu, or we'll wrap it up for you after 3 hours. Still out? Tap Keep going."]]};
+  ["Spin","Nearby, or from the Hit list.<br>Re&#8209;spins are free."],
+  ["Stay","No clock, wildcards or jackpot.<br>Spin again when ready."],
+  ["End the crawl","From the menu, or after 3 hours.<br>Still out? Tap Keep going."],
+  ["Get the crawl card","Every rooftop, time and stat from the crawl."]]};
+// R&R's Pass list isn't a step: it sits under the steps on its own
+const RR_NOTE=`<div class="hownote"><b>Pass list</b><span>Rooftops to leave out of R&amp;R.<br>Add when skipping, or from the Rooftops tab.</span></div>`;
 // How to play from settings: both modes in one sheet, three-quarters high
 function howToPlay(k){k=k||"rush";
-  sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Timed</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>`,()=>{
+  sheet(`<h3>How to play</h3><div class="seg" style="margin-top:12px"><button type="button" data-hw="rush" aria-pressed="${k==="rush"}">Timed</button><button type="button" data-hw="rr" aria-pressed="${k==="rr"}">R&amp;R</button></div><div class="steps" style="margin-top:14px">${stepsHTML(HOW[k]())}</div>${k==="rr"?RR_NOTE:""}`,()=>{
     $("sheet").classList.add("tq");$("sheetBody").querySelectorAll("[data-hw]").forEach(b=>b.onclick=()=>howToPlay(b.dataset.hw))})}
 const sawHow=k=>{S.seenHow=S.seenHow||{};if(!S.seenHow[k]){S.seenHow[k]=1;save()}};
 function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
@@ -2786,7 +2788,7 @@ function openMenu(){
 $("pMenu").onclick=openMenu;$("pMap").onclick=()=>crawlMap();
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mixZone"))crawlMap({move:true,pre:true})});
 
-function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>
+function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>${RR_NOTE}
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
 function endGame(at){
   const g=G();if(!g||g.ended)return;
