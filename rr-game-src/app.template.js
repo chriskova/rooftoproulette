@@ -846,8 +846,11 @@ function homeOpen(){const el=$("homeOpen");if(!el)return;const t=now(),L=VENUES.
 // The name grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
 function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
   while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}
-  // the big faded pin is a backdrop at a set size; it sits low enough that its tip runs on under the tab bar, never on the Join link
-  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=document.querySelector("#tabs");if(im&&lg.offsetParent&&tb&&tb.offsetHeight){lg.style.top="0px";const pr=lg.getBoundingClientRect(),ih=im.offsetHeight||560;lg.style.top=Math.round(tb.getBoundingClientRect().top+28-ih-pr.top)+"px"}}
+  // the big faded pin is a backdrop: it starts just under the wordmark and its tip runs on under the tab bar. Same size as on an S20;
+  // only a taller screen grows it, just enough for the tip to still reach under the tab bar.
+  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=$("tabs"),br=v.querySelector(".brand");
+  if(im&&lg.offsetParent&&tb&&tb.offsetHeight&&br){lg.style.top="0px";const p0=lg.getBoundingClientRect().top,top=br.getBoundingClientRect().bottom-25,H=Math.max(560,Math.round(tb.getBoundingClientRect().top+28-top));
+    im.style.height=H+"px";lg.style.right=-Math.round(150*H/560)+"px";lg.style.top=Math.round(top-p0)+"px"}}
 addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
