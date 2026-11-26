@@ -454,7 +454,9 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   $("fvMapB").onclick=followMap;$("fvCount").onclick=followBars;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{fvCardSig="";paintFollow()}).catch(()=>{})}).catch(()=>{});
-  clearInterval(fvT);fvT=setInterval(paintFollow,250);liveAttach();paintFollow()}
+  clearInterval(fvT);fvT=setInterval(paintFollow,250);liveAttach();paintFollow();if(!fvPrev)setTimeout(()=>pingHost(true),1500)}
+// a quiet check of the host's phone whenever a follower comes back to the app, so the menu already knows
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&fv&&!fvPrev)setTimeout(()=>pingHost(true),800)});
 const fvGame=d=>{try{return JSON.parse(d.g)}catch(e){return {}}};
 const fvHost=d=>((d&&d.hostName)||"Friend").split(" ")[0];
 // the crawl's map, full screen, the same as the person spinning has it: zone, every bar in it, the bars so far, the next bar, you
@@ -498,19 +500,26 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
 // the follower's menu: the same sheet as the host's, with only what a follower can do
-const PING_WAIT=5000;
+const PING_WAIT=3000;
 let fmPing=0;
 // where the host's phone stands for this follower: answering, being checked, or not answering
 function hostReach(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
   if(fmPing&&(!m||m.ping!==fmPing))return Date.now()-fmPing<PING_WAIT?"checking":"ok";   // this phone's ask hasn't reached the crawl yet (or this phone's offline)
   if(!m||!m.ping)return "ok";if((d.pongs||{})[me]===m.ping)return "ok";return Date.now()-m.ping>PING_WAIT?"gone":"checking"}
-async function pingHost(){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liveDoc||!(liveDoc.members||{})[me])return;fmPing=Date.now();
+async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liveDoc||liveDoc.ended||!(liveDoc.members||{})[me])return;
+  if(quiet&&Date.now()-fmPing<30000)return;fmPing=Date.now();
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
+// Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
 function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
-  return `<button type="button" id="fmTake" ${st==="gone"?"":"disabled"} class="${st==="gone"?"":"off"}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who}'s phone isn't responding`:st==="checking"?`Checking ${who}'s phone…`:`${who}'s phone is responding`}</small></span></button>`}
+  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who}'s phone isn't responding`:st==="checking"?`Checking ${who}'s phone…`:`If ${who}'s phone dies`}</small></span></button>`}
+let fmWant=false;
+function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
+  if(st==="gone"){fmWant=false;takeOverSheet();return}
+  if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who}'s phone is still connected. Ask them to hand you the spin.`,3500);return}
+  if(st==="ok")pingHost();fmWant=true}   // checking (or a fresh check): the row carries on once it hears back
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
-  if(!mine&&d&&!d.ended)pingHost();
+  if(!mine&&d&&!d.ended&&Date.now()-fmPing>10000)pingHost();
   sheet(`<h3>Menu</h3><div class="menu">
     ${mine||!d||d.ended?"":`<div id="fmTakeW">${fmTakeHTML(d)}</div>`}
     <button type="button" id="fmHow">${I.help}<span>How it works</span></button>
@@ -520,8 +529,9 @@ function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
     $("fmHow").onclick=()=>{let g={};try{g=JSON.parse(d.g)}catch(e){}(g.mode==="cruise"?cruiseHow:howSheet)()};
     $("fmSound").onclick=()=>{S.sound=!S.sound;save();followMenu()};
     // the take-over row updates itself while the menu's open: checking → responding, or checking → not responding
-    const W=$("fmTakeW");if(W){const bind=()=>{const b=$("fmTake");if(b)b.onclick=()=>{if(hostReach(liveDoc)==="gone")takeOverSheet()}};bind();
-      const iv=setInterval(()=>{if(!document.contains(W)||!$("sheet").open){clearInterval(iv);return}const h=fmTakeHTML(liveDoc);if(W._h!==h){W._h=h;W.innerHTML=h;bind()}},250)}
+    fmWant=false;const W=$("fmTakeW");if(W){const bind=()=>{const b=$("fmTake");if(b)b.onclick=takeTap};bind();
+      const iv=setInterval(()=>{if(!document.contains(W)||!$("sheet").open){clearInterval(iv);fmWant=false;return}const h=fmTakeHTML(liveDoc);if(W._h!==h){W._h=h;W.innerHTML=h;bind()}
+        if(fmWant&&hostReach(liveDoc)!=="checking")takeTap()},250)}
     if($("fmLeave"))$("fmLeave").onclick=()=>sheet(`<h3>Stop following?</h3><p class="note">This crawl won't go on your tab.</p>
       <div class="acts"><button class="btn" type="button" id="flY" style="background:var(--red);color:#fff">Stop following</button><button class="btn dark" type="button" id="flN">Keep following</button></div>`,()=>{
       $("flN").onclick=closeSheet;$("flY").onclick=()=>{closeSheet();leaveFollow();go("home")}})})}

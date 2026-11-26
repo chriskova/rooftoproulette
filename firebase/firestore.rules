@@ -27,7 +27,7 @@ service cloud.firestore {
     }
     // live crawls: anyone with the link (a random id) reads; the spinner writes the crawl;
     // followers can only add themselves (and ping the spinner from their own entry), take over when the spinner's
-    // gone quiet for 2.5 minutes or hasn't answered their ping for 4 seconds, or be handed the spin
+    // gone quiet for 2.5 minutes or hasn't answered their ping for 2.5 seconds, or be handed the spin
     match /live/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.host == request.auth.uid && request.resource.data.g.size() < 200000;
@@ -40,7 +40,7 @@ service cloud.firestore {
         || (request.resource.data.host == request.auth.uid
             && resource.data.members[request.auth.uid].get('ping', 0) > 0
             && resource.data.get('pongs', {}).get(request.auth.uid, 0) != resource.data.members[request.auth.uid].ping
-            && request.time.toMillis() - resource.data.members[request.auth.uid].ping > 4000
+            && request.time.toMillis() - resource.data.members[request.auth.uid].ping > 2500
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['host','hostName','beat','prevHost','members']))
       );
     }
