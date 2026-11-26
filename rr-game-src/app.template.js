@@ -1972,7 +1972,9 @@ function doSpin(force,vel){
     });
     return;
   }
-  reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation();dealWild(900)});
+  const T_=reel.spinTo(pick.name,vel===undefined?-(30+Math.random()*20):vel,info=>{g.target=pick.id;g.targetAt=now();g.targetFrom={lat:from.lat,lng:from.lng};g.reelOpen=false;animateId=null;if(!CR(g))rollWild(g,pick.id);spinning=false;save();renderPlay();reveal(info,$("stage"));onLocation();dealWild(900)});
+  // followers' reels stop on it at the same moment as this one (their screens don't show it any earlier)
+  if(g.live&&T_){g.spinRes={at:g.spinAt,id:pick.id,land:g.spinAt+Math.round(T_*1000)};save();if(typeof liveSync==="function")liveSync(true)}
 }
 /* ---------- the Jackpot: once a timed game, a longer gold spin that pays out one of five rewards ---------- */
 const JACKPOTS=[

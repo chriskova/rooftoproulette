@@ -501,27 +501,33 @@ const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spin
 // a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
 // While the host spins, followers get the same reel the host sees, rolling. The result is only sent once the host's
 // reel has stopped, so theirs winds down onto it then (about a second behind) and flies into the card the same way.
-let fvReel=null,fvLanding=false;
+let fvReel=null,fvLanding=false,fvDone=0;   // fvDone: the spin (its spinAt) this phone has already landed
 function fvReelNames(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
   return P.length?P:VENUES.map(v=>v.name)}
 function fvReelStart(g){const el=$("fvNow");
   el.innerHTML=`<div class="fv-spin"><span class="eyebrow">${esc(fvHost(liveDoc))} is spinning</span><div id="fvReelBox"></div></div>`;
   fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true});fvReel.roll(20)}
-function fvReelLand(v){const R=fvReel;fvLanding=true;
-  R.spinTo(v.name,20,info=>{fvReel=null;fvLanding=false;fvCardSig="";const d=liveDoc;if(!fv||!d)return;
-    let g={};try{g=JSON.parse(d.g)}catch(e){}fvCard0(d,g,Date.now()+(d.off||0));try{reveal(info,$("fvNow"))}catch(e){}},{dur:1.1})}
+// sec: when to stop. Given the host's landing time it stops with the host; otherwise (the result came in after) it winds down in about a second.
+function fvReelLand(v,sec,spinAt){const R=fvReel;fvLanding=true;
+  R.spinTo(v.name,20,info=>{fvReel=null;fvLanding=false;fvDone=spinAt||0;fvCardSig="";const d=liveDoc;if(!fv||!d)return;
+    let g={};try{g=JSON.parse(d.g)}catch(e){}fvCard0(d,g,Date.now()+(d.off||0));try{reveal(info,$("fvNow"))}catch(e){}},{dur:sec?sec+.42:1.1})}   // +.42: spinTo's wind-down runs that much shorter than dur at this speed
 function fvReelDrop(){if(fvReel){fvReel.stop();fvReel=null}fvLanding=false}
 function fvCard(d,g,t){if(fvLanding)return;const had=!!$("fvReelBox"),pv=had?null:cardSnap($("fvNow"));fvCard0(d,g,t);if(pv&&!$("fvReelBox"))try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
   if(d.ended||!g.started){fvReelDrop();el.innerHTML="";fvCardSig="";return}
-  const spin=fvSpinning(g,t)||!!fvJack(g),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target||spin?null:at0,v=spin?null:g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
+  // this phone's reel already stopped on the host's result, but the host's "landed" hasn't arrived yet: show that bar
+  const SR=g.spinRes&&g.spinRes.at===g.spinAt&&fvDone===g.spinAt&&fvSpinning(g,t)&&!fvJack(g)?byId(g.spinRes.id):null;
+  const spin=!SR&&(fvSpinning(g,t)||!!fvJack(g)),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=SR||g.target||spin?null:at0,v=SR||(spin?null:g.target?byId(g.target):at?byId(at.id):null);   // spun from the bar: the next bar, like the host sees
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
   const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:fvSpinning(g,t)?"spin":fvJack(g)?"jp":g.reelOpen?"open":null,wd,g.wild&&g.wild.res,wd&&wOpenNow(g,g.wild),v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
   // the host's spin just landed on a bar: wind the rolling reel down onto it (it draws the card when it's done)
   const live=fvReel&&$("fvReelBox")&&document.contains($("fvReelBox"));
-  if(v&&live&&g.target&&!at){fvCardSig=sig;fvReelLand(v);return}
-  if(!v&&fvSpinning(g,t)){fvCardSig=sig;if(!live)fvReelStart(g);return}
+  if(v&&live&&!at){fvCardSig=sig;fvReelLand(v,0,g.spinAt);return}
+  if(!v&&fvSpinning(g,t)){fvCardSig=sig;if(!live)fvReelStart(g);
+    // the host sent where it'll land and when: stop with them (if there's still time to wind down nicely)
+    const R=g.spinRes;if(R&&R.at===g.spinAt&&!fvJack(g)&&byId(R.id)){const left=(R.land-t)/1000;if(left>.7)fvReelLand(byId(R.id),left,g.spinAt);else fvReelLand(byId(R.id),0,g.spinAt)}
+    return}
   fvReelDrop();
   fvCardSig=sig;
   const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
