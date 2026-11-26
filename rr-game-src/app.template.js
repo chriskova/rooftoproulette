@@ -846,8 +846,8 @@ function homeOpen(){const el=$("homeOpen");if(!el)return;const t=now(),L=VENUES.
 // The name grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
 function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
   while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}
-  // the big faded pin is a backdrop: it starts behind the name and its tip runs on under the tab bar, so it never lines up with Play or the Join link
-  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=document.querySelector(".tabs:not([hidden]),#tabs,nav.tabbar");if(im&&lg.offsetParent){const top=im.getBoundingClientRect().top,j=$("homeJoin"),floor=tb&&tb.offsetHeight?tb.getBoundingClientRect().top:(j?j.getBoundingClientRect().bottom+40:v.getBoundingClientRect().bottom);const H=Math.max(380,Math.round(floor+28-top));im.style.height=H+"px";lg.style.right=-Math.round(H*477/600*.34)+"px"}}
+  // the big faded pin is a backdrop at a set size; it sits low enough that its tip runs on under the tab bar, never on the Join link
+  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=document.querySelector("#tabs");if(im&&lg.offsetParent&&tb&&tb.offsetHeight){lg.style.top="0px";const pr=lg.getBoundingClientRect(),ih=im.offsetHeight||560;lg.style.top=Math.round(tb.getBoundingClientRect().top+28-ih-pr.top)+"px"}}
 addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
