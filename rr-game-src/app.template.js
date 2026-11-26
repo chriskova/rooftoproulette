@@ -1764,7 +1764,7 @@ function makeReel(el,names,o){
   const draw=()=>{const b=Math.round(R.p);
     const now_=performance.now(),spd=Math.abs(R.p-lastP)/Math.max(1,now_-lastT)*1000;lastP=R.p;lastT=now_;
     const fNow=Math.floor(R.p),fPrev=Math.floor(lastFl),crossed=fNow!==fPrev?Math.max(fNow,fPrev):null;lastFl=R.p;
-    if(crossed!==null){tick(560+Math.random()*80);buzz(3);
+    if(crossed!==null){if(!o.quiet){tick(560+Math.random()*80);buzz(3)}
       // the slot's lights flash with every name that passes: a fast flicker at speed, slow blinks as it winds down
       if(frame&&frame.animate&&!R.landing){const dur=Math.round(Math.min(240,Math.max(70,900/Math.max(spd,1))));const fi=Math.min(1,.4+.6*Math.min(1,7/Math.max(spd,1)));frame._fl=performance.now();frame._fd=dur;frame._fi=fi;   // softer at full speed, full strength on the last few names
         frame.animate([{borderColor:fi>.8?"#FFE3A3":"#FBD27E",boxShadow:`0 0 0 ${(4*fi).toFixed(1)}px rgba(255,214,120,${(.45*fi).toFixed(2)}),0 0 ${Math.round(28*fi)}px rgba(255,214,120,${(.6*fi).toFixed(2)}),inset 0 0 18px rgba(255,214,120,${(.25*fi).toFixed(2)})`},{}],{duration:dur,easing:"ease-out"})}}
@@ -1797,6 +1797,10 @@ function makeReel(el,names,o){
   draw();R.redraw=draw;
   const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
+  // a follower's reel: rolls at a steady speed until the host's result comes in, then spinTo winds it down onto it
+  R.roll=v=>{cancelAnimationFrame(R.raf);moved=true;R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
+    let t0=performance.now();const f=t=>{R.p+=v*Math.min(.05,(t-t0)/1000);t0=t;draw();R.raf=requestAnimationFrame(f)};R.raf=requestAnimationFrame(f)};
+  R.stop=()=>cancelAnimationFrame(R.raf);
   R.spinTo=(name,v,done,opt)=>{
     // it rolls the way you flicked it: down (the usual) or up
     opt=opt||{};moved=true;const dir=v>0?1:-1,v0=Math.max(4,Math.abs(v)||20),VC=28,vs=Math.min(VC,v0);
@@ -1849,7 +1853,7 @@ function makeReel(el,names,o){
    straight from there into its spot on the card, so it all reads as one move. */
 function punchLand(el,frame,name,done){
   const c=el.querySelector(".row.c .b"),row=c.parentElement,cs=getComputedStyle(c),r0=c.getBoundingClientRect(),fr=frame.getBoundingClientRect();
-  const host=el.closest("dialog")||el.closest(".jpx,.jpdemo")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const host=el.closest("dialog")||el.closest(".jpx,.jpdemo,.followv")||document.body,calm=matchMedia("(prefers-reduced-motion: reduce)").matches;
   const cx=fr.left+fr.width/2,cy=r0.top+r0.height/2,fs=parseFloat(cs.fontSize),INK=themeAmberText(c);   // centred on the slot (very long names overflow the wheel lopsided)
   const P=document.createElement("div");P.className="punch";P.textContent=name;
   Object.assign(P.style,{left:cx+"px",top:cy+"px",fontFamily:cs.fontFamily,fontWeight:cs.fontWeight,fontSize:cs.fontSize,letterSpacing:cs.letterSpacing,color:INK});
@@ -1891,7 +1895,7 @@ function reveal(info,scope){
   const h2=card.querySelector("h2,.ct-n"),cr=card.getBoundingClientRect(),hr=h2.getBoundingClientRect(),fr=info.fr,nr=info.nr;
   const cs=getComputedStyle(card),hs=getComputedStyle(h2),E="cubic-bezier(.3,.75,.2,1)",D=440,X=200;
   const after=[];let n=card.nextElementSibling;while(n){after.push(n);n=n.nextElementSibling}
-  const host=scope.closest("dialog")||scope.closest(".jpx,.jpdemo")||document.body;
+  const host=scope.closest("dialog")||scope.closest(".jpx,.jpdemo,.followv")||document.body;
   const box=document.createElement("div");box.className="flybox"+(card.classList.contains("phd")?" fb-dk":"");host.appendChild(box);
   box.animate([
     {left:fr.left+"px",top:fr.top+"px",width:fr.width+"px",height:fr.height+"px",borderRadius:"14px"},

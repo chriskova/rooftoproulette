@@ -499,21 +499,35 @@ let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 const fvJack=g=>g.jp&&g.jp.at>(g.targetAt||0)&&g.jp.at>=(g.spinAt||0)?g.jp:null;   // a jackpot spin since the last bar landed
 const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(fvJack(g)?5500:30000);
 // a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
-function fvReelHTML(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
-  const L=shuffle(P.length?P:VENUES.map(v=>v.name)).slice(0,14),list=L.concat(L.slice(0,4));
-  return `<div class="bar fv-reel"><span class="eyebrow">${esc(fvHost(liveDoc))}'s spinning</span><div class="fvr"><div class="fvr-s" style="--n:${L.length}">${list.map(n=>`<b>${esc(n)}</b>`).join("")}</div></div></div>`}
-function fvCard(d,g,t){const pv=cardSnap($("fvNow"));fvCard0(d,g,t);try{cardMorph($("fvNow"),pv)}catch(e){}}
+// While the host spins, followers get the same reel the host sees, rolling. The result is only sent once the host's
+// reel has stopped, so theirs winds down onto it then (about a second behind) and flies into the card the same way.
+let fvReel=null,fvLanding=false;
+function fvReelNames(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
+  return P.length?P:VENUES.map(v=>v.name)}
+function fvReelStart(g){const el=$("fvNow");
+  el.innerHTML=`<div class="fv-spin"><span class="eyebrow">${esc(fvHost(liveDoc))} is spinning</span><div id="fvReelBox"></div></div>`;
+  fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true});fvReel.roll(20)}
+function fvReelLand(v){const R=fvReel;fvLanding=true;
+  R.spinTo(v.name,20,info=>{fvReel=null;fvLanding=false;fvCardSig="";const d=liveDoc;if(!fv||!d)return;
+    let g={};try{g=JSON.parse(d.g)}catch(e){}fvCard0(d,g,Date.now()+(d.off||0));try{reveal(info,$("fvNow"))}catch(e){}},{dur:1.1})}
+function fvReelDrop(){if(fvReel){fvReel.stop();fvReel=null}fvLanding=false}
+function fvCard(d,g,t){if(fvLanding)return;const had=!!$("fvReelBox"),pv=had?null:cardSnap($("fvNow"));fvCard0(d,g,t);if(pv&&!$("fvReelBox"))try{cardMorph($("fvNow"),pv)}catch(e){}}
 function fvCard0(d,g,t){const el=$("fvNow");
-  if(d.ended||!g.started){el.innerHTML="";fvCardSig="";return}
+  if(d.ended||!g.started){fvReelDrop();el.innerHTML="";fvCardSig="";return}
   const spin=fvSpinning(g,t)||!!fvJack(g),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=g.target||spin?null:at0,v=spin?null:g.target?byId(g.target):at?byId(at.id):null;   // spun from the bar: the next bar, like the host sees
   const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
   const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:fvSpinning(g,t)?"spin":fvJack(g)?"jp":g.reelOpen?"open":null,wd,g.wild&&g.wild.res,wd&&wOpenNow(g,g.wild),v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
   if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
+  // the host's spin just landed on a bar: wind the rolling reel down onto it (it draws the card when it's done)
+  const live=fvReel&&$("fvReelBox")&&document.contains($("fvReelBox"));
+  if(v&&live&&g.target&&!at){fvCardSig=sig;fvReelLand(v);return}
+  if(!v&&fvSpinning(g,t)){fvCardSig=sig;if(!live)fvReelStart(g);return}
+  fvReelDrop();
   fvCardSig=sig;
   const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
   if(!v){const who=esc(fvHost(liveDoc));
     const J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
-    el.innerHTML=fvSpinning(g,t)?fvReelHTML(g):JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next rooftop</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
+    el.innerHTML=JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next rooftop</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){fvCardSig="";paintFollow()}});
   const cp0=cardPhoto(v),cp=cp0.cls?cp0:{cls:" photo blank",style:"",cr:""},o=openState(v,t),nw=isNew(v.id),an=landed?" anim":"",y=fvPrev?null:you();
   const wild=wd?wildBox(g,g.wild,at?" dark":"",{follow:true}):"";
