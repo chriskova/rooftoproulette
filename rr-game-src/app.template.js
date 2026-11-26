@@ -4472,14 +4472,14 @@ function settingsSheet(){
     try{history.pushState({setPage:1},"")}catch(e){}requestAnimationFrame(()=>requestAnimationFrame(()=>pg.classList.add("on")))}
   if($("sheet").open)closeSheet();
   const tg=(id,on,t,sub)=>`<button class="strow tgl" type="button" id="${id}" role="switch" aria-checked="${!!on}"><span class="t"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span><span class="sw"></span></button>`;
-  const lk=(id,t,val,cls)=>`<button class="strow${cls?" "+cls:""}" type="button" id="${id}"><span class="t"><b>${t}</b></span>${val!=null?`<span class="sval" id="${id}S">${val}</span>`:""}<i class="chev">›</i></button>`;
+  const lk=(id,t,val,cls)=>`<button class="strow${cls?" "+cls:""}" type="button" id="${id}"><span class="t"><b>${t}</b></span>${val!=null?`<span class="sval" id="${id}S">${val}</span>`:""}<i class="chev" id="${id}C">›</i></button>`;
   const grp=(h,rows)=>rows.filter(Boolean).length?`<div class="sgh">${h}</div><div class="sgrp">${rows.filter(Boolean).join("")}</div>`:"";
   const nT=readH(TKEY).length,live=!!(S.game&&S.game.started&&!S.game.ended),plat=anPlat(),top=pg.querySelector(".spbody")?pg.querySelector(".spbody").scrollTop:0;
   pg.innerHTML=`<div class="sphead"><button class="spback" type="button" id="spBack" aria-label="Back">${I.back}</button><b>Settings</b></div><div class="spbody">
     ${grp("Appearance",[`<div class="strow stseg"><div class="seg" id="stTheme">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-th="${k}" aria-pressed="${(S.theme||"auto")===k}">${l}</button>`).join("")}</div></div>`])}
     ${ISIOS?grp("Directions",[`<div class="strow stseg"><div class="seg" id="stMaps">${[["apple","Apple Maps"],["google","Google Maps"]].map(([k,l])=>`<button type="button" data-mp="${k}" aria-pressed="${(S.maps==="google"?"google":"apple")===k}">${l}</button>`).join("")}</div></div>`]):""}
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
-    ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Storage","")])}
+    ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Record your spins during a crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Storage","")])}
     ${grp("Account",accountRows(lk))}
     ${grp("Privacy",[lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
@@ -4498,7 +4498,7 @@ function settingsSheet(){
   $("stFilm").onclick=()=>{S.film=S.film===false;save();track("film_toggle",{on:S.film!==false,where:"settings"});settingsSheet();if(S.route==="play")renderPlay()};
   accountBind();
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
-    el.textContent=L.length?mbTxt(bytes):"0 MB";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
+    el.textContent=L.length?mbTxt(bytes):"0 MB";if(L.length)$("stClips").onclick=()=>clipsClearSheet(L);else{const ch=$("stClipsC");if(ch)ch.style.visibility="hidden";$("stClips").style.cursor="default"}});
   $("stPerm").onclick=permSheet;
   $("stPriv").onclick=()=>docPage("privacy.html","Privacy policy");$("stTerms").onclick=()=>docPage("terms.html","Terms of use");
   // replays the first-open walkthrough, the same screens the home link used to show
@@ -4506,13 +4506,13 @@ function settingsSheet(){
   // Contact us shows the address first: copy it, or start an email (with the app details at the bottom for us)
   $("stSup").onclick=()=>{const body=`\n\n\n—\nApp ${APPV} · ${plat} · ${anDev.$os} · ${anDev.$browser} · ${innerWidth}×${innerHeight}`;
     sheet(`<h3>Contact us</h3><p class="note">Questions, bugs or a rooftop we're missing.</p><p class="supmail">${esc(SUPPORT)}</p>
-      <div class="acts"><button class="btn" type="button" id="suMail">Send an email</button><button class="btn dark" type="button" id="suCopy">Copy address</button></div>`,()=>{
+      <div class="acts"><button class="btn" type="button" id="suMail">Send email</button><button class="btn dark" type="button" id="suCopy">Copy address</button></div>`,()=>{
       $("suMail").onclick=()=>{track("support_email");location.href=`mailto:${SUPPORT}?subject=${encodeURIComponent("Rooftop Roulette")}&body=${encodeURIComponent(body)}`};
-      $("suCopy").onclick=()=>{try{navigator.clipboard.writeText(SUPPORT)}catch(e){}toast("Copied.",1800)}})};
+      $("suCopy").onclick=()=>{try{navigator.clipboard.writeText(SUPPORT)}catch(e){}toast("Address copied",1800)}})};
   $("stIG").onclick=()=>ext(IG);$("stTT").onclick=()=>ext(TT);if($("stRate"))$("stRate").onclick=()=>ext(PLAY);
   if($("stTest"))$("stTest").onclick=()=>{S.test=!S.test;if(!S.test){S.ff=0;S.fake=null;history.replaceState(history.state,"",location.pathname)}save();if(S.game&&!S.test)startWatch();render();settingsSheet()};
-  if($("stTips"))$("stTips").onclick=()=>{S.tips={};S.seenHow={};save();document.querySelectorAll(".camtip").forEach(t=>t.remove());toast("Tips reset. They'll show again as you play.",2600)};   // test mode: see every first-time hint again
-  if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">All ${nT} test crawls go. Your real tab isn't touched.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
+  if($("stTips"))$("stTips").onclick=()=>{S.tips={};S.seenHow={};save();document.querySelectorAll(".camtip").forEach(t=>t.remove());toast("Tips reset",2000)};   // test mode: see every first-time hint again
+  if($("stClr"))$("stClr").onclick=()=>sheet(`<h3>Clear test crawls?</h3><p class="note">${nT} test crawl${nT===1?"":"s"} will be cleared. Your tab isn't affected.</p><div class="acts"><button class="btn" type="button" id="stClrY" style="background:var(--red);color:#fff">Clear</button><button class="btn line" type="button" id="stClrN">Cancel</button></div>`,()=>{
     $("stClrY").onclick=()=>{try{localStorage.removeItem(TKEY)}catch(e){}if(hTest){H.length=0}closeSheet();render();settingsSheet()};$("stClrN").onclick=closeSheet});
 }
 // Privacy policy and terms open on a page of their own inside the app; back comes back to settings
@@ -4580,7 +4580,7 @@ async function permSheet(){
   const row=(k,t,st)=>`<button class="prow" type="button" data-pm="${k}" data-st="${st}"><b>${t}</b>${lab(st)}<i class="chev">›</i></button>`;
   sheet(`<h3>Permissions</h3>
     <div class="plist">${row("loc","Location",loc)}${row("cam","Camera",cam)}${row("mic","Microphone",mic)}</div>
-    <div class="acts">${NATIVE?`<button class="btn" type="button" id="pmOpen">Open phone settings</button>`:""}<button class="btn line" type="button" id="pmBack">Back</button></div>`,()=>{
+    <div class="acts">${NATIVE?`<button class="btn" type="button" id="pmOpen">Open settings</button>`:""}<button class="btn line" type="button" id="pmBack">Done</button></div>`,()=>{
     const open=()=>openAppSettings().catch(err=>{anErr("SettingsOpen",(err&&err.message)||String(err),err&&err.stack);toast("Couldn't open settings. Go to Settings → Apps → Rooftop Roulette → Permissions.",5000)});
     if($("pmOpen"))$("pmOpen").onclick=open;
     $("pmBack").onclick=closeSheet;
