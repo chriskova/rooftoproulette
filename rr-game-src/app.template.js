@@ -4643,6 +4643,7 @@ function liveModeHTML(){if(!(FB_CFG||(typeof FAKE_CLOUD!=="undefined"&&FAKE_CLOU
   return `<div class="eyebrow" style="margin:14px 0 8px">Live crawls</div><div class="trow"><button class="btn sm ${on?"dark":""}" type="button" id="tLm1">Sam &amp; Jess</button><button class="btn sm ${on?"":"dark"}" type="button" id="tLm2">Two real phones</button></div>
   <p class="note" style="margin:8px 0 0">${on?"Host on this phone (signed in) and join from the other with Join on home. Both phones can stay in test mode. Test crawls stay off real tabs.":"Sam and Jess are simulated on this phone. Nothing gets sent."}</p>`}
 function liveModeBind(){[["tLm1",false],["tLm2",true]].forEach(([id,v])=>{const el=$(id);if(!el)return;el.onclick=()=>{if(!!S.testLive===v)return;
+  if(v){testGoReal(null);return}   // from Sam & Jess: their crawl ids are dropped, your crawl carries on
   if((S.game&&S.game.live)||S.follow){toast("Finish the live crawl first.",2500);return}S.testLive=v;save();location.reload()}})}
 function simHTML(){if(typeof testReal==="function"&&testReal())return "";const g=G(),mine=g&&g.started&&!g.ended,k=simLiveKey(),d=k&&SIM.docs[k],fh=d&&!d.ended&&simFriend(d.host);
   const b=(id,t)=>`<button class="btn sm dark" type="button" id="${id}">${t}</button>`;let r="";

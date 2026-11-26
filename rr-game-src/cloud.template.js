@@ -150,6 +150,13 @@ function simQuiet(){const k=simLiveKey();if(!k||!SIM.docs[k])return;SIM.quiet[k]
 
 // test mode simulates friends on this phone, unless two-phone mode is on: then live crawls go through the real backend
 const testReal=()=>!!(S.test&&S.testLive&&(FB_CFG||FAKE_CLOUD));
+// Test mode with Sam & Jess: crawl codes only exist on this phone, so a real phone can't join one. Scanning a real phone's
+// code, or tapping "Invite a real phone", switches this phone to two-phone mode and carries on after the reload.
+const testSimOn=()=>!!(S.test&&!testReal()&&(FB_CFG||FAKE_CLOUD));
+function testGoReal(next){const g=S.game;if(g&&g.live)delete g.live;[S.wiz,S.quick].forEach(w=>{if(w&&w.live)delete w.live});   // sim crawl ids mean nothing to the real backend
+  if(S.follow)S.follow=null;S.testLive=true;S.testNext=next;save();closeSheet();toast("Switching to two real phones…",1500);setTimeout(()=>location.reload(),400)}
+function testNextRun(){const n=S.testNext;if(!n||!testReal())return;S.testNext=null;save();
+  if(n.join)followLive(n.join);else if(n.invite&&G())setTimeout(liveInvite,600)}
 function cloud(){if(!CLP){CLP=(S.test&&!testReal()?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
 const myName=()=>(ME&&ME.name)||S.myName||"";
@@ -336,7 +343,9 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
   const sent=invParts.sent[id]||(invParts.sent[id]={});
   const row=mates.length?`<div class="frow">${mates.map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,mates.map(x=>x.n))||"Friend")}</span></button>`).join("")}</div>`:"";
   const qr=svg?`<div class="qrbox ${mates.length?"xs":"sm"}">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
-  return {html:row+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`,bind:root=>{
+  const real=testSimOn()?`<button class="btn line" type="button" data-iv="real" style="margin-top:8px">Test: invite a real phone</button><p class="note" style="margin:6px 0 0">This code only works for Sam and Jess. Switches to two real phones.</p>`:"";
+  return {html:row+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`+real,bind:root=>{
+    const rb=root.querySelector('[data-iv="real"]');if(rb)rb.onclick=()=>testGoReal({invite:1});
     root.querySelector('[data-iv="send"]').onclick=()=>{if(onAct)onAct();if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
@@ -395,6 +404,7 @@ function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn(
 async function previewFollow(){const g=G();if(!g||!g.started)return;try{await cloud();await startLive();await liveSync(true)}catch(e){console.warn(e)}closeSheet();openFollow(true);liveAttach()}
 // follower
 async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest app.",3000);return}
+  if(testSimOn()&&!/^SIM/.test(id)&&!(typeof SIM!=="undefined"&&SIM.docs[`live/${id}`])){testGoReal({join:id});return}
   if(S.game&&S.game.live===id){go("play");return}
   if(S.game&&S.game.started&&!S.game.ended){toast("Finish your own crawl first.",3000);return}
   if(!myName()){nameSheet(()=>followLive(id),"follow");return}   // so the host sees who's following, not "Friend"
@@ -673,7 +683,7 @@ function endSignInBind(){const b=$("siNudge");if(b)b.onclick=()=>{S.siNudged=tru
 function cloudBoot(){if(!(FB_CFG||FAKE_CLOUD))return;
   const lc=liveCode(location.hash)||liveCode(location.search);
   if(lc){history.replaceState(null,"",location.pathname+location.search.replace(/[?&]live=[A-Za-z0-9]+/,"").replace(/^&/,"?"))}
-  if(lc||S.follow||(S.game&&S.game.live)||localStorage.getItem("rr-synced")||ME){cloud().then(()=>{if(lc)followLive(lc);else if(S.follow)openFollow()}).catch(()=>{})}
+  if(lc||S.follow||(S.game&&S.game.live)||S.testNext||localStorage.getItem("rr-synced")||ME){cloud().then(()=>{if(lc)followLive(lc);else if(S.follow)openFollow();testNextRun()}).catch(()=>{})}
   else setTimeout(()=>cloud().catch(()=>{}),4000);
   if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.getLaunchUrl)CAPX.Plugins.App.getLaunchUrl().then(o=>{const c=liveCode(o&&o.url);if(c)cloud().then(()=>followLive(c))}).catch(()=>{});
   setInterval(()=>liveSync(false),5000);batteryWatch();paintPeople();homeLive();setTimeout(followMetaPull,3000)}
