@@ -512,11 +512,11 @@ async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liv
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
 // Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
 function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
-  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who}'s phone isn't responding`:st==="checking"?`Checking ${who}'s phone…`:`If ${who}'s phone dies`}</small></span></button>`}
+  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl${st==="gone"?`<small>${who}'s phone · Not responding</small>`:st==="checking"&&fmWant?`<small>${who}'s phone · Checking…</small>`:""}</span></button>`}
 let fmWant=false;
 function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
   if(st==="gone"){fmWant=false;takeOverSheet();return}
-  if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who}'s phone is still connected. Ask them to hand you the spin.`,3500);return}
+  if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who}'s phone is connected.<br>Ask ${who} for the spin.`,3500);return}
   if(st==="ok")pingHost();fmWant=true}   // checking (or a fresh check): the row carries on once it hears back
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
   if(!mine&&d&&!d.ended&&Date.now()-fmPing>10000)pingHost();
