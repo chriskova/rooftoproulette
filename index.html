@@ -196,7 +196,7 @@ f.addEventListener("submit",async function(e){e.preventDefault();err.textContent
     if(r.ok)return done(false);
     if(r.status===409)return done(true);
     throw new Error(r.status)}
-  catch(x){err.textContent="Didn't go through. Try again.";go.disabled=false;go.textContent="Notify me"}});
+  catch(x){err.textContent="Didn't go through. Try again.";go.disabled=false;go.textContent="Be first to know"}});
 $("share").addEventListener("click",async function(){var d={title:"Rooftop Roulette",text:"Rooftop Roulette",url:SHARE};
   try{if(navigator.share){await navigator.share(d);return}}catch(e){if(e&&e.name==="AbortError")return}
   try{await navigator.clipboard.writeText(SHARE);$("share").textContent="Link copied"}catch(e){prompt("Copy the link",SHARE)}});
