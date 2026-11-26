@@ -294,9 +294,15 @@ function startDemo(){if(S.game)return;ac();clearInactiveZoneSetup();
   const ov=document.createElement("div");ov.className="mapfull demozone";document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add("on"));
   const drop=()=>{if(rrMap){try{rrMap.remove()}catch(e){}rrMap=null}};
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{drop();ov.remove()},220)};
-  zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the practice crawl",back:"Cancel"});
+  // the same panel as a real crawl's setup: drag it up (or tap See list) for the rooftops in the circle, behind the same spoiler question.
+  // Every rooftop counts as open in practice, so the list is everything in the circle.
+  let cur=z,spoiled=false;
+  const list=()=>{const L=pool(cur).all.slice().sort((a,c)=>dist(cur,a)-dist(cur,c));
+    return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your zone`,html:`<div class="card zlist">${L.map(v=>`<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)}</small></button><span class="zd">${mOrKm(dist(cur,v))}</span></div>`).join("")}</div>`,
+      bind(root){root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))},gate:()=>!spoiled,ungate:()=>{spoiled=true}}};
+  zonePanel(ov,{range,title:"Pick your zone",sub:"A 1-hour practice run.",go:"Start the practice crawl",back:"Cancel",list});
   $("mvX").onclick=close;
-  rrZoneBind(z,null,()=>false,(P,zz)=>{const n=P.all.length,b=$("mvGo");if(!b)return;
+  rrZoneBind(z,null,()=>false,(P,zz)=>{cur=zz;const n=P.all.length,b=$("mvGo");if(!b)return;
     $("mvNote").textContent=n<2?"Not enough rooftops here. Try somewhere busier.":"Every rooftop's open in a practice crawl, whatever the time.";
     b.disabled=n<2;b.onclick=()=>{ov.remove();drop();startDemoAt({lat:zz.lat,lng:zz.lng},zz.r)}},{...range,pool})}
 function startDemoAt(st,r){if(S.game)return;const c=CITIES.filter(x=>x.live).map(x=>({x,d:dist(st,x)})).sort((a,b)=>a.d-b.d)[0],city=c?c.x.name:"Sydney";S.city=city;
@@ -991,7 +997,8 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   let lastP=null,cardAt=0;
   ["pointerdown","touchstart","mousedown","wheel","dblclick"].forEach(ev=>card.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));swipeHide(card);
   // the bars in the circle, in a panel from the bottom like everything else
-  $("rrNB").onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
+  // (a full-screen setup panel with its own list keeps its See list: it opens the panel's list, not this sheet)
+  {const nb0=$("rrNB");if(!(nb0&&nb0.classList.contains("fspill")))nb0.onclick=()=>{if(!lastP)return;if(o&&o.listSheet){o.listSheet(lastP);return}const t=now(),y=me||you(),back=inSheet&&o&&o.reopen;
     const L=lastP.all.slice().sort((a,b)=>(openOK(b,t)?1:0)-(openOK(a,t)?1:0)||(y?dist(y,a)-dist(y,b):a.name.localeCompare(b.name)));
     const sk=o&&o.skip&&o.skip.show()?`<button class="toggle" type="button" id="mlSkip" role="switch" aria-checked="${!!o.skip.get()}" style="margin:4px 0 10px"><span class="t"><b>Skip visited rooftops${o.skip.n&&o.skip.n()?` <span class="skn">${o.skip.n()}</span>`:""}</b></span><span class="sw"></span></button>`:"";
     sheet(`<h3>${lastP.open.length} open in your circle</h3><p class="note" style="margin:2px 0 8px">${esc($("rrLbl").textContent)}</p>${sk}
@@ -999,7 +1006,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
       <button class="btn dark" type="button" id="mlBack" style="margin-top:14px">${back?"Back to the map":"Close"}</button>`,()=>{
       $("sheetBody").querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>barSheet(byId(b.dataset.v)));
       $("mlBack").onclick=()=>{if(back)back(z);else closeSheet()};
-      if($("mlSkip"))$("mlSkip").onclick=()=>{o.skip.set(!o.skip.get());paint(true);$("rrNB").onclick()}})};
+      if($("mlSkip"))$("mlSkip").onclick=()=>{o.skip.set(!o.skip.get());paint(true);$("rrNB").onclick()}})}};
   {const q=sfield($("rrQ")),res=$("rrRes");
     ["pointerdown","touchstart","mousedown","dblclick","wheel"].forEach(ev=>[q.parentNode,res].forEach(x=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true})));
     const show=()=>{const t=fold(q.value.trim());if(!t){res.hidden=true;return}
@@ -1416,7 +1423,7 @@ function zonePanel(ov,o){
   ov.innerHTML=`<div class="mf-move">${rrZoneHTML(o.range)}<div class="mvhead"><h1 class="q">${o.title}</h1>${o.sub?`<p class="sub">${o.sub}</p>`:""}</div><p class="note mvnote" id="mvNote"></p>
     <div class="wtop"><button class="iconbtn" id="mvX" type="button" aria-label="${o.back||"Back"}">${I.back}</button></div></div>
     <div class="cta mvcta"><button class="btn" type="button" id="mvGo">${o.go}</button></div>`;
-  const v=ov.querySelector(".mf-move");fsLayout(v,v,{list:false});
+  const v=ov.querySelector(".mf-move");if(o.list)v._fsList=o.list;fsLayout(v,v,{list:!!o.list});
   const m=v.querySelectorAll(".fspanel .fsctl .fsmore");(m[m.length-1]||v.querySelector(".fsctl")).append($("mvNote"));return v}
 function fsOpts(){const panel=document.querySelector(".fsv .fspanel");if(!panel)return;const o=document.createElement("div");o.className="fsopts";
   const hl=$("qHL");if(hl){const v=hl.firstChild&&hl.firstChild.nodeType===3?hl.firstChild.textContent:"";hl.className="fsopt fsdrop";hl.innerHTML=`<span class="l">Spin from</span><b>${esc(v)}</b><svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;o.append(hl)}
