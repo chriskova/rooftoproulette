@@ -95,17 +95,8 @@ footer a{color:var(--muted);text-decoration:none}
   .kick{font-size:13px;margin-bottom:20px}
   .brand{font-size:min(clamp(96px,9.4vw,144px),15.5vh);letter-spacing:.03em}
   .line{font-size:clamp(22px,1.9vw,26px);margin-top:24px;font-weight:700}
-  /* signup on one row: email, phone, button */
-  form{margin-top:clamp(32px,5vh,52px);padding-top:0;flex-direction:row;flex-wrap:wrap;align-items:stretch;gap:10px;max-width:620px}
-  input[type=email]{flex:1 1 200px;min-width:0;width:auto;height:58px}
-  .lbl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .phones{display:flex;gap:0;padding:5px;border:1.5px solid var(--line);border-radius:16px;background:var(--s1);height:58px}
-  .phones span{height:100%;padding:0 16px;border:0;border-radius:11px;background:transparent;font-size:15px}
-  .phones label+label{border-left:1.5px solid var(--line);margin-left:4px;padding-left:4px}
-  .phones label:has(input:checked),.phones label:has(input:checked)+label{border-left-color:transparent}
-  .phones input:checked+span{background:var(--amber-soft);box-shadow:inset 0 0 0 1.5px var(--amber)}
-  .err{order:5;flex-basis:100%;text-align:left;margin:2px 2px 0}
-  .btn{width:auto;flex:0 0 auto;padding:0 28px;height:58px;margin:0}
+  /* signup stacked like the phone version */
+  form{margin-top:clamp(32px,5vh,52px);padding-top:0;max-width:440px}
   /* the app on a phone */
   .device{display:block;position:relative;margin:0;z-index:0;width:min(350px,calc((100vh - 110px) * .462))}
   .phone{position:relative;z-index:1;border-radius:50px;padding:11px;background:#15120E;
@@ -114,16 +105,11 @@ footer a{color:var(--muted);text-decoration:none}
   footer{grid-column:1/-1;margin-top:0;padding-top:18px;border-top:1px solid var(--line)}
   /* signed up: keep everything, swap the form for the confirmation */
   body.sent{overflow:auto}
-  body.sent main{height:auto;min-height:0}
+  body.sent main{height:auto;min-height:100vh}
   body.sent .lead>.kick,body.sent .lead>.line,body.sent .lead>.brand{display:block}
   body.sent footer{display:flex}
   body.sent .done{margin:clamp(32px,5vh,52px) 0 0;padding:0;text-align:left;align-items:flex-start}
-  body.sent .done .btn{padding:0 28px}
-}
-/* narrower desktops: email on its own row, phone choice and button underneath */
-@media (min-width:960px) and (max-width:1199px) and (min-height:600px){
-  input[type=email]{flex-basis:100%}
-  .btn{flex:1 1 auto}
+  body.sent .done{max-width:440px;width:100%}
 }
 @media (min-width:960px) and (min-height:600px) and (prefers-color-scheme:dark){
   .phone{background:#1A1E26;box-shadow:0 0 0 1.5px rgba(255,255,255,.14),0 50px 90px -28px rgba(0,0,0,.8)}
@@ -157,7 +143,7 @@ footer a{color:var(--muted);text-decoration:none}
  </div>
 
   <figure class="device" aria-hidden="true">
-    <div class="phone"><img src="img/spin.jpg" alt="" width="780" height="1618" loading="lazy"></div>
+    <div class="phone"><picture><source srcset="img/spin-dark.jpg" media="(prefers-color-scheme: dark)"><img src="img/spin.jpg" alt="" width="780" height="1618" loading="lazy"></picture></div>
   </figure>
 
 
