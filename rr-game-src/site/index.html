@@ -85,8 +85,8 @@ footer a{color:var(--muted);text-decoration:none}
 @media (min-width:960px) and (min-height:600px){
   /* the faded pin: big, behind the name, running off the left edge (the phone version runs off the right) */
   .bg{position:fixed;inset:0;overflow:hidden}
-  /* the faded pin: big, from the bottom-left corner, just its tip running off the bottom; the app's amber glow top left */
-  .bg{background:radial-gradient(60% 55% at 0% 0%,rgba(245,184,61,.22),transparent 70%)}
+  /* the faded pin: big, from the bottom-left corner, just its tip running off the bottom; the app's amber glow (top right, fainter top left) */
+  .bg{background:radial-gradient(70% 55% at 85% 0%,rgba(245,184,61,.24),transparent 70%),radial-gradient(55% 45% at 0% 0%,rgba(245,184,61,.1),transparent 70%)}
   .pin{right:auto;top:auto;left:-9vh;bottom:-6vh;height:94vh}
   main{max-width:1200px;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(56px,7vw,120px);align-items:center;
     padding:0 64px 28px;min-height:0}
