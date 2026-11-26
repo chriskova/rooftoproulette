@@ -83,33 +83,41 @@ footer a{color:var(--muted);text-decoration:none}
 .device{display:none}
 /* desktop */
 @media (min-width:960px) and (min-height:600px){
-  /* the faded pin: big, behind the name, running off the left edge (the phone version runs off the right) */
-  .bg{position:fixed;inset:0;overflow:hidden}
-  /* the faded pin: big, from the bottom-left corner, just its tip running off the bottom; the app's amber glow (top right, fainter top left) */
-  .bg{background:radial-gradient(70% 55% at 85% 0%,rgba(245,184,61,.24),transparent 70%),radial-gradient(55% 45% at 0% 0%,rgba(245,184,61,.1),transparent 70%)}
-  .pin{right:auto;top:auto;left:-9vh;bottom:-6vh;height:94vh}
-  main{max-width:1200px;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:clamp(56px,7vw,120px);align-items:center;
-    padding:0 64px 28px;min-height:0}
-  main{min-height:100vh;grid-template-rows:1fr auto}
-  .lead{display:flex;flex-direction:column;justify-content:center;padding:40px 0;max-width:620px}
-  .kick{font-size:13px;margin-bottom:20px}
-  .brand{font-size:min(clamp(96px,9.4vw,144px),15.5vh);letter-spacing:.03em}
-  .line{font-size:clamp(22px,1.9vw,26px);margin-top:24px;font-weight:700}
+  /* Desktop. The whole layout is sized off the screen's height (--u = 1% of it, capped at 12px, i.e. screens up to
+     1200px tall), so it looks the same on every desktop: "Early access" and the top of the phone line up 9% down,
+     the phone always shows about three quarters of itself before running off the bottom, and the pin always tucks
+     60px under the phone's left edge. On taller screens than that everything stops growing. */
+  :root{--u:min(1vh,12px);--top:calc(var(--u) * 9);--pw:calc(var(--u) * 57);--col:calc(var(--u) * 52);--gap:calc(var(--u) * 9);
+    --left:max(56px,calc(var(--u) * 16),calc((100vw - var(--u) * 140) / 2))}
+  .bg{position:fixed;inset:0;overflow:hidden;
+    background:radial-gradient(70% 55% at 85% 0%,rgba(245,184,61,.24),transparent 70%),radial-gradient(55% 45% at 0% 0%,rgba(245,184,61,.1),transparent 70%)}
+  /* the faded pin comes up from the bottom-left corner, its tip just running off the bottom, right edge 60px under the phone */
+  .pin{--w:calc(var(--left) + var(--col) + var(--gap) + 60px + 2vh);right:auto;top:auto;left:-2vh;width:var(--w);height:auto;bottom:calc(var(--w) * -.075)}
+  main{max-width:none;margin:0;height:100vh;display:grid;grid-template-columns:var(--col) var(--pw);grid-template-rows:1fr auto;column-gap:var(--gap);
+    justify-content:start;padding:var(--top) 0 calc(var(--u) * 3) var(--left);overflow:hidden}
+  .lead{display:flex;flex-direction:column;align-self:start;padding:0;max-width:none}
+  .kick{font-size:calc(var(--u) * 1.45);line-height:1;margin:0 0 calc(var(--u) * 2.2)}
+  .brand{font-size:calc(var(--u) * 15);letter-spacing:.03em}
+  .line{font-size:calc(var(--u) * 2.6);margin-top:calc(var(--u) * 2.6);font-weight:700}
   /* signup stacked like the phone version */
-  form{margin-top:clamp(32px,5vh,52px);padding-top:0;max-width:440px}
-  /* the app on a phone */
-  .device{display:block;position:relative;margin:0;z-index:0;width:min(350px,calc((100vh - 110px) * .462))}
-  .phone{position:relative;z-index:1;border-radius:50px;padding:11px;background:#15120E;
+  form{margin-top:calc(var(--u) * 5.5);padding-top:0;width:calc(var(--u) * 49);max-width:100%}
+  /* the app on a phone, top lined up with "Early access", running off the bottom of the screen */
+  .device{display:block;position:relative;z-index:0;margin:0;grid-row:1/3;grid-column:2;align-self:start;width:var(--pw)}
+  .phone{position:relative;z-index:1;border-radius:calc(var(--pw) * .1);padding:calc(var(--pw) * .022);background:#15120E;
     box-shadow:0 0 0 1px rgba(0,0,0,.08),0 50px 90px -28px rgba(40,26,6,.5),0 18px 36px -18px rgba(40,26,6,.35)}
-  .phone img{display:block;width:100%;height:auto;border-radius:40px}
-  footer{grid-column:1/-1;margin-top:0;padding-top:18px;border-top:1px solid var(--line)}
+  .phone img{display:block;width:100%;height:auto;border-radius:calc(var(--pw) * .078)}
+  footer{grid-column:1;align-self:end;margin-top:0;padding:18px 0 0;width:calc(var(--u) * 49)}
+  /* the signup controls grow with the rest */
+  input[type=email],.btn{height:max(50px,calc(var(--u) * 6.2));font-size:max(16px,calc(var(--u) * 1.8))}
+  .phones span{height:max(48px,calc(var(--u) * 5.8));font-size:max(15px,calc(var(--u) * 1.75))}
+  .lbl{font-size:max(13px,calc(var(--u) * 1.45))}
+  form{gap:max(10px,calc(var(--u) * 1.3))}
   /* signed up: keep everything, swap the form for the confirmation */
-  body.sent{overflow:auto}
-  body.sent main{height:auto;min-height:100vh}
+  body.sent{overflow:hidden}
+  body.sent main{height:100vh;min-height:0}
   body.sent .lead>.kick,body.sent .lead>.line,body.sent .lead>.brand{display:block}
   body.sent footer{display:flex}
-  body.sent .done{margin:clamp(32px,5vh,52px) 0 0;padding:0;text-align:left;align-items:flex-start}
-  body.sent .done{max-width:440px;width:100%}
+  body.sent .done{margin:calc(var(--u) * 5.5) 0 0;padding:0;text-align:left;align-items:flex-start;width:calc(var(--u) * 49)}
 }
 @media (min-width:960px) and (min-height:600px) and (prefers-color-scheme:dark){
   .phone{background:#1A1E26;box-shadow:0 0 0 1.5px rgba(255,255,255,.14),0 50px 90px -28px rgba(0,0,0,.8)}
