@@ -104,6 +104,8 @@ function simTick(){const B=SIM.B;if(!B)return;
   SIMF.forEach(f=>Object.keys(SIM.docs).filter(k=>k.startsWith(`users/${f.uid}/invites/`)).forEach(k=>{B.del(k);simJoin(k.split("/").pop(),f)}));
   // their crawl moves only when you move it from the test panel; their phone still checks in so it doesn't look gone
   Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(d&&!d.ended&&simFriend(d.host)&&!SIM.quiet[k]&&Date.now()-(d.beat||0)>60000)B.set(k,{beat:Date.now()},true)});
+  // and answers "are you there?" from a follower's menu, the way a real phone does (not once it's been made to go quiet)
+  Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host)||SIM.quiet[k])return;const P=hostPongs(d);if(P)B.set(k,{pongs:P,beat:Date.now()},true)});
   // and their bar counts once they've been there 3 minutes, the way it does on a real phone
   Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host))return;let g;try{g=JSON.parse(d.g)}catch(e){return}const a=(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
     if(a&&!a._inCount&&Date.now()+(d.off||0)-a.arrivedAt>=DWELL_MIN*60000)simAct(k,()=>{})})}
@@ -404,7 +406,10 @@ function onLive(id,d){
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
   if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
   if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
-  if(g&&g.live===id)paintMembers(d,id)}
+  if(g&&g.live===id){paintMembers(d,id);if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
+// A follower opening the menu asks "are you there?" (their member entry gets a ping time). The host's phone answers
+// straight away by echoing it back. No answer within a few seconds and that follower can take over the crawl.
+function hostPongs(d){const P=Object.assign({},d.pongs||{});let ch=false;Object.entries(d.members||{}).forEach(([u,m])=>{if(m&&m.ping&&P[u]!==m.ping){P[u]=m.ping;ch=true}});return ch?P:null}
 let memSeen=null;
 function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
   memSeen={id,s:new Set(ids)};
@@ -493,14 +498,30 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
 // the follower's menu: the same sheet as the host's, with only what a follower can do
+const PING_WAIT=5000;
+let fmPing=0;
+// where the host's phone stands for this follower: answering, being checked, or not answering
+function hostReach(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
+  if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
+  if(fmPing&&(!m||m.ping!==fmPing))return Date.now()-fmPing<PING_WAIT?"checking":"ok";   // this phone's ask hasn't reached the crawl yet (or this phone's offline)
+  if(!m||!m.ping)return "ok";if((d.pongs||{})[me]===m.ping)return "ok";return Date.now()-m.ping>PING_WAIT?"gone":"checking"}
+async function pingHost(){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liveDoc||!(liveDoc.members||{})[me])return;fmPing=Date.now();
+  try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
+function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
+  return `<button type="button" id="fmTake" ${st==="gone"?"":"disabled"} class="${st==="gone"?"":"off"}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who}'s phone isn't responding`:st==="checking"?`Checking ${who}'s phone…`:`${who}'s phone is responding`}</small></span></button>`}
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
+  if(!mine&&d&&!d.ended)pingHost();
   sheet(`<h3>Menu</h3><div class="menu">
+    ${mine||!d||d.ended?"":`<div id="fmTakeW">${fmTakeHTML(d)}</div>`}
     <button type="button" id="fmHow">${I.help}<span>How it works</span></button>
     <button type="button" id="fmSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
     ${mine?"":`<button type="button" class="danger" id="fmLeave">${I.flag}<span>Stop following<small>Stop seeing ${esc(who)}'s spins and timer</small></span></button>`}
   </div>`,()=>{
     $("fmHow").onclick=()=>{let g={};try{g=JSON.parse(d.g)}catch(e){}(g.mode==="cruise"?cruiseHow:howSheet)()};
     $("fmSound").onclick=()=>{S.sound=!S.sound;save();followMenu()};
+    // the take-over row updates itself while the menu's open: checking → responding, or checking → not responding
+    const W=$("fmTakeW");if(W){const bind=()=>{const b=$("fmTake");if(b)b.onclick=()=>{if(hostReach(liveDoc)==="gone")takeOverSheet()}};bind();
+      const iv=setInterval(()=>{if(!document.contains(W)||!$("sheet").open){clearInterval(iv);return}const h=fmTakeHTML(liveDoc);if(W._h!==h){W._h=h;W.innerHTML=h;bind()}},250)}
     if($("fmLeave"))$("fmLeave").onclick=()=>sheet(`<h3>Stop following?</h3><p class="note">This crawl won't go on your tab.</p>
       <div class="acts"><button class="btn" type="button" id="flY" style="background:var(--red);color:#fff">Stop following</button><button class="btn dark" type="button" id="flN">Keep following</button></div>`,()=>{
       $("flN").onclick=closeSheet;$("flY").onclick=()=>{closeSheet();leaveFollow();go("home")}})})}
@@ -591,10 +612,14 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="stale"?`<p>Can't reach ${esc(nFirst(d.hostName)||"the spinner")}'s phone.</p><button class="btn" type="button" id="fvTake">Take over the spin</button>`
       :want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
-    if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOver;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
+    if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOverSheet;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
+function takeOverSheet(){const who=esc(fvHost(liveDoc));
+  sheet(`<h3>Take over the crawl?</h3><p class="note">${who}'s phone isn't responding. You'll have the spin and the clock, and everyone following moves to your phone.</p>
+    <div class="acts"><button class="btn" type="button" id="toY">Take over</button><button class="btn dark" type="button" id="toN">Cancel</button></div>`,()=>{
+    $("toN").onclick=closeSheet;$("toY").onclick=()=>{closeSheet();takeOver()}})}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
-  try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||Date.now()-(d.beat||0)<=STALE_MS)return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
+  try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||hostReach(d)!=="gone")return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
     m[d.host]={n:d.hostName||"",j:(me&&me.j)||Date.now(),b:0,was:1};
     return Object.assign({},d,{host:ME.uid,hostName:crawlName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
   if(!ok){toast("Someone else got there first.",2500);return}track("live_takeover")}

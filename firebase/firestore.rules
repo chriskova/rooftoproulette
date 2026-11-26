@@ -26,7 +26,8 @@ service cloud.firestore {
         && request.resource.data.get('src','') is string && request.resource.data.get('src','').size() < 40;
     }
     // live crawls: anyone with the link (a random id) reads; the spinner writes the crawl;
-    // followers can only add themselves, take over when the spinner's gone quiet for 5 minutes, or be handed the spin
+    // followers can only add themselves (and ping the spinner from their own entry), take over when the spinner's
+    // gone quiet for 2.5 minutes or hasn't answered their ping for 4 seconds, or be handed the spin
     match /live/{id} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.host == request.auth.uid && request.resource.data.g.size() < 200000;
@@ -34,7 +35,12 @@ service cloud.firestore {
         resource.data.host == request.auth.uid
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
             && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]))
-        || (request.resource.data.host == request.auth.uid && request.time.toMillis() - resource.data.beat > 300000
+        || (request.resource.data.host == request.auth.uid && request.time.toMillis() - resource.data.beat > 150000
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['host','hostName','beat','prevHost','members']))
+        || (request.resource.data.host == request.auth.uid
+            && resource.data.members[request.auth.uid].get('ping', 0) > 0
+            && resource.data.get('pongs', {}).get(request.auth.uid, 0) != resource.data.members[request.auth.uid].ping
+            && request.time.toMillis() - resource.data.members[request.auth.uid].ping > 4000
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['host','hostName','beat','prevHost','members']))
       );
     }
