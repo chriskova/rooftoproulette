@@ -4119,15 +4119,15 @@ function renderBars(){tickOff();
     pins=others.map(v=>({v,cls:os(v).open?"":"off"}));
   }else if(f==="been"){
     const list=VENUES.filter(v=>{const s=barStatus(v,c);return s==="col"||s==="been"}).sort(sortD);
-    intro=`Rooftops you've visited in a game or marked as been before. Turn on <b>New rooftops only</b> when you set up a crawl and these get skipped.`;
+    intro=`Rooftops you've been to. Turn on <b>Skip visited rooftops</b> when you set up and they won't come up.`;
     rows=list.map(v=>rowHTML(v,os(v),barStatus(v,c),y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "Been here before".</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "Visited".</div>`];
     pins=list.map(v=>({v,cls:"done"}));
   }else if(f==="nfu"){
     const list=VENUES.filter(v=>S.nfu[v.id]).sort(sortD);
-    intro=`Rooftops you'd never go to. These never come up in a spin. Tap one to bring it back.`;
+    intro=`Rooftops to leave out of R&amp;R. Tap one to bring it back.`;
     rows=list.map(v=>rowHTML(v,os(v),"nfu",y));
-    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">No rooftops hidden. If there's a rooftop you'd never go to, tap it in another tab and switch on "Pass".</div>`];
+    if(!rows.length)rows=[`<div class="empty" style="padding:22px 8px">Nothing here yet. Tap any rooftop in another tab and switch on "Pass".</div>`];
     pins=list.map(v=>({v,cls:"off"}));
   }else{
     const rg=S.barsRegion||"all";
@@ -4181,9 +4181,9 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
       ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this rooftop of the day</button>`:""}
-      ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Been here before</b><small>Leave out of "New rooftops only"</small></span><span class="sw"></span></button>`}
-      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Add to rooftops you want to try</small></span><span class="sw"></span></button>`}
-      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Leave out of R&amp;R</small></span><span class="sw"></span></button>
+      ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Visited</b><small>Rooftops you've been to</small></span><span class="sw"></span></button>`}
+      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Rooftops you want to try</small></span><span class="sw"></span></button>`}
+      <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Rooftops to leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
     $("rpBar").onclick=()=>{track("report_change");const sub=encodeURIComponent(`${v.name}: info update`),body=encodeURIComponent(`Bar: ${v.name} (${v.id})\nWhat's changed:\n\n`);location.href=`mailto:hello@rooftoproulette.com?subject=${sub}&body=${body}`};bindSheetCard(v,bf);bindVisits();
@@ -4231,7 +4231,7 @@ function listSheet(k,msg,after){
   const c=collectedMap();
   const L={want:{t:"Hit list",d:"Rooftops you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
     been:{t:"Visited",d:"Rooftops you've been to before. Turn on <b>Skip visited rooftops</b> when you set up and they won't come up."},
-    nfu:{t:"Pass",d:"Rooftops you'd never go to. These never come up in R&amp;R."},
+    nfu:{t:"Pass",d:"Rooftops to leave out of R&amp;R."},
     fav:{t:"Favourites",d:"Rooftops you love. Tap the heart on any rooftop to add it here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been"){S.been[id]=1;delete S.want[id]}else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
