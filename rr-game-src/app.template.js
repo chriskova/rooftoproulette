@@ -3004,7 +3004,7 @@ function renderPlay0(){
     const ts=deckCardsOf(dk),nP=ts.filter(t=>pl[t]).length,more=PACKS.some(p=>!packOwned(p.id));
     const reopen=()=>w.click();
     sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>
-      ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"All "+ts.length+" played":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
+      ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"Complete":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
       ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard decks <span class="chev">›</span></button>`:""}`}
       <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
       $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=deckSheet})});
@@ -3278,7 +3278,7 @@ function packToPile(){S[WK("wbag")]=[]}   // a new deck joins the turns straight
   S.wplayed=real;delete S.wpile;S.wbag=[];S.twbag=[];S.wfinished=WILDS.every(t=>real[t]);S.wfix1=1;save()}catch(e){}})();
 // My Tab: under the headline stats
 function deckCardHTML(){const pl=WP(),own=PACKS.filter(p=>packOwned(p.id)),cards=WILDS.concat(...own.map(p=>p.cards.map(c=>c.t))),n=cards.filter(t=>pl[t]).length,tot=cards.length,done=n>=tot;
-  return `<button class="deckcard" type="button" id="hDeck"><span class="dk-l"><small>Wildcards</small><b>${done?(own.length?"All played":BASE_DECK+" done"):n+" of "+tot+" played"}</b><span class="dk-bar"><i style="width:${Math.round(n/tot*100)}%"></i></span></span><span class="dk-fan">${[0,1,2].map(()=>`<span class="dk-back">${I.sparkle}</span>`).join("")}</span><span class="chev">›</span></button>`}
+  return `<button class="deckcard" type="button" id="hDeck"><span class="dk-l"><small>Wildcards</small><b>${done?(own.length?"All decks":BASE_DECK)+" · Complete":n+" of "+tot+" played"}</b>${done?"":`<span class="dk-bar"><i style="width:${Math.round(n/tot*100)}%"></i></span>`}</span><span class="dk-fan">${[0,1,2].map(()=>`<span class="dk-back">${I.sparkle}</span>`).join("")}</span><span class="chev">›</span></button>`}
 const PACK_PITCH={house:"Rules that hit the whole table",spin:"A second spin decides the round"};
 // The deck screen: your free deck, then the packs and what each one adds
 function wFace(t){const ic=WMETA[t]?WMETA[t].ic:(WNAME[t]||["Wildcard","star"])[1];return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[ic]||WIC.star}</svg>`}
@@ -3312,16 +3312,16 @@ const deckName=id=>id==="free"?BASE_DECK:packById(id).name;
 function deckView(id,back){const pl=WP(),ts=deckCardsOf(id),k=ts.filter(t=>pl[t]).length,face=wFace;
   const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc(wNm(t))}</span></button>`:`<span class="dk-card down">${deckLogo(id)}</span>`;
   sheet(`<div class="dk-vhead"><span class="dk-logo">${deckLogo(id)}</span><h3>${esc(deckName(id))}</h3></div>
-    <div class="dk-head"><span class="eyebrow">Cards</span><span class="dk-n">${k>=ts.length?"All "+ts.length+" played":k+" of "+ts.length+" played"}</span></div><div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>
+    <div class="dk-head"><span class="eyebrow">Cards</span><span class="dk-n">${k>=ts.length?"Complete":k+" of "+ts.length+" played"}</span></div>${k>=ts.length?"":`<div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>`}
     <div class="dk-grid">${ts.map(mini).join("")}</div>
     <div class="acts" style="margin-top:16px"><button class="btn line" type="button" id="dvBack">${back?"Back":"Done"}</button></div>`,()=>{
     $("sheet").classList.add("tq");
-    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;const wh=wWhere(t);sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?wLead(WMETA[t]):t)}</span></div>${wh.length?`<div class="eyebrow" style="margin-top:16px">Played</div><div class="wwhere">${wh.map(x=>{const v=x.id&&byId(x.id);return `<div><b>${esc(v?v.name:"Rooftop not recorded")}</b><span>${esc(dateTxt(x.at))}</span></div>`}).join("")}</div>`:""}<div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=()=>deckView(id,back))});
+    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;const wh=wWhere(t);sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?wLead(WMETA[t]):t)}</span></div>${wh.length?`<div class="eyebrow" style="margin-top:var(--gap-section)">Played</div><div class="wwhere">${wh.map(x=>{const v=x.id&&byId(x.id);return `<div><b>${esc(v?v.name:"Rooftop not recorded")}</b><span>${esc(dateTxt(x.at))}</span></div>`}).join("")}</div>`:""}<div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=()=>deckView(id,back))});
     $("dvBack").onclick=()=>{if(back)back();else closeSheet()}})}
 // your decks as rows: the deck's mark, name and how much you've played; a switch on the right once you own a pack
 function deckSwHTML(){const pl=WP(),own=anyOwned();
   const row=(k,on)=>{const ts=deckCardsOf(k),n=ts.filter(t=>pl[t]).length;
-    return `<div class="dk-row${own&&on?" on":""}"><button class="dk-open" type="button" data-dv="${k}"><span class="dk-logo">${deckLogo(k)}</span><span class="t"><b>${esc(deckName(k))}</b><small>${n>=ts.length?"All "+ts.length+" played":n+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button>${own?`<button class="dk-sw" type="button" role="switch" data-dk="${k}" aria-checked="${on}" aria-label="${esc(deckName(k))} in play"><span class="sw"></span></button>`:""}</div>`};
+    return `<div class="dk-row${own&&on?" on":""}"><button class="dk-open" type="button" data-dv="${k}"><span class="dk-logo">${deckLogo(k)}</span><span class="t"><b>${esc(deckName(k))}</b><small>${n>=ts.length?"Complete":n+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button>${own?`<button class="dk-sw" type="button" role="switch" data-dk="${k}" aria-checked="${on}" aria-label="${esc(deckName(k))} in play"><span class="sw"></span></button>`:""}</div>`};
   return `<div class="dk-on">${row("free",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>row(p.id,packOn(p.id))).join("")}</div>`}
 function bindDeckSw(root,after,back){root.querySelectorAll("[data-dv]").forEach(b=>b.onclick=()=>deckView(b.dataset.dv,back));
   root.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
@@ -3336,8 +3336,8 @@ function afterBuy(id,back){const p=packById(id),g=G();
     $("abMix").onclick=()=>{delete S.freeOff;if(S.packOff)delete S.packOff[id];if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)};
     $("abOnly").onclick=()=>{S.freeOff=true;S.packOff={};PACKS.forEach(q=>{if(q.id!==id)S.packOff[q.id]=true});if(g)g.wdeck=null;save();refreshDeckLbl();packSheet(id,back)}})}
 // the day after, on the recap: where your deck's at, once per crawl
-function recapDeck(r){if(r.demo||r.deckAsked||!H.length)return "";const n=freePlayed(),tot=WILDS.length;if(n>=tot&&PACKS.every(p=>packOwned(p.id)))return "";
-  return `<button class="sinudge" type="button" id="rcDeck">${I.sparkle}<span><b>${n>=tot?BASE_DECK+" done":"Wildcards: "+n+" of "+tot+" played"}</b><small>${n>=tot?"Two decks to add when you're ready":(tot-n)+" you haven't had yet"}</small></span></button>`}
+function recapDeck(r){if(r.demo||r.deckAsked||!H.length)return "";const n=freePlayed(),tot=WILDS.length;if(n>=tot)return "";
+  return `<button class="sinudge" type="button" id="rcDeck">${I.sparkle}<span><b>${"Wildcards: "+n+" of "+tot+" played"}</b><small>${(tot-n)+" you haven't had yet"}</small></span></button>`}
 // My Tab: your packs, then the ones you could add
 function tabPacksHTML(){return `<div class="eyebrow hsec">Wildcard decks</div><div class="recs">${PACKS.map(p=>{const own=packOwned(p.id),pl=WP(),n=p.cards.filter(c=>pl[c.t]).length;
   return `<button class="rec" type="button" data-tpk="${p.id}"><span class="t"><small>${own?(packOn(p.id)?"In play":"Switched off"):p.cards.length+" wildcards"}</small><span>${esc(p.name)}</span></span><b>${own?n+"/"+p.cards.length:"Preview"}</b><span class="chev">›</span></button>`}).join("")}</div>`}
