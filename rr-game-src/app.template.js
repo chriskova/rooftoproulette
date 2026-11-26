@@ -4479,7 +4479,7 @@ function settingsSheet(){
     ${grp("Appearance",[`<div class="strow stseg"><div class="seg" id="stTheme">${[["auto","Auto"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-th="${k}" aria-pressed="${(S.theme||"auto")===k}">${l}</button>`).join("")}</div></div>`])}
     ${ISIOS?grp("Directions",[`<div class="strow stseg"><div class="seg" id="stMaps">${[["apple","Apple Maps"],["google","Google Maps"]].map(([k,l])=>`<button type="button" data-mp="${k}" aria-pressed="${(S.maps==="google"?"google":"apple")===k}">${l}</button>`).join("")}</div></div>`]):""}
     ${grp("Sound and vibration",[tg("stSound",S.sound,"Sound"),tg("stVib",S.vib!==false,"Vibration")])}
-    ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Clips on this phone","")])}
+    ${grp("Photos and clips",[tg("stFilm",S.film!==false,"Creator mode","Enables spin recordings during your crawl"),NATIVE?tg("stGal",S.clipAuto!==false,"Save to gallery","Photos and clips you take in the app"):"",lk("stClips","Storage","")])}
     ${grp("Account",accountRows(lk))}
     ${grp("Privacy",[lk("stPerm","Permissions"),lk("stPriv","Privacy policy")])}
     ${grp("Help",[live?"":lk("stHow","How to play"),lk("stSup","Contact us"),lk("stTerms","Terms of use")])}
@@ -4498,7 +4498,7 @@ function settingsSheet(){
   $("stFilm").onclick=()=>{S.film=S.film===false;save();track("film_toggle",{on:S.film!==false,where:"settings"});settingsSheet();if(S.route==="play")renderPlay()};
   accountBind();
   clipAll().then(L=>{const el=$("stClipsS");if(!el)return;const bytes=L.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0);
-    el.textContent=L.length?`${L.length} · ${mbTxt(bytes)}`:"None";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
+    el.textContent=L.length?mbTxt(bytes):"0 MB";$("stClips").onclick=()=>{if(L.length)clipsClearSheet(L)}});
   $("stPerm").onclick=permSheet;
   $("stPriv").onclick=()=>docPage("privacy.html","Privacy policy");$("stTerms").onclick=()=>docPage("terms.html","Terms of use");
   // replays the first-open walkthrough, the same screens the home link used to show
@@ -4546,13 +4546,15 @@ addEventListener("popstate",()=>{if($("docPage")){closeDoc();return}if($("acctPa
 if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.addListener)
   CAPX.Plugins.App.addListener("backButton",()=>{if(!appBack())CAPX.Plugins.App.minimizeApp()});
 // Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
-function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
-  sheet(`<h3>Clips on this phone</h3><p class="note">${L.length} clip${L.length===1?"":"s"} · ${sz(L)}. Clearing them here doesn't touch copies in your photos.</p>
-    <div class="acts">${inGal.length?`<button class="btn" type="button" id="ccGal">Clear the ${inGal.length} already in your photos (${sz(inGal)})</button>`:""}
-    <button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all clips (${sz(L)})</button><button class="btn line" type="button" id="ccNo">Back</button></div>`,()=>{
-    const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${a.length} clip${a.length===1?"":"s"}`,2500);closeSheet();if($("setPage"))settingsSheet();if(S.route==="end")renderEnd()});
-    if($("ccGal"))$("ccGal").onclick=()=>del(inGal);
-    $("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${L.length-inGal.length?`${L.length-inGal.length} of them aren't in your photos, so they'll be gone for good.`:"They're all in your photos too."}</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear them</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
+function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),out=L.length-inGal.length,sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
+  const cn=n=>`${n} clip${n===1?"":"s"}`;
+  // all in their photos: one safe button. Some not: clear the safe ones, or all (confirmed). None: clear all (confirmed).
+  const note=!out?(L.length===1?"It's also in your photos.":"They're also in your photos."):inGal.length?`${out} ${out===1?"isn't":"aren't"} in your photos yet.`:(L.length===1?"It isn't in your photos.":"They aren't in your photos.");
+  sheet(`<h3>Storage</h3><p class="note">${cn(L.length)} · ${sz(L)}. ${note}</p>
+    <div class="acts">${!out?`<button class="btn" type="button" id="ccSafe">Clear clips</button>`:`${inGal.length?`<button class="btn" type="button" id="ccSafe">Clear the ${inGal.length} already saved</button>`:""}<button class="btn line" type="button" id="ccAll" style="color:var(--red)">Clear all</button>`}<button class="btn line" type="button" id="ccNo">Cancel</button></div>`,()=>{
+    const del=a=>Promise.all(a.map(c=>clipDel(c.id))).then(()=>{toast(`Cleared ${cn(a.length)}`,2500);closeSheet();if($("setPage"))settingsSheet();if(S.route==="end")renderEnd()});
+    if($("ccSafe"))$("ccSafe").onclick=()=>del(inGal);
+    if($("ccAll"))$("ccAll").onclick=()=>sheet(`<h3>Clear all clips?</h3><p class="note">${out===1?"1 isn't":`${out} aren't`} in your photos, so ${out===1?"it'll":"they'll"} be gone for good.</p><div class="acts"><button class="btn" type="button" id="ccY" style="background:var(--red);color:#fff">Clear all</button><button class="btn line" type="button" id="ccN">Cancel</button></div>`,()=>{$("ccY").onclick=()=>del(L);$("ccN").onclick=()=>clipsClearSheet(L)});
     $("ccNo").onclick=closeSheet})}
 // What the app is allowed to use, and a way to change it.
 // Call a native plugin method whether or not its JS object was set up (the bridge always has nativePromise).
