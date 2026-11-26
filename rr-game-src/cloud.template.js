@@ -512,11 +512,11 @@ async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liv
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
 // Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
 function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
-  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl${st==="gone"?`<small>${who}'s phone · Not responding</small>`:st==="checking"&&fmWant?`<small>${who}'s phone · Checking…</small>`:""}</span></button>`}
+  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who} isn't connected`:st==="checking"?`Checking ${who}…`:`${who} is connected`}</small></span></button>`}
 let fmWant=false;
 function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
   if(st==="gone"){fmWant=false;takeOverSheet();return}
-  if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who}'s phone is connected.<br>Ask ${who} for the spin.`,3500);return}
+  if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who} is connected.<br>Ask ${who} for the spin.`,3500);return}
   if(st==="ok")pingHost();fmWant=true}   // checking (or a fresh check): the row carries on once it hears back
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
   if(!mine&&d&&!d.ended&&Date.now()-fmPing>10000)pingHost();
@@ -625,7 +625,7 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvTake"))$("fvTake").onclick=takeOverSheet;if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
 function takeOverSheet(){const who=esc(fvHost(liveDoc));
-  sheet(`<h3>Take over the crawl?</h3><p class="note">${who}'s phone isn't responding. You'll have the spin and the clock, and everyone following moves to your phone.</p>
+  sheet(`<h3>Take over the crawl?</h3><p class="note">${who} isn't connected. You'll have the spin and the clock, and everyone following moves to your phone.</p>
     <div class="acts"><button class="btn" type="button" id="toY">Take over</button><button class="btn dark" type="button" id="toN">Cancel</button></div>`,()=>{
     $("toN").onclick=closeSheet;$("toY").onclick=()=>{closeSheet();takeOver()}})}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
