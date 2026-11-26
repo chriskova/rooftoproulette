@@ -846,11 +846,11 @@ function homeOpen(){const el=$("homeOpen");if(!el)return;const t=now(),L=VENUES.
 // The name grows on tall phones (--hs). If something extra shows (the Hit list row), scale it back until it all fits.
 function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.style.setProperty("--hs",k);
   while(k>0&&v.scrollHeight>v.clientHeight+1){k=Math.max(0,+(k-.1).toFixed(2));v.style.setProperty("--hs",k)}
-  // the big faded pin is a backdrop: it starts just under the wordmark and its tip runs on under the tab bar, so it scales with the screen
-  // (the same share of the screen on every phone; an S20 gets 560px)
-  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=$("tabs"),br=v.querySelector(".brand");
-  if(im&&lg.offsetParent&&tb&&tb.offsetHeight&&br){lg.style.top="0px";const p0=lg.getBoundingClientRect().top,top=br.getBoundingClientRect().bottom-25,H=Math.max(300,Math.round(tb.getBoundingClientRect().top+28-top));
-    im.style.height=H+"px";{const vw=v.clientWidth||innerWidth,W=Math.round(H*477/600);lg.style.right=Math.round(vw*.958-W)+"px"};lg.style.top=Math.round(top-p0)+"px"}}
+  // the big faded pin is a backdrop: its top sits halfway up "ROULETTE" (the TT) and its tip runs on under the tab bar, so it scales with the screen.
+  // Its left edge sits 18% in from the left on every phone (where it was on an S20), so it bleeds off the right only.
+  const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=$("tabs"),sp=v.querySelector(".brand span");
+  if(im&&lg.offsetParent&&tb&&tb.offsetHeight&&sp){lg.style.top="0px";const p0=lg.getBoundingClientRect().top,rg=document.createRange();rg.selectNodeContents(sp);const sr=rg.getBoundingClientRect(),top=sr.top+.483*sr.height,H=Math.max(300,Math.round(tb.getBoundingClientRect().top+28-top));
+    im.style.height=H+"px";const vw=v.clientWidth||innerWidth,W=H*477/600;lg.style.right=Math.round(vw*.82-W)+"px";{const d=im.getBoundingClientRect().left-v.getBoundingClientRect().left-vw*.18;if(Math.abs(d)>1)lg.style.right=Math.round(vw*.82-W+d)+"px"}lg.style.top=Math.round(top-p0)+"px"}}
 addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
