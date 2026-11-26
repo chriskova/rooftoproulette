@@ -37,7 +37,7 @@ self.addEventListener("fetch",e=>{
 ''')
 open(os.path.join(OUT,'.nojekyll'),'w').write('')
 print('built',len(V))
-# the website (index.html: early-access signup for now) and the support, privacy and terms pages, at the root
+# the website (index.html: launch signup for now) and the support, privacy and terms pages, at the root
 for f in os.listdir(os.path.join(D,'site')):
     if f.endswith('.html'):shutil.copy(os.path.join(D,'site',f),os.path.join(OUT,f))
 # inline Leaflet so the page also works as a single downloaded file
