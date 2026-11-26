@@ -850,7 +850,7 @@ function fitHome(){const v=$("v-home");if(!v||!v.offsetParent)return;let k=1;v.s
   // (the same share of the screen on every phone; an S20 gets 560px)
   const lg=$("homeLogo"),im=lg&&lg.querySelector("img"),tb=$("tabs"),br=v.querySelector(".brand");
   if(im&&lg.offsetParent&&tb&&tb.offsetHeight&&br){lg.style.top="0px";const p0=lg.getBoundingClientRect().top,top=br.getBoundingClientRect().bottom-25,H=Math.max(300,Math.round(tb.getBoundingClientRect().top+28-top));
-    im.style.height=H+"px";lg.style.right=-Math.round(150*H/560)+"px";lg.style.top=Math.round(top-p0)+"px"}}
+    im.style.height=H+"px";{const vw=v.clientWidth||innerWidth,W=Math.round(H*477/600);lg.style.right=Math.round(vw*.958-W)+"px"};lg.style.top=Math.round(top-p0)+"px"}}
 addEventListener("resize",()=>{if(S.route==="home")fitHome()});
 // The first time each mode is played, its rules come up first (with the demo spin), then "Let's play" carries on.
 function firstRules(k,show,start){if((S.seenHow||{})[k]){start();return}show(start)}
