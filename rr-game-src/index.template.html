@@ -1658,7 +1658,9 @@ body.camon #v-play .adjz{display:none}
 .dk-open{flex:1;min-width:0;display:flex;align-items:center;gap:12px;appearance:none;background:none;border:0;padding:12px 6px 12px 14px;font:inherit;color:inherit;text-align:left;cursor:pointer}
 .dk-open .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.dk-open .t b{font-size:15.5px}.dk-open .t small{color:var(--muted);font-size:13px}
 .dk-open .chev{color:var(--amber-text);font-size:20px;line-height:1;padding-right:8px}
-.dk-sw{appearance:none;background:none;border:0;border-left:1px solid var(--line);padding:6px 16px 6px 14px;align-self:stretch;display:flex;align-items:center;cursor:pointer}
+.dk-sw{appearance:none;background:none;border:0;padding:6px 16px 6px 14px;align-self:stretch;display:flex;align-items:center;cursor:pointer;position:relative}
+/* the divider stops short of the row's edges, like the Skip visited row's */
+.dk-sw::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:1px;background:var(--line)}
 .dk-sw[aria-checked="true"] .sw{background:var(--amber)}.dk-sw[aria-checked="true"] .sw::after{transform:translateX(20px)}
 .dk-logo{width:30px;height:40px;flex:none;border-radius:7px;border:1.5px dashed rgba(245,184,61,.6);display:flex;align-items:center;justify-content:center;color:var(--amber-text)}
 .dk-logo svg{width:17px;height:17px}
