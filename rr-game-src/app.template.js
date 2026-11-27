@@ -4896,8 +4896,6 @@ function endDue(g){if(!g.started)return null;const t=[];if(now()>=g.endsAt)t.pus
 function staleEnd(){const g=G();if(!g||g.demo)return false;
   // a crawl that ended but never cleared (older versions could trip as the app opened): put it on My Tab if it isn't already, and land home
   if(g.ended){if(!H.some(r=>r.id===g.id)){const rec=JSON.parse(JSON.stringify(g));rec.test=!!(g.test||S.test);pushH(rec)}S.lastEnd=g.id;S.game=null;save();stopWatch();go("home");return true}
-  // set up but never spun, 3+ hours ago: nothing to keep, so it's dropped and the app opens on home
-  if(!g.started){const made=+String(g.id).slice(1)||0;if(!made||now()-made<QUIET_END_MS)return false;track("crawl_unspun_dropped",{mode:CR(g)?"rr":"rush"});endGame(now(),true);return true}
   const due=endDue(g);if(due==null||now()-due<QUIET_END_MS)return false;
   track("crawl_quiet_end",{mode:CR(g)?"rr":"rush",hours:Math.round((now()-due)/3600000)});if(CR(g)&&due===g.autoAt)g.autoEnded=true;endGame(due,true);return true}
 /* ---------- boot ---------- */
@@ -4907,7 +4905,11 @@ else if(NATIVE&&!S.game){natCall("CrawlNotify","clear").catch(()=>{});const BG=b
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
-try{render()}catch(e){console.error(e)}queueMicrotask(loop);setTimeout(refreshVenues,1500);   // first check runs once everything has loaded, so a crawl ending right now ends cleanly
+try{render()}catch(e){console.error(e)}// After an app update, open fresh: a crawl that was set up but never spun is dropped and you land on home.
+// A crawl that's actually under way is kept (phones update apps on their own, even mid-crawl).
+if(S.appv!==APPV){const g0=S.game;let dropped=false;if(g0&&!g0.demo&&!g0.started){S.game=null;dropped=true;stopWatch();if(g0.live&&typeof liveCancel==="function")try{liveCancel(g0.live)}catch(e){}}
+  const fresh=!!S.appv;S.appv=APPV;save();if((fresh||dropped)&&!S.game&&S.onboarded&&S.route!=="intro")go("home")}
+queueMicrotask(loop);setTimeout(refreshVenues,1500);   // first check runs once everything has loaded, so a crawl ending right now ends cleanly
    // a screen that fails to draw must never stop the rest of the app loading
 openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if(!BUNDLED&&"serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register((window.RR_ROOT||"")+"sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
