@@ -906,9 +906,21 @@ const favList=()=>VENUES.filter(v=>S.fav[v.id]&&!v.tempClosed&&cityOf(v)===S.cit
 const listOf=k=>k==="fav"?favList():wantList(),listName=k=>k==="fav"?"Favourites":"Hit list";
 const listOpt=(t,on)=>{const L=wantList(),o=L.filter(v=>openOK(v,t)).length;return `<button class="opt" type="button" role="radio" aria-checked="${!!on}" id="qList"><span class="ic">${I.sparkle}</span><span class="t"><b>My Hit list</b><small>Rooftops you want to try</small></span>${L.length?`<span class="n"><b>${o}</b><small>open</small></span>`:`<span class="n"><small>Make one</small></span>`}</button>`};
 const quickLabel=q=>q.from.type==="list"?listName(q.from.list):q.from.type==="me"?`Near you · ${q.r} km`:q.from.type==="all"?"Anywhere in "+S.city:q.from.name;
+// Setting up a zone only needs to know roughly where you are. Use a fix from the last 10 minutes if there is one
+// (the app grabs one on open), otherwise take whichever answer comes first: a rough network fix (a second or two)
+// or the GPS. Waiting on a full GPS lock here was the long "Finding you…" before R&R's map showed.
+function quickFix(){
+  if(S.test&&S.fake)return getOnce();
+  if(here&&here.t&&Date.now()-here.t<10*60000){pickCity(here);return Promise.resolve(here)}
+  if(!navigator.geolocation)return Promise.reject({code:-1});
+  return new Promise((res,rej)=>{let done=0,fails=0;
+    const ok=p=>{if(!done){done=1;res(p)}},no=e=>{if(done)return;if((e&&e.code===1)||++fails>=2){done=1;rej(e)}};
+    navigator.geolocation.getCurrentPosition(p=>{if(done)return;here={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()};lastFix=Date.now();locErr=null;pickCity(here);try{meAll()}catch(x){}ok(here)},no,{enableHighAccuracy:false,maximumAge:600000,timeout:6000});
+    getOnce().then(ok,no)})}
+const fixFresh=()=>!!(here&&here.t&&Date.now()-here.t<10*60000);
 async function quickNearMe(){
   const q=S.quick;q.note=null;
-  try{const p=await getOnce();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};
+  try{const p=await quickFix();q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};
       // nothing open within 2 km of you: start on the closest city's CBD, same as timed
       const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){const city=nearLive(p)||S.city,O=VENUES.filter(v=>cityOf(v)===city&&!S.nfu[v.id]&&!v.tempClosed&&openOK(v,t)),best=O.length;
         const c=GAME_AREAS(city).find(a=>a.name==="The City")||GAME_AREAS(city)[0]||CITIES.find(x=>x.name===city);
@@ -1095,12 +1107,15 @@ function renderQuick(){
   const hp=S.test&&S.fake?S.fake:here,away=!!hp&&nearLive(hp)!==S.city;
   const cityStart=()=>{const a=GAME_AREAS(S.city)[0]||CITIES.find(c=>c.name===S.city);q.from={type:"pick",name:null,lat:a.lat,lng:a.lng};q.z={lat:a.lat,lng:a.lng,r:q.z&&q.z.r||2}};
   if(q.note&&!q.from){q.note=null;cityStart();q.far="Couldn't find you. Drag the map to where you'll start."}
+  if(!q.from&&!away&&!q.far&&(fixFresh()||(S.test&&S.fake))){const p=S.test&&S.fake?S.fake:here;q.from={type:"me",name:"Near you",lat:p.lat,lng:p.lng};
+    if(!q.z||dist(q.z,p)>5000){q.z={lat:p.lat,lng:p.lng,r:q.z?q.z.r:2};const t=now();if(rrPool({lat:p.lat,lng:p.lng,r:2},t,false).open.length<1){q.from=null;q.z=null}}if(q.from){q.step=1;save()}}   // nothing open near you: the usual path picks the city centre
   if(!q.from){b.classList.remove("fsv");
     b.innerHTML=top+head+`<p class="note" style="margin:10px 2px">Finding you…</p>`;bindTop();
     cta(`<button class="btn" type="button" disabled>Start the crawl</button>`,()=>{});
     if(!renderQuick.busy){renderQuick.busy=1;(async()=>{try{
       if(away){cityStart();save();renderQuick();return}
-      if(!S.test){const st=await permState(true);if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
+      // already allowed (the usual case): no extra permission round trip, which on the phone app was its own location lookup
+      if(!S.test&&!fixFresh()&&(await permState())!=="granted"){const st=await permState(true);if(st!=="granted"){S.permNext="rr-me";go("perm");return}}
       await quickNearMe()}finally{renderQuick.busy=0}})()}
     return}
   const pick=q.from.type==="pick",me=q.from.type==="me"?{lat:q.from.lat,lng:q.from.lng}:null;

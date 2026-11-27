@@ -1173,10 +1173,12 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .menu button svg{width:22px;height:22px;color:var(--muted)}
 .menu button small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
 .menu button.danger{color:var(--red)}
+.menu button.warn small{color:var(--amber-text);font-weight:700}
 #camVid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;display:none}
 body.camon #camVid{display:block;opacity:0;transition:opacity .3s}body.camon #camVid.on{opacity:1}
 body.camon,body.camon .app,body.camon .appbar{background:transparent!important}
 body.camon .app{position:relative;z-index:1}
+body.camon #pMap{display:none}   /* filming a spin: the map has no part in it */
 body.camon .appbar .logo{text-shadow:0 1px 8px rgba(0,0,0,.5)}
 body.camon #v-play{background:transparent}
 body.camon #v-play #pCount{visibility:hidden}
@@ -2180,10 +2182,10 @@ body.camon #v-play .adjz{display:none}
 .barrow .t small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nw{white-space:nowrap}.beenic{display:inline-flex;vertical-align:-2px;margin-left:6px;color:var(--dim)}.beenic svg{width:15px;height:15px}
 .barrow.shut{opacity:.5}
 .shuthd{color:var(--muted)}
-.toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#20242e;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px var(--sh);font-size:14px;color:rgba(255,255,255,.82);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 12px);z-index:950;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:var(--s1);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px var(--sh);font-size:14px;font-weight:500;color:var(--text);transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.2,.9,.3,1.1),opacity .2s}
 .toast.on{transform:none;opacity:1;pointer-events:auto}
-.toast span{flex:1;min-width:0}.toast b{color:#fff;font-weight:700}.toast a{color:#fff}
-.toast button{flex:none;background:none;border:1px solid rgba(255,255,255,.45);color:#fff;font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
+.toast span{flex:1;min-width:0}.toast b{color:var(--text);font-weight:700}.toast a{color:var(--amber-text)}
+.toast button{flex:none;background:none;border:1px solid var(--line2);color:var(--text);font:inherit;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
 .blists{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.blist.fav b{color:#FF7A9A}
 .nfulink{grid-column:1/-1;justify-self:start;padding:2px 2px 0;font-size:13.5px}
 .blist{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;background:var(--s1);border:1px solid var(--line);border-radius:14px;color:var(--text);text-align:left;cursor:pointer;font:inherit}
@@ -2636,7 +2638,9 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 .fr{appearance:none;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:58px;max-width:64px;font:inherit;color:var(--text);cursor:pointer;padding:0}
 .fr .av{position:relative;width:54px;height:54px;border-radius:50%;background:var(--amber);color:#241803;display:grid;place-items:center;font-weight:800;font-size:20px}
 .fr .av i{position:absolute;right:-2px;bottom:-2px;width:20px;height:20px;border-radius:50%;background:var(--bg);display:grid;place-items:center;color:var(--amber-text);font-style:normal;font-weight:900;font-size:14px;line-height:1}
-.fr .fn{font-size:13px;font-weight:600;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr.sent .av{background:var(--s2);color:var(--muted)}.fr.sent .fn{color:var(--muted)}
+.fr .fn{font-size:13px;font-weight:600;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr.in{cursor:default}.fr.in .av{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--green)}.fr.in .av i{background:var(--green);color:var(--bg);font-size:12px}.fr.in .st{font-size:11px;font-weight:700;color:var(--green);margin-top:-4px}
+.fr.pop .av{animation:frPop .5s cubic-bezier(.3,1.5,.5,1)}@keyframes frPop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+.invn{color:var(--green);font-weight:700}.fr.sent .av{background:var(--s2);color:var(--muted)}.fr.sent .fn{color:var(--muted)}
 .invbig{width:100%;margin-top:14px;background:none;border:2px solid var(--amber);color:var(--text)}.invbig svg{color:var(--amber-text)}.invbig svg{width:20px;height:20px}
 .ready:has(.invbig) .camfab.ontop{bottom:78px}   /* the camera stays on the spinner, not on the button */
 .whobox{margin-top:18px}.whobox .qrbox{margin-top:6px}.whold{height:220px}
