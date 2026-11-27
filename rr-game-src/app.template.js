@@ -200,7 +200,8 @@ try{const R=readH(HKEY),sim=R.filter(r=>/^SIM/.test(r.liveId||""));if(sim.length
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{if(typeof liveKick==="function"&&S.game&&S.game.live)liveKick()}catch(e){}};   // a live crawl: friends see the change straight away
-const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon();if(typeof livePicCheck==="function")try{livePicCheck()}catch(e){}};   // a host's new crawl photo goes out to followers
+const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)try{tabSyncSoon()}catch(e){}   // sign-in code not loaded yet (a crawl ending as the app opens): it syncs once it is
+  ;if(typeof livePicCheck==="function")try{livePicCheck()}catch(e){}};   // a host's new crawl photo goes out to followers
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
 // Time travel only ever applies in test mode, so a real game always runs on the phone's clock.
@@ -2827,7 +2828,7 @@ document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("#mi
 
 function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sheet(`<h3>How R&amp;R works</h3><div class="steps" style="margin-top:12px">${stepsHTML(HOW.rr())}</div>${RR_NOTE}
     ${demoBtns(next)}`,()=>bindDemoBtns(()=>cruiseHow(next),next))}
-function endGame(at){
+function endGame(at,quiet){
   const g=G();if(!g||g.ended)return;
   document.querySelectorAll(".jpx").forEach(o=>o.remove());spinning=false;   // a jackpot card still up when the clock runs out (or the crawl's ended from the notification) mustn't sit over the crawl card
   if(!g.started){if(g.live&&typeof liveCancel==="function")liveCancel(g.live);S.game=null;save();stopWatch();go("home");return}
@@ -2845,6 +2846,7 @@ function endGame(at){
   rec.newIds=rec.visits.filter(v=>v.counted===true&&!prevCol[v.id]).map(v=>v.id);
   if(g.demo){DEMO_REC=rec;track("demo_end",{bars:rec.visits.filter(v=>v.counted===true).length});S.lastEnd=g.id;S.rackEnd=g.id;S.bodDue=g.id;S.game=null;save();closeSheet();ding();go("end");confetti();return}
   rec.test=!!(g.test||S.test);pushH(rec);syncH();afterNote(rec);if(rec.live)liveEnded(rec);
+  if(quiet){S.lastEnd=g.id;S.game=null;save();stopWatch();closeSheet();go("home");return}   // a crawl left open for hours: straight onto My Tab, no fanfare
   S.lastEnd=g.id;S.rackEnd=g.id;S.bodDue=g.id;S.game=null;save();stopWatch();closeSheet();ding();buzz([100,60,100,60,200]);go("end");confetti();
 }
 
@@ -4886,14 +4888,25 @@ document.addEventListener("visibilitychange",()=>{
   loop();
 });
 
+/* A crawl nobody's touched for 6 hours (left open, or brought back by a phone backup) ends itself
+   as of the last spin or arrival, and goes on My Tab, instead of opening mid-crawl days later */
+const OLD_CRAWL_MS=6*3600000;
+function crawlLast(g){let t=Math.max(g.startedAt||0,g.targetAt||0,g.spinAt||0);(g.visits||[]).forEach(v=>{t=Math.max(t,v.arrivedAt||0,v.leftAt||0)});return t}
+function staleEnd(){const g=G();if(!g||g.demo)return false;
+  // a crawl that ended but never cleared (older versions could trip as the app opened): put it on My Tab if it isn't already, and land home
+  if(g.ended){if(!H.some(r=>r.id===g.id)){const rec=JSON.parse(JSON.stringify(g));rec.test=!!(g.test||S.test);pushH(rec)}S.lastEnd=g.id;S.game=null;save();stopWatch();go("home");return true}const last=crawlLast(g);if(!last||now()-last<OLD_CRAWL_MS)return false;
+  track("crawl_stale_end",{mode:CR(g)?"rr":"rush",hours:Math.round((now()-last)/3600000)});if(CR(g)&&g.started)g.autoEnded=true;endGame(last,true);return true}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)staleEnd()});
 /* ---------- boot ---------- */
+queueMicrotask(staleEnd);   // once the whole app (sign-in, live crawls) has loaded
 if(S.game&&!S.test&&!S.game.demo)startWatch();
 // no crawl on: nothing of ours should be sitting in the notification shade (left over from a crawl that ended while the page was elsewhere)
 else if(NATIVE&&!S.game){natCall("CrawlNotify","clear").catch(()=>{});const BG=bgGeo();if(BG)bgOrphan(BG)}
 if(S.test&&!S.game&&S.fake){S.fake=null;save()}
 if(navigator.permissions&&navigator.geolocation)permState().then(s=>{if(s==="granted")getOnce().then(()=>{render();[zMap,bMap].forEach(setMe)}).catch(()=>{})});
 if(S.onboarded&&(S.route!=="intro"||S.introReplay)){S.introReplay=false;S.route=S.game?"play":"home";save()}   // a fresh open always lands on Play
-try{render()}catch(e){console.error(e)}loop();setTimeout(refreshVenues,1500);   // a screen that fails to draw must never stop the rest of the app loading
+try{render()}catch(e){console.error(e)}queueMicrotask(loop);setTimeout(refreshVenues,1500);   // first check runs once everything has loaded, so a crawl ending right now ends cleanly
+   // a screen that fails to draw must never stop the rest of the app loading
 openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if(!BUNDLED&&"serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register((window.RR_ROOT||"")+"sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
   // a new version took over: reload once so it's used straight away, unless a crawl screen is open (then it's used next launch)
