@@ -1813,7 +1813,7 @@ function makeReel(el,names,o){
       if(inR!==r._in){r._in=inR;[t,bo].forEach(x=>{x.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";x.style.transform=inR?"scale(1.12)":""})}
     }};
   draw();R.redraw=draw;
-  const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();let tp=t0,n=0,slow=0;const f=t=>{const u=Math.min(1,(t-t0)/dur);if(t-tp>26)slow++;n++;tp=t;fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else{if(dur>1500&&n>30)liteCheck(slow/n);end&&end()}};R.raf=requestAnimationFrame(f)};
+  const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();let tp=t0,n=0,slow=0;const f=t=>{const u=Math.min(1,(t-t0)/dur);if(t-tp>22)slow++;n++;tp=t;fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else{if(dur>1500&&n>30)liteCheck(slow/n);end&&end()}};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
   // a follower's reel: rolls at a steady speed until the host's result comes in, then spinTo winds it down onto it
   R.roll=v=>{cancelAnimationFrame(R.raf);moved=true;R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
@@ -2046,6 +2046,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
     const wrap=document.createElement("div");wrap.className="jpcard-wrap";
     wrap.innerHTML=`<div class="bar jpcard jc-${j.k}"><span class="eyebrow">Jackpot</span><h2>${esc(j.t)}</h2>${jvHTML(j,ctx)}<p>${esc(jvText(j))}</p>${jvActs(j)}</div>`;
     ov.appendChild(wrap);
+    wrap.querySelectorAll(".jv-face b").forEach(b=>fitLine(b,11));   // a long wildcard name (Cheapskate) shrinks to fit its card
     box.animate([{opacity:1},{opacity:0}],{duration:260,delay:120,fill:"forwards"});
     reveal(info,wrap);
     const card=wrap.querySelector(".jpcard");let gone=false;
@@ -2093,7 +2094,7 @@ function jvRun(j,card,ctx,choose){
     cs.forEach((c,i)=>setTimeout(()=>{c.classList.add("on");sfx("flip")},500+i*260));
     // tap a card: it flips over to show what you're in for; tap another to swap; then lock it in
     let pickI=-1;const go=card.querySelector("#jvGo"),txt=card.querySelector(":scope>p");
-    const flip=(c,html)=>{const b=c.querySelector(".jv-b");b.animate([{transform:"rotateY(180deg) scaleX(1)"},{transform:"rotateY(180deg) scaleX(0)"}],{duration:140,easing:"ease-in"}).onfinish=()=>{b.innerHTML=html;b.animate([{transform:"rotateY(180deg) scaleX(0)"},{transform:"rotateY(180deg) scaleX(1)"}],{duration:180,easing:"ease-out"})}};
+    const flip=(c,html)=>{const b=c.querySelector(".jv-b");b.animate([{transform:"rotateY(180deg) scaleX(1)"},{transform:"rotateY(180deg) scaleX(0)"}],{duration:140,easing:"ease-in"}).onfinish=()=>{b.innerHTML=html;b.querySelectorAll(".jv-face b").forEach(x=>fitLine(x,11));{const t=b.querySelector(".jv-txt");if(t){let f=parseFloat(getComputedStyle(t).fontSize);while(t.scrollHeight>b.clientHeight-16&&f>10){f-=.5;t.style.fontSize=f+"px"}}}b.animate([{transform:"rotateY(180deg) scaleX(0)"},{transform:"rotateY(180deg) scaleX(1)"}],{duration:180,easing:"ease-out"})}};
     setTimeout(()=>cs.forEach(c=>{c.disabled=false;c.onclick=()=>{const i=+c.dataset.i;if(i===pickI)return;
       if(pickI>=0){const p=cs[pickI];p.classList.remove("picked");flip(p,`<span class="jv-face">${wildFace(ctx.wilds[pickI])}</span>`)}
       pickI=i;c.classList.add("picked");card.classList.add("haspick");sfx("flip");buzz(10);flip(c,`<span class="jv-txt"><b>${esc((WNAME[ctx.wilds[i]]||["Wildcard"])[0])}</b>${esc(wShort(ctx.wilds[i]))}</span>`);
@@ -3069,7 +3070,7 @@ function renderPlay0(){
 }
 // Lighter effects for phones that drop frames on a spin (no extra glow layers, fewer streaks and confetti). Decided by
 // how the wheel actually ran here, not by the phone's age; two slow spins in a row switch it on.
-function liteCheck(slowShare){const was=!!S.lite;S.liteHits=slowShare>.25?(S.liteHits||0)+1:0;if(S.liteHits>=2)S.lite=true;if(!!S.lite!==was){save();document.body.classList.toggle("lite",!!S.lite)}}
+function liteCheck(slowShare){const was=!!S.lite;S.liteHits=slowShare>.15?(S.liteHits||0)+1:0;if(S.liteHits>=1)S.lite=true;if(!!S.lite!==was){save();document.body.classList.toggle("lite",!!S.lite)}}
 document.body.classList.toggle("lite",!!S.lite);
 function confetti(host,n){if(S.lite&&n==null)n=20;
   const app=host||$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];

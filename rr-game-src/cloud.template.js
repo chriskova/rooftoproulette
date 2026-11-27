@@ -462,9 +462,22 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   $("fvMenu").onclick=followMenu;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
-  clearInterval(fvT);fvT=setInterval(paintFollow,250);liveAttach();paintFollow();if(!fvPrev)setTimeout(()=>pingHost(true),1500)}
+  fvStretch(fv.querySelector(".fv-body"));
+  clearInterval(fvT);fvT=setInterval(()=>{if(Date.now()-fvScrollAt>350)paintFollow()},250);liveAttach();paintFollow();if(!fvPrev)setTimeout(()=>pingHost(true),1500)}
 // a quiet check of the host's phone whenever a follower comes back to the app, so the menu already knows
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&fv&&!fvPrev)setTimeout(()=>pingHost(true),800)});
+document.addEventListener("visibilitychange",()=>{if(document.hidden||!fv)return;const id=S.follow;
+  if(id)cloud().then(B=>B.get(`live/${id}`)).then(d=>{if(d&&S.follow===id&&(!liveDoc||(d.upd||0)>=(liveDoc.upd||0))){liveDoc=d;onLive(id,d)}}).catch(()=>{});
+  if(!fvPrev)setTimeout(()=>pingHost(true),800)});
+let fvScrollAt=0;
+function fvStretch(el){if(!el)return;let y0=null,edge=0,pull=0;
+  const set=p=>{pull=p;el.style.transformOrigin=edge>0?"50% 0":"50% 100%";el.style.transform=p?`scaleY(${1+Math.min(.08,p/2400)})`:""};
+  el.addEventListener("scroll",()=>{fvScrollAt=Date.now()},{passive:true});
+  el.addEventListener("touchstart",e=>{fvScrollAt=Date.now();y0=e.touches[0].clientY;edge=0;el.style.transition="none"},{passive:true});
+  el.addEventListener("touchmove",e=>{if(y0==null)return;fvScrollAt=Date.now();const dy=e.touches[0].clientY-y0,top=el.scrollTop<=0,bot=el.scrollTop+el.clientHeight>=el.scrollHeight-1;
+    if(!edge){if(top&&dy>0)edge=1;else if(bot&&dy<0)edge=-1;else{y0=e.touches[0].clientY;return}}
+    const p=edge*dy;if(p<=0){edge=0;set(0);y0=e.touches[0].clientY;return}set(p*.5)},{passive:true});
+  const end=()=>{y0=null;if(pull){el.style.transition="transform .45s cubic-bezier(.2,1.4,.4,1)";set(0)}edge=0};
+  el.addEventListener("touchend",end,{passive:true});el.addEventListener("touchcancel",end,{passive:true})}
 const fvGame=d=>{try{return JSON.parse(d.g)}catch(e){return {}}};
 const fvHost=d=>((d&&d.hostName)||"Friend").split(" ")[0];
 // the crawl's map, full screen, the same as the person spinning has it: zone, every bar in it, the bars so far, the next bar, you
@@ -561,7 +574,7 @@ let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 // The bar card, the same one the person spinning sees: photo, name, wildcard, time there or directions
 // the host's wheel is going: their spin started after the bar they last landed on, in the last 30 seconds (60 for a jackpot)
 const fvJack=g=>g.jp&&g.jp.at>(g.targetAt||0)&&g.jp.at>=(g.spinAt||0)?g.jp:null;   // a jackpot spin since the last bar landed
-const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(fvJack(g)?5500:30000);
+const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&(fvJack(g)?t-g.spinAt<10*60000:t-g.spinAt<30000);
 // a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
 // what's going on now: the rooftop the group's at or heading to (photo, name, time there or the walk), or a quiet
 // panel while the host spins. The rooftop list and the wildcard sit under it.
@@ -574,7 +587,8 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   const vs=fvVisits(g),at=vs.find(v=>!v.leftAt),J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
   const spin=fvSpinning(g,t);                                        // the host's wheel is going, from a bar or on the way
   const nx=!spin&&g.target&&(!at||g.target!==at.id)?byId(g.target):null;   // landed: the next rooftop, even before they've left
-  const v=nx||(!spin&&at?byId(at.id):null),yy=fvPrev?null:you(),here=!!(at&&v&&!nx);
+  const v=nx||(!spin&&at?byId(at.id):null),here=!!(at&&v&&!nx);
+  const lastB=(at||vs.slice().reverse().find(x=>x.leftAt))||null,yy=fvPrev?null:S.test?(lastB?byId(lastB.id):g.startPos||g.center||null):you();
   // this rooftop's wildcard and jackpot ride on its card
   const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked&&(g.wild.shown||g.wild.landed)?g.wild:null;
   const jd=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpOn=!!(jd&&v&&(here?vs.indexOf(at)===g.jp.leg:g.jp.leg===vs.length&&(g.targetAt||0)>=g.jp.at));
@@ -592,14 +606,16 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   const jt=el.querySelector(".fv-jtag");if(jt)jt.onclick=()=>toast(`<b>${esc(jd.t)}</b><br>${esc((FVJP[jd.k]||(()=>jd.d))(fvHost(d)))}`,3500)}
 // the jackpot: a tag on the rooftop it picked, tap for what it did (the clock already says when it's frozen)
 const FVJP={call:w=>`${w} picked this rooftop from three.`,freeze:()=>"Clock frozen for 10 minutes.",spins:w=>`${w}'s next 3 re-spins are free.`,short:()=>"The closest open rooftop.",dealer:w=>`${w} picked the wildcard.`};
-const fvJTag=jd=>`<button type="button" class="fv-jtag">${I.sparkle}Jackpot · ${esc(jd.t)}</button>`;
+const JPI={call:()=>I.pin,freeze:()=>I.clock,spins:()=>I.redo,short:()=>I.nav,dealer:()=>I.dice};
+const jpIcon=k=>(JPI[k]||(()=>I.sparkle))();
+const fvJTag=jd=>`<button type="button" class="fv-jtag">${jpIcon(jd.k)}Jackpot · ${esc(jd.t)}</button>`;
 const fvWStrip=(w,rule)=>`<div class="fv-ws">${wFace(w)}<span><b>${esc(wNm(w))}</b>${esc(rule)}</span></div>`;
 const fvMin=ms=>ms<60000?"<1 min":Math.floor(ms/60000)+" min";
 const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
 // rooftops so far: every one you've left, newest first (the one you're at is the card above). The page scrolls; a crawl
 // rarely goes past five or six.
 function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse(),JD=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpAt=JD?g.jp.leg:-1;
-  const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${v.cant?"No entry":v.counted===false?"Didn't count":fvMin(v.leftAt-v.arrivedAt)+" there"} · ${clock12(sydAt(v.arrivedAt).min)}</small></span>${jpAt===i?`<span class="wcd-card wsm jp">${I.sparkle}<b>${esc(JD.t)}</b></span>`:""}${w?`<span class="wcd-card wsm">${wFace(w)}<b>${esc(wNm(w))}</b></span>`:""}</button>`}).join("");
+  const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${v.cant?"No entry":v.counted===false?"Didn't count":fvMin(v.leftAt-v.arrivedAt)+" there"} · ${clock12(sydAt(v.arrivedAt).min)}</small></span>${jpAt===i?`<span class="jpcoin" title="Jackpot · ${esc(JD.t)}">${jpIcon(JD.k)}</span>`:""}${w?`<span class="wcd-card wsm">${wFace(w)}<b>${esc(wNm(w))}</b></span>`:""}</button>`}).join("");
   const h=done.length?`<div class="fv-list"><div class="fv-lh"><span class="eyebrow">Previous rooftops</span></div>${rows}</div>`:"";
   if(el._h===h)return;el._h=h;el.innerHTML=h;
   el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
