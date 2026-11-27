@@ -820,7 +820,7 @@ function colCardHTML(){
     <div class="pbar"><i style="width:${pct}%"></i></div>`;
 }
 // the one small link under Play: join a friend's crawl (How to play lives in Settings)
-function homeLinks(){$("homeJoin").onclick=()=>joinScan()}
+function homeLinks(){}
 function renderHome(){
   homeLinks();
   homeOpen();
@@ -1245,7 +1245,8 @@ function renderWiz(){
       <button class="txtbtn zdemo" type="button" id="lenDemo">Not heading out yet? <span class="amber">Try a practice crawl</span></button>`;
     $("lenDemo").onclick=()=>askDemo(()=>{S.wiz=null});
     body.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{if(b.dataset.l==="rr")w.rr=true;else{w.rr=false;w.len=+b.dataset.l;w.radius=null}save();renderWiz()});
-    cta(`<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{$("wNext").onclick=()=>{
+    // joining a friend's crawl: the quiet way in, at the bottom above Next
+    cta(`${typeof cloudOn==="function"&&cloudOn()?`<button class="txtbtn howlink wjoin" type="button" id="lenJoin">Join a friend's crawl</button>`:""}<button class="btn" id="wNext" type="button" ${w.len||w.rr?"":"disabled"}>Next</button>`,()=>{if($("lenJoin"))$("lenJoin").onclick=()=>joinScan();$("wNext").onclick=()=>{
       if(w.rr){S.wiz=null;save();track("rr_from_setup",{});firstRules("rr",cruiseHow,()=>{S.quick={step:0,from:null};go("quick")});return}
       w.step=1;save();renderWiz()}});
   }
