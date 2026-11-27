@@ -415,7 +415,7 @@ function onLive(id,d){
 function hostPongs(d){const P=Object.assign({},d.pongs||{});let ch=false;Object.entries(d.members||{}).forEach(([u,m])=>{if(m&&m.ping&&P[u]!==m.ping){P[u]=m.ping;ch=true}});return ch?P:null}
 // A locked phone (or another app on top) can't answer followers' "are you there?". The host's phone says so as it goes,
 // so followers see "away from the app", not "isn't connected", and nobody takes over from someone just pocketing a phone.
-function hostAway(on){const g=G();if(!g||!g.live||g.ended||!isHost())return;cloud().then(B=>B.set(`live/${g.live}`,on?{away:Date.now()}:{away:0,beat:Date.now()},true)).catch(()=>{})}
+function hostAway(on){const g=G();if(!g||!g.live||g.ended||!isHost())return;cloud().then(B=>B.set(`live/${g.live}`,on?{away:Date.now(),beat:Date.now()}:{away:0,beat:Date.now()},true)).catch(()=>{})}
 document.addEventListener("visibilitychange",()=>hostAway(document.hidden));
 addEventListener("pagehide",()=>hostAway(true));
 let memSeen=null;
@@ -560,7 +560,8 @@ function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
     $("fmHow").onclick=()=>{let g={};try{g=JSON.parse(d.g)}catch(e){}(g.mode==="cruise"?cruiseHow:howSheet)()};
     // the take-over row updates itself while the menu's open: checking → responding, or checking → not responding
     fmWant=false;const W=$("fmTakeW");if(W){const bind=()=>{const b=$("fmTake");if(b)b.onclick=takeTap};bind();
-      const iv=setInterval(()=>{if(!document.contains(W)||!$("sheet").open){clearInterval(iv);fmWant=false;return}const h=fmTakeHTML(liveDoc);if(W._h!==h){W._h=h;W.innerHTML=h;bind()}
+      const iv=setInterval(()=>{if(!document.contains(W)||!$("sheet").open){clearInterval(iv);fmWant=false;return}const h=fmTakeHTML(liveDoc);if(W._h!==h){W._h=h;const b=$("fmTake"),t=document.createElement("div");t.innerHTML=h;const nb=t.firstElementChild;
+          if(b&&nb){b.className=nb.className;const sm=b.querySelector("small"),ns=nb.querySelector("small");if(sm&&ns)sm.textContent=ns.textContent}else{W.innerHTML=h;bind()}}
         if(fmWant&&hostReach(liveDoc)!=="checking")takeTap()},250)}
     if($("fmLeave"))$("fmLeave").onclick=()=>sheet(`<h3>Stop following?</h3><p class="note">This crawl won't go on your tab.</p>
       <div class="acts"><button class="btn" type="button" id="flY" style="background:var(--red);color:#fff">Stop following</button><button class="btn dark" type="button" id="flN">Keep following</button></div>`,()=>{
@@ -643,7 +644,9 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   {const al=$("fvAlert"),hr=!fvPrev&&!d.ended?hostReach(d):"ok",h=hr==="gone"?`<div class="t"><b>${esc(fvHost(d))} isn't connected</b></div><button class="btn sm" type="button" id="fvTake">Take over</button>`
       :hr==="quiet"?`<div class="t"><b>No signal from ${esc(fvHost(d))}</b><small>Take over in ${quietLeft(d)}s</small></div><button class="btn sm" type="button" id="fvTake" disabled>Take over</button>`:"";
 
-    if(al._h!==h){al._h=h;al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=takeOverSheet}}
+    if(al._h!==h){const sameKind=al._hr===hr&&h;al._h=h;al._hr=hr;
+      if(sameKind){const sm=al.querySelector("small"),t=document.createElement("div");t.innerHTML=h;const ns=t.querySelector("small");if(sm&&ns)sm.textContent=ns.textContent}
+      else{al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=takeOverSheet}}}
   {const lp=fv.querySelector(".fv-livepill");if(lp)lp.hidden=!!d.ended||(!fvPrev&&["gone","quiet"].includes(hostReach(d)))}
   const want=fvPrev?"prev":d.ended?"end":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
@@ -654,12 +657,14 @@ function takeOverSheet(){const who=esc(fvHost(liveDoc)),away=hostReach(liveDoc)=
     <div class="acts"><button class="btn" type="button" id="toY">Take over</button><button class="btn dark" type="button" id="toN">Cancel</button></div>`,()=>{
     $("toN").onclick=closeSheet;$("toY").onclick=()=>{closeSheet();takeOver()}})}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
+  // a locked phone gone quiet: the crawl's rules also want an unanswered "are you there?", so send one and give it a moment
+  if(liveDoc&&liveDoc.away){toast("Taking over…",3000);await pingHost();await new Promise(r=>setTimeout(r,2800))}
   try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||!["gone","away"].includes(hostReach(d)))return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
     m[d.host]={n:d.hostName||"",j:(me&&me.j)||Date.now(),b:0,was:1};
     return Object.assign({},d,{host:ME.uid,hostName:crawlName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
   if(!ok){toast("Someone else got there first.",2500);return}track("live_takeover")}
 function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
-  const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=!!S.test;
+  const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=!!S.test;if(S.test)S.ff=d.off||0;
   S.game=g;save();liveLastSig=liveSig(g);startWatch();buzz(30);go("play");toast("You've got the spin.",2500);liveSync(true)}
 // host hands the spin to a follower
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
