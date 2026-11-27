@@ -2939,7 +2939,7 @@ function cardMorph(box,prev){if(!prev||!box||matchMedia("(prefers-reduced-motion
     const an=k.animate([{height:"0px",opacity:0,marginTop:"0px",marginBottom:"0px",paddingTop:"0px",paddingBottom:"0px"},{height:h+"px",opacity:1,marginTop:mt,marginBottom:mb,paddingTop:st.paddingTop,paddingBottom:st.paddingBottom}],{duration:420,easing:E});
     an.onfinish=an.oncancel=()=>{k.style.overflow=""}})}
 function renderPlay(){const pv=cardSnap($("stage"));renderPlay0();try{cardMorph($("stage"),pv)}catch(e){}}
-function renderPlay0(){
+function renderPlay0(){if(typeof paintPeople==="function")try{paintPeople()}catch(e){}
   const g=G();if(!g)return;
   if(typeof CAM!=="undefined"&&CAM.once&&!g.ended&&(spinning||!g.target&&(!atVisit()||g.reelOpen)))document.body.classList.add("camon");
   $("pMenu").innerHTML=I.more;$("pMap").innerHTML=I.map;try{paintPeople()}catch(e){}$("pMap").classList.toggle("hasdot",mapHintDue(g));

@@ -2701,6 +2701,19 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 .jpcoin{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#FFE3A3,#F5B83D 55%,#D9951F);color:#3a2604;box-shadow:inset 0 0 0 2px rgba(255,255,255,.35),0 2px 6px rgba(120,80,10,.25)}.jpcoin svg{width:18px;height:18px}
 .fv-li .jpcoin+.wcd-card{margin-left:-4px}
 .fv-alert .btn.wait{opacity:.45}.offwait{display:flex;justify-content:center;padding:14px 0 6px}
+.pleft{justify-self:start;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;max-width:100%}.pleft .count{max-width:100%}
+.fpile{appearance:none;border:0;background:none;padding:2px;display:inline-flex;align-items:center;cursor:pointer;flex:none}.fpile[hidden]{display:none}.fpile:empty{display:none}
+.fpile .av{width:30px;height:30px;font-size:13px;box-shadow:0 0 0 2px var(--bg)}.fpile .av+.av{margin-left:-9px}
+.av{position:relative;flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;overflow:hidden;color:#fff;font-weight:800;font-size:15px;line-height:1;background:var(--s2)}
+.av img{width:100%;height:100%;object-fit:cover}.av.more{background:var(--s2);color:var(--text);font-size:11.5px;font-weight:800}
+.av.host{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--amber)!important}.fpile .av.host{margin-right:3px}
+.av.pop{animation:avpop .55s cubic-bezier(.3,1.6,.5,1)}@keyframes avpop{0%{transform:scale(.4)}100%{transform:scale(1)}}
+.plist{display:flex;flex-direction:column;margin-top:var(--gap-label)}.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-child{border-top:0}
+.prow .av.host{margin:0 2px}.prow .pn{flex:1;min-width:0;font-weight:650;font-size:15.5px}.prow .pn small{color:var(--muted);font-weight:500}.ptag{font-size:12px;font-weight:800;color:var(--amber-text);background:var(--amber-soft);border-radius:99px;padding:3px 9px;white-space:nowrap}
+.joinban{position:fixed;left:50%;bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 14px);z-index:3200;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:7px 14px 7px 7px;border-radius:99px;background:var(--s1);border:1px solid var(--line);box-shadow:0 10px 30px var(--sh);transform:translate(-50%,16px);opacity:0;transition:transform .35s cubic-bezier(.3,1.4,.5,1),opacity .25s}
+.joinban.on{transform:translate(-50%,0);opacity:1}.joinban .jbav{display:flex}.joinban .jbav .av{width:32px;height:32px;font-size:13px;box-shadow:0 0 0 2px var(--s1)}.joinban .jbav .av+.av{margin-left:-8px}
+.joinban .jbt{font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
+.joinban.fly{background:transparent;border-color:transparent;box-shadow:none;transition:background .25s,border-color .25s,box-shadow .25s}.joinban.fly .jbt{opacity:0}
 .fv-alert{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--s1);border:1.5px solid var(--red)}.fv-alert[hidden]{display:none}.fv-alert .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.fv-alert b{font-size:15px}.fv-alert small{font-size:13px;color:var(--muted)}.fv-alert .btn{width:auto;flex:none;height:40px;padding:0 16px;font-size:15px}
 .fv-act{display:flex;flex-direction:column;align-items:center;gap:8px}.fv-act p{margin:0;font-weight:600}.fv-act .btn{width:100%}
 .qrbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0 auto}.qrbtn svg{width:18px;height:18px}
@@ -2812,7 +2825,7 @@ setTimeout(done,1200)})();</script>
   <!-- PLAY -->
   <section class="view" id="v-play" hidden>
     <div class="ptop">
-      <div class="count" id="pCount"></div>
+      <div class="pleft"><div class="count" id="pCount"></div><button class="fpile" id="pPile" type="button" aria-label="Who's following" hidden></button></div>
       <div class="clock" id="clock"><b id="clockT">60:00</b><small id="clockL">Left</small></div>
       <div class="pbtns"><button class="iconbtn" id="pMap" type="button" aria-label="Crawl map"></button><button class="iconbtn" id="pMenu" type="button" aria-label="Menu"></button></div>
     </div>
