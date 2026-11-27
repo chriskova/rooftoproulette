@@ -169,6 +169,17 @@ public class CrawlNotifyPlugin extends Plugin {
         call.resolve(r);
     }
 
+    /** When this install happened. A reinstall gets a new time; an update keeps it. The app compares it with the one it saved,
+        so data Android brings back from a backup on a reinstall can be told apart from the same install carrying on. */
+    @PluginMethod
+    public void installInfo(PluginCall call) {
+        JSObject r = new JSObject();
+        try {
+            r.put("first", getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0).firstInstallTime);
+        } catch (Exception e) { r.put("first", 0); }
+        call.resolve(r);
+    }
+
     /** The phone's notification settings for this app (or just the crawl channel if that's the one switched off). */
     @PluginMethod
     public void openSettings(PluginCall call) {

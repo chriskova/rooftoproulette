@@ -4909,7 +4909,12 @@ try{render()}catch(e){console.error(e)}// After an app update, open fresh: a cra
 // A crawl that's actually under way is kept (phones update apps on their own, even mid-crawl).
 if(S.appv!==APPV){const g0=S.game;let dropped=false;if(g0&&!g0.demo&&!g0.started){S.game=null;dropped=true;stopWatch();if(g0.live&&typeof liveCancel==="function")try{liveCancel(g0.live)}catch(e){}}
   const fresh=!!S.appv;S.appv=APPV;save();if((fresh||dropped)&&!S.game&&S.onboarded&&S.route!=="intro")go("home")}
-queueMicrotask(loop);setTimeout(refreshVenues,1500);   // first check runs once everything has loaded, so a crawl ending right now ends cleanly
+queueMicrotask(loop);
+// Reinstalled (not updated) on Android: Android may bring back a copy of the old data from the phone's backup. My Tab and
+// settings can come back, but never a crawl: it starts fresh on home, like any other app.
+if(NATIVE)natCall("CrawlNotify","installInfo").then(r=>{const f=r&&r.first;if(!f)return;
+  if(S.inst&&S.inst!==f&&S.game){const g0=S.game;S.game=null;stopWatch();track("restore_crawl_dropped",{started:!!g0.started});if(S.onboarded&&S.route!=="intro")go("home")}
+  if(S.inst!==f){S.inst=f;save()}}).catch(()=>{});setTimeout(refreshVenues,1500);   // first check runs once everything has loaded, so a crawl ending right now ends cleanly
    // a screen that fails to draw must never stop the rest of the app loading
 openSharedFromHash();addEventListener("hashchange",openSharedFromHash);track("app_open",{city:S.city||null,returning:!!(H&&H.length)});pageView(S.route||"home");document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshVenues()});
 if(!BUNDLED&&"serviceWorker" in navigator&&location.protocol==="https:"){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register((window.RR_ROOT||"")+"sw.js").then(rg=>{try{rg.update()}catch(e){}}).catch(()=>{});
