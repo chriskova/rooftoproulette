@@ -766,7 +766,7 @@ const SLIDES=[
  {art:GO_ART(),h:"Get to the rooftop",p:"One drink at each rooftop."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
  {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."},
- {art:TOG_ART(),h:"Play together",p:"Friends follow every spin and the timer<br>from their own phones."}
+ {art:TOG_ART(),h:"Play together",p:"Friends follow every spin<br>from their own phones."}
 ];   // (R&R isn't in the intro: setup offers Rest & Roulette right where you choose)
 function renderIntro(){if((S.intro||0)>=SLIDES.length)S.intro=SLIDES.length-1;
   const i=S.intro||0,b=$("introBody");
