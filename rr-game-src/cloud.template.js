@@ -338,7 +338,7 @@ async function liveInvite(){
   if(!myName()){nameSheet(()=>liveInvite());return}
   let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
   track("live_invite");const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
-  inviteSheet(id,`<h3>Invite friends</h3><p class="note" style="margin:4px 0 12px"><span id="invN">${n?`<span class="invn">${n} following.</span> `:""}</span>Friends follow along and get the recap.</p>`)}
+  inviteSheet(id,`<h3 tabindex="-1" autofocus style="outline:0">Invite friends</h3><p class="note" style="margin:4px 0 12px"><span id="invN">${n?`<span class="invn">${n} following.</span> `:""}</span>Friends follow along and get the recap.</p>`)}
 // The invite sheet (Who's coming? and Invite friends): friends you've crawled with as a row of faces up top (one tap each),
 // then Send link, with the QR one tap away beside it. No friends yet: the QR shows big instead, the quickest way to get the first one in.
 // The invite (Who's coming? in setup, Invite friends from the pill or menu): crawl friends' faces up top (one tap each), the QR
@@ -348,7 +348,7 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
   const sent=invParts.sent[id]||(invParts.sent[id]={});invParts.mates=mates;invParts.id=id;
   const qr=svg?`<div class="qrbox ${mates.length?"xs":"sm"}">${svg}</div><p class="note qrnote">Scan to follow</p>`:"";
   const real=testSimOn()?`<button class="btn line" type="button" data-iv="real" style="margin-top:8px">Test: invite a real phone</button><p class="note" style="margin:6px 0 0">This code only works for Sam and Jess. Switches to two real phones.</p>`:"";
-  return {html:`<div id="invRow">${invRowHTML(id)}</div>`+qr+`<button class="btn" type="button" data-iv="send">${I.share} Share link</button>`+real+`<button class="btn dark" type="button" data-iv="done" style="margin-top:10px">Done</button>`,bind:root=>{
+  return {html:`<div id="invRow">${invRowHTML(id)}</div>`+qr+`<button class="btn invshare" type="button" data-iv="send">${I.share} Share link</button>`+real+`<button class="btn invdone" type="button" data-iv="done">Done</button>`,bind:root=>{
     root.querySelector('[data-iv="done"]').onclick=closeSheet;
     const rb=root.querySelector('[data-iv="real"]');if(rb)rb.onclick=()=>testGoReal({invite:1});
     root.querySelector('[data-iv="send"]').onclick=()=>{if(onAct)onAct();if(NATIVE)PLG.Share.share({title:"Rooftop Roulette",text}).catch(()=>{});else if(navigator.share)navigator.share({text}).catch(()=>{});else{navigator.clipboard&&navigator.clipboard.writeText(link);toast("Link copied.",2000)}};
