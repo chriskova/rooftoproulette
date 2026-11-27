@@ -12,11 +12,13 @@ grp = main.new_group("RRLive", "RRLive")
 attrs = grp.new_file("RRLiveAttributes.swift")
 widget = grp.new_file("RRLiveWidget.swift")
 grp.new_file("Info.plist")
+assets = grp.new_file("Assets.xcassets")
 appgrp = main.children.find { |g| g.display_name == "App" }
 crawl = appgrp.new_file("CrawlNotify.swift")
 
 ext = proj.new_target(:app_extension, "RRLive", :ios, "16.2", proj.products_group, :swift)
 ext.add_file_references([widget, attrs])
+ext.add_resources([assets])   # the logo shown on the lock screen and in the Dynamic Island
 app.add_file_references([crawl, attrs])
 %w[WidgetKit SwiftUI].each do |fw|
   ref = proj.frameworks_group.new_file("System/Library/Frameworks/#{fw}.framework", :sdk_root)
