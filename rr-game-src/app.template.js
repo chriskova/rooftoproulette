@@ -4817,9 +4817,12 @@ function liveNote(){
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
   // the line under it: this rooftop's wildcard, if it has one (the time left is the bar itself; the mode you already know)
   const wl=id=>g.wild&&g.wild.id===id&&g.wild.text&&(g.wild.shown||g.wild.landed)&&!g.wild.locked?`Wildcard · ${wNm(g.wild.text)}`:"";
-  if(a){title=`At ${byId(a.id).name}`;text=wl(a.id)}
-  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=wl(v.id)}
-  else{title="Spin for the next one";text=""}
+  // the line under: what's live and useful, joined with " · " (time here, the wildcard, who's following, rooftops so far)
+  let fl=0;try{fl=g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0}catch(e){}
+  const fol=fl?`${fl} following`:"",nb=countShown(g),join=(...x)=>x.filter(Boolean).join(" · ");
+  if(a){title=`At ${byId(a.id).name}`;text=join(`${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min here`,wl(a.id),fol)}
+  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=join(wl(v.id),fol)||`Rooftop ${g.visits.filter(x=>x.arrivedAt!=null).length+1}`}
+  else{title="Spin for the next one";text=join(nb?plural(nb,"rooftop")+" so far":"",fol)}
   const o={title,text};
   if(!cr&&frozen(g)&&g.frz.start){o.text="Clock starts at your first rooftop"}
   else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.startAt=Math.round(realAt(g.startedAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}

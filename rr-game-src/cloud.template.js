@@ -532,7 +532,8 @@ const QUIET_MS=20000;   // a check-in's overdue: probably flat, but give it unti
 function hostReach(d){if(d&&!d.ended&&d.away){const q=Date.now()-(d.beat||0);return q>AWAY_DEAD?"gone":q>QUIET_MS?"quiet":"ok"}return hostReach0(d)}
 const quietLeft=d=>Math.max(1,Math.ceil((AWAY_DEAD-(Date.now()-(d.beat||0)))/1000));
 // the native nudge: the host's "still here", and an answer to anyone who asked
-window.__rrBeat=async()=>{const g=G();if(!g||!g.live||g.ended||!isHost()||!document.hidden)return;
+window.__rrBeat=async()=>{try{if(typeof liveNote==="function")liveNote()}catch(e){}   // keeps "12 min here" current with the phone locked
+  const g=G();if(!g||!g.live||g.ended||!isHost()||!document.hidden)return;
   try{const B=await cloud(),id=g.live,d=await B.get(`live/${id}`).catch(()=>null),P=d?hostPongs(d):null;await B.set(`live/${id}`,Object.assign({beat:Date.now()},P?{pongs:P}:{}),true)}catch(e){console.warn("beat",e)}};
 function hostReach0(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
