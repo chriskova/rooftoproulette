@@ -501,8 +501,9 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   // A status page, not a copy of the game: the clock, where the group is, the wildcard in play and the rooftops so far.
   // No reel, no animations, nothing to press that the host's phone does, so nobody expects it to work like the host's.
-  fv.innerHTML=`<div class="fv-hd"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}<button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div>
+  fv.innerHTML=`<div class="fv-top"><div class="fv-l"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button></div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
+    <div class="fv-r"><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
   $("fvMenu").onclick=followMenu;$("fvPile").onclick=peopleSheet;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
