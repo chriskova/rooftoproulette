@@ -200,7 +200,7 @@ try{const R=readH(HKEY),sim=R.filter(r=>/^SIM/.test(r.liveId||""));if(sim.length
 let hTest=!!S.test,H=readH(hTest?TKEY:HKEY);
 function syncH(){if(!!S.test!==hTest){hTest=!!S.test;H=readH(hTest?TKEY:HKEY)}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{if(typeof liveKick==="function"&&S.game&&S.game.live)liveKick()}catch(e){}};   // a live crawl: friends see the change straight away
-const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon()};
+const saveH=()=>{writeH(hTest?TKEY:HKEY,H);if(!hTest)tabSyncSoon();if(typeof livePicCheck==="function")try{livePicCheck()}catch(e){}};   // a host's new crawl photo goes out to followers
 // a game goes into the history of the mode it was played in
 function pushH(rec){if(!!rec.test===hTest){H.unshift(rec);saveH()}else{const k=rec.test?TKEY:HKEY,L=readH(k);L.unshift(rec);writeH(k,L)}}
 // Time travel only ever applies in test mode, so a real game always runs on the phone's clock.
@@ -3655,6 +3655,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     else if(k==="dist"||k==="time")crawlStatSheet(k,r.id,l)});
   if(r.followed&&!r.photo){$("scPh").remove()}   // a friend's crawl: their photos stay on their phone, and the photo's theirs to pick
   else $("scPh").onclick=e=>r.photo&&!e.target.closest("[data-chg]")?mediaView(r):r.followed?null:photoSheet(r,renderEnd);
+  if(r.followed){const c=$("scPh")&&$("scPh").querySelector("[data-chg]");if(c)c.remove()}   // the host's photo: shown, not changed here
   if(!isShared&&!r.demo)clipList(r.id).then(L=>{const ph=$("scPh");if(L.length&&ph&&document.contains(ph)){ph.insertAdjacentHTML("beforeend",`<i class="phclips">▶ ${L.length}</i>`);if(!r.photo)ph.onclick=()=>mediaView(r)}}).catch(()=>{});
   box.querySelectorAll("[data-ph]").forEach(t=>{const b=byId(t.dataset.ph);if(!b||t.style.backgroundImage)return;if(phMem[b.id]===undefined&&!phAllowed(b.id,"play"))return;
     (phMem[b.id]!==undefined?Promise.resolve(phMem[b.id]):barPhoto(b)).then(ph=>{if(ph){t.style.backgroundImage=`url('${ph.url}')`;t.classList.add("photo")}}).catch(()=>{})});
@@ -4063,7 +4064,7 @@ async function mediaView(r,start){
   const close=()=>{ov.querySelectorAll("video").forEach(v=>v.pause());ov.classList.remove("on");setTimeout(()=>{items.forEach(x=>{if(x.k==="c")URL.revokeObjectURL(x.src)});ov.remove()},220)};
   ov.querySelector(".mv-x").onclick=close;
   const paint=()=>{const x=items[cur];ov.querySelector(".mv-n").textContent=`${cur+1} / ${items.length}`;
-    acts.innerHTML=x.k==="p"?(r.photo===x.src?`<span class="mv-on">On your crawl card</span>`:`<button class="btn sm" type="button" data-a="use">Use on crawl card</button>`)+`<button class="btn sm line" type="button" data-a="add">Add photo</button>`
+    acts.innerHTML=r.followed?"":x.k==="p"?(r.photo===x.src?`<span class="mv-on">On your crawl card</span>`:`<button class="btn sm" type="button" data-a="use">Use on crawl card</button>`)+`<button class="btn sm line" type="button" data-a="add">Add photo</button>`
       :`<button class="btn sm" type="button" data-a="share">Share</button><button class="btn sm line" type="button" data-a="save">Save</button>`;
     acts.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{const a=b.dataset.a;
       if(a==="use"){r.photo=x.src;delete r.noPhoto;saveH();paint();if(S.route==="end")renderEnd()}

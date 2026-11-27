@@ -758,6 +758,13 @@ async function liveEnded(rec){if(!rec.live||!CLP)return;rec.liveId=rec.live;dele
 // after the crawl: the host's name and bar of the day reach everyone who followed (only the host sets them)
 async function liveMeta(r){if(!r||!r.liveId||r.followed||!cloudOn()||!signedIn())return;
   try{const B=await cloud();await B.set(`live/${r.liveId}`,{title:r.title||"",bod:r.barOfDay||"",bodDone:!!r.bodDone},true)}catch(e){console.warn("live meta",e)}}
+// The host's crawl photo reaches followers too, the same way: sent whenever it changes (up to a day after the crawl),
+// shrunk to keep the crawl's record small.
+const picSent={};
+function picSmall(src){return new Promise(res=>{if(!src||src.length<300000)return res(src||"");const img=new Image();img.onload=()=>{const s=Math.min(1,800/Math.max(img.width,img.height)),c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.68))};img.onerror=()=>res("");img.src=src})}
+function livePicCheck(){if(!cloudOn()||!signedIn())return;H.slice(0,6).forEach(r=>{if(!r.liveId||r.followed||now()-(r.endedAt||0)>864e5)return;
+  const k=r.photo?r.photo.length+":"+r.photo.slice(-40):"";if(picSent[r.id]===undefined){picSent[r.id]=r.picSent||"";}if(picSent[r.id]===k)return;picSent[r.id]=k;
+  picSmall(r.photo).then(pic=>cloud().then(B=>B.set(`live/${r.liveId}`,{pic},true))).then(()=>{r.picSent=k;writeH(hTest?TKEY:HKEY,H)}).catch(e=>{picSent[r.id]=undefined;console.warn("live pic",e)})})}
 // followers pick those up when the app opens or comes back, for crawls from the last week
 let metaAt=0;
 // After the crawl ends the host usually names it and picks bar of the day: keep listening for 30 minutes so both land
@@ -767,6 +774,7 @@ function metaApply(r,d){let ch=false;
   if(d.bod!==undefined){const hv=d.bod&&r.visits.find(v=>v.id===d.bod&&v.arrivedAt!=null),b=hv?d.bod:"";if(hv&&hv.counted!==true){hv.counted=true;ch=true}
     if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}
   if((d.bod||d.bodDone)&&r.bodWait){r.bodWait=false;ch=true}
+  if(d.pic!==undefined&&(d.pic||"")!==(r.photo||"")){if(d.pic){r.photo=d.pic;r.photos=[d.pic]}else{delete r.photo;r.photos=[]}ch=true}
   return ch}
 let metaUnsub=null;
 async function metaWatch(id){try{if(metaUnsub)metaUnsub();const B=await cloud();const un=B.watch(`live/${id}`,d=>{if(!d)return;const r=H.find(x=>x.liveId===id&&x.followed);if(r&&metaApply(r,d)){saveH();if(S.route==="end"||S.route==="hist")render()}});
@@ -787,7 +795,7 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=nFirst(d.hostName);if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
-  delete r.newIds;r.bodDone=true;r.test=!!S.test;if(!d.bod&&r.visits.filter(v=>v.counted!==false).length>=2)r.bodWait=true;
+  delete r.newIds;r.bodDone=true;r.test=!!S.test;if(d.pic){r.photo=d.pic;r.photos=[d.pic]}if(!d.bod&&r.visits.filter(v=>v.counted!==false).length>=2)r.bodWait=true;
   // the host's "did you have a drink?" calls aren't the follower's to make: anything still open counts by the 3-minute rule
   r.visits.forEach(v=>{if(v.counted==null&&v.arrivedAt!=null)v.counted=!!v.leftAt&&v.leftAt-v.arrivedAt>=DWELL_MIN*60000||!v.leftAt});
   let gT={};try{gT=JSON.parse(d.g)}catch(e){}if(gT.test&&!S.test){leaveFollow();closeSheet();toast("That was a test crawl, so it's not on your tab.",3500);go("home");return}   // a test crawl stays out of a real tab
