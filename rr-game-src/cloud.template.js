@@ -445,7 +445,7 @@ const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="av ${c
 // everyone on it, the host first
 const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Object.entries(d.members||{}).filter(([u])=>u!==d.host).sort((a,b)=>(a[1].j||0)-(b[1].j||0))):[];
 // up to three overlapping faces, then +N; never yourself
-function paintPile(el,d,withHost,pop){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),show=L.slice(0,3),more=L.length-show.length;
+function paintPile(el,d,withHost,pop){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),show=L.slice(0,L.length>3?2:3),more=L.length-show.length;   // never more than three circles: two faces and +N once there are four or more
   const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="av more">+${more}</span>`:"");
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlPeople(d),names=L.map(([,m])=>m.n),host=d.host===me&&G()&&G().live;
@@ -501,9 +501,9 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
   // A status page, not a copy of the game: the clock, where the group is, the wildcard in play and the rooftops so far.
   // No reel, no animations, nothing to press that the host's phone does, so nobody expects it to work like the host's.
-  fv.innerHTML=`<div class="fv-top"><div class="fv-l"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button></div>
+  fv.innerHTML=`<div class="fv-top"><div class="fv-l"><div class="t"><small id="fvWhoS"></small><b id="fvWho">Following</b></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
-    <div class="fv-r"><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div></div>
+    <div class="fv-r"><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
   $("fvMenu").onclick=followMenu;$("fvPile").onclick=peopleSheet;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
@@ -680,7 +680,7 @@ function fvStopSheet(i,back){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.n
 `,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back;const jt=$("sheetBody").querySelector(".fv-jtag");if(jt)jt.onclick=()=>toast(`<b>${esc(jd.t)}</b><br>${esc((FVJP[jd.k]||(()=>jd.d))(fvHost(d)))}`,3500)})}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now()+(d.off||0),cr=g.mode==="cruise";   // the host's game clock
-  const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Only you can spin":"You're following";
+  const who=fvHost(d);$("fvWho").textContent=fvPrev?"Your crawl":who;$("fvWhoS").textContent=fvPrev?"What friends see":"Following";
   followNote(d,g,t);
   // the same clock as the host's phone: held at the full length until the first bar (and through a time freeze), then counting down
   // only touch what changed: redrawing these four times a second made the page lay itself out again mid-scroll
