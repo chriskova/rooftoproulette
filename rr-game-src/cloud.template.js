@@ -625,7 +625,7 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   act=$("fvAct");
   {const al=$("fvAlert"),hr=!fvPrev&&!d.ended?hostReach(d):"ok",h=hr==="gone"?`<div class="t"><b>${esc(fvHost(d))} isn't connected</b></div><button class="btn sm" type="button" id="fvTake">Take over</button>`
       :hr==="quiet"?`<div class="t"><b>No signal from ${esc(fvHost(d))}</b><small>Take over in ${quietLeft(d)}s</small></div><button class="btn sm" type="button" id="fvTake" disabled>Take over</button>`:"";
-    if(hr==="gone"&&al._hr!=="gone")buzz([60,60,60]);al._hr=hr;
+
     if(al._h!==h){al._h=h;al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=takeOverSheet}}
   {const lp=fv.querySelector(".fv-livepill");if(lp)lp.hidden=!!d.ended||(!fvPrev&&["gone","quiet"].includes(hostReach(d)))}
   const want=fvPrev?"prev":d.ended?"end":"none";if(act.dataset.k!==want){act.dataset.k=want;
