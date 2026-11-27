@@ -361,8 +361,8 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
 function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
   const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
-  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
-  const rest=mates.filter(m=>!inU.has(m.uid)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
+  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
+  const rest=mates.filter(m=>!inU.has(m.uid)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
   const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
@@ -440,13 +440,13 @@ function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const on=cloudOn()&
 // each person keeps one colour (worked out from their account), the way Google does initials
 const AVC=["#C0634A","#6F8F62","#557BA3","#8A5A7C","#3C8780","#B0862C"];
 const avCol=u=>{let h=0;for(const c of String(u||"?"))h=(h*31+c.charCodeAt(0))|0;return AVC[Math.abs(h)%AVC.length]};
-const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="av ${cls||""}" data-u="${esc(u)}"><img src="${esc(m.p)}" alt="" referrerpolicy="no-referrer"></span>`
-  :`<span class="av ${cls||""}" data-u="${esc(u)}" style="background:${avCol(u)}">${esc((nFirst(n)||"?")[0].toUpperCase())}</span>`};
+const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="pv ${cls||""}" data-u="${esc(u)}"><img src="${esc(m.p)}" alt="" referrerpolicy="no-referrer"></span>`
+  :`<span class="pv ${cls||""}" data-u="${esc(u)}" style="background:${avCol(u)}">${esc((nFirst(n)||"?")[0].toUpperCase())}</span>`};
 // everyone on it, the host first
 const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Object.entries(d.members||{}).filter(([u])=>u!==d.host).sort((a,b)=>(a[1].j||0)-(b[1].j||0))):[];
 // up to three overlapping faces, then +N; never yourself
 function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
-  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="av more">${show.length?"+":""}${more}</span>`:"");
+  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"");
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 // as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
 // Roomy first (a little gap from the menu, faces less squashed); tightened only when that's what fits more people.
@@ -475,7 +475,7 @@ function joinShow(){const q=joinQ;if(!q||document.hidden)return;joinQ=null;const
   document.body.appendChild(ban);requestAnimationFrame(()=>ban.classList.add("on"));buzz([30,60,30]);
   setTimeout(()=>{const pile=fv?$("fvPile"):$("pPile"),vis=pile&&pile.offsetParent!==null;
     if(!vis){ban.classList.remove("on");setTimeout(()=>ban.remove(),300);return}
-    const T=pile.getBoundingClientRect(),avs=[...ban.querySelectorAll(".av")];ban.classList.add("fly");
+    const T=pile.getBoundingClientRect(),avs=[...ban.querySelectorAll(".pv")];ban.classList.add("fly");
     avs.forEach((a,i)=>{const r=a.getBoundingClientRect(),dx=T.left+12+i*4-(r.left+r.width/2),dy=T.top+T.height/2-(r.top+r.height/2),s=Math.max(.6,T.height/r.height*.8);
       a.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${s})`,opacity:.9}],{duration:520,delay:i*60,easing:"cubic-bezier(.5,0,.2,1)",fill:"forwards"})});
     setTimeout(()=>{ban.remove();const d=liveDoc;if(d)paintPile(pile,d,!!fv,new Set(q.list.map(([u])=>u)));setTimeout(()=>{if(d){pile._h="";paintPile(pile,d,!!fv)}},700)},560+avs.length*60)},2800)}
@@ -722,7 +722,7 @@ function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
   S.game=g;save();liveLastSig=liveSig(g);startWatch();buzz(30);go("play");toast("You've got the spin.",2500);liveSync(true)}
 // host hands the spin to a follower
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{}).filter(([u])=>u!==(d&&d.host));
-  sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(nIn(m.n,ms.map(x=>x[1].n))||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
+  sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0])}</span><span class="mn">${esc(nIn(m.n,ms.map(x=>x[1].n))||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
     document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>offerSpin(b.dataset.gs))})}
 // the offer: their phone asks them; it's only handed over once they say yes (30 seconds, or Cancel)
 const OFFER_MS=30000;let offerT=0;
