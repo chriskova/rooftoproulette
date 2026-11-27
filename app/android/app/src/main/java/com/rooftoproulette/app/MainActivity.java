@@ -9,7 +9,11 @@ import android.view.WindowManager;
 import android.os.SystemClock;
 import android.webkit.WebView;
 import androidx.core.splashscreen.SplashScreen;
+import android.view.View;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.WebViewListener;
@@ -45,6 +49,11 @@ public class MainActivity extends BridgeActivity {
         // and the web view itself. Cream with dark icons by default, black with light icons in dark mode.
         applyBars(getResources().getConfiguration());
 
+        // The page lays itself out around the status bar, the camera cut-out and the navigation bar, from sizes this
+        // hands it. Capacitor's own handling is off: on some phones (an older system WebView, or a reload where it
+        // missed the page's settings) it pushed the whole page down below a plain strip instead.
+        safeAreas();
+
         try {
             WebView wv = getBridge().getWebView();
             // Big system text: follow it, but cap it at 130% so the layout and main buttons still fit (what Uber and most apps do)
@@ -54,6 +63,12 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void onPageLoaded(WebView webView) {
                     if (readyAt == 0) readyAt = SystemClock.uptimeMillis();
+                    injectSafeAreas();
+                }
+
+                @Override
+                public void onPageCommitVisible(WebView webView, String url) {
+                    injectSafeAreas();
                 }
             });
         } catch (Exception ignored) {
@@ -84,6 +99,40 @@ public class MainActivity extends BridgeActivity {
         bars.setAppearanceLightStatusBars(!night);
         bars.setAppearanceLightNavigationBars(!night);
         try { getBridge().getWebView().setBackgroundColor(bg); } catch (Exception ignored) {}
+    }
+
+    private int[] safe = null;   // top, right, bottom, left in CSS pixels
+
+    void safeAreas() {
+        View decor = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decor, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            boolean kb = insets.isVisible(WindowInsetsCompat.Type.ime());
+            // the keyboard still shrinks the page (so a text box stays above it); nothing else moves it
+            v.setPadding(0, 0, 0, kb ? ime.bottom : 0);
+            float d = getResources().getDisplayMetrics().density;
+            int bottom = kb ? Math.max(0, bars.bottom - ime.bottom) : bars.bottom;
+            safe = new int[] { Math.round(bars.top / d), Math.round(bars.right / d), Math.round(bottom / d), Math.round(bars.left / d) };
+            injectSafeAreas();
+            return insets;
+        });
+        decor.requestApplyInsets();
+    }
+
+    void injectSafeAreas() {
+        final int[] s = safe;
+        if (s == null) return;
+        try {
+            final WebView wv = getBridge().getWebView();
+            final String js = "(function(){var r=document.documentElement.style;"
+                + "r.setProperty('--safe-area-inset-top','" + s[0] + "px');"
+                + "r.setProperty('--safe-area-inset-right','" + s[1] + "px');"
+                + "r.setProperty('--safe-area-inset-bottom','" + s[2] + "px');"
+                + "r.setProperty('--safe-area-inset-left','" + s[3] + "px');"
+                + "window.dispatchEvent(new Event('resize'))})()";
+            wv.post(() -> wv.evaluateJavascript(js, null));
+        } catch (Exception ignored) {}
     }
 
     void edgeToEdge() {

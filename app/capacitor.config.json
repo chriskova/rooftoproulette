@@ -13,7 +13,8 @@
   },
   "plugins": {
     "SystemBars": {
-      "style": "DEFAULT"
+      "style": "DEFAULT",
+      "insetsHandling": "disable"
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_rr",
