@@ -237,8 +237,8 @@ const avatarHTML=big=>`<span class="aav${big?" big":""}">${ME&&ME.photo?`<img sr
 // once you're in: the account page if you came from the account button or Settings, otherwise just a toast
 function afterSignIn(from){let k=0;const go=()=>{const first=((ME&&ME.name)||"").split(" ")[0];
     if(signedIn()&&(from==="acct"||from==="settings"||from==="mytab"))accountPage();
-    else if(signedIn()&&from==="live"){closeSheet();toast(first?`You're in, ${esc(first)}.`:"You're in.",2000);setTimeout(liveInvite,350)}
-    else if(signedIn()){closeSheet();toast(first?`You're in, ${esc(first)}.`:"You're in.",2600)}
+    else if(signedIn()&&from==="live"){closeSheet();toast(first?`Signed in as ${esc(first)}`:"Signed in",2000);setTimeout(liveInvite,350)}
+    else if(signedIn()){closeSheet();toast(first?`Signed in as ${esc(first)}`:"Signed in",2600)}
     else toast("Couldn't finish signing in. Try again.",3500)};
   if(signedIn())go();else{const t=setInterval(()=>{if(signedIn()||++k>25){clearInterval(t);go()}},100)}}
 // Account: a full page like Settings, for when you're signed in. Who you are, who you crawl with, your tab's backup.
