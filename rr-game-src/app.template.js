@@ -692,7 +692,10 @@ function pageView(route){if(!route||route===anLastPage)return;anLastPage=route;c
   const nm={home:"home",play:"crawl",end:"summary",bars:"rooftops",hist:"my-tab",wiz:"setup",quick:"rr-setup",perm:"location",intro:"intro",ob:"welcome"}[route]||route;
   track("$pageview",{$pathname:base+"/"+nm,$current_url:location.origin+base+"/"+nm,screen:nm})}
 let prevRoute=null;
+let minWhy="";
 function go(route){prevRoute=S.route;if(route!=="home")backArm();
+  // test mode: say what dropped a crawl into the bar above the tabs (tracking down an unexpected minimise)
+  if(S.test&&S.route==="play"&&route==="home"&&S.game&&!S.game.ended){const w=minWhy||(new Error().stack||"").split("\n").slice(2,4).map(x=>x.trim().replace(/^at /,"").split(" ")[0]).join(" < ");setTimeout(()=>toast(`Test: minimised by ${esc(w)}`,5000),300)}minWhy="";
   // leaving a setup screen: clear it, so its map can't be mistaken for the next one's (both use the same names)
   if(route!==S.route){if(S.route==="wiz"&&$("wBody")){$("wBody").innerHTML="";if(rrMap){rrMap.remove();rrMap=null}}if(S.route==="quick"&&$("v-quick")){$("v-quick").innerHTML="";if(rrMap){rrMap.remove();rrMap=null}}}{const t=document.querySelector(".camtip");if(t&&route!=="play")t.remove()}if(route==="end"&&S.route!=="end")S.endBack=S.route;if(S.route!==route&&typeof hideToast==="function")hideToast();if(route!=="bars"&&typeof bSearching!=="undefined"&&bSearching){bSearching=false;$("app").classList.remove("searching");$("barsMain").hidden=false;$("barsResults").hidden=true;$("bQx").hidden=true;$("bView").hidden=false;$("bQ").value=""}S.route=route;save();render()}
 function render(){
@@ -736,7 +739,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   m.onclick=()=>{go("play");const v=$("v-play");v.classList.remove("rise");void v.offsetWidth;v.classList.add("rise");setTimeout(()=>v.classList.remove("rise"),520)}}
 function cta(html,on){const c=$("cta");c.innerHTML=html;c.hidden=false;$("app").classList.add("has-cta");if(on)on(c)}
 [["tPlay","play","Play"],["tBars","bars","Rooftops"],["tHist","hist","My Tab"]].forEach(([id,k,l])=>{$(id).innerHTML=tabIcons[k]+`<span>${l}</span>`;$(id).dataset.tab=k});
-$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;if(typeof fv!=="undefined"&&fv){if(k!=="play")minFollow(k);return}if(k==="bars"&&S.route!=="bars"&&S.barsView==="map"){S.barsView="list";save()}go(k==="play"?"home":k)};   // Rooftops always opens on the list
+$("tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=b.dataset.tab;minWhy=`the ${k==="play"?"Play":k==="bars"?"Rooftops":"My Tab"} tab`;if(typeof fv!=="undefined"&&fv){if(k!=="play")minFollow(k);return}if(k==="bars"&&S.route!=="bars"&&S.barsView==="map"){S.barsView="list";save()}go(k==="play"?"home":k)};   // Rooftops always opens on the list
 
 /* ---------- shared copy ---------- */
 
@@ -4609,6 +4612,7 @@ function appBack(){
   if(S.route==="bars"&&bSearching){setSearching(false);return true}
   if(S.route==="intro"&&(S.intro||0)>0){S.intro--;save();renderIntro();return true}
   if(S.route==="intro"&&S.introReplay){S.introReplay=false;go("home");return true}
+  if(S.route==="play"&&$("reelBack")&&$("reelBack").offsetParent!==null){$("reelBack").click();return true}
   const v=$("v-"+S.route),bk=v&&[...v.querySelectorAll('[aria-label="Back"]')].find(x=>x.offsetParent!==null);
   if(bk){bk.click();return true}
   if(!["home","intro","ob"].includes(S.route)){go("home");return true}
@@ -4619,7 +4623,7 @@ function backNeeded(){return S.route!=="home"||!!($("sheet")&&$("sheet").open)}
 addEventListener("popstate",()=>{if($("docPage")){closeDoc();return}if($("acctPage")){closeAcct();return}if($("setPage")){closeSettings();return}
   if(NATIVE)return;if(appBack()&&backNeeded())backArm()});
 if(NATIVE&&CAPX.Plugins&&CAPX.Plugins.App&&CAPX.Plugins.App.addListener)
-  CAPX.Plugins.App.addListener("backButton",()=>{if(!appBack())CAPX.Plugins.App.minimizeApp()});
+  CAPX.Plugins.App.addListener("backButton",()=>{minWhy="the back gesture";if(!appBack())CAPX.Plugins.App.minimizeApp()});
 // Clips take space on the phone; clear them by hand (never automatically: some people keep them only here).
 function clipsClearSheet(L){const inGal=L.filter(c=>c.gal),out=L.length-inGal.length,sz=a=>mbTxt(a.reduce((t,c)=>t+(c.blob&&c.blob.size||0),0));
   const cn=n=>`${n} clip${n===1?"":"s"}`;
