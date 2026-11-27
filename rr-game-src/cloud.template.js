@@ -413,6 +413,11 @@ function onLive(id,d){
 // A follower opening the menu asks "are you there?" (their member entry gets a ping time). The host's phone answers
 // straight away by echoing it back. No answer within a few seconds and that follower can take over the crawl.
 function hostPongs(d){const P=Object.assign({},d.pongs||{});let ch=false;Object.entries(d.members||{}).forEach(([u,m])=>{if(m&&m.ping&&P[u]!==m.ping){P[u]=m.ping;ch=true}});return ch?P:null}
+// A locked phone (or another app on top) can't answer followers' "are you there?". The host's phone says so as it goes,
+// so followers see "away from the app", not "isn't connected", and nobody takes over from someone just pocketing a phone.
+function hostAway(on){const g=G();if(!g||!g.live||g.ended||!isHost())return;cloud().then(B=>B.set(`live/${g.live}`,on?{away:Date.now()}:{away:0,beat:Date.now()},true)).catch(()=>{})}
+document.addEventListener("visibilitychange",()=>hostAway(document.hidden));
+addEventListener("pagehide",()=>hostAway(true));
 let memSeen=null;
 function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
   memSeen={id,s:new Set(ids)};
@@ -453,7 +458,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   fv.innerHTML=`<div class="fv-hd"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}<span class="fv-livepill"><i></i>LIVE</span><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
-    <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvWild"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
+    <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvWild"></div><div id="fvJp"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
   $("fvMenu").onclick=followMenu;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
@@ -495,9 +500,10 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   if(!d||d.ended||!g.started){if(fvNote){fvNote="";natCall("CrawlNotify","clear").catch(()=>{})}return}
   noteSetup();notifEnsure("f"+S.follow,true);
   const cr=g.mode==="cruise",vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tgt=g.target&&byId(g.target),who=d.hostName?nFirst(d.hostName)+"'s crawl":"Live crawl";
-  const o={follower:true,title:at?`${who} · at ${byId(at.id).name}`:tgt?`${who} · heading to ${tgt.name}`:`${who} · spinning next`,text:cr?"R&R":plural(vs.filter(v=>v.counted!==false).length,"rooftop")+" so far"};
+  const hn=fvHost(d),nx=tgt&&(!at||tgt.id!==at.id)?tgt:null,spin=fvSpinning(g,t);
+  const o={follower:true,title:spin?`${hn} is spinning`:nx?(at?`Up next: ${nx.name}`:`Heading to ${nx.name}`):at?`At ${byId(at.id).name}`:`${hn} spins next`,text:`Following ${hn}'s crawl`};
   const fz=g.frz&&t<g.frz.until;
-  if(!cr&&fz&&g.frz.start)o.text="Clock starts at the first rooftop";
+  if(!cr&&fz&&g.frz.start)o.text=`Following ${hn}'s crawl · clock starts at the first rooftop`;
   else if(!cr&&!fz){o.endsAt=Math.round(g.endsAt-(d.off||0));o.startAt=Math.round(g.startedAt-(d.off||0));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-t)/Math.max(1,g.endsAt-g.startedAt))}
   else if(cr&&at)o.since=Math.round(at.arrivedAt);
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
@@ -506,7 +512,8 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
 const PING_WAIT=6000;   // a host phone that's locked or on a slow connection can take a few seconds to answer: say "Checking" until it's sure
 let fmPing=0;
 // where the host's phone stands for this follower: answering, being checked, or not answering
-function hostReach(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
+function hostReach(d){const r=hostReach0(d);return r==="gone"&&d&&d.away?"away":r}
+function hostReach0(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
   if(fmPing&&(!m||m.ping!==fmPing))return Date.now()-fmPing<PING_WAIT?"checking":"ok";   // this phone's ask hasn't reached the crawl yet (or this phone's offline)
   if(!m||!m.ping)return "ok";if((d.pongs||{})[me]===m.ping)return "ok";return Date.now()-m.ping>PING_WAIT?"gone":"checking"}
@@ -515,10 +522,10 @@ async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liv
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
 // Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
 function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
-  return `<button type="button" id="fmTake" class="${st==="gone"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who} isn't connected`:st==="checking"?`Checking ${who}…`:`${who} is connected`}</small></span></button>`}
+  return `<button type="button" id="fmTake" class="${st==="gone"||st==="away"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who} isn't connected`:st==="away"?`${who} is away from the app`:st==="checking"?`Checking ${who}…`:`${who} is connected`}</small></span></button>`}
 let fmWant=false;
 function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
-  if(st==="gone"){fmWant=false;takeOverSheet();return}
+  if(st==="gone"||st==="away"){fmWant=false;takeOverSheet();return}
   if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who} is connected.<br>Ask ${who} for the spin.`,3500);return}
   if(st==="ok")pingHost();fmWant=true}   // checking (or a fresh check): the row carries on once it hears back
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
@@ -555,41 +562,51 @@ const fvVisits=g=>(g.visits||[]).filter(v=>v.arrivedAt!=null);
 const fvWildAt=(g,id)=>{const e=(g.wlog||[]).filter(x=>x&&typeof x==="object"&&x.id===id).pop();return e?e.t:(g.wild&&g.wild.id===id?g.wild.text:"")};
 function fvRule(g,w){const m=WMETA[w.text];if(!m)return w.text;if(m.seal&&!wOpenNow(g,w))return "Opens at the rooftop";if(m.spin)return (w.res||[]).length?wFull(m,w.res):m.t;return wLead(m)}
 function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
-  if(d.ended){if(el._k!=="end"){el._k="end";el.innerHTML="";$("fvWild").innerHTML=""}return}
+  if(d.ended){if(el._k!=="end"){el._k="end";el.innerHTML="";$("fvWild").innerHTML="";$("fvJp").innerHTML=""}return}
   const vs=fvVisits(g),at=vs.find(v=>!v.leftAt),J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
-  const spin=fvSpinning(g,t)&&!at;                       // spinning from a bar keeps showing the bar until the next one's picked
-  const v=at?byId(at.id):!spin&&g.target?byId(g.target):null,yy=fvPrev?null:you();
-  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,g.reelOpen]);
-  if(el._k===k){const dw=$("fvDwell");if(dw&&at)dw.textContent=fvHere(t-at.arrivedAt);fvWildPaint(g,v,at);return}
+  const spin=fvSpinning(g,t);                                        // the host's wheel is going, from a bar or on the way
+  const nx=!spin&&g.target&&(!at||g.target!==at.id)?byId(g.target):null;   // landed: the next rooftop, even before they've left
+  const v=nx||(!spin&&at?byId(at.id):null),still=at&&(spin||nx)?at:null,yy=fvPrev?null:you();
+  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx]);
+  const tick=()=>{const dw=$("fvDwell");if(dw&&at&&!nx)dw.textContent=fvHere(t-at.arrivedAt);const st=$("fvStillT");if(st&&still)st.textContent=fvMin(t-still.arrivedAt)};
+  if(el._k===k){tick();fvWildPaint(g,v,at);fvJpPaint(d,g,t,spin);return}
   const was=el._k?JSON.parse(el._k):null;el._k=k;
-  if(was&&v&&was[2]!==v.id)buzz(at?[40,40,40]:30);    // a new rooftop picked, or arrived
+  if(was&&v&&was[2]!==v.id)buzz(at&&!nx?[40,40,40]:30);    // a new rooftop picked, or arrived
+  const sb=still?`<div class="fv-still"><span>At <b>${esc(byId(still.id).name)}</b></span><span id="fvStillT">${fvMin(t-still.arrivedAt)}</span></div>`:"";
   if(!v){const first=!g.started&&!vs.length&&!g.target;
-    el.innerHTML=`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${spin||!first?"The next rooftop shows here":"The first rooftop shows here"}</span></div>`;fvWildPaint(g,null,null);return}
+    el.innerHTML=sb+`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${first&&!spin?"The first rooftop shows here":"The next rooftop shows here"}</span></div>`;fvWildPaint(g,null,null);fvJpPaint(d,g,t,spin);return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){el._k="";paintFollow()}});
-  const cp=cardPhoto(v);
-  const meta=at?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");
-  el.innerHTML=`<div class="fv-ph${cp.cls?" on":""}"${cp.style}>${cp.cr}<div class="fv-tx"><span class="eyebrow">${at?"At the rooftop":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
-    ${at?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}</div>`;
-  fvWildPaint(g,v,at)}
+  const cp=cardPhoto(v),here=at&&!nx;
+  const meta=here?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");
+  el.innerHTML=sb+`<div class="fv-ph${cp.cls?" on":""}"${cp.style}>${cp.cr}<div class="fv-tx"><span class="eyebrow">${here?"At the rooftop":at?"Up next":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
+    ${here?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}</div>`;
+  fvWildPaint(g,v,at);fvJpPaint(d,g,t,spin)}
+// the jackpot, once it's landed, until the group leaves the rooftop it picked: so nobody wonders why the clock stopped
+const FVJP={call:w=>`${w} picked this rooftop from three.`,freeze:()=>"Clock frozen for 10 minutes.",spins:w=>`${w}'s next 3 re-spins are free.`,short:()=>"The closest open rooftop.",dealer:w=>`${w} picked the wildcard.`};
+function fvJpPaint(d,g,t,spin){const el=$("fvJp");if(!el)return;const jp=g.jp,JD=jp&&JACKPOTS.find(x=>x.k===jp.k);let h="";
+  if(JD&&!spin&&g.targetAt&&g.targetAt>=jp.at){const lv=fvVisits(g)[jp.leg];if(!lv||!lv.leftAt)h=fvJpCard(JD,fvHost(d))}
+  if(el._h!==h){el._h=h;el.innerHTML=h}}
+const fvJpCard=(JD,who)=>`<div class="fv-wc jp"><div class="wcd-card jp">${I.sparkle}<b>${esc(JD.t)}</b></div><div class="t"><span class="eyebrow">Jackpot</span><p>${esc((FVJP[JD.k]||(()=>JD.d))(who))}</p></div></div>`;
+const fvWcCard=(w,rule)=>`<div class="fv-wc"><div class="wcd-card">${wFace(w)}<b>${esc(wNm(w))}</b></div><div class="t"><span class="eyebrow">Wildcard</span><p>${esc(rule)}</p></div></div>`;
 const fvMin=ms=>ms<60000?"<1 min":Math.floor(ms/60000)+" min";
 const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
 function fvWildPaint(g,v,at){const el=$("fvWild");if(!el)return;const w=g.wild&&v&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
-  const h=w?`<div class="fv-wl">${wFace(w.text)}<div><span class="nm">Wildcard · ${esc(wNm(w.text))}</span><p>${esc(fvRule(g,w))}</p></div></div>`:"";if(el._h!==h){el._h=h;el.innerHTML=h}}
+  const h=w?fvWcCard(w.text,fvRule(g,w)):"";if(el._h!==h){el._h=h;el.innerHTML=h}}
 // rooftops so far: every one you've left, newest first (the one you're at is the card above). The page scrolls; a crawl
 // rarely goes past five or six.
-function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse();
-  const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${v.cant?"No entry":v.counted===false?"Didn't count":fvMin(v.leftAt-v.arrivedAt)+" there"}</small>${w?`<span class="wtag">${wFace(w)}${esc(wNm(w))}</span>`:""}</span><span class="tm">${clock12(sydAt(v.arrivedAt).min)}</span></button>`}).join("");
+function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse(),JD=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpAt=JD?g.jp.leg:-1;
+  const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${v.cant?"No entry":v.counted===false?"Didn't count":fvMin(v.leftAt-v.arrivedAt)+" there"} · ${clock12(sydAt(v.arrivedAt).min)}</small></span>${jpAt===i?`<span class="wcd-card wsm jp">${I.sparkle}<b>${esc(JD.t)}</b></span>`:""}${w?`<span class="wcd-card wsm">${wFace(w)}<b>${esc(wNm(w))}</b></span>`:""}</button>`}).join("");
   const h=done.length?`<div class="fv-list"><div class="fv-lh"><span class="eyebrow">Previous rooftops</span></div>${rows}</div>`:"";
   if(el._h===h)return;el._h=h;el.innerHTML=h;
   el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
 const fvG=()=>{try{return JSON.parse(liveDoc.g)}catch(e){return {}}};
 // one stop on the crawl: its photo with the name over it, then arrived, time there and getting there, and its wildcard
 function fvStopSheet(i,back){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g),v=vs[i];if(!v)return;const b=byId(v.id);if(!b)return;
-  const prev=i>0?vs[i-1].leftAt:g.startedAt,leg=prev?v.arrivedAt-prev:null,w=fvWildAt(g,v.id),cp=cardPhoto(b);
+  const prev=i>0?vs[i-1].leftAt:g.startedAt,leg=prev?v.arrivedAt-prev:null,w=fvWildAt(g,v.id),cp=cardPhoto(b),jd=g.jp&&g.jp.leg===i&&JACKPOTS.find(x=>x.k===g.jp.k);
   if(phMem[b.id]===undefined)barPhoto(b).then(ph=>{if(ph&&$("sheet").open&&$("sheetBody").querySelector(".fv-sph"))fvStopSheet(i,back)});
   sheet(`<div class="fv-sph${cp.cls?" on":""}"${cp.style}>${cp.cr}${back?`<button type="button" class="fv-sback" id="fsBack" aria-label="Back">${I.back}</button>`:""}<div class="fv-tx"><span class="eyebrow">Rooftop ${i+1}${v.cant?" · No entry":v.counted===false?" · Didn't count":""}</span><h2>${esc(b.name)}</h2></div></div>
     <div class="fv-stats"><div><small>Arrived</small><b>${clock12(sydAt(v.arrivedAt).min)}</b></div><div><small>Time there</small><b>${v.cant?"No entry":fvMin((v.leftAt||t)-v.arrivedAt)}</b></div><div><small>Travel</small><b>${leg!=null&&leg>=0?fvMin(leg):"–"}</b></div></div>
-    ${w?`<div class="fv-wl">${wFace(w)}<div><span class="nm">Wildcard · ${esc(wNm(w))}</span><p>${esc(w)}</p></div></div>`:""}`,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back})}
+    ${w||jd?`<div class="fv-cards">${w?fvWcCard(w,WMETA[w]&&WMETA[w].spin?WMETA[w].t:w):""}${jd?fvJpCard(jd,fvHost(d)):""}</div>`:""}`,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back})}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now()+(d.off||0),cr=g.mode==="cruise";   // the host's game clock
   const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Only you can spin":"You're following";
@@ -607,12 +624,12 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
     if($("fvDone"))$("fvDone").onclick=()=>{const id=S.follow;leaveFollow();const r=H.find(x=>x.liveId===id);if(r){S.lastEnd=r.id;S.endBack="home";save();go("end")}else go("home")}}}
-function takeOverSheet(){const who=esc(fvHost(liveDoc));
-  sheet(`<h3>Take over the crawl?</h3><p class="note">${who} isn't connected. You'll have the spin and the clock, and everyone following moves to your phone.</p>
+function takeOverSheet(){const who=esc(fvHost(liveDoc)),away=hostReach(liveDoc)==="away";
+  sheet(`<h3>Take over the crawl?</h3><p class="note">${away?`${who} is away from the app.`:`${who} isn't connected.`} You'll have the spin and the clock, and everyone following moves to your phone.</p>
     <div class="acts"><button class="btn" type="button" id="toY">Take over</button><button class="btn dark" type="button" id="toN">Cancel</button></div>`,()=>{
     $("toN").onclick=closeSheet;$("toY").onclick=()=>{closeSheet();takeOver()}})}
 async function takeOver(){const id=S.follow,B=await cloud();let ok=false;
-  try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||hostReach(d)!=="gone")return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
+  try{ok=await B.tx(`live/${id}`,d=>{if(!d||d.ended||!["gone","away"].includes(hostReach(d)))return undefined;const m=Object.assign({},d.members||{}),me=m[ME.uid];delete m[ME.uid];let gg={};try{gg=JSON.parse(d.g)}catch(e){}
     m[d.host]={n:d.hostName||"",j:(me&&me.j)||Date.now(),b:0,was:1};
     return Object.assign({},d,{host:ME.uid,hostName:crawlName(),beat:Date.now(),prevHost:d.host,members:m})})}catch(e){console.warn(e)}
   if(!ok){toast("Someone else got there first.",2500);return}track("live_takeover")}
@@ -635,31 +652,37 @@ async function liveEnded(rec){if(!rec.live||!CLP)return;rec.liveId=rec.live;dele
   liveDetach()}
 // after the crawl: the host's name and bar of the day reach everyone who followed (only the host sets them)
 async function liveMeta(r){if(!r||!r.liveId||r.followed||!cloudOn()||!signedIn())return;
-  try{const B=await cloud();await B.set(`live/${r.liveId}`,{title:r.title||"",bod:r.barOfDay||""},true)}catch(e){console.warn("live meta",e)}}
+  try{const B=await cloud();await B.set(`live/${r.liveId}`,{title:r.title||"",bod:r.barOfDay||"",bodDone:!!r.bodDone},true)}catch(e){console.warn("live meta",e)}}
 // followers pick those up when the app opens or comes back, for crawls from the last week
 let metaAt=0;
 // After the crawl ends the host usually names it and picks bar of the day: keep listening for 30 minutes so both land
 // on the follower's recap as they're set, then fall back to the occasional check below.
 function metaApply(r,d){let ch=false;
   if(d.title!==undefined&&(d.title||"")!==(r.title||"")){if(d.title)r.title=d.title;else delete r.title;ch=true}
-  if(d.bod!==undefined){const b=d.bod&&r.visits.some(v=>v.id===d.bod&&v.counted===true)?d.bod:"";if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}
+  if(d.bod!==undefined){const hv=d.bod&&r.visits.find(v=>v.id===d.bod&&v.arrivedAt!=null),b=hv?d.bod:"";if(hv&&hv.counted!==true){hv.counted=true;ch=true}
+    if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}
+  if((d.bod||d.bodDone)&&r.bodWait){r.bodWait=false;ch=true}
   return ch}
 let metaUnsub=null;
 async function metaWatch(id){try{if(metaUnsub)metaUnsub();const B=await cloud();const un=B.watch(`live/${id}`,d=>{if(!d)return;const r=H.find(x=>x.liveId===id&&x.followed);if(r&&metaApply(r,d)){saveH();if(S.route==="end"||S.route==="hist")render()}});
-  metaUnsub=un;setTimeout(()=>{if(metaUnsub===un){un();metaUnsub=null}},30*60000)}catch(e){console.warn("meta watch",e)}}
+  metaUnsub=un;const until=Date.now()+30*60000;
+    // a fallback while the host's choosing: a plain read every 20 seconds, in case the live listener dropped (phone locked, signal)
+    const pl=setInterval(async()=>{if(Date.now()>until||document.hidden)return;const r=H.find(x=>x.liveId===id&&x.followed);if(!r||r.barOfDay&&r.title){clearInterval(pl);return}
+      const d=await B.get(`live/${id}`).catch(()=>null);if(d&&metaApply(r,d)){saveH();if(S.route==="end"||S.route==="hist")render()}},20000);
+    setTimeout(()=>{clearInterval(pl);if(metaUnsub===un){un();metaUnsub=null}const r=H.find(x=>x.liveId===id&&x.followed);if(r&&r.bodWait){r.bodWait=false;saveH();if(S.route==="end")render()}},30*60000)}catch(e){console.warn("meta watch",e)}}
 async function followMetaPull(){if(!cloudOn()||Date.now()-metaAt<5*60000)return;
   const L=H.filter(r=>r.followed&&r.liveId&&now()-(r.endedAt||0)<7*864e5);if(!L.length)return;metaAt=Date.now();
   let ch=false;try{const B=await cloud();for(const r of L){const d=await B.get(`live/${r.liveId}`).catch(()=>null);if(!d)continue;
     if(metaApply(r,d))ch=true}}catch(e){console.warn("meta pull",e)}
   if(ch){saveH();if(S.route==="end"||S.route==="hist")render()}}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)followMetaPull()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){if(H.some(r=>r.followed&&r.bodWait))metaAt=0;followMetaPull()}});
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
   let r;try{r=JSON.parse(d.rec)}catch(e){return}
   // fill in anything an older host version left out, so the crawl card and tab can always draw it
   r.visits=r.visits||[];r.moves=r.moves||[];r.excluded=r.excluded||[];if(!(r.areas&&r.areas.length))r.areas=[r.center?nearestSuburb(r.center):""];
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=nFirst(d.hostName);if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
-  delete r.newIds;r.bodDone=true;r.test=!!S.test;
+  delete r.newIds;r.bodDone=true;r.test=!!S.test;if(!d.bod&&r.visits.filter(v=>v.counted!==false).length>=2)r.bodWait=true;
   // the host's "did you have a drink?" calls aren't the follower's to make: anything still open counts by the 3-minute rule
   r.visits.forEach(v=>{if(v.counted==null&&v.arrivedAt!=null)v.counted=!!v.leftAt&&v.leftAt-v.arrivedAt>=DWELL_MIN*60000||!v.leftAt});
   let gT={};try{gT=JSON.parse(d.g)}catch(e){}if(gT.test&&!S.test){leaveFollow();closeSheet();toast("That was a test crawl, so it's not on your tab.",3500);go("home");return}   // a test crawl stays out of a real tab

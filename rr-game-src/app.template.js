@@ -3596,7 +3596,7 @@ function renderEnd(){
       <div class="bodgrid" style="--rows:${Math.ceil(st.counted.length/2)}">${st.counted.map(v=>{const b=byId(v.id),cp=cardPhoto(b);return `<button type="button" class="bodt${cp.cls}${r.barOfDay===b.id?" on":""}" data-bp="${b.id}"${cp.style}><b>${esc(b.name)}</b></button>`}).join("")}</div></div>`;
     box.scrollTop=0;
     box.querySelectorAll("[data-bp]").forEach(t=>t.onclick=()=>{r.barOfDay=t.dataset.bp;r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();if(typeof liveMeta==="function")liveMeta(r);buzz(15);renderEnd()});
-    $("bodSkip").onclick=()=>{r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();renderEnd()};
+    $("bodSkip").onclick=()=>{r.bodDone=true;delete S.bodOpen;delete S.bodDue;save();saveH();if(typeof liveMeta==="function")liveMeta(r);renderEnd()};
     st.counted.forEach(v=>{const b=byId(v.id);if(phMem[b.id]===undefined&&phAllowed(b.id,"play"))barPhoto(b).then(ph=>{const t=box.querySelector(`[data-bp="${b.id}"]`);if(t&&ph){t.classList.add("photo");t.style.backgroundImage=`url('${ph.url}')`}})});
     return}
   box.innerHTML=`
@@ -3615,7 +3615,8 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
           const row=(v,i,k)=>{const b=byId(v.id),stay=v.leftAt?(v.leftAt-v.arrivedAt):(r.endedAt-v.arrivedAt),bod=r.barOfDay===v.id,tm=v.cant?"No entry":v.lastOrders?"Last orders":v.counted===false?"Didn't count":r.noLoc?"":hmm(Math.max(0,stay)),cp=cardPhoto(b);
             if(k==="strip")return `<div class="bcard${v.counted===true?"":" x"}${bod?" isbod":""}" ${bod?'data-bodopen="1"':`data-bar="${b.id}"`} role="button" tabindex="0"><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}><i>${i+1}</i></span><span class="nm">${esc(b.name)}</span><span class="tm">${tm}</span>${bod?'<span class="bodtag">Rooftop of the day</span>':""}</div>`;
             return `<div class="brow${v.counted===true?"":" x"}${bod?" isbod":""}"${bod?' data-bodopen="1" role="button"':""}><span class="bth${cp.cls}" data-ph="${b.id}"${cp.style}></span><i>${i+1}</i><span class="nmw"><span class="nmx"><span class="nm">${esc(b.name)}</span>${bod?'<span class="bodtag">Rooftop of the day</span>':""}</span><span class="tm">${tm}</span></span></div>`};
-          const pick=n>=2&&!r.barOfDay&&!r.followed?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your rooftop of the day</button>`:"";
+          const pick=n>=2&&!r.barOfDay&&!r.followed?`<button class="bodbtn" type="button" data-bodopen="1">${I.sparkle} Pick your rooftop of the day</button>`
+            :r.followed&&r.bodWait&&!r.barOfDay?`<div class="bodwait"><span class="fv-dots"><i></i><i></i><i></i></span>${esc(r.followed)} is picking the rooftop of the day</div>`:"";
           const mapblk=`        <div class="scmap wide"><div id="endMap"></div><button class="scexp" type="button" id="scExp" aria-label="Open the map">${I.expand||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>'}</button>
           <div class="scov"><div class="tri s6c">${K.concat(M).map(([v,l,k])=>`<div${k?` class="sttap" role="button" tabindex="0" data-st="${k}" data-sl="${l}" data-sv="${esc(String(v))}"`:""}><b>${String(v).replace(/([a-zA-Z]+)/g,"<i>$1</i>")}</b><small>${l}${k?' <span class="chev">›</span>':""}</small></div>`).join("")}</div></div></div>
 `;
