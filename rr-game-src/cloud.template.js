@@ -783,12 +783,13 @@ async function metaWatch(id){try{if(metaUnsub)metaUnsub();const B=await cloud();
     const pl=setInterval(async()=>{if(Date.now()>until||document.hidden)return;const r=H.find(x=>x.liveId===id&&x.followed);if(!r||r.barOfDay&&r.title){clearInterval(pl);return}
       const d=await B.get(`live/${id}`).catch(()=>null);if(d&&metaApply(r,d)){saveH();if(S.route==="end"||S.route==="hist")render()}},20000);
     setTimeout(()=>{clearInterval(pl);if(metaUnsub===un){un();metaUnsub=null}const r=H.find(x=>x.liveId===id&&x.followed);if(r&&r.bodWait){r.bodWait=false;saveH();if(S.route==="end")render()}},30*60000)}catch(e){console.warn("meta watch",e)}}
-async function followMetaPull(){if(!cloudOn()||Date.now()-metaAt<5*60000)return;
+async function followMetaPull(){if(!cloudOn()||Date.now()-metaAt<60000)return;
   const L=H.filter(r=>r.followed&&r.liveId&&now()-(r.endedAt||0)<7*864e5);if(!L.length)return;metaAt=Date.now();
   let ch=false;try{const B=await cloud();for(const r of L){const d=await B.get(`live/${r.liveId}`).catch(()=>null);if(!d)continue;
     if(metaApply(r,d))ch=true}}catch(e){console.warn("meta pull",e)}
   if(ch){saveH();if(S.route==="end"||S.route==="hist")render()}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){if(H.some(r=>r.followed&&r.bodWait))metaAt=0;followMetaPull()}});
+setTimeout(()=>{try{followMetaPull()}catch(e){}},2500);   // opening the app fresh (it was fully closed) checks too
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
   let r;try{r=JSON.parse(d.rec)}catch(e){return}
   // fill in anything an older host version left out, so the crawl card and tab can always draw it
