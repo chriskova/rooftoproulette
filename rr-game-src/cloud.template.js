@@ -515,7 +515,9 @@ let fmPing=0;
 // A locked host phone is normal (it's in a pocket): it still checks in every 15 seconds (the native notification nudges
 // it), so it counts as connected. Three missed check-ins (flat, off, no signal) and it can be taken over.
 const AWAY_DEAD=45000;
-function hostReach(d){if(d&&!d.ended&&d.away)return Date.now()-(d.beat||0)>AWAY_DEAD?"gone":"ok";return hostReach0(d)}
+const QUIET_MS=20000;   // a check-in's overdue: probably flat, but give it until AWAY_DEAD before anyone can take over
+function hostReach(d){if(d&&!d.ended&&d.away){const q=Date.now()-(d.beat||0);return q>AWAY_DEAD?"gone":q>QUIET_MS?"quiet":"ok"}return hostReach0(d)}
+const quietLeft=d=>Math.max(1,Math.ceil((AWAY_DEAD-(Date.now()-(d.beat||0)))/1000));
 // the native nudge: the host's "still here", and an answer to anyone who asked
 window.__rrBeat=async()=>{const g=G();if(!g||!g.live||g.ended||!isHost()||!document.hidden)return;
   try{const B=await cloud(),id=g.live,d=await B.get(`live/${id}`).catch(()=>null),P=d?hostPongs(d):null;await B.set(`live/${id}`,Object.assign({beat:Date.now()},P?{pongs:P}:{}),true)}catch(e){console.warn("beat",e)}};
@@ -528,7 +530,7 @@ async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liv
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
 // Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
 function fmTakeHTML(d){const st=hostReach(d),who=esc(fvHost(d));
-  return `<button type="button" id="fmTake" class="${st==="gone"||st==="away"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who} isn't connected`:st==="away"?`${who} is away from the app`:st==="checking"?`Checking ${who}…`:`${who} is connected`}</small></span></button>`}
+  return `<button type="button" id="fmTake" class="${st==="gone"||st==="quiet"?"warn":""}">${I.dice}<span>Take over the crawl<small>${st==="gone"?`${who} isn't connected`:st==="quiet"?`No signal from ${who} · ready in ${quietLeft(d)}s`:st==="checking"?`Checking ${who}…`:`${who} is connected`}</small></span></button>`}
 let fmWant=false;
 function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
   if(st==="gone"||st==="away"){fmWant=false;takeOverSheet();return}
@@ -621,9 +623,11 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   fvCard(d,g,t);fvListPaint(d,g,t);
   const stale=!d.ended&&Date.now()-(d.beat||0)>STALE_MS,   // before the clock's started too: a phone can die before the first spin   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");
-  {const al=$("fvAlert"),h=!fvPrev&&!d.ended&&hostReach(d)==="gone"?`<div class="t"><b>${esc(fvHost(d))} isn't connected</b></div><button class="btn sm" type="button" id="fvTake">Take over</button>`:"";
+  {const al=$("fvAlert"),hr=!fvPrev&&!d.ended?hostReach(d):"ok",h=hr==="gone"?`<div class="t"><b>${esc(fvHost(d))} isn't connected</b></div><button class="btn sm" type="button" id="fvTake">Take over</button>`
+      :hr==="quiet"?`<div class="t"><b>No signal from ${esc(fvHost(d))}</b><small>Take over in ${quietLeft(d)}s</small></div><button class="btn sm" type="button" id="fvTake" disabled>Take over</button>`:"";
+    if(hr==="gone"&&al._hr!=="gone")buzz([60,60,60]);al._hr=hr;
     if(al._h!==h){al._h=h;al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=takeOverSheet}}
-  {const lp=fv.querySelector(".fv-livepill");if(lp)lp.hidden=!!d.ended||(!fvPrev&&hostReach(d)==="gone")}
+  {const lp=fv.querySelector(".fv-livepill");if(lp)lp.hidden=!!d.ended||(!fvPrev&&["gone","quiet"].includes(hostReach(d)))}
   const want=fvPrev?"prev":d.ended?"end":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
