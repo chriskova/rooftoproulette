@@ -428,7 +428,7 @@ function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,p
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
 function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn()&&g&&!g.ended&&!g.demo;b.hidden=!on;if(!on)return;
   const n=g.live&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0;
-  b.innerHTML=PEOPLEI_()+`<i class="pbadge${n?" n":""}">${n||"+"}</i>`;{const t=$("tbar");if(t)b.style.top=(t.offsetTop+t.offsetHeight+12)+"px"}b.setAttribute("aria-label",n?`${n} following. Invite friends`:"Invite friends")}
+  {const h=PEOPLEI_()+`<i class="pbadge${n?" n":""}">${n||"+"}</i>`;if(b._h!==h){b._h=h;b.innerHTML=h}}{const t=$("tbar");if(t)b.style.top=(t.offsetTop+t.offsetHeight+12)+"px"}b.setAttribute("aria-label",n?`${n} following. Invite friends`:"Invite friends")}
 
 // test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
 async function previewFollow(){const g=G();if(!g||!g.started)return;try{await cloud();await startLive();await liveSync(true)}catch(e){console.warn(e)}closeSheet();openFollow(true);liveAttach()}
@@ -568,14 +568,14 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   const nx=!spin&&g.target&&(!at||g.target!==at.id)?byId(g.target):null;   // landed: the next rooftop, even before they've left
   const v=nx||(!spin&&at?byId(at.id):null),yy=fvPrev?null:you(),here=!!(at&&v&&!nx);
   // this rooftop's wildcard and jackpot ride on its card
-  const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
+  const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked&&(g.wild.shown||g.wild.landed)?g.wild:null;
   const jd=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpOn=!!(jd&&v&&(here?vs.indexOf(at)===g.jp.leg:g.jp.leg===vs.length&&(g.targetAt||0)>=g.jp.at));
   const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx,w&&fvRule(g,w),jpOn]);
   if(el._k===k){const dw=$("fvDwell");if(dw&&here)dw.textContent=fvHere(t-at.arrivedAt);return}
   const was=el._k?JSON.parse(el._k):null;el._k=k;
   if(was&&v&&was[2]!==v.id)buzz(here?[40,40,40]:30);    // a new rooftop picked, or arrived
   if(!v){const first=!g.started&&!vs.length&&!g.target;
-    el.innerHTML=`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${first&&!spin?"The first rooftop shows here":"The next rooftop shows here"}</span></div>`;return}
+    el.innerHTML=`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${first&&!spin?"The first rooftop shows here":"The next rooftop shows here"}</span></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){el._k="";paintFollow()}});
   const cp=cardPhoto(v);
   const meta=here?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");

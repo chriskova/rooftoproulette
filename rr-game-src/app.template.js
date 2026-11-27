@@ -1643,7 +1643,7 @@ const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 // Once people join it says so (and still invites more).
 const mixInvLbl=j=>j?`${MIX_PPLI} ${j} joined · Invite more`:`${MIX_INVI} Invite friends`;
 const mixInvBig=g=>mixInv(g)&&!g.visits.length?`<button class="btn invbig" type="button" data-mxinv="1">${mixInvLbl(mixJoined(g))}</button>`:"";
-function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{b.innerHTML=mixInvLbl(j)})}
+function paintMixInv(){const g=G();if(!g)return;const j=mixJoined(g);document.querySelectorAll("[data-mxinv]").forEach(b=>{const h=mixInvLbl(j);if(b._h!==h){b._h=h;b.innerHTML=h}})}   // only when it changes: a redraw mid-tap loses the tap
 // the zone sits under the spinner before the clock starts (where Move zone goes once it has)
 const mixZoneHTML=g=>CR(g)||!mixPre(g)?"":`<div class="mixzone"><button class="mixp" type="button" data-mx="zone">${I.pin}<span class="zt">${esc(g.areas[g.areas.length-1])} · ${rLabel(g.radius)}</span>${MIX_CV}</button></div>`;
 const mixDeckLbl=()=>{if(!anyOwned())return "Wildcards";const on=(freeOn()?["free"]:[]).concat(PACKS.filter(p=>packOn(p.id)).map(p=>p.id));return on.length===1?esc(deckName(on[0])):on.length+" decks"};
