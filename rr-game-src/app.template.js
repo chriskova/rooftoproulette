@@ -92,7 +92,7 @@ const AREAS=[
 const areaCity=a=>a.city||"Sydney",REG=()=>REGIONS.filter(r=>(r.city||"Sydney")===S.city);
 const areaOf=v=>{const c=v.city||"Sydney",L=AREAS.filter(a=>areaCity(a)===c);return L.find(a=>a.src.includes(v.area))||L.slice().sort((a,b)=>dist(v,a)-dist(v,b))[0]};
 const RADII=[0.5,1,1.5,2],LENS=[60,120],SKIPS=3;
-const LAST_ORDERS=10,CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=30;
+const LAST_ORDERS=10,CHECKIN_M=75,LEAVE_M=150,DWELL_MIN=3,SOON=30,FINAL=20;
 const DWELL=()=>{const g_=S.game;return g_&&g_.demo?0:DWELL_MIN*60000};   // the demo counts a bar the moment you arrive
 const KEY="rr-app-v3",HKEY="rr-history-v2";
 const AN=window.RR_CONFIG,APPV="__VERSION__";
@@ -2686,7 +2686,11 @@ function tip(k,text,arrow){if(S.tips[k])return "";return `<div class="tip${arrow
 document.addEventListener("click",e=>{const b=e.target.closest(".tip button");if(!b)return;const t=b.closest(".tip");seen(t.dataset.tip);t.remove()});
 
 /* ---------- sheets ---------- */
-function sheet(html,bind){backArm();{const d_=$("sheet");if(!d_.open){d_.classList.add("fresh");clearTimeout(d_._fr);d_._fr=setTimeout(()=>d_.classList.remove("fresh"),380)}}$("sheet").classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();const d=$("sheet");if(!d.open)d.showModal()}
+function sheet(html,bind){backArm();{const d_=$("sheet");if(!d_.open){d_.classList.add("fresh");clearTimeout(d_._fr);d_._fr=setTimeout(()=>d_.classList.remove("fresh"),380)}}
+  const d=$("sheet"),h0=d.open?d.getBoundingClientRect().height:0;
+  d.classList.remove("full","tq");$("sheetBody").innerHTML=html;fillPhotos($("sheetBody"));if(bind)bind();if(!d.open)d.showModal();
+  // already open: ease from the old height to the new one (one pop-up leading to the next shouldn't jump)
+  if(h0&&!matchMedia("(prefers-reduced-motion: reduce)").matches){const h1=d.getBoundingClientRect().height;if(Math.abs(h1-h0)>6)try{d.animate([{height:h0+"px",overflow:"hidden"},{height:h1+"px",overflow:"hidden"}],{duration:240,easing:"cubic-bezier(.2,.8,.2,1)"})}catch(e){}}}
 const closeSheet=()=>{const d=$("sheet");if(d.open)d.close()};
 $("sheet").addEventListener("click",e=>{if(e.target===$("sheet"))closeSheet()});
 (()=>{const d=$("sheet");let y0=null,dy=0;
@@ -2957,7 +2961,7 @@ function renderPlay0(){
     st.innerHTML=ask+`<div class="bar at${cp.cls||" photo blank"}${animateId===("at:"+a.id)?" anim":""}"${cp.style}>${cp.cr}<span class="eyebrow">${CR(g)?"You're here":"Visit logged"}${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>${v.fact?`<div class="wi">${esc(v.fact)}</div>`:""}
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="dwell">${mmss(d)}</div></div>
       <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>
-      ${g.wild&&g.wild.id===v.id?wild(v.id).replace('class="wild"','class="wild dark"').replace(' data-pending="1"',''):""}</div>
+      ${g.wild&&g.wild.id===v.id?wild(v.id).replace(' data-pending="1"',''):""}</div>
       ${CR(g)&&g.nudge&&d>=g.nudge*60000?`<div class="nudge">${I.clock}<span><b>Keen to try another rooftop?</b> Spin whenever you're ready.</span></div>`:""}
       ${ok&&g.visits.filter(x=>x.arrivedAt!=null).length>=2&&!g.snapAsk&&!(g.photos||[]).length?`<div class="snap two"><div class="snapt">${I.camera}<span><b>Grab a photo for your crawl card?</b></span><button class="snapx" type="button" id="snapX" aria-label="Not now">${I.x}</button></div><div class="row2"><button class="btn sm" type="button" id="snapIn">${I.camera} Camera</button><button class="btn sm dark" type="button" id="snapGal">${GAL} Gallery</button></div></div>`
         :(g.photos||[]).length&&!g.snapSeen?`<div class="tip nob soft ok">${I.check}<span><b>Photo saved.</b> It'll be on your story card.</span></div>`
@@ -3020,11 +3024,10 @@ function renderPlay0(){
     const pl=WP(),dk=WILDS.includes(txt)?"free":(PACKS.find(p=>p.cards.some(c=>c.t===txt))||{}).id||"free";
     const ts=deckCardsOf(dk),nP=ts.filter(t=>pl[t]).length,more=PACKS.some(p=>!packOwned(p.id));
     const reopen=()=>w.click();
-    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional… I guess.</p><div class="wild wexplain">${I.sparkle}<span><b>${m?esc(m.n):"This one"}</b>${esc(shown)}</span></div>
-      ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"Complete":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
-      ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard decks <span class="chev">›</span></button>`:""}`}
-      <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
-      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=()=>deckSheet()})});
+    sheet(`<h3>Wildcards</h3><p class="note">Mini challenges. Completely optional…</p><div class="wild wexplain">${wFace(txt)}<span><b>${esc(wNm(txt))}</b>${esc(shown)}</span></div>
+      ${g.demo?"":`<div class="sgrp wxdeck"><button class="strow" type="button" id="wDeckRow"><span class="dk-ic">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"Complete":nP+" of "+ts.length+" played"}</small></span><i class="chev">›</i></button>${more?`<button class="strow" type="button" id="wMorePk"><span class="t"><b>More wildcard decks</b></span><i class="chev">›</i></button>`:""}</div>`}
+      <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Done</button></div>`,()=>{
+      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=()=>deckSheet(reopen)})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
@@ -3176,7 +3179,7 @@ const wShort=t=>wSealed(t)?"Opens at the rooftop":WMETA[t]?wLead(WMETA[t]):t;   
 const wOpenNow=(g,w)=>!!(g&&w&&(g.visits||[]).some(v=>v.id===w.id&&v.arrivedAt!=null&&v.leftAt==null));
 // The inside of a wildcard box: sealed on the way, the rule once you're there, then what the spin landed on
 function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
-  if(!m)return `${I.sparkle}<span><b>Wildcard</b>${esc(w.text)}${lastLine(w)}</span>`;
+  if(!m)return `${wFace(w.text)}<span><b>${esc(wNm(w.text))}</b>${esc(w.text)}${lastLine(w)}</span>`;
   const here=wOpenNow(g,w),open=!m.seal||here,ic=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[m.ic]||WIC.star}</svg>`;
   if(!open)return `${ic}<span><b>${esc(m.n)}</b>Opens at the rooftop</span>`;
   if(!o.follow&&g&&!g.demo)markPlayed(w.text);
@@ -3313,18 +3316,18 @@ function wWhere(t){const out=[],L=H.slice(),g=S.game;if(g&&!g.demo&&!g.follow)L.
 // Wildcards: a pop-up laid out like Settings (grouped rows, a deck's switch behind a short line, no buttons at the bottom).
 // Opening a deck swaps the pop-up to that deck, with a back arrow by its name; a card opens the same way from there.
 function shBack(id,title){return `<div class="shback"><button class="spback" type="button" id="${id}" aria-label="Back">${I.back}</button><h3>${title}</h3></div>`}
-function deckSheet(){
+function deckSheet(back){if(typeof back!=="function")back=null;
   const toAdd=PACKS.filter(p=>!packOwned(p.id)),owned=PACKS.filter(p=>packOwned(p.id));
   const pack=p=>`<button class="strow dkp" type="button" data-dp="${p.id}"><span class="dk-ic">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="sval">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><i class="chev">›</i></button>`;
-  sheet(`<h3>Wildcards</h3>
+  sheet(`${back?shBack("dsBack","Wildcards"):"<h3>Wildcards</h3>"}
     <div class="sgh first">${owned.length?"Your decks":"Your deck"}</div>${deckSwHTML()}
     ${toAdd.length?`<div class="sgh">More wildcard decks</div><div class="sgrp">${toAdd.map(pack).join("")}</div>`:""}
     ${canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="dkRestore"><span class="t"><b>Restore purchases</b></span><i class="chev">›</i></button></div>`:""}`,()=>{
-    $("sheet").classList.add("tq");
-    $("sheetBody").querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
-    bindDeckSw($("sheetBody"),null,deckSheet);
-    if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
-    if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet").open&&$("sheetBody").querySelector(".dkp"))deckSheet()})})}
+    const me=()=>deckSheet(back);if($("dsBack"))$("dsBack").onclick=back;
+    $("sheetBody").querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,me));
+    bindDeckSw($("sheetBody"),null,me);
+    if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(me);
+    if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet").open&&$("sheetBody").querySelector(".dkp"))me()})})}
 const deckCardsOf=id=>id==="free"?WILDS:packById(id).cards.map(c=>c.t);
 const deckName=id=>id==="free"?BASE_DECK:packById(id).name;
 // one deck opened up: played cards face up, the rest face down with the deck's mark
@@ -3333,7 +3336,7 @@ function deckView(id,back){const pl=WP(),ts=deckCardsOf(id),k=ts.filter(t=>pl[t]
   sheet(`${back?shBack("dvBack",esc(deckName(id))):`<h3>${esc(deckName(id))}</h3>`}
     <div class="dk-head"><span class="sgh">Cards</span><span class="dk-n">${k>=ts.length?"Complete":k+" of "+ts.length+" played"}</span></div>${k>=ts.length?"":`<div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>`}
     <div class="dk-grid">${ts.map(mini).join("")}</div>`,()=>{
-    $("sheet").classList.add("tq");if($("dvBack"))$("dvBack").onclick=back;
+    if($("dvBack"))$("dvBack").onclick=back;
     $("sheetBody").querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>cardSheet(b.dataset.dt,()=>deckView(id,back),deckName(id)))})}
 // a card's details: the card itself (its mark and name, as it's dealt) with the rule beside it, then where it was played
 function cardSheet(t,back,title){const m=WMETA[t],wh=wWhere(t),rule=m?(m.lead?m.t:wLead(m)):t;   // spin cards: the whole rule, not the half-sentence the spin finishes
@@ -3582,7 +3585,7 @@ function renderEnd(){
   const r=(DEMO_REC&&DEMO_REC.id===S.lastEnd)?DEMO_REC:(SHARED&&SHARED.id===S.lastEnd&&!H.some(x=>x.id===SHARED.id))?SHARED:H.find(x=>x.id===S.lastEnd),box=$("v-end");if(!r){SHARED=null;go("home");return}
   const isShared=r===SHARED;
   const cr=r.mode==="cruise",st=stats(r),n=st.counted.length,lenTxt=cr?"R&amp;R":r.len===60?"1 hour":"2 hours",aw=awardsFor(r,st);
-  const pending=r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);
+  const pending=r.followed?[]:r.visits.map((v,i)=>({v,i})).filter(o=>o.v.counted===null);   // a followed crawl: the host answers these, not you
   const atBars=st.arrived.reduce((s,v)=>s+((v.leftAt||r.endedAt)-v.arrivedAt),0),moving=Math.max(0,st.dur-atBars);
   const still=cr&&r.autoEnded&&!r.stillAsked&&!S.game&&now()-r.endedAt<12*3600000;
   if(!r.photo&&!r.noPhoto&&r.photos&&r.photos.length){r.photo=r.photos[r.photos.length-1];saveH()}

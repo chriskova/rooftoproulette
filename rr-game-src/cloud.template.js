@@ -448,15 +448,15 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   if(!fvPrev&&S.route!=="home"){S.route="home";save();render()}   // opening it puts you back on the Play tab, wherever you opened it from
   document.body.classList.add("fvon");paintTabsFv();
   fv=document.createElement("div");fv.className="followv";document.body.appendChild(fv);requestAnimationFrame(()=>fv&&fv.classList.add("on"));
-  fv.innerHTML=`<div class="fv-live" role="status"><span class="fv-eye">${EYEI}</span><span class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></span>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
-    <div class="ptop fv-ptop"><button type="button" class="count" id="fvCount" aria-label="Rooftops so far"></button><div class="clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
-      <div class="pbtns"><button type="button" class="iconbtn" id="fvMapB" aria-label="Crawl map">${I.map}</button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
+  // A status page, not a copy of the game: the clock, where the group is, the wildcard in play and the rooftops so far.
+  // No reel, no animations, nothing to press that the host's phone does, so nobody expects it to work like the host's.
+  fv.innerHTML=`<div class="fv-hd"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}<span class="fv-livepill"><i></i>LIVE</span><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div>
+    <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
-    <div class="fv-now" id="fvNow"></div><div class="fv-act" id="fvAct"></div>`;
-  $("fvMenu").onclick=followMenu;
-  $("fvMapB").onclick=followMap;$("fvCount").onclick=followBars;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
+    <div class="fv-body"><div id="fvNow"></div><div id="fvWild"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
+  $("fvMenu").onclick=followMenu;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
-  if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{fvCardSig="";paintFollow()}).catch(()=>{})}).catch(()=>{});
+  if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
   clearInterval(fvT);fvT=setInterval(paintFollow,250);liveAttach();paintFollow();if(!fvPrev)setTimeout(()=>pingHost(true),1500)}
 // a quiet check of the host's phone whenever a follower comes back to the app, so the menu already knows
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&fv&&!fvPrev)setTimeout(()=>pingHost(true),800)});
@@ -503,7 +503,7 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);if(key===fvNote&&Date.now()-fvNoteAt<60000)return;
   fvNote=key;fvNoteAt=Date.now();natCall("CrawlNotify","update",o).catch(()=>{})}
 // the follower's menu: the same sheet as the host's, with only what a follower can do
-const PING_WAIT=3000;
+const PING_WAIT=6000;   // a host phone that's locked or on a slow connection can take a few seconds to answer: say "Checking" until it's sure
 let fmPing=0;
 // where the host's phone stands for this follower: answering, being checked, or not answering
 function hostReach(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
@@ -550,76 +550,62 @@ let fvSig="",fvCardSig="",fvCnt=null,fvFly=false;
 const fvJack=g=>g.jp&&g.jp.at>(g.targetAt||0)&&g.jp.at>=(g.spinAt||0)?g.jp:null;   // a jackpot spin since the last bar landed
 const fvSpinning=(g,t)=>!!g.spinAt&&(!g.targetAt||g.spinAt>g.targetAt)&&t-g.spinAt<(fvJack(g)?5500:30000);
 // a wheel of the zone's bar names rolling past, until the host's lands. Then the bar it landed on drops in, same as theirs.
-// While the host spins, followers get the same reel the host sees, rolling. The result is only sent once the host's
-// reel has stopped, so theirs winds down onto it then (about a second behind) and flies into the card the same way.
-let fvReel=null,fvLanding=false,fvDone=0;   // fvDone: the spin (its spinAt) this phone has already landed
-function fvReelNames(g){const c=g.center,P=(c&&g.radius?playable(inCircle(c,g.radius),false):VENUES.filter(v=>cityOf(v)===(g.city||S.city))).map(v=>v.name);
-  return P.length?P:VENUES.map(v=>v.name)}
-// Before the first spin, followers see the host's reel sitting still, waiting on them (the host's says "Spin to start").
-// The first spin then rolls that same reel.
-let fvIdle=false;
-function fvReelIdle(g){const el=$("fvNow");if(fvIdle&&fvReel&&$("fvReelBox"))return;fvReelDrop();
-  el.innerHTML=`<div class="fv-spin"><span class="eyebrow" id="fvSpinLbl">&nbsp;</span><div id="fvReelBox"></div></div>`;
-  fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true,ph:"Waiting on "+fvHost(liveDoc)});fvIdle=true}
-function fvReelStart(g){const el=$("fvNow"),who=esc(fvHost(liveDoc));
-  if(fvIdle&&fvReel&&$("fvReelBox")){fvIdle=false;$("fvSpinLbl").textContent=fvHost(liveDoc)+" is spinning";fvReel.roll(20);return}
-  el.innerHTML=`<div class="fv-spin"><span class="eyebrow" id="fvSpinLbl">${who} is spinning</span><div id="fvReelBox"></div></div>`;
-  fvReel=makeReel($("fvReelBox"),fvReelNames(g),{quiet:true});fvReel.roll(20)}
-// sec: when to stop. Given the host's landing time it stops with the host; otherwise (the result came in after) it winds down in about a second.
-function fvReelLand(v,sec,spinAt){const R=fvReel;fvLanding=true;
-  R.spinTo(v.name,20,info=>{fvReel=null;fvLanding=false;fvDone=spinAt||0;fvCardSig="";const d=liveDoc;if(!fv||!d)return;
-    let g={};try{g=JSON.parse(d.g)}catch(e){}fvCard0(d,g,Date.now()+(d.off||0));try{reveal(info,$("fvNow"))}catch(e){}},{dur:sec?sec+.42:1.1})}   // +.42: spinTo's wind-down runs that much shorter than dur at this speed
-function fvReelDrop(){if(fvReel){fvReel.stop();fvReel=null}fvLanding=false;fvIdle=false}
-function fvCard(d,g,t){if(fvLanding)return;const had=!!$("fvReelBox"),pv=had?null:cardSnap($("fvNow"));fvCard0(d,g,t);if(pv&&!$("fvReelBox"))try{cardMorph($("fvNow"),pv)}catch(e){}}
-function fvCard0(d,g,t){const el=$("fvNow");
-  if(d.ended){fvReelDrop();el.innerHTML="";fvCardSig="";return}
-  if(!g.started&&!g.target&&!(g.visits||[]).length&&!fvSpinning(g,t)){fvCardSig="";fvReelIdle(g);return}
-  // this phone's reel already stopped on the host's result, but the host's "landed" hasn't arrived yet: show that bar
-  const SR=g.spinRes&&g.spinRes.at===g.spinAt&&fvDone===g.spinAt&&fvSpinning(g,t)&&!fvJack(g)?byId(g.spinRes.id):null;
-  const spin=!SR&&(fvSpinning(g,t)||!!fvJack(g)),vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),at0=vs.find(v=>!v.leftAt),at=SR||g.target||spin?null:at0,v=SR||(spin?null:g.target?byId(g.target):at?byId(at.id):null);   // spun from the bar: the next bar, like the host sees
-  const wd=g.wild&&v&&g.wild.id===v.id&&!g.wild.locked&&g.wild.text?g.wild.text:"";
-  const yy=fvPrev?null:you(),sig=JSON.stringify([at?"at:"+at.id:v?v.id:fvSpinning(g,t)?"spin":fvJack(g)?"jp":g.reelOpen?"open":null,wd,g.wild&&g.wild.res,wd&&wOpenNow(g,g.wild),v&&!!phMem[v.id],yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000)]),prev=fvCardSig;
-  if(sig===fvCardSig){const dw=$("fvDwell");if(dw&&at)dw.textContent=mmss(t-at.arrivedAt);return}
-  // the host's spin just landed on a bar: wind the rolling reel down onto it (it draws the card when it's done)
-  const live=!fvIdle&&fvReel&&$("fvReelBox")&&document.contains($("fvReelBox"));
-  if(v&&live&&!at){fvCardSig=sig;fvReelLand(v,0,g.spinAt);return}
-  if(!v&&fvSpinning(g,t)){fvCardSig=sig;if(!live)fvReelStart(g);
-    // the host sent where it'll land and when: stop a beat after them (a busy host phone, filming the spin, can land a little late; a follower must never be first)
-    const R=g.spinRes;if(R&&R.at===g.spinAt&&!fvJack(g)&&byId(R.id)){const left=(R.land-t)/1000+.35;if(left>.7)fvReelLand(byId(R.id),left,g.spinAt);else fvReelLand(byId(R.id),0,g.spinAt)}
-    return}
-  fvReelDrop();
-  fvCardSig=sig;
-  const landed=prev&&JSON.parse(prev)[0]!==JSON.parse(sig)[0];if(landed&&v)buzz(at?[40,40,40]:30);
-  if(!v){const who=esc(fvHost(liveDoc));
-    const J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
-    el.innerHTML=JD?`<div class="bar fv-reel fv-jp"><span class="eyebrow">${who} hit the jackpot</span><h2>${esc(JD.t)}</h2></div>`:`<div class="bar fv-wait"><span class="eyebrow">Next rooftop</span><h2>${g.reelOpen?`${who}'s about to spin`:`Waiting on ${who} to spin`}</h2></div>`;return}
-  if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){fvCardSig="";paintFollow()}});
-  const cp0=cardPhoto(v),cp=cp0.cls?cp0:{cls:" photo blank",style:"",cr:""},o=openState(v,t),nw=isNew(v.id),an=landed?" anim":"",y=fvPrev?null:you();
-  const wild=wd?wildBox(g,g.wild,at?" dark":"",{follow:true}):"";
-  el.innerHTML=at
-    ?`<div class="bar at${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">At the rooftop${nw?'<span class="newpill">New to you</span>':""}</span><h2>${esc(v.name)}</h2>${v.fact?`<div class="wi">${esc(v.fact)}</div>`:""}
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><div><div class="small">Time here</div><div class="dwell" id="fvDwell">${mmss(t-at.arrivedAt)}</div></div>
-      <div class="small" style="text-align:right">${o.open?"Closes "+clock12(o.closeAt):""}</div></div>${wild}</div>`
-    :`<div class="bar tgt${cp.cls}${an}"${cp.style}>${cp.cr}<span class="eyebrow">Next rooftop${nw?`<span class="newpill"${cp0.cls?"":' style="background:rgba(36,24,3,.15);color:var(--amber-ink)"'}>New to you</span>`:""}</span><h2>${esc(v.name)}</h2>${v.vibe?`<div class="vibe">${esc(v.vibe)}</div>`:""}
-      <div class="facts">${y?`<span>${travelHTML(y,v)}</span><span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}${o.open?`<span>${I.clock} til ${clock12(o.closeAt)}</span>`:""}</div>${wild}
-      <a class="btn dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener">${I.nav} Directions</a></div>`}
+// what's going on now: the rooftop the group's at or heading to (photo, name, time there or the walk), or a quiet
+// panel while the host spins. The rooftop list and the wildcard sit under it.
+function fvCard(d,g,t){fvCard0(d,g,t)}
+const fvVisits=g=>(g.visits||[]).filter(v=>v.arrivedAt!=null);
+const fvWildAt=(g,id)=>{const e=(g.wlog||[]).filter(x=>x&&typeof x==="object"&&x.id===id).pop();return e?e.t:(g.wild&&g.wild.id===id?g.wild.text:"")};
+function fvRule(g,w){const m=WMETA[w.text];if(!m)return w.text;if(m.seal&&!wOpenNow(g,w))return "Opens at the rooftop";if(m.spin)return (w.res||[]).length?wFull(m,w.res):m.t;return wLead(m)}
+function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
+  if(d.ended){if(el._k!=="end"){el._k="end";el.innerHTML="";$("fvWild").innerHTML=""}return}
+  const vs=fvVisits(g),at=vs.find(v=>!v.leftAt),J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
+  const spin=fvSpinning(g,t)&&!at;                       // spinning from a bar keeps showing the bar until the next one's picked
+  const v=at?byId(at.id):!spin&&g.target?byId(g.target):null,yy=fvPrev?null:you();
+  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,g.reelOpen]);
+  if(el._k===k){const dw=$("fvDwell");if(dw&&at)dw.textContent=fvHere(t-at.arrivedAt);fvWildPaint(g,v,at);return}
+  const was=el._k?JSON.parse(el._k):null;el._k=k;
+  if(was&&v&&was[2]!==v.id)buzz(at?[40,40,40]:30);    // a new rooftop picked, or arrived
+  if(!v){const first=!g.started&&!vs.length&&!g.target;
+    el.innerHTML=`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${spin||!first?"The next rooftop shows here":"The first rooftop shows here"}</span></div>`;fvWildPaint(g,null,null);return}
+  if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){el._k="";paintFollow()}});
+  const cp=cardPhoto(v);
+  const meta=at?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");
+  el.innerHTML=`<div class="fv-ph${cp.cls?" on":""}"${cp.style}>${cp.cr}<div class="fv-tx"><span class="eyebrow">${at?"At the rooftop":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
+    ${at?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}</div>`;
+  fvWildPaint(g,v,at)}
+const fvMin=ms=>Math.max(0,Math.floor(ms/60000))+" min";
+const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
+function fvWildPaint(g,v,at){const el=$("fvWild");if(!el)return;const w=g.wild&&v&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
+  const h=w?`<div class="fv-wl">${wFace(w.text)}<div><span class="nm">Wildcard · ${esc(wNm(w.text))}</span><p>${esc(fvRule(g,w))}</p></div></div>`:"";if(el._h!==h){el._h=h;el.innerHTML=h}}
+// rooftops so far: the ones you've left, newest first (the one you're at is the card above). Two with a wildcard showing, three without.
+function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse(),n=$("fvWild").innerHTML?2:3;
+  const rows=done.slice(0,n).map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${fvMin(v.leftAt-v.arrivedAt)} there</small>${w?`<span class="wtag">${wFace(w)}${esc(wNm(w))}</span>`:""}</span><span class="tm">${clock12(sydAt(v.arrivedAt).min)}</span></button>`}).join("");
+  const h=done.length?`<div class="fv-list"><button type="button" class="fv-lh" id="fvAll"><span class="eyebrow">Rooftops so far</span><span class="cv">See all ›</span></button>${rows}</div>`:"";
+  if(el._h===h)return;el._h=h;el.innerHTML=h;
+  if($("fvAll"))$("fvAll").onclick=()=>fvAllSheet();el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
+const fvG=()=>{try{return JSON.parse(liveDoc.g)}catch(e){return {}}};
+// everything so far, newest first: each rooftop with its wildcard under it, and where it started
+function fvAllSheet(){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g);
+  const tot=vs.reduce((s,v)=>s+((v.leftAt||t)-v.arrivedAt),0);
+  const items=vs.map((v,i)=>{const b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="ti done" data-fi="${i}"><span class="r"><b>${esc(b?b.name:"Rooftop")}</b><span>${clock12(sydAt(v.arrivedAt).min)}</span></span><small>${v.leftAt?fvMin(v.leftAt-v.arrivedAt)+" there":"Here now"+(t-v.arrivedAt>=60000?" · "+fvMin(t-v.arrivedAt):"")}</small></button>${w?`<div class="ti w"><b>Wildcard · ${esc(wNm(w))}</b><p>${esc(w)}</p></div>`:""}`}).reverse().join("");
+  const st=g.startedAt?`<div class="ti"><span class="r"><b>Started</b><span>${clock12(sydAt(g.startedAt).min)}</span></span><small>${g.mode==="cruise"?"Rest &amp; Roulette":LEN(g.len)}${g.areas&&g.areas[0]?" · "+esc(g.areas[0]):""}</small></div>`:"";
+  sheet(`<h3>Rooftops so far</h3><p class="note">${vs.length} rooftop${vs.length===1?"":"s"} · ${fvMin(tot)} at rooftops</p><div class="fv-tl">${items}${st}</div>`,()=>{
+    $("sheetBody").querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi,fvAllSheet))})}
+// one stop on the crawl: its photo with the name over it, then arrived, time there and getting there, and its wildcard
+function fvStopSheet(i,back){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g),v=vs[i];if(!v)return;const b=byId(v.id);if(!b)return;
+  const prev=i>0?vs[i-1].leftAt:g.startedAt,leg=prev?v.arrivedAt-prev:null,w=fvWildAt(g,v.id),cp=cardPhoto(b);
+  if(phMem[b.id]===undefined)barPhoto(b).then(ph=>{if(ph&&$("sheet").open&&$("sheetBody").querySelector(".fv-sph"))fvStopSheet(i,back)});
+  sheet(`<div class="fv-sph${cp.cls?" on":""}"${cp.style}>${cp.cr}${back?`<button type="button" class="fv-sback" id="fsBack" aria-label="Back">${I.back}</button>`:""}<div class="fv-tx"><span class="eyebrow">Rooftop ${i+1}</span><h2>${esc(b.name)}</h2></div></div>
+    <div class="fv-stats"><div><small>Arrived</small><b>${clock12(sydAt(v.arrivedAt).min)}</b></div><div><small>Time there</small><b>${fvMin((v.leftAt||t)-v.arrivedAt)}</b></div><div><small>Travel</small><b>${leg!=null&&leg>=0?fvMin(leg):"–"}</b></div></div>
+    ${w?`<div class="fv-wl">${wFace(w)}<div><span class="nm">Wildcard · ${esc(wNm(w))}</span><p>${esc(w)}</p></div></div>`:""}`,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back})}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now()+(d.off||0),cr=g.mode==="cruise";   // the host's game clock
-  const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`Following ${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Friends see this. Only you can spin":`${who} has the spin`;
+  const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Only you can spin":"You're following";
   followNote(d,g,t);
   // the same clock as the host's phone: held at the full length until the first bar (and through a time freeze), then counting down
   const c=fvClockTxt(d,g,t),L=fvLabel(d,g,t);$("fvClock").textContent=!d.ended&&!g.started&&!cr?mmss((g.len||60)*60000):c.clock;$("fvSub").textContent=L.lbl;$("fvClockW").className="clock"+L.cls;
   const tb=$("fvBar");tb.hidden=cr||!g.started||d.ended;tb.className="tbar"+L.cls;$("fvBarI").style.width=L.pct+"%";
-  fvCard(d,g,t);
-  // the bar they're at counts: the same "it counts" animation as the host's phone, into this counter
-  // the bar counts 3 minutes in, worked out here: the host's own "it counts" moment only happens with their crawl screen open
-  const inC=v=>!v.leftAt&&(v._inCount||(!g.demo&&t-v.arrivedAt>=DWELL_MIN*60000));
-  const atv=vs.find(v=>!v.leftAt),ak=atv?atv.id+"@"+atv.arrivedAt:null;let nb=vs.filter(v=>v.counted===true||inC(v)).length;
-  if(ak&&inC(atv)&&fvCnt&&fvCnt.k===ak&&!fvCnt.c&&!fvFly&&!document.hidden&&$("fvNow").querySelector(".bar.at h2")){fvFly=true;
-    const fc0=$("fvCount");countFly({pc:fc0,lead:250,z:1700,bump:true,getH:()=>$("fvNow")&&$("fvNow").querySelector(".bar.at h2"),done:()=>{fvFly=false;fc0._h="";paintFollow()}})}
-  fvCnt=ak?{k:ak,c:inC(atv)}:null;
-  if(fvFly)nb--;
-  const fc=$("fvCount"),fch=`${I.glass.replace('<svg','<svg width="18" height="18" style="color:var(--amber-text)"')} <b>${nb}</b><i class="cv">${I.chev||"›"}</i>`;if(!fvFly&&fc._h!==fch){fc._h=fch;fc.innerHTML=fch}
+  fvCard(d,g,t);fvListPaint(d,g,t);
   const stale=!d.ended&&Date.now()-(d.beat||0)>STALE_MS,   // before the clock's started too: a phone can die before the first spin   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");
   const want=fvPrev?"prev":d.ended?"end":stale?"stale":"none";if(act.dataset.k!==want){act.dataset.k=want;
@@ -658,11 +644,19 @@ async function liveMeta(r){if(!r||!r.liveId||r.followed||!cloudOn()||!signedIn()
   try{const B=await cloud();await B.set(`live/${r.liveId}`,{title:r.title||"",bod:r.barOfDay||""},true)}catch(e){console.warn("live meta",e)}}
 // followers pick those up when the app opens or comes back, for crawls from the last week
 let metaAt=0;
+// After the crawl ends the host usually names it and picks bar of the day: keep listening for 30 minutes so both land
+// on the follower's recap as they're set, then fall back to the occasional check below.
+function metaApply(r,d){let ch=false;
+  if(d.title!==undefined&&(d.title||"")!==(r.title||"")){if(d.title)r.title=d.title;else delete r.title;ch=true}
+  if(d.bod!==undefined){const b=d.bod&&r.visits.some(v=>v.id===d.bod&&v.counted===true)?d.bod:"";if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}
+  return ch}
+let metaUnsub=null;
+async function metaWatch(id){try{if(metaUnsub)metaUnsub();const B=await cloud();const un=B.watch(`live/${id}`,d=>{if(!d)return;const r=H.find(x=>x.liveId===id&&x.followed);if(r&&metaApply(r,d)){saveH();if(S.route==="end"||S.route==="hist")render()}});
+  metaUnsub=un;setTimeout(()=>{if(metaUnsub===un){un();metaUnsub=null}},30*60000)}catch(e){console.warn("meta watch",e)}}
 async function followMetaPull(){if(!cloudOn()||Date.now()-metaAt<5*60000)return;
   const L=H.filter(r=>r.followed&&r.liveId&&now()-(r.endedAt||0)<7*864e5);if(!L.length)return;metaAt=Date.now();
   let ch=false;try{const B=await cloud();for(const r of L){const d=await B.get(`live/${r.liveId}`).catch(()=>null);if(!d)continue;
-    if(d.title!==undefined&&(d.title||"")!==(r.title||"")){if(d.title)r.title=d.title;else delete r.title;ch=true}
-    if(d.bod!==undefined){const b=d.bod&&r.visits.some(v=>v.id===d.bod&&v.counted===true)?d.bod:"";if(b!==(r.barOfDay||"")){if(b)r.barOfDay=b;else delete r.barOfDay;ch=true}}}}catch(e){console.warn("meta pull",e)}
+    if(metaApply(r,d))ch=true}}catch(e){console.warn("meta pull",e)}
   if(ch){saveH();if(S.route==="end"||S.route==="hist")render()}}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)followMetaPull()});
 function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId===id))return;
@@ -672,8 +666,10 @@ function followEnded(d){if(!d.rec)return;const id=S.follow;if(H.some(r=>r.liveId
   const m=(d.members||{})[ME.uid],b=m?m.b||0:0;
   r.id="f"+id;r.liveId=id;r.followed=nFirst(d.hostName);if(d.title)r.title=d.title;if(b>0){r.visits=r.visits.slice(b);if(r.visits[0])r.startedAt=Math.max(r.startedAt,m.j||r.startedAt)}
   delete r.newIds;r.bodDone=true;r.test=!!S.test;
+  // the host's "did you have a drink?" calls aren't the follower's to make: anything still open counts by the 3-minute rule
+  r.visits.forEach(v=>{if(v.counted==null&&v.arrivedAt!=null)v.counted=!!v.leftAt&&v.leftAt-v.arrivedAt>=DWELL_MIN*60000||!v.leftAt});
   let gT={};try{gT=JSON.parse(d.g)}catch(e){}if(gT.test&&!S.test){leaveFollow();closeSheet();toast("That was a test crawl, so it's not on your tab.",3500);go("home");return}   // a test crawl stays out of a real tab
-  pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);
+  pushH(r);syncH();matesFrom(d);track("live_landed",{bars:r.visits.length});afterNote(r);metaWatch(id);
   // followers get the same ending as the host: straight onto the summary, with the stats racking up. No sign-in ask here
   // (they're out, a few drinks in); the day-after card and My Tab ask instead.
   if(fvPrev)return;leaveFollow();closeSheet();S.lastEnd=r.id;S.rackEnd=r.id;SHARED=null;

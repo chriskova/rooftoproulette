@@ -2361,8 +2361,8 @@ body.camon #v-play .adjz{display:none}
 .camtipx{position:absolute;top:8px;right:8px;width:20px;height:20px;display:grid;place-items:center;opacity:.7}
 .camtipx svg{width:14px;height:14px}
 .acant{display:block;margin:8px auto 0;font-size:14px}
-.cantrow{display:flex;margin-top:6px}
-.cantrow .txtbtn{margin:0 auto;font-size:14.5px}
+.cantrow{display:flex;margin-top:0}
+.cantrow .txtbtn{margin:0 auto;font-size:14.5px;padding:7px 8px 3px}
 .zbars .zic{color:var(--amber-text);display:grid;place-items:center;flex:none}
 .zbars .zic svg{width:22px;height:22px}
 #sheet.fresh #sheetBody{pointer-events:none}
@@ -2639,6 +2639,46 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 @keyframes fvroll{from{transform:translateY(0)}to{transform:translateY(calc(var(--n) * -1.1em))}}
 .fv-list{display:flex;flex-direction:column}.fv-list .eyebrow{color:var(--muted);margin:6px 0 4px}.fv-list:empty{display:none}
 .fv-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-weight:600}.fv-row i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--amber);color:#241803;display:grid;place-items:center;font-size:12px;font-weight:800}.fv-row span{flex:1}.fv-row small{color:var(--muted)}.fv-row.x{opacity:.5}
+/* the follower's status page: header, clock, what's happening now, the wildcard, rooftops so far */
+.fv-hd{display:flex;align-items:center;gap:10px;flex:none}.fv-hd .t{flex:1;min-width:0}.fv-hd b{display:block;font-size:17px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fv-hd small{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:1px}
+.fv-livepill{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--green);background:var(--green-soft);padding:4px 9px;border-radius:99px}
+.fv-livepill i{width:7px;height:7px;border-radius:50%;background:var(--green);animation:fvlive 2s ease-in-out infinite}@keyframes fvlive{50%{opacity:.35}}
+.followv .fv-clock{flex:none;margin-top:4px}.followv .fv-clock b{font-size:clamp(48px,16vw,64px)}
+.followv>.tbar{flex:none}
+.fv-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 12px;margin:0 -2px;padding-left:2px;padding-right:2px}
+.fv-body>div:empty{display:none}
+.fv-ph{position:relative;height:200px;border-radius:18px;overflow:hidden;background:#4a3d31 center/cover no-repeat;flex:none}
+.fv-ph::after,.fv-sph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 35%,rgba(0,0,0,.72))}
+.fv-ph>.cr,.fv-sph>.cr{position:absolute;top:10px;right:10px;font-size:10.5px;color:#fff;background:rgba(0,0,0,.55);border-radius:6px;padding:2px 7px;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}.fv-ph>.cr a,.fv-sph>.cr a{color:#fff}
+.fv-tx{position:absolute;left:16px;right:70px;bottom:14px;color:#fff;z-index:1}.fv-tx .eyebrow{color:rgba(255,255,255,.85)}
+.fv-tx h2{font-family:var(--display);font-weight:800;font-size:38px;line-height:.95;color:var(--amber);text-transform:uppercase;margin:6px 0 4px}.fv-tx .m{font-size:14px;font-weight:600;color:rgba(255,255,255,.92)}
+.fv-dir{position:absolute;right:14px;bottom:16px;z-index:1;width:44px;height:44px;border-radius:50%;background:var(--amber);display:grid;place-items:center;color:var(--amber-ink)}.fv-dir svg{width:20px;height:20px}
+.fv-panel{height:200px;flex:none;border:1.5px dashed var(--line2);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);text-align:center;padding:0 20px}.fv-panel b{font-size:19px;color:var(--text);font-weight:750}.fv-panel span{font-size:14px}
+.fv-dots i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin:0 3px;animation:fvdot 1.2s ease-in-out infinite}.fv-dots i:nth-child(2){animation-delay:.2s}.fv-dots i:nth-child(3){animation-delay:.4s}@keyframes fvdot{0%,100%{opacity:.3}50%{opacity:1}}
+.fv-wl{display:flex;gap:10px;align-items:flex-start;border:1.5px dashed rgba(245,184,61,.8);background:rgba(245,184,61,.06);border-radius:16px;padding:11px 14px}
+.fv-wl svg{width:20px;height:20px;color:var(--amber-text);flex:none;margin-top:1px}.fv-wl .nm{display:block;font-size:11.5px;font-weight:800;letter-spacing:.12em;color:var(--amber-text);text-transform:uppercase}.fv-wl p{margin:3px 0 0;font-size:14.5px;font-weight:600;line-height:1.35}
+.fv-list{background:var(--s1);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.fv-lh{appearance:none;background:none;border:0;width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 14px var(--gap-label);font:inherit;color:inherit;cursor:pointer}.fv-lh .cv{color:var(--muted);font-size:13px;font-weight:700}
+.fv-li{appearance:none;background:none;border:0;border-top:1px solid var(--line);width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;font:inherit;color:inherit;text-align:left;cursor:pointer}.fv-li:active{background:var(--s2)}
+.fv-li .n{width:22px;height:22px;border-radius:50%;background:var(--amber);color:var(--amber-ink);font-size:12px;font-weight:800;display:grid;place-items:center;flex:none}
+.fv-li .t{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start}.fv-li b{font-size:15px;font-weight:700}.fv-li small{font-size:12.5px;color:var(--muted)}.fv-li .tm{font-size:13px;color:var(--muted);font-weight:600}
+.wtag{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:11.5px;font-weight:700;color:var(--amber-text);border:1.2px dashed rgba(245,184,61,.8);border-radius:99px;padding:2px 9px 2px 7px}.wtag svg{width:12px;height:12px}
+/* See all: a timeline, newest first */
+.fv-tl{position:relative;margin-top:var(--gap-section);padding-left:26px}.fv-tl::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--line2)}
+.fv-tl .ti{position:relative;display:block;width:100%;appearance:none;background:none;border:0;padding:0 0 16px;font:inherit;color:inherit;text-align:left}
+.fv-tl button.ti{cursor:pointer}
+.fv-tl .ti::before{content:"";position:absolute;left:-23px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--s1);border:2px solid var(--line2)}
+.fv-tl .ti.done::before{background:var(--amber);border-color:var(--amber)}.fv-tl .ti.w::before{border-color:var(--amber);border-style:dashed}
+.fv-tl .r{display:flex;justify-content:space-between;gap:10px}.fv-tl .r b{font-size:15px;font-weight:700}.fv-tl .r span{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+.fv-tl small{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.fv-tl .ti.w b{display:block;color:var(--amber-text);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}.fv-tl .ti.w p{margin:3px 0 0;font-size:14px;font-weight:600;line-height:1.35}
+/* one stop: the photo with its name over it (like the cards), then the numbers right under */
+.fv-sph{position:relative;height:190px;border-radius:18px;overflow:hidden;background:#4a3d31 center/cover no-repeat}
+.fv-sph .fv-tx{right:16px}.fv-sback{position:absolute;top:10px;left:10px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(0,0,0,.45);color:#fff;display:grid;place-items:center}.fv-sback svg{width:20px;height:20px}
+.fv-stats{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:14px;margin-top:10px}
+.fv-stats div{padding:10px 12px;border-left:1px solid var(--line)}.fv-stats div:first-child{border-left:0}
+.fv-stats b{display:block;font-size:17px;font-weight:750;margin-top:2px}.fv-stats small{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.fvsh .fv-wl{margin-top:10px}
 .fv-act{display:flex;flex-direction:column;align-items:center;gap:8px}.fv-act p{margin:0;font-weight:600}.fv-act .btn{width:100%}
 .qrbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin:0 auto}.qrbtn svg{width:18px;height:18px}
 #v-play{position:relative}.iconbtn.people{position:absolute;right:16px;top:0;z-index:6;box-shadow:0 2px 10px rgba(0,0,0,.14);background:var(--s1)}body.camon .iconbtn.people{display:none}.iconbtn.people svg{width:22px;height:22px}.pbadge{position:absolute;right:-3px;top:-3px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--amber);color:#241803;font:800 13px/18px var(--body,inherit);font-style:normal;text-align:center;box-shadow:0 0 0 2px var(--bg)}.pbadge.n{font-size:11px}
