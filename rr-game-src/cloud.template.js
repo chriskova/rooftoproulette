@@ -581,7 +581,7 @@ function fvWildPaint(g,v,at){const el=$("fvWild");if(!el)return;const w=g.wild&&
 // rarely goes past five or six.
 function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse();
   const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${fvMin(v.leftAt-v.arrivedAt)} there</small>${w?`<span class="wtag">${wFace(w)}${esc(wNm(w))}</span>`:""}</span><span class="tm">${clock12(sydAt(v.arrivedAt).min)}</span></button>`}).join("");
-  const h=done.length?`<div class="fv-list"><div class="fv-lh"><span class="eyebrow">Rooftops so far</span></div>${rows}</div>`:"";
+  const h=done.length?`<div class="fv-list"><div class="fv-lh"><span class="eyebrow">Previous rooftops</span></div>${rows}</div>`:"";
   if(el._h===h)return;el._h=h;el.innerHTML=h;
   el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
 const fvG=()=>{try{return JSON.parse(liveDoc.g)}catch(e){return {}}};
