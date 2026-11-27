@@ -754,6 +754,10 @@ const CHEERS_ART=()=>`<svg class="ia-cheers" viewBox="0 0 48 48" fill="none" str
  <g class="gl gl-l"><path class="wine" d="M7.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M6 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M12 22v16M8 38h8"/></g>
  <g class="gl gl-r"><path class="wine" d="M31.2 15h9.6c-.6 4.6-2.4 7-4.8 7s-4.2-2.4-4.8-7z"/><path d="M30 8h12c0 9.5-2.7 14-6 14s-6-4.5-6-14z"/><path d="M36 22v16M32 38h8"/></g>
  <g class="clk"><path d="M24 4.5V1.5"/><path d="M20.2 5.6l-2-2.2"/><path d="M27.8 5.6l2-2.2"/></g></svg>`;
+// two phones on the same crawl: the second slides in beside the first, both showing the same pin
+const TOG_ART=()=>`<svg class="ia-tog" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+ <g class="p1"><rect x="6" y="9" width="18" height="31" rx="3.5"/><path d="M15 17.5a4 4 0 0 1 4 4c0 3-4 6.5-4 6.5s-4-3.5-4-6.5a4 4 0 0 1 4-4z"/></g>
+ <g class="p2"><rect x="24" y="9" width="18" height="31" rx="3.5" transform="rotate(10 33 24.5)"/><path d="M33 17.5a4 4 0 0 1 4 4c0 3-4 6.5-4 6.5s-4-3.5-4-6.5a4 4 0 0 1 4-4z" transform="rotate(10 33 24.5)"/></g></svg>`;
 const WILD_ART=()=>`<svg class="ia-wild" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
  <rect class="bk" x="9" y="9" width="20" height="28" rx="3.5" transform="rotate(-14 19 23)"/>
  <g class="fr"><rect x="19" y="10" width="20" height="28" rx="3.5" stroke-dasharray="3.2 3.2"/><path d="M29 17.5l1.6 4.9 4.9 1.6-4.9 1.6-1.6 4.9-1.6-4.9-4.9-1.6 4.9-1.6z" fill="currentColor" fill-opacity=".35"/></g></svg>`;
@@ -761,7 +765,8 @@ const SLIDES=[
  {art:SPIN_ART(),h:"Spin the wheel",p:"Land a random rooftop bar for your crawl.<br>No planning, no debating."},
  {art:GO_ART(),h:"Get to the rooftop",p:"One drink at each rooftop."},
  {art:LOOP_ART(),h:"Spin again",p:"See how many you can hit before<br>the clock runs out."},
- {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."}
+ {art:WILD_ART(),h:"Wildcards and jackpots",p:"Some rooftops come with a wildcard.<br>One spin a crawl hits the jackpot."},
+ {art:TOG_ART(),h:"Play together",p:"Friends follow every spin and the timer<br>from their own phones."}
 ];   // (R&R isn't in the intro: setup offers Rest & Roulette right where you choose)
 function renderIntro(){if((S.intro||0)>=SLIDES.length)S.intro=SLIDES.length-1;
   const i=S.intro||0,b=$("introBody");
