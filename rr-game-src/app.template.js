@@ -1665,7 +1665,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
   if(k==="zone")crawlMap({move:true,pre:true});
   else if(k==="len")lenSheet(g);
   // the same Wildcards sheet as My Tab; the pill catches up when it closes
-  else if(k==="deck"){deckSheet();$("sheet").addEventListener("close",()=>{const d=document.querySelector('[data-mx="deck"]');if(d)d.innerHTML=mixDeckLbl()+MIX_CV},{once:true})}});
+  else if(k==="deck")deckSheet()});
 // R&R: what the wheel spins from. Your lists show when 2+ on them are open.
 function crPoolSheet(g){const t=now(),opn=k=>listOf(k).filter(v=>openOK(v,t)).length,cur=g.cz.type==="list"?g.cz.list:"";
   const rows=[["","All rooftops","Every open rooftop in your zone"]].concat(["want","fav"].filter(k=>opn(k)>=2||cur===k).map(k=>[k,listName(k),`${opn(k)} open now`]));
@@ -3024,7 +3024,7 @@ function renderPlay0(){
       ${g.demo?"":`<div class="dk-on wxdeck"><div class="dk-row"><button class="dk-open" type="button" id="wDeckRow"><span class="dk-logo">${deckLogo(dk)}</span><span class="t"><b>${esc(deckName(dk))}</b><small>${nP>=ts.length?"Complete":nP+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button></div></div>
       ${more?`<button class="txtbtn wxmore" type="button" id="wMorePk">More wildcard decks <span class="chev">›</span></button>`:""}`}
       <div class="sfoot"><button class="btn" type="button" id="wOk" autofocus>Challenge accepted</button></div>`,()=>{
-      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=deckSheet})});
+      $("wOk").onclick=closeSheet;if($("wDeckRow"))$("wDeckRow").onclick=()=>deckView(dk,reopen);if($("wMorePk"))$("wMorePk").onclick=()=>deckSheet()})});
   st.querySelectorAll(".bar.tapmaps,.camtgt").forEach(c=>c.onclick=e=>{if(e.target.closest("a,button,.wild"))return;window.open(c.dataset.gm,"_blank","noopener")});
   const sb=$("spinBtn");if(sb)sb.onclick=()=>{if(!CR(g)&&g.started&&!basePool().length){openMove(true);return}const open_=()=>{g.reelOpen=true;save();renderPlay()};
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
@@ -3218,7 +3218,7 @@ function packsSheet(mid){const g=G();
       S.packOff=S.packOff||{};S.packOff[id]=!S.packOff[id];if(!S.packOff[id])delete S.packOff[id];if(g)g.wdeck=null;save();b.setAttribute("aria-checked",String(packOn(id)));refreshDeckLbl()});
     document.querySelectorAll("[data-pk]").forEach(b=>b.onclick=()=>packSheet(b.dataset.pk,()=>packsSheet(mid)));
   })}
-function refreshDeckLbl(){const c=$("wDeck");if(c&&c.querySelector("b"))c.querySelector("b").textContent=deckLbl()}
+function refreshDeckLbl(){const c=$("wDeck");if(c&&c.querySelector("b"))c.querySelector("b").textContent=deckLbl();const d=document.querySelector('[data-mx="deck"]');if(d&&typeof mixDeckLbl==="function")d.innerHTML=mixDeckLbl()+MIX_CV}
 function packSheet(id,back){const p=packById(id);if(!p)return;const own=packOwned(id),g=G();
   const face=c=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[c.ic]||WIC.star}</svg>`;
   if(!own){const pv=p.prev.map(i=>p.cards[i]),rest=p.cards.length-pv.length;
@@ -3310,36 +3310,40 @@ function wWhere(t){const out=[],L=H.slice(),g=S.game;if(g&&!g.demo&&!g.follow)L.
     out.push({id,at:r.startedAt})});
   return out.sort((a,b)=>b.at-a.at)}
 // The Wildcards screen: one row per deck, like a phone's settings list. Switch it on or off on the right, tap the row to see its cards.
-function deckSheet(){const pl=WP();
+// Wildcards: a pop-up laid out like Settings (grouped rows, a deck's switch behind a short line, no buttons at the bottom).
+// Opening a deck swaps the pop-up to that deck, with a back arrow by its name; a card opens the same way from there.
+function shBack(id,title){return `<div class="shback"><button class="spback" type="button" id="${id}" aria-label="Back">${I.back}</button><h3>${title}</h3></div>`}
+function deckSheet(){
   const toAdd=PACKS.filter(p=>!packOwned(p.id)),owned=PACKS.filter(p=>packOwned(p.id));
-  const pack=p=>`<button class="dk-pack" type="button" data-dp="${p.id}"><span class="dk-logo">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="dk-pr">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><span class="chev">›</span></button>`;
+  const pack=p=>`<button class="strow dkp" type="button" data-dp="${p.id}"><span class="dk-ic">${deckLogo(p.id)}</span><span class="t"><b>${esc(p.name)}</b><small>${esc(PACK_PITCH[p.id]||p.line)}</small></span><span class="sval">${canBuy()&&rcPrice[PK_PRODUCT[p.id]]?esc(rcPrice[PK_PRODUCT[p.id]]):"Preview"}</span><i class="chev">›</i></button>`;
   sheet(`<h3>Wildcards</h3>
-    ${owned.length?`<div class="eyebrow dk-ph first">Your decks</div>`:""}${deckSwHTML()}
-    ${toAdd.length?`<div class="eyebrow dk-ph">${owned.length?"More wildcard decks":"Decks"}</div><div class="dk-packs">${toAdd.map(pack).join("")}</div>`:""}
-    ${canBuy()?`<button class="txtbtn wmore" type="button" id="dkRestore">Restore purchases</button>`:""}`,()=>{
+    <div class="sgh first">${owned.length?"Your decks":"Your deck"}</div>${deckSwHTML()}
+    ${toAdd.length?`<div class="sgh">More wildcard decks</div><div class="sgrp">${toAdd.map(pack).join("")}</div>`:""}
+    ${canBuy()?`<div class="sgh">Purchases</div><div class="sgrp"><button class="strow" type="button" id="dkRestore"><span class="t"><b>Restore purchases</b></span><i class="chev">›</i></button></div>`:""}`,()=>{
     $("sheet").classList.add("tq");
-    document.querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
-    bindDeckSw(document.querySelector(".sheet")||document,null,deckSheet);
+    $("sheetBody").querySelectorAll("[data-dp]").forEach(b=>b.onclick=()=>packSheet(b.dataset.dp,deckSheet));
+    bindDeckSw($("sheetBody"),null,deckSheet);
     if($("dkRestore"))$("dkRestore").onclick=()=>restorePacks().then(deckSheet);
-    if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet")&&$("sheet").querySelector(".dk-packs"))deckSheet()});
-  })}
+    if(canBuy()&&PACKS.some(p=>!rcPrice[PK_PRODUCT[p.id]]))rcInit().then(()=>{if(PACKS.some(p=>rcPrice[PK_PRODUCT[p.id]])&&$("sheet").open&&$("sheetBody").querySelector(".dkp"))deckSheet()})})}
 const deckCardsOf=id=>id==="free"?WILDS:packById(id).cards.map(c=>c.t);
 const deckName=id=>id==="free"?BASE_DECK:packById(id).name;
 // one deck opened up: played cards face up, the rest face down with the deck's mark
 function deckView(id,back){const pl=WP(),ts=deckCardsOf(id),k=ts.filter(t=>pl[t]).length,face=wFace;
   const mini=t=>pl[t]?`<button class="dk-card up" type="button" data-dt="${esc(t)}">${face(t)}<span>${esc(wNm(t))}</span></button>`:`<span class="dk-card down">${deckLogo(id)}</span>`;
-  sheet(`<div class="dk-vhead"><span class="dk-logo">${deckLogo(id)}</span><h3>${esc(deckName(id))}</h3></div>
-    <div class="dk-head"><span class="eyebrow">Cards</span><span class="dk-n">${k>=ts.length?"Complete":k+" of "+ts.length+" played"}</span></div>${k>=ts.length?"":`<div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>`}
-    <div class="dk-grid">${ts.map(mini).join("")}</div>
-    <div class="acts" style="margin-top:16px"><button class="btn line" type="button" id="dvBack">${back?"Back":"Done"}</button></div>`,()=>{
-    $("sheet").classList.add("tq");
-    document.querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>{const t=b.dataset.dt;const wh=wWhere(t);sheet(`<h3>${esc(wNm(t))}</h3><div class="wild wexplain">${face(t)}<span>${esc(WMETA[t]?wLead(WMETA[t]):t)}</span></div>${wh.length?`<div class="eyebrow" style="margin-top:var(--gap-section)">Played</div><div class="wwhere">${wh.map(x=>{const v=x.id&&byId(x.id);return `<div><b>${esc(v?v.name:"Rooftop not recorded")}</b><span>${esc(dateTxt(x.at))}</span></div>`}).join("")}</div>`:""}<div class="acts"><button class="btn line" type="button" id="dkBack">Back</button></div>`,()=>$("dkBack").onclick=()=>deckView(id,back))});
-    $("dvBack").onclick=()=>{if(back)back();else closeSheet()}})}
+  sheet(`${back?shBack("dvBack",esc(deckName(id))):`<h3>${esc(deckName(id))}</h3>`}
+    <div class="dk-head"><span class="sgh">Cards</span><span class="dk-n">${k>=ts.length?"Complete":k+" of "+ts.length+" played"}</span></div>${k>=ts.length?"":`<div class="dk-bar wide"><i style="width:${Math.round(k/ts.length*100)}%"></i></div>`}
+    <div class="dk-grid">${ts.map(mini).join("")}</div>`,()=>{
+    $("sheet").classList.add("tq");if($("dvBack"))$("dvBack").onclick=back;
+    $("sheetBody").querySelectorAll("[data-dt]").forEach(b=>b.onclick=()=>cardSheet(b.dataset.dt,()=>deckView(id,back),deckName(id)))})}
+// a card's details: the card itself (its mark and name, as it's dealt) with the rule beside it, then where it was played
+function cardSheet(t,back,title){const m=WMETA[t],wh=wWhere(t),rule=m?(m.lead?m.t:wLead(m)):t;   // spin cards: the whole rule, not the half-sentence the spin finishes
+  sheet(`${back?shBack("cdBack",esc(title||"")):""}<div class="wcd"><div class="wcd-card">${wFace(t)}<b>${esc(wNm(t))}</b></div><div class="wcd-t"><p class="wcd-r">${esc(rule)}</p></div></div>
+    ${wh.length?`<div class="sgh">Played</div><div class="wwhere">${wh.map(x=>{const v=x.id&&byId(x.id);return `<div><b>${esc(v?v.name:"Rooftop not recorded")}</b><span>${esc(dateTxt(x.at))}</span></div>`}).join("")}</div>`:""}`,()=>{if($("cdBack"))$("cdBack").onclick=back})}
 // your decks as rows: the deck's mark, name and how much you've played; a switch on the right once you own a pack
 function deckSwHTML(){const pl=WP(),own=anyOwned();
   const row=(k,on)=>{const ts=deckCardsOf(k),n=ts.filter(t=>pl[t]).length;
-    return `<div class="dk-row${own&&on?" on":""}"><button class="dk-open" type="button" data-dv="${k}"><span class="dk-logo">${deckLogo(k)}</span><span class="t"><b>${esc(deckName(k))}</b><small>${n>=ts.length?"Complete":n+" of "+ts.length+" played"}</small></span><span class="chev">›</span></button>${own?`<button class="dk-sw" type="button" role="switch" data-dk="${k}" aria-checked="${on}" aria-label="${esc(deckName(k))} in play"><span class="sw"></span></button>`:""}</div>`};
-  return `<div class="dk-on">${row("free",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>row(p.id,packOn(p.id))).join("")}</div>`}
+    return `<div class="dkr${own&&on?" on":""}"><button class="strow dk-open" type="button" data-dv="${k}"><span class="dk-ic">${deckLogo(k)}</span><span class="t"><b>${esc(deckName(k))}</b><small>${n>=ts.length?"Complete":n+" of "+ts.length+" played"}</small></span>${own?"":`<i class="chev">›</i>`}</button>${own?`<button class="dk-sw" type="button" role="switch" data-dk="${k}" aria-checked="${on}" aria-label="${esc(deckName(k))} in play"><span class="sw"></span></button>`:""}</div>`};
+  return `<div class="sgrp dk-on">${row("free",freeOn())}${PACKS.filter(p=>packOwned(p.id)).map(p=>row(p.id,packOn(p.id))).join("")}</div>`}
 function bindDeckSw(root,after,back){root.querySelectorAll("[data-dv]").forEach(b=>b.onclick=()=>deckView(b.dataset.dv,back));
   root.querySelectorAll("[data-dk]").forEach(b=>b.onclick=()=>{const k=b.dataset.dk,on=b.getAttribute("aria-checked")==="true";
   if(on&&root.querySelectorAll('[data-dk][aria-checked="true"]').length<2){toast("Keep one deck on",1600);return}

@@ -1656,7 +1656,22 @@ body.camon #v-play .adjz{display:none}
 .rset .rs small{font-size:12.5px;color:var(--muted)}
 .rset .rs b{font-size:16px;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rset .rs .chev{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--amber-text);font-size:20px;line-height:1}
-.dk-ph.first{margin-top:var(--gap-label)}.dk-on{display:flex;flex-direction:column;gap:8px;margin-bottom:var(--gap-section)}
+.dk-ph.first{margin-top:var(--gap-label)}
+/* Wildcards page: grouped rows like Settings; a deck's switch sits apart on the right behind a short line */
+.dkr{display:flex;align-items:center;border-top:1px solid var(--line)}.dkr:first-child{border-top:0}
+.dkr .strow{border-top:0;flex:1;min-width:0}
+.dk-ic{flex:none;width:26px;display:grid;place-items:center;color:var(--amber-text)}.dk-ic svg{width:22px;height:22px}
+.strow.dkp .sval{color:var(--amber-text);font-weight:700}
+#sheet .sgh{margin:var(--gap-section) 4px var(--gap-label)}#sheet .sgh.first{margin-top:var(--gap-label)}
+#sheet .dk-head{margin:var(--gap-label) 0 var(--gap-label)}#sheet .dk-head .sgh{margin:0 4px}
+/* a sheet's own back arrow, beside its title */
+.shback{display:flex;align-items:center;gap:6px;margin:-4px 0 0 -8px;min-height:40px}.shback h3{margin:0}
+/* a card's details: the card as it's dealt, its rule beside it */
+/* a card's details: the same played card as in the deck grid (solid: played; dotted ones are still face down), rule beside it */
+.wcd{display:flex;align-items:center;gap:14px;margin-top:var(--gap-label)}
+.wcd-card{flex:none;width:66px;aspect-ratio:3/4;border-radius:9px;background:var(--s1);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px;text-align:center}
+.wcd-card svg{width:18px;height:18px;color:var(--amber-text)}.wcd-card b{font-size:10.5px;font-weight:700;line-height:1.15}
+.wcd-t{flex:1;min-width:0}.wcd-r{margin:0;font-size:16px;font-weight:600;line-height:1.4}
 /* deck rows: mark, name and played count; the switch sits apart on the right, the rest of the row opens the deck */
 .dk-row{display:flex;align-items:center;background:var(--s1);border:1.5px solid var(--line);border-radius:var(--r);transition:border-color .15s}
 .dk-row.on{border-color:var(--amber)}
