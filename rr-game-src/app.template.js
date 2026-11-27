@@ -4896,6 +4896,8 @@ function endDue(g){if(!g.started)return null;const t=[];if(now()>=g.endsAt)t.pus
 function staleEnd(){const g=G();if(!g||g.demo)return false;
   // a crawl that ended but never cleared (older versions could trip as the app opened): put it on My Tab if it isn't already, and land home
   if(g.ended){if(!H.some(r=>r.id===g.id)){const rec=JSON.parse(JSON.stringify(g));rec.test=!!(g.test||S.test);pushH(rec)}S.lastEnd=g.id;S.game=null;save();stopWatch();go("home");return true}
+  // set up but never spun, 3+ hours ago: nothing to keep, so it's dropped and the app opens on home
+  if(!g.started){const made=+String(g.id).slice(1)||0;if(!made||now()-made<QUIET_END_MS)return false;track("crawl_unspun_dropped",{mode:CR(g)?"rr":"rush"});endGame(now(),true);return true}
   const due=endDue(g);if(due==null||now()-due<QUIET_END_MS)return false;
   track("crawl_quiet_end",{mode:CR(g)?"rr":"rush",hours:Math.round((now()-due)/3600000)});if(CR(g)&&due===g.autoAt)g.autoEnded=true;endGame(due,true);return true}
 /* ---------- boot ---------- */
