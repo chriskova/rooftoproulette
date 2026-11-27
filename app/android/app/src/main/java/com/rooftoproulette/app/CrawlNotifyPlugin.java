@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import com.getcapacitor.JSObject;
@@ -28,6 +30,25 @@ public class CrawlNotifyPlugin extends Plugin {
     static final int ID = 28351;                 // = BackgroundGeolocationService.NOTIFICATION_ID
     static final String CHANNEL = "crawl_live";
 
+    // While a crawl's notification is up, nudge the page once a minute. A locked phone barely runs the page's own
+    // timers, so this is what keeps a host's "still here" going to followers with the phone in a pocket.
+    static final long BEAT_MS = 60000;
+    private final Handler beatH = new Handler(Looper.getMainLooper());
+    private boolean beating = false;
+    private final Runnable beat = new Runnable() {
+        @Override
+        public void run() {
+            if (!beating) return;
+            try { getBridge().getWebView().evaluateJavascript("window.__rrBeat&&window.__rrBeat()", null); } catch (Exception ignore) {}
+            beatH.postDelayed(this, BEAT_MS);
+        }
+    };
+    private void beatOn(boolean on) {
+        beatH.removeCallbacks(beat);
+        beating = on;
+        if (on) beatH.postDelayed(beat, BEAT_MS);
+    }
+
     private void ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager m = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -44,6 +65,7 @@ public class CrawlNotifyPlugin extends Plugin {
 
     @PluginMethod
     public void update(PluginCall call) {
+        if (!beating) beatH.post(() -> beatOn(true));
         try {
             ensureChannel();
             Context ctx = getContext();
@@ -173,6 +195,7 @@ public class CrawlNotifyPlugin extends Plugin {
 
     @PluginMethod
     public void clear(PluginCall call) {
+        beatH.post(() -> beatOn(false));
         try { NotificationManagerCompat.from(getContext()).cancel(ID); } catch (Exception ignore) {}
         call.resolve();
     }

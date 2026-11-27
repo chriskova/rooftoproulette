@@ -512,7 +512,13 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
 const PING_WAIT=6000;   // a host phone that's locked or on a slow connection can take a few seconds to answer: say "Checking" until it's sure
 let fmPing=0;
 // where the host's phone stands for this follower: answering, being checked, or not answering
-function hostReach(d){const r=hostReach0(d);return r==="gone"&&d&&d.away?"away":r}
+// A locked host phone is normal (it's in a pocket): it still checks in once a minute (the native notification nudges it),
+// so it counts as connected. Only a phone that's stopped checking in for a few minutes (flat, off, no signal) can be taken over.
+const AWAY_DEAD=3.5*60000;
+function hostReach(d){if(d&&!d.ended&&d.away)return Date.now()-(d.beat||0)>AWAY_DEAD?"gone":"ok";return hostReach0(d)}
+// the native nudge: the host's "still here", and an answer to anyone who asked
+window.__rrBeat=async()=>{const g=G();if(!g||!g.live||g.ended||!isHost())return;
+  try{const B=await cloud(),id=g.live,d=await B.get(`live/${id}`).catch(()=>null),P=d?hostPongs(d):null;await B.set(`live/${id}`,Object.assign({beat:Date.now()},P?{pongs:P}:{}),true)}catch(e){console.warn("beat",e)}};
 function hostReach0(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
   if(fmPing&&(!m||m.ping!==fmPing))return Date.now()-fmPing<PING_WAIT?"checking":"ok";   // this phone's ask hasn't reached the crawl yet (or this phone's offline)
@@ -571,7 +577,7 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked&&(g.wild.shown||g.wild.landed)?g.wild:null;
   const jd=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpOn=!!(jd&&v&&(here?vs.indexOf(at)===g.jp.leg:g.jp.leg===vs.length&&(g.targetAt||0)>=g.jp.at));
   const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx,w&&fvRule(g,w),jpOn]);
-  if(el._k===k){const dw=$("fvDwell");if(dw&&here)dw.textContent=fvHere(t-at.arrivedAt);return}
+  if(el._k===k){const dw=$("fvDwell");if(dw&&here){const x=fvHere(t-at.arrivedAt);if(dw.textContent!==x)dw.textContent=x}return}
   const was=el._k?JSON.parse(el._k):null;el._k=k;
   if(was&&v&&was[2]!==v.id)buzz(here?[40,40,40]:30);    // a new rooftop picked, or arrived
   if(!v){const first=!g.started&&!vs.length&&!g.target;
@@ -608,8 +614,10 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Only you can spin":"You're following";
   followNote(d,g,t);
   // the same clock as the host's phone: held at the full length until the first bar (and through a time freeze), then counting down
-  const c=fvClockTxt(d,g,t),L=fvLabel(d,g,t);$("fvClock").textContent=!d.ended&&!g.started&&!cr?mmss((g.len||60)*60000):c.clock;$("fvSub").textContent=L.lbl;$("fvClockW").className="clock"+L.cls;
-  const tb=$("fvBar");tb.hidden=cr||!g.started||d.ended;tb.className="tbar"+L.cls;$("fvBarI").style.width=L.pct+"%";
+  // only touch what changed: redrawing these four times a second made the page lay itself out again mid-scroll
+  const set=(el,k,v)=>{if(el&&el[k]!==v)el[k]=v};
+  const c=fvClockTxt(d,g,t),L=fvLabel(d,g,t);set($("fvClock"),"textContent",!d.ended&&!g.started&&!cr?mmss((g.len||60)*60000):c.clock);set($("fvSub"),"textContent",L.lbl);set($("fvClockW"),"className","clock"+L.cls);
+  const tb=$("fvBar");set(tb,"hidden",!!(cr||!g.started||d.ended));set(tb,"className","tbar"+L.cls);{const bi=$("fvBarI"),w=Math.round(L.pct*10)/10+"%";if(bi._w!==w){bi._w=w;bi.style.width=w}}
   fvCard(d,g,t);fvListPaint(d,g,t);
   const stale=!d.ended&&Date.now()-(d.beat||0)>STALE_MS,   // before the clock's started too: a phone can die before the first spin   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");

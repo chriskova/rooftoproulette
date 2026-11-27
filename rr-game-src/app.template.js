@@ -536,7 +536,7 @@ function gload(){
 }
 const LL=p=>({lat:p.lat,lng:p.lng});
 function gWrap(el,o){
-  const map=new google.maps.Map(el,{mapId:GMAPID,isFractionalZoomEnabled:true,colorScheme:isDark()?"DARK":"LIGHT",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.greedy?"greedy":"cooperative",center:{lat:-33.8732,lng:151.2069},zoom:14});
+  const map=new google.maps.Map(el,{mapId:GMAPID,isFractionalZoomEnabled:true,colorScheme:isDark()?"DARK":"LIGHT",disableDefaultUI:true,clickableIcons:false,gestureHandling:o&&o.locked?"none":o&&o.greedy?"greedy":"cooperative",keyboardShortcuts:!(o&&o.locked),center:{lat:-33.8732,lng:151.2069},zoom:14});
   let ov=[],meM=null,ringC=null,tapAt=0;   // a pin tap also reaches the map as a click: don't let that close what the pin opened
   const node=h=>{const d=document.createElement("div");d.style.transform="translateY(50%)";d.style.display="grid";d.style.placeItems="center";d.innerHTML=h;return d};
   const mk=(pos,h,z,onClick,title)=>{const n=node(h);
@@ -567,8 +567,8 @@ function gWrap(el,o){
     resize(){},remove(){this.clear();if(meM)meM.map=null;if(ringC)ringC.setMap(null);el.innerHTML=""}
   };
 }
-function lWrap(el){
-  const m=mkMap(el),ov=L.layerGroup().addTo(m);let meM=null,ringC=null;
+function lWrap(el,o){
+  const m=mkMap(el,o&&o.locked?{dragging:false,touchZoom:false,doubleClickZoom:false,scrollWheelZoom:false,boxZoom:false,keyboard:false,tap:false}:undefined),ov=L.layerGroup().addTo(m);let meM=null,ringC=null;
   return {
     clear(){ov.clearLayers()},
     circle(c,r){zoneCircle(c,r).addTo(ov)},
@@ -593,7 +593,7 @@ function lWrap(el){
 }
 // Every live map shows where you are and follows you (finished crawls opt out with noMe: they're a record, not a live view).
 const meMaps=[];
-async function makeMap(id,o){const el=$(id);if(!el)return null;let m;try{await gload();if(gBad)throw 0;m=gWrap(el,o)}catch(e){m=lWrap(el)}
+async function makeMap(id,o){const el=$(id);if(!el)return null;let m;try{await gload();if(gBad)throw 0;m=gWrap(el,o)}catch(e){m=lWrap(el,o)}
   if(!(o&&o.noMe)){m._el=el;meMaps.push(m);const y=you();if(y)try{m.me(y)}catch(e){}}
   return m}
 function meAll(){const y=you();for(let i=meMaps.length-1;i>=0;i--){const m=meMaps[i];if(!document.contains(m._el)){meMaps.splice(i,1);continue}try{m.me(y)}catch(e){}}}
@@ -1765,13 +1765,13 @@ function makeReel(el,names,o){
   let L=[PH];while(L.length<LEN)L.push(pickFrom(new Set(L.slice(-GAP)),L[L.length-1]));
   const swapIn=i=>{const c=shuffle(U.filter(x=>x!==L[i]&&!clash(L,i,x)));if(c.length)L[i]=c[0]};
   for(let i=LEN-GAP;i<LEN;i++)if(clash(L,i,L[i]))swapIn(i);
-  const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length;
+  const R={p:0,busy:false,raf:0,rest:0},mod=k=>((k%L.length)+L.length)%L.length,WR=new Map();
   el.classList.add("reel");el.classList.remove("won");
   /* A bulging lens: one layer of names, never clipped. Each name grows smoothly as it nears the middle of the
      window and is only full size dead centre. On the way in it's squashed top-to-bottom (the edge of a rounded
      lens squeezes more in that direction), and it swaps from the fine weight to the bold one as it swells.
      Names are spread further apart near the middle so a big name never runs into its neighbours. */
-  el.innerHTML=`<div class="frame"></div>${[...Array(13)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
+  el.innerHTML=`<div class="frame"><i class="ffl"></i></div>${[...Array(13)].map(()=>`<div class="row"><span class="t"></span><span class="b"></span></div>`).join("")}${o.hint?`<div class="hint" aria-hidden="true"><i></i></div>`:""}`;
   const rows=[...el.querySelectorAll(".row")],frame=el.querySelector(".frame");
   let lastK=0,lastFl=0,moved=false,lastP=0,lastT=performance.now();
   const SIG=.62,OUT=.66,bump=d=>Math.exp(-(d/SIG)*(d/SIG));
@@ -1785,7 +1785,7 @@ function makeReel(el,names,o){
     if(crossed!==null){if(!o.quiet){tick(560+Math.random()*80);buzz(3)}
       // the slot's lights flash with every name that passes: a fast flicker at speed, slow blinks as it winds down
       if(frame&&frame.animate&&!R.landing){const dur=Math.round(Math.min(240,Math.max(70,900/Math.max(spd,1))));const fi=Math.min(1,.4+.6*Math.min(1,7/Math.max(spd,1)));frame._fl=performance.now();frame._fd=dur;frame._fi=fi;   // softer at full speed, full strength on the last few names
-        frame.animate([{borderColor:fi>.8?"#FFE3A3":"#FBD27E",boxShadow:`0 0 0 ${(4*fi).toFixed(1)}px rgba(255,214,120,${(.45*fi).toFixed(2)}),0 0 ${Math.round(28*fi)}px rgba(255,214,120,${(.6*fi).toFixed(2)}),inset 0 0 18px rgba(255,214,120,${(.25*fi).toFixed(2)})`},{}],{duration:dur,easing:"ease-out"})}}
+        const fg=frame.firstChild;if(fg)fg.animate([{opacity:fi},{opacity:0}],{duration:dur,easing:"ease-out"})}}
     // the slot is pushed out while a name sits in its catch, and springs back once it's rolled past (same range as the name's own zoom)
     if(frame){const fin=Math.abs(R.p-Math.round(R.p))<.14&&spd<12&&!R.landing;if(fin!==frame._in){frame._in=fin;frame.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";frame.style.transform=fin?"scale(1.025,1.09)":""}
       frame.classList.toggle("held",fin&&!!R.down)}   // dragging slowly: the light holds while a name's in the slot
@@ -1796,7 +1796,7 @@ function makeReel(el,names,o){
     RAD=Math.max(190,(el.clientHeight||290)*.6);
     for(let k=fl-6;k<=fl+6;k++){const r=rows[((k%13)+13)%13],d=k-R.p,a=Math.abs(d),n=L[mod(k)],t=r.firstChild,bo=r.lastChild;
       if(r._k!==k){r._k=k;r._in=false;[t,bo].forEach(x=>{x.style.transition="none";x.style.transform=""})}
-      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1}
+      if(t.textContent!==n){t.textContent=n;bo.textContent=n;r.classList.toggle("long",n.length>15);r.classList.toggle("xlong",n.length>26);r.classList.toggle("ph",n===PH);t.style.scale="";if(WR.has(n))r._wr=WR.get(n);else{const wt=t.offsetWidth,wb=bo.offsetWidth;r._wr=wt&&wb?wb/wt:1;WR.set(n,r._wr)}}
       const g=bump(d),y=yAt(d),ang=y/RAD;
       if(Math.abs(ang)>1.4){r.style.opacity=0;continue}
       const sx=OUT+(1-OUT)*Math.pow(g,.75),sy=OUT+(1-OUT)*Math.pow(g,1.5);
@@ -1813,7 +1813,7 @@ function makeReel(el,names,o){
       if(inR!==r._in){r._in=inR;[t,bo].forEach(x=>{x.style.transition="transform .2s cubic-bezier(.3,1.5,.5,1)";x.style.transform=inR?"scale(1.12)":""})}
     }};
   draw();R.redraw=draw;
-  const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();const f=t=>{const u=Math.min(1,(t-t0)/dur);fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else end&&end()};R.raf=requestAnimationFrame(f)};
+  const anim=(dur,fn,end)=>{cancelAnimationFrame(R.raf);const t0=performance.now();let tp=t0,n=0,slow=0;const f=t=>{const u=Math.min(1,(t-t0)/dur);if(t-tp>26)slow++;n++;tp=t;fn(u);draw();if(u<1)R.raf=requestAnimationFrame(f);else{if(dur>1500&&n>30)liteCheck(slow/n);end&&end()}};R.raf=requestAnimationFrame(f)};
   R.bounce=()=>{const p0=R.p,to=R.rest;R.busy=true;anim(380,u=>{const c=1.7,x=u-1;R.p=p0+(to-p0)*(1+(c+1)*x*x*x+c*x*x)},()=>{R.p=to;draw();R.busy=false;const h=el.querySelector(".hint");if(h)h.classList.remove("off")})};
   // a follower's reel: rolls at a steady speed until the host's result comes in, then spinTo winds it down onto it
   R.roll=v=>{cancelAnimationFrame(R.raf);moved=true;R.busy=true;el.classList.add("going");const h=el.querySelector(".hint");if(h)h.remove();
@@ -2029,7 +2029,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   ov.innerHTML=`<i class="jpx-bg"></i><i class="jpx-glow l"></i><i class="jpx-glow r"></i><div class="jpx-streaks"></div>`;
   document.body.appendChild(ov);
   const filming=!!CAM.rec;   // filming a jackpot on an older phone: drop the streaks (they're not in the clip) and go lighter on confetti
-  if(!calm&&!filming){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<18;i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
+  if(!calm&&!filming){const st=ov.querySelector(".jpx-streaks");for(let i=0;i<(S.lite?8:18);i++){const e=document.createElement("i"),left=i%2?78+Math.random()*20:Math.random()*20;
     Object.assign(e.style,{left:left+"vw",height:(40+Math.random()*90)+"px",animationDuration:(.45+Math.random()*.5)+"s",animationDelay:(-Math.random())+"s",opacity:.25+Math.random()*.5});st.appendChild(e)}}
   const ph=document.createElement("div");ph.style.height=r.height+"px";box.parentNode.insertBefore(ph,box);
   Object.assign(box.style,{position:"fixed",left:r.left+"px",top:r.top+"px",width:r.width+"px",margin:"0",zIndex:"2"});ov.appendChild(box);
@@ -2040,7 +2040,7 @@ function jackpotRun(box,R_,vel,j,done,ctx){
   ov.querySelector(".jpx-bg").animate([{opacity:0},{opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)",fill:"forwards"});   // only the dark fades in; the wheel stays solid
   let stopRiser=()=>{};
   const T=R_.spinTo(j.t,Math.min(-40,vel||-40),info=>{
-    ov.classList.add("won");confetti(ov,filming?18:0);ctx.onLand&&ctx.onLand();
+    ov.classList.add("won");confetti(ov,filming||S.lite?18:0);ctx.onLand&&ctx.onLand();
     const fl=document.createElement("i");fl.className="jpx-flash";ov.appendChild(fl);fl.animate([{opacity:.9},{opacity:0}],{duration:600,easing:"ease-out",fill:"forwards"}).onfinish=()=>fl.remove();
     // the card, in the middle of the screen, built the same way as a bar's card
     const wrap=document.createElement("div");wrap.className="jpcard-wrap";
@@ -3067,7 +3067,11 @@ function renderPlay0(){
   // The phone app tracks with the screen locked. Only a browser (or the app if background tracking failed to start) needs the app left open.
   else gn.textContent=g.target&&!(NATIVE&&bgWatch!==null)?"Keep the app open on the way so your visit logs the moment you arrive.":"";
 }
-function confetti(host,n){
+// Lighter effects for phones that drop frames on a spin (no extra glow layers, fewer streaks and confetti). Decided by
+// how the wheel actually ran here, not by the phone's age; two slow spins in a row switch it on.
+function liteCheck(slowShare){const was=!!S.lite;S.liteHits=slowShare>.25?(S.liteHits||0)+1:0;if(S.liteHits>=2)S.lite=true;if(!!S.lite!==was){save();document.body.classList.toggle("lite",!!S.lite)}}
+document.body.classList.toggle("lite",!!S.lite);
+function confetti(host,n){if(S.lite&&n==null)n=20;
   const app=host||$("app"),cols=["#F5B83D","#F4F1EA","#4ADE80","#FFD27A"];
   for(let i=0;i<(n||46);i++){const p=document.createElement("i");p.className="cf";p.style.left=(Math.random()*100)+"%";p.style.background=cols[i%4];p.style.animationDelay=(Math.random()*.25)+"s";p.style.setProperty("--x",(Math.random()*160-80)+"px");p.style.setProperty("--r",(Math.random()*720-360)+"deg");app.appendChild(p);setTimeout(()=>p.remove(),1900)}
 }
@@ -3606,7 +3610,7 @@ function renderEnd(){
     ${still?`<div class="still"><b>Still going?</b><span>We wrapped your crawl at 3 hours and saved it. If you're still out, pick up where you left off.</span><div class="row2"><button class="btn sm" type="button" id="stY">Keep going</button><button class="btn sm dark" type="button" id="stN">That's a wrap</button></div></div>`:""}
     ${pending.map(o=>`<div class="ask"><b>Should ${esc(byId(o.v.id).name)} count?</b><span class="small">You weren't there long. Did you have a drink?</span><div class="row"><button class="btn sm" type="button" data-q="${o.i}" data-a="1">Count it</button><button class="btn sm dark" type="button" data-q="${o.i}" data-a="0">Don't count</button></div></div>`).join("")}
     <div class="sc">
-      <div class="sc-top"><button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button><span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
+      <div class="sc-top">${S.endBack==="play"&&!isShared?`<button class="scback" type="button" id="doneBtn" aria-label="Close">${I.x}</button>`:`<button class="scback" type="button" id="doneBtn" aria-label="Back">${I.back}</button>`}<span class="eyebrow scttl">${cr?"R&amp;R":LEN(r.len)} · ${dateTxt(rt(r,r.startedAt))}</span><span class="sctr"><button class="scmore" type="button" id="scMore" aria-label="Crawl options">${I.more}</button></span></div>
       ${(()=>{const stays=st.arrived.filter(v=>v.leftAt&&!v.lastOrders).map(v=>v.leftAt-v.arrivedAt),lng=stays.length?Math.max(...stays):0;
         const K=r.noLoc?[[n,n===1?"Rooftop":"Rooftops"],[hmm(st.dur),"Total time"]]:cr?[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(st.dur),"Total time"]]:[[n,n===1?"Rooftop":"Rooftops"],[km(st.total),"Distance",st.arrived.length>1&&"dist"],[hmm(moving),"Travel time"]];
         const M=r.noLoc?[]:cr?[[hmm(atBars),"Rooftop time",st.arrived.length&&"time"],[lng?hmm(lng):"—","Longest stay",lng&&"long"],[stays.length?hmm(stays.reduce((a,b)=>a+b,0)/stays.length):"—","Average stay"]]
@@ -3671,7 +3675,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
   if(S.rackEnd===r.id){delete S.rackEnd;save();if(n){const nb=box.querySelector(".tri>div b");if(nb)nb.textContent="0";setTimeout(()=>rackUp(box,n),700)}}
   requestAnimationFrame(async()=>{
     if(eMap){eMap.remove();eMap=null}
-    const el=$("endMap"),m=await makeMap("endMap",{noMe:true});if(!m||!document.contains(el))return;eMap=m;
+    const el=$("endMap"),m=await makeMap("endMap",{noMe:true,locked:true});if(!m||!document.contains(el))return;eMap=m;
     const {stops:pts,trail:tr}=crawlPath(r,st);
     if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
@@ -4805,7 +4809,7 @@ function liveNote(){
   notifEnsure(g.id);
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
   if(a){title=`At ${byId(a.id).name}`;text=cr?mode:`${mode} · here ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`}
-  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode+(y?` · ${kmTxt(dist(y,v)/1000)} away`:"")}
+  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode}
   else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"rooftop")}`}
   const o={title,text};
   if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first rooftop"}
