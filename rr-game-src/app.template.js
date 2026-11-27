@@ -4851,6 +4851,7 @@ function afterNote(rec){
   const list=u.length<=3?(u.length>1?u.slice(0,-1).join(", ")+" and "+u[u.length-1]:u[0]):u.slice(0,3).join(", ")+` and ${u.length-3} more`;
   noteSetup();lnSchedule([{id:104,title:`${day}'s crawl: ${plural(u.length,"rooftop")}`,body:list+".",channelId:"crawl_after",smallIcon:"ic_stat_rr",iconColor:"#F5B83D",extra:{crawl:rec.id},schedule:{at,allowWhileIdle:true}}]).catch(()=>{})}
 function loop(){
+  if(staleEnd())return;   // back after a crawl finished hours ago: onto My Tab quietly
   liveNote();alertSync();if(S.route!=="play")renderMini();
   const g=G();
   if(g&&g.started&&!g.ended&&now()>=g.endsAt){
@@ -4888,17 +4889,16 @@ document.addEventListener("visibilitychange",()=>{
   loop();
 });
 
-/* A crawl nobody's touched for 6 hours (left open, or brought back by a phone backup) ends itself
-   as of the last spin or arrival, and goes on My Tab, instead of opening mid-crawl days later */
-const OLD_CRAWL_MS=6*3600000;
-function crawlLast(g){let t=Math.max(g.startedAt||0,g.targetAt||0,g.spinAt||0);(g.visits||[]).forEach(v=>{t=Math.max(t,v.arrivedAt||0,v.leftAt||0)});return t}
+/* Opening the app well after a crawl finished (its clock ran out, or R&R's 3 hours were up, 3+ hours ago):
+   it goes straight onto My Tab and you land home, no crawl card or confetti. Finished more recently: the usual crawl card. */
+const QUIET_END_MS=3*3600000;
+function endDue(g){if(!g.started)return null;const t=[];if(now()>=g.endsAt)t.push(g.endsAt);if(CR(g)&&g.autoAt&&now()>=g.autoAt)t.push(g.autoAt);return t.length?Math.min(...t):null}
 function staleEnd(){const g=G();if(!g||g.demo)return false;
   // a crawl that ended but never cleared (older versions could trip as the app opened): put it on My Tab if it isn't already, and land home
-  if(g.ended){if(!H.some(r=>r.id===g.id)){const rec=JSON.parse(JSON.stringify(g));rec.test=!!(g.test||S.test);pushH(rec)}S.lastEnd=g.id;S.game=null;save();stopWatch();go("home");return true}const last=crawlLast(g);if(!last||now()-last<OLD_CRAWL_MS)return false;
-  track("crawl_stale_end",{mode:CR(g)?"rr":"rush",hours:Math.round((now()-last)/3600000)});if(CR(g)&&g.started)g.autoEnded=true;endGame(last,true);return true}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)staleEnd()});
+  if(g.ended){if(!H.some(r=>r.id===g.id)){const rec=JSON.parse(JSON.stringify(g));rec.test=!!(g.test||S.test);pushH(rec)}S.lastEnd=g.id;S.game=null;save();stopWatch();go("home");return true}
+  const due=endDue(g);if(due==null||now()-due<QUIET_END_MS)return false;
+  track("crawl_quiet_end",{mode:CR(g)?"rr":"rush",hours:Math.round((now()-due)/3600000)});if(CR(g)&&due===g.autoAt)g.autoEnded=true;endGame(due,true);return true}
 /* ---------- boot ---------- */
-queueMicrotask(staleEnd);   // once the whole app (sign-in, live crawls) has loaded
 if(S.game&&!S.test&&!S.game.demo)startWatch();
 // no crawl on: nothing of ours should be sitting in the notification shade (left over from a crawl that ended while the page was elsewhere)
 else if(NATIVE&&!S.game){natCall("CrawlNotify","clear").catch(()=>{});const BG=bgGeo();if(BG)bgOrphan(BG)}
