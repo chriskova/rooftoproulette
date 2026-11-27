@@ -272,7 +272,7 @@ function fitPic(d){if(!d||d.length<380000)return Promise.resolve(d);return new P
   for(let k=0;k<6&&out.length>=380000;k++){const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);s*=.85;q=Math.max(.5,q-.05)}
   res(out.length<380000?out:null)};img.onerror=()=>res(null);img.src=d})}
 // lists (been, not for us, hit list, favourites) and crawl names live on your account too
-const PREF_KEYS=["been","nfu","want","fav","names"];
+const PREF_KEYS=["been","nfu","want","fav","names","gone"];
 const prefsNow=()=>{const o={};PREF_KEYS.forEach(k=>{if(S[k]&&typeof S[k]==="object")o[k]=S[k]});return JSON.stringify(o)};
 let tabT=null,prefsSent=null;
 function tabSyncSoon(){if(!signedIn())return;clearTimeout(tabT);tabT=setTimeout(tabPush,2500)}
@@ -293,12 +293,15 @@ async function tabSyncAll(){if(!signedIn())return;const B=await cloud(),uid=ME.u
   try{const u=(await B.get(`users/${uid}`))||{};B.set(`users/${uid}`,{name:ME.name||"",photo:ME.photo||"",seen:Date.now()},true);
     // lists: merge what's on the account with what's on this phone
     if(u.prefs){try{const p=JSON.parse(u.prefs);PREF_KEYS.forEach(k=>{if(p[k]&&typeof p[k]==="object")S[k]=Object.assign({},p[k],S[k]||{})});save();if(typeof render==="function"&&S.route!=="play")render()}catch(e){}}
-    const L=readH(HKEY),have=new Set(L.map(r=>r.id)),m=syncedMap(),docs=await B.list(`users/${uid}/crawls`),pics={};let added=0,picsBack=0;
+    // crawls deleted here or on another of your phones: off this phone too, and never restored
+    const gone=S.gone||{};let L=readH(HKEY);const L0=L.length;L=L.filter(r=>!gone[r.id]);if(L.length!==L0){writeTab(L);if(!hTest)H=readH(HKEY);if(S.route==="hist")renderHist()}
+    const have=new Set(L.map(r=>r.id)),m=syncedMap(),docs=await B.list(`users/${uid}/crawls`),pics={};let added=0,picsBack=0;
+    docs.forEach(x=>{if(gone[x._id.split("~p")[0]])m[x._id]=m[x._id]||1});   // tabPush clears these off the account
     docs.filter(x=>isPicDoc(x._id)).forEach(x=>{const [id,n]=x._id.split("~p");(pics[id]=pics[id]||[])[+n]=x.j});
     // test crawls (simulated friends' crawls, ones moved to test) don't belong on the real tab: mark them so tabPush
     // clears them from the account, instead of bringing them back on every open
     const testIds=new Set(readH(TKEY).map(r=>r.id)),isTestRec=r=>r.test||/^SIM/.test(r.liveId||"")||testIds.has(r.id);
-    for(const x of docs){if(isPicDoc(x._id)||have.has(x._id))continue;try{const r=JSON.parse(x.j);m[r.id]=recHash(x.j);
+    for(const x of docs){if(isPicDoc(x._id)||have.has(x._id)||gone[x._id])continue;try{const r=JSON.parse(x.j);m[r.id]=recHash(x.j);
       if(isTestRec(r)){docs.filter(d=>d._id.startsWith(r.id+"~p")).forEach(d=>m[d._id]=1);continue}
       const P=(pics[r.id]||[]).filter(Boolean);if(P.length){r.photos=P;if(r.pi>=0&&P[r.pi])r.photo=P[r.pi]}delete r.np;delete r.pi;L.push(r);added++}catch(e){}}
     // crawls already on this phone that lost their photos get them back too

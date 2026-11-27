@@ -4401,9 +4401,12 @@ function moveCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
   if(S.lastEnd===r.id){S.lastEnd=null;save()}
   go("hist");toast(`<span>Moved to ${r.test?"test":"real"} crawls</span><button type="button" class="tundo">Undo</button>`,6000,t=>{t.querySelector(".tundo").onclick=()=>{
     const L2=readH(k).filter(x=>x.id!==r.id);writeH(k,L2);r.test=!r.test;H.splice(Math.min(i,H.length),0,r);saveH();hideToast();render()}})}
+// A deleted crawl is remembered as deleted (S.gone, kept on your account too), so the backup can't bring it back
+// on the next open or on another phone signed in as you.
 function deleteCrawl(r){const i=H.findIndex(x=>x.id===r.id);if(i<0)return;
-  H.splice(i,1);saveH();if(S.lastEnd===r.id){S.lastEnd=null;save()}let undone=false;
-  go("hist");toast(`<span>Crawl deleted</span><button type="button" class="tundo">Undo</button>`,6000,t=>{t.querySelector(".tundo").onclick=()=>{undone=true;H.splice(Math.min(i,H.length),0,r);saveH();hideToast();render()}});
+  if(!hTest){S.gone=S.gone||{};S.gone[r.id]=Date.now()}
+  H.splice(i,1);saveH();if(S.lastEnd===r.id)S.lastEnd=null;save();let undone=false;
+  go("hist");toast(`<span>Crawl deleted</span><button type="button" class="tundo">Undo</button>`,6000,t=>{t.querySelector(".tundo").onclick=()=>{undone=true;if(S.gone)delete S.gone[r.id];save();H.splice(Math.min(i,H.length),0,r);saveH();hideToast();render()}});
   // its clips go once the undo has passed
   setTimeout(()=>{if(undone||H.some(x=>x.id===r.id))return;clipList(r.id).then(L=>L.forEach(c=>clipDel(c.id))).catch(()=>{})},7000)}
 // Every bar visit, like a ride history: by month, newest first. Second tab ranks the rooftops.
