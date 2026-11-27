@@ -445,9 +445,12 @@ const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="av ${c
 // everyone on it, the host first
 const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Object.entries(d.members||{}).filter(([u])=>u!==d.host).sort((a,b)=>(a[1].j||0)-(b[1].j||0))):[];
 // up to three overlapping faces, then +N; never yourself
-function paintPile(el,d,withHost,pop){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),show=L.slice(0,L.length>3?2:3),more=L.length-show.length;   // never more than three circles: two faces and +N once there are four or more
-  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="av more">+${more}</span>`:"");
+function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
+  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="av more">${show.length?"+":""}${more}</span>`:"");
   if(el._h!==h){el._h=h;el.innerHTML=h}}
+// as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
+function fitPile(el,d){if(!el||!d)return;const ck=$("fvClock");for(const c of [4,3,2,1]){paintPile(el,d,true,null,c);if(!ck||!el.offsetParent)return;
+    const a=el.getBoundingClientRect(),b=ck.getBoundingClientRect();if(a.left>=b.right+8)return}}
 function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlPeople(d),names=L.map(([,m])=>m.n),host=d.host===me&&G()&&G().live;
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3><div class="plist">${L.map(([u,m])=>`<div class="prow">${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</div>`).join("")}</div>
     ${host?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();liveInvite()}})}
@@ -503,7 +506,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   // No reel, no animations, nothing to press that the host's phone does, so nobody expects it to work like the host's.
   fv.innerHTML=`<div class="fv-top"><div class="fv-l"><div class="t"><small id="fvWhoS"></small><b id="fvWho">Following</b></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
-    <div class="fv-r"><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button></div></div>
+    <div class="fv-r"><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
   $("fvMenu").onclick=followMenu;$("fvPile").onclick=peopleSheet;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
@@ -696,7 +699,7 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
     if(al._h!==h){const sameKind=al._hr===hr&&h;al._h=h;al._hr=hr;
       if(sameKind){const sm=al.querySelector("small"),t=document.createElement("div");t.innerHTML=h;const ns=t.querySelector("small");if(sm&&ns)sm.textContent=ns.textContent}
       else{al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=()=>hostReach(liveDoc)==="gone"?takeOverSheet():takeTap()}}}
-  paintPile($("fvPile"),d,true);
+  fitPile($("fvPile"),d);
   const want=fvPrev?"prev":d.ended?"end":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
     if($("fvBack"))$("fvBack").onclick=()=>{closeFollow();go("play")};if($("fvLeave"))$("fvLeave").onclick=()=>{leaveFollow();go("home")};
