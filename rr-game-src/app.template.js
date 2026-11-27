@@ -4102,12 +4102,12 @@ const heartBtn=v=>`<button class="heart" type="button" data-heart="${v.id}" aria
 function rowHTML(v,o,s,y){return `<div class="barrow${s==="nfu"?" hid":""}${o.open?"":" shut"}" role="button" tabindex="0" data-id="${v.id}"><span class="t"><b>${esc(v.name)}${S.fav[v.id]?`<i class="fv rfv">${HRTF}</i>`:""}${s==="col"||s==="been"?'<i class="beenic" title="Been here" aria-label="Been here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.3l2.7 2.7L16 9.6"/></svg></i>':""}</b><small>${esc(v.vibe||v.area)}</small></span><span class="rt">${o.open?(y&&dist(y,v)<50000?mOrKm(dist(y,v)):""):o.temp?"Temp. closed":o.opens!=null?"Opens "+clock12(o.opens):"Closed today"}</span>${stampHTML(s)}${heartBtn(v)}</div>`}
 function bindRows(root){
   root.querySelectorAll("[data-id]").forEach(b=>{const v=byId(b.dataset.id);b.onclick=e=>{if(e.target.closest("[data-heart],[data-rm]"))return;if(root.id==="barsResults")rememberBar(v.id);barSheet(v)};warmOnHold(b,v)});
-  root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();
+  root.querySelectorAll("[data-heart]").forEach(h=>h.onclick=e=>{e.stopPropagation();const id=h.dataset.heart;if(S.want[id])delete S.want[id];else{S.want[id]=1;delete S.nfu[id];buzz(10)}save();toast(S.want[id]?"Added to Hit list":"Removed from Hit list",1800);
     document.querySelectorAll(`[data-heart="${id}"]`).forEach(x=>x.setAttribute("aria-pressed",String(!!S.want[id])));paintLists()});
 }
 function paintLists(){
   const c=collectedMap(),inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nFav=VENUES.filter(v=>S.fav[v.id]&&inCity(v)).length;
-  $("barsLists").innerHTML=[["want","Hit list",nWant],["fav","Favourites",nFav],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
+  $("barsLists").innerHTML=[["want","Hit list",nWant],["fav","Favourites",nFav],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}">${k==="want"?`<i class="blic">${HEART}</i>`:k==="fav"?`<i class="blic">${HRTF}</i>`:""}<b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   $("barsLists").querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>listSheet(b.dataset.l));
 }
 function sfield(el){if(!el||el._sf)return el;el._sf=1;
@@ -4174,7 +4174,7 @@ function renderBars(){tickOff();
   $("barsCity").innerHTML=cityBtn();
   const inCity=v=>cityOf(v)===S.city,nWant=VENUES.filter(v=>S.want[v.id]&&inCity(v)).length,nBeen=VENUES.filter(v=>(c[v.id]||S.been[v.id])&&inCity(v)).length,nNfu=Object.keys(S.nfu).filter(id=>byId(id)).length;
   paintLists();
-  if(false)$("barsLists").innerHTML=[["want","Hit list",nWant],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}"><b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
+  if(false)$("barsLists").innerHTML=[["want","Hit list",nWant],["been","Visited",nBeen]].map(([k,l,n])=>`<button class="blist ${k}" type="button" data-l="${k}">${k==="want"?`<i class="blic">${HEART}</i>`:k==="fav"?`<i class="blic">${HRTF}</i>`:""}<b>${n}</b><span>${l}</span></button>`).join("")+`<button class="txtbtn nfulink" type="button" data-l="nfu">Pass list ›</button>`;
   const today=new Date().toDateString(),ct=sydAt(t,TZ[S.city]);
   const openOnly=false;
   const rgSel=f==="all"?(S.barsRegion||"all"):null;
@@ -4264,14 +4264,13 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
   const t=now(),o=openState(v,t),y=you(),c=collectedMap(),s=barStatus(v,c);
   if(bMap&&S.route==="bars")bMap.setView(v,16);
   const bf=`<span>${I.clock} ${o.open?"Open til "+clock12(o.closeAt):o.opens!=null?"Opens "+clock12(o.opens):(o.temp?"Temporarily closed":"Closed today")}</span>${y?`<span>${I.pin} ${mOrKm(dist(y,v))}</span>`:""}`;
-  sheet(`${opt.back?`<button class="txtbtn bsback" type="button" id="bsBack">‹ ${esc(opt.backTxt||"Back")}</button>`:""}<div class="bswrap">${sheetCard(v,bf)}${true?`<button class="favbtn" type="button" id="bsFav" aria-pressed="${!!S.fav[v.id]}" aria-label="Favourite">${HRT}${HRTF}</button>`:""}</div>
+  sheet(`${opt.back?`<button class="txtbtn bsback" type="button" id="bsBack">‹ ${esc(opt.backTxt||"Back")}</button>`:""}<div class="bswrap">${sheetCard(v,bf)}<div class="cardacts">${been_&&!S.want[v.id]?"":`<button class="favbtn bm" type="button" id="bsWant" aria-pressed="${!!S.want[v.id]}" aria-label="Hit list">${HEART}</button>`}<button class="favbtn" type="button" id="bsFav" aria-pressed="${!!S.fav[v.id]}" aria-label="Favourite">${HRT}${HRTF}</button></div></div>
     ${opt.visit?`<p class="note bsvisit">${opt.visit}</p>`:""}
     ${v.fact&&!opt.lite?`<p class="wordis">${esc(v.fact)}</p>`:""}
     ${opt.lite&&visitsOf(v.id).length<=1?"":visitsHTML(v)}
     <div class="acts">
       ${night&&!night.followed&&night.barOfDay!==v.id&&night.visits.some(x=>x.id===v.id&&x.counted===true)&&night.visits.filter(x=>x.counted===true).length>=2?`<button class="btn" type="button" id="mkBod">${I.sparkle} Make this bar of the day</button>`:""}
       ${c[v.id]||night?"":`<button class="toggle" type="button" id="tgBeen" role="switch" aria-checked="${!!S.been[v.id]}"><span class="t"><b>Visited</b><small>Rooftops you've been to</small></span><span class="sw"></span></button>`}
-      ${been_&&!S.want[v.id]?"":`<button class="toggle" type="button" id="tgWant" role="switch" aria-checked="${!!S.want[v.id]}"><span class="t"><b>Hit list</b><small>Rooftops you want to try</small></span><span class="sw"></span></button>`}
       <button class="toggle" type="button" id="tgNfu" role="switch" aria-checked="${!!S.nfu[v.id]}"><span class="t"><b>Pass</b><small>Rooftops to leave out of R&amp;R</small></span><span class="sw"></span></button>
     </div>
     <button class="txtbtn reportbtn" type="button" id="rpBar">Wrong hours or info? Let us know</button>`,()=>{
@@ -4279,11 +4278,14 @@ function barSheet(v,night,opt){opt=opt||{};const been_=beenTo(v.id);
     if($("mkBod"))$("mkBod").onclick=()=>{night.barOfDay=v.id;night.bodDone=true;saveH();if(typeof liveMeta==="function")liveMeta(night);buzz(15);closeSheet();if(S.route==="end")renderEnd()};
     if($("tgBeen"))$("tgBeen").onclick=()=>{if(S.been[v.id])delete S.been[v.id];else{S.been[v.id]=1;delete S.want[v.id]}save();barSheet(v);if(S.route==="bars")renderBars()};
     if($("bsBack"))$("bsBack").onclick=opt.back;
-    if($("bsFav"))$("bsFav").onclick=e=>{e.stopPropagation();toggleFav(v.id);const b=$("bsFav"),on=!!S.fav[v.id];b.setAttribute("aria-pressed",String(on));
+    if($("bsFav"))$("bsFav").onclick=e=>{e.stopPropagation();toggleFav(v.id);const b=$("bsFav"),on=!!S.fav[v.id];b.setAttribute("aria-pressed",String(on));if($("bsWant"))$("bsWant").setAttribute("aria-pressed",String(!!S.want[v.id]));
       if(on&&b.animate)b.animate([{transform:"scale(1)"},{transform:"scale(1.3)"},{transform:"scale(1)"}],{duration:320,easing:"ease-out"});
       toast(on?"Added to Favourites":"Removed from Favourites",1800);if(S.route==="bars")renderBars();if(S.route==="hist")renderHist()};
     $("tgNfu").onclick=()=>{if(S.nfu[v.id])delete S.nfu[v.id];else{S.nfu[v.id]=1;delete S.want[v.id];delete S.fav[v.id]}save();barSheet(v,night,opt);if(S.route==="bars")renderBars()};
-    if($("tgWant"))$("tgWant").onclick=()=>{if(S.want[v.id])delete S.want[v.id];else{S.want[v.id]=1;delete S.nfu[v.id]}save();barSheet(v,night,opt);if(S.route==="bars")renderBars()};
+    if($("bsWant"))$("bsWant").onclick=e=>{e.stopPropagation();const on=!S.want[v.id];if(on){S.want[v.id]=1;delete S.nfu[v.id];delete S.fav[v.id];buzz(10)}else delete S.want[v.id];save();
+      const b=$("bsWant");b.setAttribute("aria-pressed",String(on));if($("bsFav"))$("bsFav").setAttribute("aria-pressed",String(!!S.fav[v.id]));
+      if(on&&b.animate)b.animate([{transform:"scale(1)"},{transform:"scale(1.3)"},{transform:"scale(1)"}],{duration:320,easing:"ease-out"});
+      toast(on?"Added to Hit list":"Removed from Hit list",1800);if(S.route==="bars")renderBars();if(S.route==="hist")renderHist()};
   });
 }
 

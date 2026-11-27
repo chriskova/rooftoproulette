@@ -11,7 +11,7 @@ await p.evaluate(()=>{S.onboarded=true;S.sound=false;{const d=new Date();d.setHo
 await p.waitForTimeout(1200);await p.evaluate(()=>nightSheet());await p.waitForTimeout(1800);await p.screenshot({path:'out/c1.png'});
 await p.click('.ngrow[data-b="smoke-bar"]');await p.waitForTimeout(600);await p.screenshot({path:'out/c2.png'});
 await p.click('#bsFav');await p.waitForTimeout(500);await p.screenshot({path:'out/c2b.png'});
-console.log('hit list shown on visited bar',!!(await p.$('#tgWant')),'fact shown',!!(await p.$('.wordis')),'back',!!(await p.$('#bsBack')));
+console.log('hit list shown on visited bar',!!(await p.$('#bsWant')),'fact shown',!!(await p.$('.wordis')),'back',!!(await p.$('#bsBack')));
 await p.click('#bsBack');await p.waitForTimeout(1200);
 // tap pin 1 on the mini map
 await p.evaluate(()=>{const n=[...document.querySelectorAll('#ngMap .num')].find(x=>x.textContent.trim()==='1');(n.closest('.leaflet-marker-icon')||n).click()});await p.waitForTimeout(600);
