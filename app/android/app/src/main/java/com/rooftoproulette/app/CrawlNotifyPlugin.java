@@ -30,9 +30,9 @@ public class CrawlNotifyPlugin extends Plugin {
     static final int ID = 28351;                 // = BackgroundGeolocationService.NOTIFICATION_ID
     static final String CHANNEL = "crawl_live";
 
-    // While a crawl's notification is up, nudge the page once a minute. A locked phone barely runs the page's own
+    // While a crawl's notification is up, nudge the page every 15 seconds. A locked phone barely runs the page's own
     // timers, so this is what keeps a host's "still here" going to followers with the phone in a pocket.
-    static final long BEAT_MS = 60000;
+    static final long BEAT_MS = 15000;
     private final Handler beatH = new Handler(Looper.getMainLooper());
     private boolean beating = false;
     private final Runnable beat = new Runnable() {

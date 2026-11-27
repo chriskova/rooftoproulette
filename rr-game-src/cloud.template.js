@@ -512,12 +512,12 @@ function followNote(d,g,t){if(!NATIVE||fvPrev)return;
 const PING_WAIT=6000;   // a host phone that's locked or on a slow connection can take a few seconds to answer: say "Checking" until it's sure
 let fmPing=0;
 // where the host's phone stands for this follower: answering, being checked, or not answering
-// A locked host phone is normal (it's in a pocket): it still checks in once a minute (the native notification nudges it),
-// so it counts as connected. Only a phone that's stopped checking in for a few minutes (flat, off, no signal) can be taken over.
-const AWAY_DEAD=3.5*60000;
+// A locked host phone is normal (it's in a pocket): it still checks in every 15 seconds (the native notification nudges
+// it), so it counts as connected. Three missed check-ins (flat, off, no signal) and it can be taken over.
+const AWAY_DEAD=45000;
 function hostReach(d){if(d&&!d.ended&&d.away)return Date.now()-(d.beat||0)>AWAY_DEAD?"gone":"ok";return hostReach0(d)}
 // the native nudge: the host's "still here", and an answer to anyone who asked
-window.__rrBeat=async()=>{const g=G();if(!g||!g.live||g.ended||!isHost())return;
+window.__rrBeat=async()=>{const g=G();if(!g||!g.live||g.ended||!isHost()||!document.hidden)return;
   try{const B=await cloud(),id=g.live,d=await B.get(`live/${id}`).catch(()=>null),P=d?hostPongs(d):null;await B.set(`live/${id}`,Object.assign({beat:Date.now()},P?{pongs:P}:{}),true)}catch(e){console.warn("beat",e)}};
 function hostReach0(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.members||{})[me];
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";

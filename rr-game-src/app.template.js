@@ -4808,11 +4808,13 @@ function liveNote(){
   noteSetup();
   notifEnsure(g.id);
   const cr=CR(g),a=atVisit(),y=you(),mode=cr?"R&R":LEN(g.len)+" crawl";let title,text;
-  if(a){title=`At ${byId(a.id).name}`;text=cr?mode:`${mode} · here ${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min`}
-  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=mode}
-  else{title="Spin for the next one";text=`${mode} · ${plural(countShown(g),"rooftop")}`}
+  // the line under it: this rooftop's wildcard, if it has one (the time left is the bar itself; the mode you already know)
+  const wl=id=>g.wild&&g.wild.id===id&&g.wild.text&&(g.wild.shown||g.wild.landed)&&!g.wild.locked?`Wildcard · ${wNm(g.wild.text)}`:"";
+  if(a){title=`At ${byId(a.id).name}`;text=wl(a.id)}
+  else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=wl(v.id)}
+  else{title="Spin for the next one";text=""}
   const o={title,text};
-  if(!cr&&frozen(g)&&g.frz.start){o.text=text+" · Clock starts at your first rooftop"}
+  if(!cr&&frozen(g)&&g.frz.start){o.text="Clock starts at your first rooftop"}
   else if(!cr){o.endsAt=Math.round(realAt(g.endsAt));o.startAt=Math.round(realAt(g.startedAt));o.max=1000;o.progress=Math.round(1000*Math.max(0,g.endsAt-now())/Math.max(1,g.endsAt-g.startedAt))}
   else if(a)o.since=Math.round(realAt(a.arrivedAt));
   const key=JSON.stringify([o.title,o.text,o.endsAt,o.since]);
