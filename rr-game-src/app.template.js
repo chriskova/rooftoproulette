@@ -1644,7 +1644,7 @@ const mixInv=g=>{try{return !g.visits.length&&!g.demo&&!g.follow&&cloudOn()}catc
 // a small down arrow on each pill: tap to change it
 const MIX_DD='<svg class="dd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
 const mixPre=g=>!g.started&&!g.visits.length&&!g.demo&&!g.follow;
-const mixJoined=g=>{try{return g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0}catch(e){return 0}};
+const mixJoined=g=>{try{return g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?memN(liveDoc):0}catch(e){return 0}};
 const MIX_CV='<svg class="cv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 const MIX_INVI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><path d="M19 8v6M16 11h6"/></svg>';
 const MIX_PPLI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.6"/><path d="M2.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.4c2.4.3 4 1.9 4.6 5"/></svg>';
@@ -1695,7 +1695,7 @@ function lenSheet(g){sheet(`<h3>How long?</h3><div class="opts" style="margin-to
 const whoOn=()=>false;   // (the Who's coming? step is retired: the spin screen's big Invite button does the nudge)
 function whoStep(host,st,start){
   host.innerHTML=`<div><h1 class="q">Who's coming?</h1><p class="sub" style="margin:6px 0 0">Friends follow along and get the recap.</p></div><div class="whobox" id="whoBox"></div>`;
-  cta(`<button class="btn" id="whoGo" type="button">Start the crawl</button>`,()=>{$("whoGo").onclick=()=>{let j=0;try{j=Object.keys((liveDoc&&liveDoc.members)||{}).length}catch(e){}
+  cta(`<button class="btn" id="whoGo" type="button">Start the crawl</button>`,()=>{$("whoGo").onclick=()=>{let j=0;try{j=memN(liveDoc)}catch(e){}
     S.whoSkips=st.invited||j?0:(S.whoSkips||0)+1;save();start()}});
   whoFill(st)}
 async function whoFill(st){const box=$("whoBox");if(!box)return;const acted=()=>{st.invited=1;S.whoSkips=0;save()};
@@ -4818,7 +4818,7 @@ function liveNote(){
   // the line under it: this rooftop's wildcard, if it has one (the time left is the bar itself; the mode you already know)
   const wl=id=>g.wild&&g.wild.id===id&&g.wild.text&&(g.wild.shown||g.wild.landed)&&!g.wild.locked?`Wildcard · ${wNm(g.wild.text)}`:"";
   // the line under: what's live and useful, joined with " · " (time here, the wildcard, who's following, rooftops so far)
-  let fl=0;try{fl=g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0}catch(e){}
+  let fl=0;try{fl=g.live&&typeof liveDoc!=="undefined"&&liveDoc&&!liveDoc.ended?memN(liveDoc):0}catch(e){}
   const fol=fl?`${fl} following`:"",nb=countShown(g),join=(...x)=>x.filter(Boolean).join(" · ");
   if(a){title=`At ${byId(a.id).name}`;text=join(`${Math.max(0,Math.floor((now()-a.arrivedAt)/60000))} min here`,wl(a.id),fol)}
   else if(g.target){const v=byId(g.target);title=`Heading to ${v.name}`;text=join(wl(v.id),fol)||`Rooftop ${g.visits.filter(x=>x.arrivedAt!=null).length+1}`}

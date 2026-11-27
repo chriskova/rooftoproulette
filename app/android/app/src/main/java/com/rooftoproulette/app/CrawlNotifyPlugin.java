@@ -196,7 +196,18 @@ public class CrawlNotifyPlugin extends Plugin {
     @PluginMethod
     public void clear(PluginCall call) {
         beatH.post(() -> beatOn(false));
+        HostBeat.stop();
         try { NotificationManagerCompat.from(getContext()).cancel(ID); } catch (Exception ignore) {}
+        call.resolve();
+    }
+
+    /** The host's check-ins while the app's not on screen (see HostBeat). on: needs the crawl and the signed-in user's tokens. */
+    @PluginMethod
+    public void hostBeat(PluginCall call) {
+        if (Boolean.TRUE.equals(call.getBoolean("on", false))) {
+            HostBeat.start(getContext(), call.getString("project"), call.getString("key"), call.getString("live"),
+                call.getString("uid"), call.getString("id"), call.getString("refresh"));
+        } else HostBeat.stop();
         call.resolve();
     }
 

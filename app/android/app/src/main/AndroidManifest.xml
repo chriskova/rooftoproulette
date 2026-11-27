@@ -92,6 +92,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- buzz on arrival -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- The notifications plugin adds this; the app's alerts are all inexact, so it never needs "Alarms & reminders" -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 </manifest>

@@ -30,6 +30,7 @@ function fbBackend(){return new Promise((res,rej)=>{
       resetPw:email=>F.sendPasswordResetEmail(auth,email),
       rename:n=>F.updateProfile(auth.currentUser,{displayName:n}),
       refresh:()=>auth.currentUser,
+      tokens:async()=>{const u=auth.currentUser;if(!u)return null;return {id:await u.getIdToken(),refresh:u.refreshToken,uid:u.uid,key:FB_CFG.apiKey,project:FB_CFG.projectId}},
       // Google and Apple both end in a Firebase credential, linked onto this phone's anonymous account so its data comes along
       // (or, if that Google/Apple account already exists, signed into instead).
       google:async()=>{let cred=null;
@@ -337,7 +338,7 @@ async function liveInvite(){
   if(!signedIn()){track("live_invite_gate");signInSheet("Friends don't need an account to follow.","live","Sign in to share live");return}
   if(!myName()){nameSheet(()=>liveInvite());return}
   let id;try{id=await startLive()}catch(e){console.warn(e);toast("Couldn't start live. Check your signal.",3000);return}if(!id)return;
-  track("live_invite");const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
+  track("live_invite");const n=memN(liveDoc);
   inviteSheet(id,`<h3 tabindex="-1" autofocus style="outline:0">Invite friends</h3><p class="note" style="margin:4px 0 12px"><span id="invN">${n?`<span class="invn">${n} following.</span> `:""}</span>Friends follow along and get the recap.</p>`)}
 // The invite sheet (Who's coming? and Invite friends): friends you've crawled with as a row of faces up top (one tap each),
 // then Send link, with the QR one tap away beside it. No friends yet: the QR shows big instead, the quickest way to get the first one in.
@@ -356,13 +357,13 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
 // The faces row: people following now (green tick, their name, "Following") first, then crawl friends to tap and invite.
 // It redraws as people join, so the host watches each one tick over.
 function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
-  const inn=Object.entries(mem).filter(([u])=>u!==me).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
+  const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
   const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
   const rest=mates.filter(m=>!inU.has(m.uid)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av">${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
   const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
-  const n=$("invN"),c=Object.keys((liveDoc&&liveDoc.members)||{}).length;if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
+  const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
 function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
@@ -408,18 +409,22 @@ function onLive(id,d){
     if(fv&&fvPrev)closeFollow();g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(nFirst(d.hostName)||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
   if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
-  if(S.follow===id){if(d.ended)followEnded(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
-  if(g&&g.live===id){paintMembers(d,id);if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
+  if(S.follow===id){if(d.ended)followEnded(d);else offerAsk(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
+  if(g&&g.live===id){paintMembers(d,id);if(d.host===me)offerWatch(d);if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
 // A follower opening the menu asks "are you there?" (their member entry gets a ping time). The host's phone answers
 // straight away by echoing it back. No answer within a few seconds and that follower can take over the crawl.
 function hostPongs(d){const P=Object.assign({},d.pongs||{});let ch=false;Object.entries(d.members||{}).forEach(([u,m])=>{if(m&&m.ping&&P[u]!==m.ping){P[u]=m.ping;ch=true}});return ch?P:null}
 // A locked phone (or another app on top) can't answer followers' "are you there?". The host's phone says so as it goes,
 // so followers see "away from the app", not "isn't connected", and nobody takes over from someone just pocketing a phone.
-function hostAway(on){const g=G();if(!g||!g.live||g.ended||!isHost())return;cloud().then(B=>B.set(`live/${g.live}`,on?{away:Date.now(),beat:Date.now()}:{away:0,beat:Date.now()},true)).catch(()=>{})}
+function hostAway(on){const g=G();if(!g||!g.live||g.ended||!isHost())return;cloud().then(B=>B.set(`live/${g.live}`,on?{away:Date.now(),beat:Date.now()}:{away:0,beat:Date.now()},true)).catch(()=>{});
+  // the phone keeps checking in from the app itself while the page sleeps (Android): starts as the app goes away, stops as it's back
+  if(NATIVE){if(on)cloud().then(B=>B.tokens&&B.tokens()).then(t=>{if(t&&document.hidden)natCall("CrawlNotify","hostBeat",Object.assign({on:true,live:g.live},t)).catch(()=>{})}).catch(()=>{});
+    else natCall("CrawlNotify","hostBeat",{on:false}).catch(()=>{})}}
 document.addEventListener("visibilitychange",()=>hostAway(document.hidden));
 addEventListener("pagehide",()=>hostAway(true));
+const memN=d=>d?Object.keys(d.members||{}).filter(u=>u!==d.host).length:0;
 let memSeen=null;
-function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
+function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d.host),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
   memSeen={id,s:new Set(ids)};
   if(fresh.size){buzz([30,60,30]);const nm=[...fresh].map(u=>nFirst(d.members[u].n)||"A friend");
     if(!($("sheet").open&&$("invRow")&&$("sheet").contains($("invRow"))))toast(nm.length>1?`${nm.length} friends joined your crawl`:`${esc(nm[0])} joined your crawl`,3000);invRefresh(fresh)}
@@ -427,7 +432,7 @@ function paintMembers(d,id){const ids=Object.keys(d.members||{}),me=ME&&ME.uid,p
 // the people button on the crawl screen: a plus until someone follows, then how many are following
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
 function paintPeople(){const b=$("pPeople"),g=G();if(!b)return;const on=cloudOn()&&g&&!g.ended&&!g.demo;b.hidden=!on;if(!on)return;
-  const n=g.live&&liveDoc&&!liveDoc.ended?Object.keys(liveDoc.members||{}).length:0;
+  const n=g.live&&liveDoc&&!liveDoc.ended?memN(liveDoc):0;
   {const h=PEOPLEI_()+`<i class="pbadge${n?" n":""}">${n||"+"}</i>`;if(b._h!==h){b._h=h;b.innerHTML=h}}{const t=$("tbar");if(t)b.style.top=(t.offsetTop+t.offsetHeight+12)+"px"}b.setAttribute("aria-label",n?`${n} following. Invite friends`:"Invite friends")}
 
 // test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
@@ -539,7 +544,7 @@ function hostReach0(d){if(!d||d.ended)return "ok";const me=ME&&ME.uid,m=me&&(d.m
   if(Date.now()-(d.beat||0)>STALE_MS)return "gone";
   if(fmPing&&(!m||m.ping!==fmPing))return Date.now()-fmPing<PING_WAIT?"checking":"ok";   // this phone's ask hasn't reached the crawl yet (or this phone's offline)
   if(!m||!m.ping)return "ok";if((d.pongs||{})[me]===m.ping)return "ok";return Date.now()-m.ping>PING_WAIT?"gone":"checking"}
-async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liveDoc||liveDoc.ended||!(liveDoc.members||{})[me])return;
+async function pingHost(quiet){const id=S.follow,me=ME&&ME.uid;if(!id||!me||!liveDoc||liveDoc.ended||liveDoc.host===me||!(liveDoc.members||{})[me])return;
   if(quiet&&Date.now()-fmPing<30000)return;fmPing=Date.now();
   try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},liveDoc.members[me],{ping:fmPing})}},true)}catch(e){console.warn(e)}}
 // Never greyed out: a tap while it's still checking waits for the answer, then opens the confirm if the host's phone is gone.
@@ -549,6 +554,8 @@ let fmWant=false;
 function takeTap(){const st=hostReach(liveDoc),who=esc(fvHost(liveDoc));
   if(st==="gone"||st==="away"){fmWant=false;takeOverSheet();return}
   if(st==="ok"&&Date.now()-fmPing<PING_WAIT+1500){fmWant=false;toast(`${who} is connected.<br>Ask ${who} for the spin.`,3500);return}
+  // still finding out: say so now, and the confirm opens by itself the moment it's ready
+  if(st==="quiet")toast(`No signal from ${who}.<br>Take over opens in ${quietLeft(liveDoc)}s.`,2500);else toast(`Checking ${who}…`,2000);
   if(st==="ok")pingHost();fmWant=true}   // checking (or a fresh check): the row carries on once it hears back
 function followMenu(){const d=liveDoc,who=fvHost(d),mine=fvPrev;
   if(!mine&&d&&!d.ended&&Date.now()-fmPing>10000)pingHost();
@@ -642,11 +649,11 @@ function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textConte
   const stale=!d.ended&&Date.now()-(d.beat||0)>STALE_MS,   // before the clock's started too: a phone can die before the first spin   // real time: a host fast-forwarding in test mode isn't 'gone quiet'
   act=$("fvAct");
   {const al=$("fvAlert"),hr=!fvPrev&&!d.ended?hostReach(d):"ok",h=hr==="gone"?`<div class="t"><b>${esc(fvHost(d))} isn't connected</b></div><button class="btn sm" type="button" id="fvTake">Take over</button>`
-      :hr==="quiet"?`<div class="t"><b>No signal from ${esc(fvHost(d))}</b><small>Take over in ${quietLeft(d)}s</small></div><button class="btn sm" type="button" id="fvTake" disabled>Take over</button>`:"";
+      :hr==="quiet"?`<div class="t"><b>No signal from ${esc(fvHost(d))}</b><small>Take over in ${quietLeft(d)}s</small></div><button class="btn sm wait" type="button" id="fvTake">Take over</button>`:"";
 
     if(al._h!==h){const sameKind=al._hr===hr&&h;al._h=h;al._hr=hr;
       if(sameKind){const sm=al.querySelector("small"),t=document.createElement("div");t.innerHTML=h;const ns=t.querySelector("small");if(sm&&ns)sm.textContent=ns.textContent}
-      else{al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=takeOverSheet}}}
+      else{al.innerHTML=h;al.hidden=!h;if($("fvTake"))$("fvTake").onclick=()=>hostReach(liveDoc)==="gone"?takeOverSheet():takeTap()}}}
   {const lp=fv.querySelector(".fv-livepill");if(lp)lp.hidden=!!d.ended||(!fvPrev&&["gone","quiet"].includes(hostReach(d)))}
   const want=fvPrev?"prev":d.ended?"end":"none";if(act.dataset.k!==want){act.dataset.k=want;
     act.innerHTML=want==="prev"?`<button class="btn dark" type="button" id="fvBack">Back to your crawl</button>`:want==="end"?`<button class="btn" type="button" id="fvDone">See the crawl</button>`:"";
@@ -667,12 +674,33 @@ function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
   const id=S.follow;closeFollow();S.follow=null;g.live=id;g.id=g.id||("g"+Date.now());g.test=!!S.test;if(S.test)S.ff=d.off||0;
   S.game=g;save();liveLastSig=liveSig(g);startWatch();buzz(30);go("play");toast("You've got the spin.",2500);liveSync(true)}
 // host hands the spin to a follower
-function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{});
+function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{}).filter(([u])=>u!==(d&&d.host));
   sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav">${esc((m.n||"?")[0])}</span><span class="mn">${esc(nIn(m.n,ms.map(x=>x[1].n))||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
-    document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>giveSpinTo(b.dataset.gs))})}
+    document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>offerSpin(b.dataset.gs))})}
+// the offer: their phone asks them; it's only handed over once they say yes (30 seconds, or Cancel)
+const OFFER_MS=30000;let offerT=0;
+async function offerSpin(u){const d=liveDoc,g=G(),m=d&&d.members&&d.members[u];if(!g||!m)return;const at=Date.now(),who=esc(nFirst(m.n)||"Friend");
+  try{const B=await cloud();await B.set(`live/${g.live}`,{offer:{to:u,at}},true)}catch(e){toast("Couldn't reach them. Check your signal.",3000);return}
+  sheet(`<h3>Waiting for ${who}…</h3><p class="note">${who} needs to accept on their phone.</p><div class="offwait"><span class="fv-dots"><i></i><i></i><i></i></span></div>
+    <div class="acts"><button class="btn dark" type="button" id="ofX">Cancel</button></div>`,()=>{$("ofX").onclick=()=>{offerEnd(g.live);closeSheet()}});
+  clearTimeout(offerT);offerT=setTimeout(()=>{const dd=liveDoc;if(dd&&dd.offer&&dd.offer.at===at){offerEnd(g.live);if($("ofX"))closeSheet();toast(`${who} didn't answer.<br>The spin's still yours.`,3500)}},OFFER_MS)}
+function offerEnd(id){clearTimeout(offerT);cloud().then(B=>B.set(`live/${id}`,{offer:null},true)).catch(()=>{})}
+// the host's side: their answer comes back through their own entry
+function offerWatch(d){const o=d.offer;if(!o||!o.to)return;const m=(d.members||{})[o.to];if(!m)return;
+  if(m.acc===o.at){clearTimeout(offerT);if($("ofX"))closeSheet();giveSpinTo(o.to)}
+  else if(m.dec===o.at){offerEnd(G()&&G().live);if($("ofX"))closeSheet();toast(`${esc(nFirst(m.n)||"They")} said not now.`,3000)}}
+// the follower's side: a sheet to take it or not
+let offerSeen=0;
+function offerAsk(d){const o=d.offer,me=ME&&ME.uid;if(!o||o.to!==me||o.at===offerSeen||Date.now()-o.at>OFFER_MS)return;offerSeen=o.at;
+  const who=esc(fvHost(d)),ans=k=>cloud().then(B=>B.set(`live/${S.follow}`,{members:{[me]:Object.assign({},(liveDoc.members||{})[me],{[k]:o.at})}},true)).catch(()=>{});
+  buzz([30,60,30]);sheet(`<h3>Take the spin?</h3><p class="note">${who} wants to hand you the crawl. You'll spin and keep the clock.</p>
+    <div class="acts"><button class="btn" type="button" id="ofY">Take the spin</button><button class="btn dark" type="button" id="ofN">Not now</button></div>`,()=>{
+    $("ofY").onclick=()=>{ans("acc");closeSheet();toast("Taking the spin…",2500)};$("ofN").onclick=()=>{ans("dec");closeSheet()}})}
 async function giveSpinTo(u){const d=liveDoc,m=d&&d.members&&d.members[u],g=G();if(!g||!m)return;await liveSync(true);const B=await cloud();
-  const members=Object.assign({},d.members);delete members[u];members[ME.uid]={n:crawlName(),j:g.startedAt||Date.now(),b:0,was:1};
-  try{await B.set(`live/${g.live}`,{host:u,hostName:m.n||"",members,beat:Date.now()},true);closeSheet();track("live_handover")}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}}
+  // the whole crawl written in one go (a merge would leave the new host listed as following too)
+  try{const ok=await B.tx(`live/${g.live}`,dd=>{if(!dd||dd.host!==ME.uid)return undefined;const members=Object.assign({},dd.members);delete members[u];members[ME.uid]={n:crawlName(),j:g.startedAt||Date.now(),b:0,was:1};
+      const o=Object.assign({},dd,{host:u,hostName:m.n||"",members,beat:Date.now(),away:0});delete o.offer;return o});
+    if(ok){closeSheet();track("live_handover")}}catch(e){toast("Couldn't hand it over. Check your signal.",3000)}}
 // the end: the host's final crawl goes to the doc; followers copy it to their tab from the bar they joined
 // called off before the clock started: followers go home, nothing's saved
 async function liveCancel(id){try{const B=await cloud();await B.set(`live/${id}`,{ended:true,cancelled:true,beat:Date.now()},true)}catch(e){console.warn(e)}}
@@ -785,7 +813,7 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
   b.addEventListener("levelchange",chk);document.addEventListener("visibilitychange",()=>setTimeout(chk,1500));chk()}).catch(()=>{})}
 
 // menu rows during a crawl
-function liveMenuRows(g){if(!cloudOn()||g.demo)return "";const n=Object.keys((liveDoc&&liveDoc.members)||{}).length;
+function liveMenuRows(g){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
   return `<button type="button" id="mInvite">${PEOPLEI_()}<span>Invite friends<small>${n?`${n} following live`:"They follow every spin and the timer"}</small></span></button>`+(g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
