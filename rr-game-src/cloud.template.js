@@ -577,20 +577,14 @@ const fvMin=ms=>Math.max(0,Math.floor(ms/60000))+" min";
 const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
 function fvWildPaint(g,v,at){const el=$("fvWild");if(!el)return;const w=g.wild&&v&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
   const h=w?`<div class="fv-wl">${wFace(w.text)}<div><span class="nm">Wildcard · ${esc(wNm(w.text))}</span><p>${esc(fvRule(g,w))}</p></div></div>`:"";if(el._h!==h){el._h=h;el.innerHTML=h}}
-// rooftops so far: the ones you've left, newest first (the one you're at is the card above). Two with a wildcard showing, three without.
-function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse(),n=$("fvWild").innerHTML?2:3;
-  const rows=done.slice(0,n).map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${fvMin(v.leftAt-v.arrivedAt)} there</small>${w?`<span class="wtag">${wFace(w)}${esc(wNm(w))}</span>`:""}</span><span class="tm">${clock12(sydAt(v.arrivedAt).min)}</span></button>`}).join("");
-  const h=done.length?`<div class="fv-list"><button type="button" class="fv-lh" id="fvAll"><span class="eyebrow">Rooftops so far</span><span class="cv">See all ›</span></button>${rows}</div>`:"";
+// rooftops so far: every one you've left, newest first (the one you're at is the card above). The page scrolls; a crawl
+// rarely goes past five or six.
+function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse();
+  const rows=done.map(v=>{const i=vs.indexOf(v),b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="fv-li" data-fi="${i}"><span class="n">${i+1}</span><span class="t"><b>${esc(b?b.name:"Rooftop")}</b><small>${fvMin(v.leftAt-v.arrivedAt)} there</small>${w?`<span class="wtag">${wFace(w)}${esc(wNm(w))}</span>`:""}</span><span class="tm">${clock12(sydAt(v.arrivedAt).min)}</span></button>`}).join("");
+  const h=done.length?`<div class="fv-list"><div class="fv-lh"><span class="eyebrow">Rooftops so far</span></div>${rows}</div>`:"";
   if(el._h===h)return;el._h=h;el.innerHTML=h;
-  if($("fvAll"))$("fvAll").onclick=()=>fvAllSheet();el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
+  el.querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi))}
 const fvG=()=>{try{return JSON.parse(liveDoc.g)}catch(e){return {}}};
-// everything so far, newest first: each rooftop with its wildcard under it, and where it started
-function fvAllSheet(){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g);
-  const tot=vs.reduce((s,v)=>s+((v.leftAt||t)-v.arrivedAt),0);
-  const items=vs.map((v,i)=>{const b=byId(v.id),w=fvWildAt(g,v.id);return `<button type="button" class="ti done" data-fi="${i}"><span class="r"><b>${esc(b?b.name:"Rooftop")}</b><span>${clock12(sydAt(v.arrivedAt).min)}</span></span><small>${v.leftAt?fvMin(v.leftAt-v.arrivedAt)+" there":"Here now"+(t-v.arrivedAt>=60000?" · "+fvMin(t-v.arrivedAt):"")}</small></button>${w?`<div class="ti w"><b>Wildcard · ${esc(wNm(w))}</b><p>${esc(w)}</p></div>`:""}`}).reverse().join("");
-  const st=g.startedAt?`<div class="ti"><span class="r"><b>Started</b><span>${clock12(sydAt(g.startedAt).min)}</span></span><small>${g.mode==="cruise"?"Rest &amp; Roulette":LEN(g.len)}${g.areas&&g.areas[0]?" · "+esc(g.areas[0]):""}</small></div>`:"";
-  sheet(`<h3>Rooftops so far</h3><p class="note">${vs.length} rooftop${vs.length===1?"":"s"} · ${fvMin(tot)} at rooftops</p><div class="fv-tl">${items}${st}</div>`,()=>{
-    $("sheetBody").querySelectorAll("[data-fi]").forEach(b=>b.onclick=()=>fvStopSheet(+b.dataset.fi,fvAllSheet))})}
 // one stop on the crawl: its photo with the name over it, then arrived, time there and getting there, and its wildcard
 function fvStopSheet(i,back){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g),v=vs[i];if(!v)return;const b=byId(v.id);if(!b)return;
   const prev=i>0?vs[i-1].leftAt:g.startedAt,leg=prev?v.arrivedAt-prev:null,w=fvWildAt(g,v.id),cp=cardPhoto(b);
