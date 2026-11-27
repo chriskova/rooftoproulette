@@ -22,9 +22,12 @@ function fbBackend(){return new Promise((res,rej)=>{
       catch(e){if(e.code==="auth/credential-already-in-use"||e.code==="auth/email-already-in-use")return F.signInWithCredential(auth,P.credentialFromError(e)||cred);throw e}
       if(!r.user.displayName){const pd=(r.user.providerData||[])[0]||{},n=name||pd.displayName;if(n)await F.updateProfile(r.user,{displayName:n,photoURL:pd.photoURL||null})}
       return r};
+    const meOf=u=>{const pd=(u.providerData||[]).find(x=>x&&(x.displayName||x.email))||{};
+      return {uid:u.uid,anon:u.isAnonymous,name:u.displayName||pd.displayName||"",photo:u.photoURL||pd.photoURL||"",email:u.email||pd.email||"",via:(pd.providerId||"").replace(".com","")}};
     res({
-      onUser:cb=>F.onAuthStateChanged(auth,u=>{if(!u){F.signInAnonymously(auth).catch(e=>console.warn("anon",e));return}const pd=(u.providerData||[]).find(x=>x&&(x.displayName||x.email))||{};
-        cb({uid:u.uid,anon:u.isAnonymous,name:u.displayName||pd.displayName||"",photo:u.photoURL||pd.photoURL||"",email:u.email||pd.email||"",via:(pd.providerId||"").replace(".com","")})}),
+      onUser:cb=>F.onAuthStateChanged(auth,u=>{if(!u){F.signInAnonymously(auth).catch(e=>console.warn("anon",e));return}cb(meOf(u))}),
+      // linking Google, Apple or email onto this phone's guest account keeps the same user, so Firebase sends no sign-in event: read it back
+      current:async()=>{const u=auth.currentUser;if(!u)return null;try{await u.reload()}catch(e){}return auth.currentUser?meOf(auth.currentUser):null},
       emailUp:async(email,pass,name)=>{const cred=F.EmailAuthProvider.credential(email,pass);const r=await F.linkWithCredential(auth.currentUser,cred);if(name)await F.updateProfile(r.user,{displayName:name});await r.user.reload();return r},
       emailIn:(email,pass)=>F.signInWithEmailAndPassword(auth,email,pass),
       resetPw:email=>F.sendPasswordResetEmail(auth,email),
@@ -164,6 +167,8 @@ function testNextRun(){const n=S.testNext;if(!n||!testReal())return;S.testNext=n
   if(n.join)followLive(n.join);else if(n.invite&&G())setTimeout(liveInvite,600)}
 function cloud(){if(!CLP){CLP=(S.test&&!testReal()?simBackend():FAKE_CLOUD?fakeBackend():fbBackend()).then(B=>new Promise(res=>{let first=true;B.onUser(u=>{const was=ME;ME=u;if(first){first=false;res(B)}onUserChange(was,u)})})).catch(e=>{console.warn("cloud",e);CLP=null;throw e})}return CLP}
 const signedIn=()=>!!(ME&&!ME.anon);
+// after a sign-in, take the account straight from the backend rather than waiting for an event that may not come
+async function syncMe(B){if(!B||!B.current)return;try{const u=await B.current();if(u&&(!ME||ME.uid!==u.uid||ME.anon!==u.anon||ME.name!==u.name||ME.email!==u.email)){const was=ME;ME=u;onUserChange(was,u)}}catch(e){console.warn("syncMe",e)}}
 const myName=()=>(ME&&ME.name)||S.myName||"";
 // Other people only ever get your first name (plus your last initial, kept to tell two Sams apart). Never the full name.
 const crawlName=()=>{const p=String(myName()).trim().split(/\s+/).filter(Boolean);return p.length?p[0]+(p.length>1?" "+p[p.length-1][0].toUpperCase():""):""};
@@ -187,7 +192,7 @@ const AUTH_ERR={"auth/invalid-credential":"Wrong email or password.","auth/wrong
 const authErr=e=>AUTH_ERR[e&&e.code]||"Couldn't sign in. Try again.";
 const isCancel=e=>/cancel|popup-closed|user.?cancel/i.test(String(e&&(e.code||e.message)||e));
 async function signIn(from,via){via=via||"google";track("sign_in_tap",{from,via});
-  try{const B=await cloud();await(via==="apple"?B.apple():B.google());track("signed_in",{from,via});afterSignIn(from);return true}
+  try{const B=await cloud();await(via==="apple"?B.apple():B.google());await syncMe(B);track("signed_in",{from,via});afterSignIn(from);return true}
   catch(e){console.warn("sign in",e);if(!isCancel(e)){
     // RR Dev only: show the real reason under the toast so sign-in problems can be diagnosed on the phone
     const dev=NATIVE&&/(^|\.)rooftoproulette\.com$/.test(location.hostname),why=dev?String((e&&(e.code||e.message))||e).slice(0,160):"";
@@ -222,7 +227,7 @@ function emailSheet(mode,from,em){const up=mode==="up";
     const go=async()=>{const m=$("aeMail").value.trim(),pw=$("aePw").value,nm=up?$("aeName").value.trim():"";
       if(!m||!pw){err("Fill in your email and password.");return}if(up&&!nm){err("Add your first name.");return}
       const b=$("aeGo");b.disabled=true;err("");
-      try{const B=await cloud();if(up){await B.emailUp(m,pw,nm);S.myName=nm;save();const u=B.refresh&&B.refresh();if(u&&!FAKE_CLOUD){const was=ME;ME=Object.assign({},ME,{anon:false,name:nm,email:m,via:"password"});onUserChange(was,ME)}}else await B.emailIn(m,pw);
+      try{const B=await cloud();if(up){await B.emailUp(m,pw,nm);S.myName=nm;save();const u=B.refresh&&B.refresh();if(u&&!FAKE_CLOUD){const was=ME;ME=Object.assign({},ME,{anon:false,name:nm,email:m,via:"password"});onUserChange(was,ME)}}else await B.emailIn(m,pw);await syncMe(B);
         track("signed_in",{from,via:"email",created:up});afterSignIn(from)}
       catch(e){console.warn(e);err(authErr(e));b.disabled=false}};
     $("aeGo").onclick=go;$("aePw").onkeydown=e=>{if(e.key==="Enter")go()};setTimeout(()=>(up?$("aeName"):$("aeMail")).focus(),60)})}
@@ -233,7 +238,8 @@ const avatarHTML=big=>`<span class="aav${big?" big":""}">${ME&&ME.photo?`<img sr
 function afterSignIn(from){let k=0;const go=()=>{const first=((ME&&ME.name)||"").split(" ")[0];
     if(signedIn()&&(from==="acct"||from==="settings"||from==="mytab"))accountPage();
     else if(signedIn()&&from==="live"){closeSheet();toast(first?`You're in, ${esc(first)}.`:"You're in.",2000);setTimeout(liveInvite,350)}
-    else{closeSheet();toast(first?`You're in, ${esc(first)}.`:"You're in.",2600)}};
+    else if(signedIn()){closeSheet();toast(first?`You're in, ${esc(first)}.`:"You're in.",2600)}
+    else toast("Couldn't finish signing in. Try again.",3500)};
   if(signedIn())go();else{const t=setInterval(()=>{if(signedIn()||++k>25){clearInterval(t);go()}},100)}}
 // Account: a full page like Settings, for when you're signed in. Who you are, who you crawl with, your tab's backup.
 // App preferences (look, sound, creator mode) stay in Settings: they're for this phone and work signed out too.
