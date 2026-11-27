@@ -458,7 +458,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   fv.innerHTML=`<div class="fv-hd"><div class="t"><b id="fvWho">Following</b><small id="fvWhoS"></small></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}<span class="fv-livepill"><i></i>LIVE</span><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
-    <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvWild"></div><div id="fvJp"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
+    <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
   $("fvMenu").onclick=followMenu;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
@@ -562,36 +562,32 @@ const fvVisits=g=>(g.visits||[]).filter(v=>v.arrivedAt!=null);
 const fvWildAt=(g,id)=>{const e=(g.wlog||[]).filter(x=>x&&typeof x==="object"&&x.id===id).pop();return e?e.t:(g.wild&&g.wild.id===id?g.wild.text:"")};
 function fvRule(g,w){const m=WMETA[w.text];if(!m)return w.text;if(m.seal&&!wOpenNow(g,w))return "Opens at the rooftop";if(m.spin)return (w.res||[]).length?wFull(m,w.res):m.t;return wLead(m)}
 function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
-  if(d.ended){if(el._k!=="end"){el._k="end";el.innerHTML="";$("fvWild").innerHTML="";$("fvJp").innerHTML=""}return}
+  if(d.ended){if(el._k!=="end"){el._k="end";el.innerHTML=""}return}
   const vs=fvVisits(g),at=vs.find(v=>!v.leftAt),J=fvJack(g),JD=J&&JACKPOTS.find(x=>x.k===J.k);
   const spin=fvSpinning(g,t);                                        // the host's wheel is going, from a bar or on the way
   const nx=!spin&&g.target&&(!at||g.target!==at.id)?byId(g.target):null;   // landed: the next rooftop, even before they've left
-  const v=nx||(!spin&&at?byId(at.id):null),still=at&&(spin||nx)?at:null,yy=fvPrev?null:you();
-  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx]);
-  const tick=()=>{const dw=$("fvDwell");if(dw&&at&&!nx)dw.textContent=fvHere(t-at.arrivedAt);const st=$("fvStillT");if(st&&still)st.textContent=fvMin(t-still.arrivedAt)};
-  if(el._k===k){tick();fvWildPaint(g,v,at);fvJpPaint(d,g,t,spin);return}
+  const v=nx||(!spin&&at?byId(at.id):null),yy=fvPrev?null:you(),here=!!(at&&v&&!nx);
+  // this rooftop's wildcard and jackpot ride on its card
+  const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
+  const jd=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpOn=!!(jd&&v&&(here?vs.indexOf(at)===g.jp.leg:g.jp.leg===vs.length&&(g.targetAt||0)>=g.jp.at));
+  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx,w&&fvRule(g,w),jpOn]);
+  if(el._k===k){const dw=$("fvDwell");if(dw&&here)dw.textContent=fvHere(t-at.arrivedAt);return}
   const was=el._k?JSON.parse(el._k):null;el._k=k;
-  if(was&&v&&was[2]!==v.id)buzz(at&&!nx?[40,40,40]:30);    // a new rooftop picked, or arrived
-  const sb=still?`<div class="fv-still"><span>At <b>${esc(byId(still.id).name)}</b></span><span id="fvStillT">${fvMin(t-still.arrivedAt)}</span></div>`:"";
+  if(was&&v&&was[2]!==v.id)buzz(here?[40,40,40]:30);    // a new rooftop picked, or arrived
   if(!v){const first=!g.started&&!vs.length&&!g.target;
-    el.innerHTML=sb+`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${first&&!spin?"The first rooftop shows here":"The next rooftop shows here"}</span></div>`;fvWildPaint(g,null,null);fvJpPaint(d,g,t,spin);return}
+    el.innerHTML=`<div class="fv-panel">${spin?`<div class="fv-dots"><i></i><i></i><i></i></div>`:""}<b>${JD&&spin?`Jackpot: ${esc(JD.t)}`:spin?`${who} is spinning`:first?`Waiting on ${who}`:`${who} spins next`}</b><span>${first&&!spin?"The first rooftop shows here":"The next rooftop shows here"}</span></div>`;return}
   if(phMem[v.id]===undefined)barPhoto(v).then(ph=>{if(ph&&fv){el._k="";paintFollow()}});
-  const cp=cardPhoto(v),here=at&&!nx;
+  const cp=cardPhoto(v);
   const meta=here?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");
-  el.innerHTML=sb+`<div class="fv-ph${cp.cls?" on":""}"${cp.style}>${cp.cr}<div class="fv-tx"><span class="eyebrow">${here?"At the rooftop":at?"Up next":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
-    ${here?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}</div>`;
-  fvWildPaint(g,v,at);fvJpPaint(d,g,t,spin)}
-// the jackpot, once it's landed, until the group leaves the rooftop it picked: so nobody wonders why the clock stopped
+  el.innerHTML=`<div class="fv-ph${cp.cls?" on":""}${w?" has-w":""}"${cp.style}>${cp.cr}${jpOn?fvJTag(jd):""}<div class="fv-tx"><span class="eyebrow">${here?"At the rooftop":at?"Up next":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
+    ${here?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}${w?fvWStrip(w.text,fvRule(g,w)):""}</div>`;
+  const jt=el.querySelector(".fv-jtag");if(jt)jt.onclick=()=>toast(`<b>${esc(jd.t)}</b><br>${esc((FVJP[jd.k]||(()=>jd.d))(fvHost(d)))}`,3500)}
+// the jackpot: a tag on the rooftop it picked, tap for what it did (the clock already says when it's frozen)
 const FVJP={call:w=>`${w} picked this rooftop from three.`,freeze:()=>"Clock frozen for 10 minutes.",spins:w=>`${w}'s next 3 re-spins are free.`,short:()=>"The closest open rooftop.",dealer:w=>`${w} picked the wildcard.`};
-function fvJpPaint(d,g,t,spin){const el=$("fvJp");if(!el)return;const jp=g.jp,JD=jp&&JACKPOTS.find(x=>x.k===jp.k);let h="";
-  if(JD&&!spin&&g.targetAt&&g.targetAt>=jp.at){const lv=fvVisits(g)[jp.leg];if(!lv||!lv.leftAt)h=fvJpCard(JD,fvHost(d))}
-  if(el._h!==h){el._h=h;el.innerHTML=h}}
-const fvJpCard=(JD,who)=>`<div class="fv-wc jp"><div class="wcd-card jp">${I.sparkle}<b>${esc(JD.t)}</b></div><div class="t"><span class="eyebrow">Jackpot</span><p>${esc((FVJP[JD.k]||(()=>JD.d))(who))}</p></div></div>`;
-const fvWcCard=(w,rule)=>`<div class="fv-wc"><div class="wcd-card">${wFace(w)}<b>${esc(wNm(w))}</b></div><div class="t"><span class="eyebrow">Wildcard</span><p>${esc(rule)}</p></div></div>`;
+const fvJTag=jd=>`<button type="button" class="fv-jtag">${I.sparkle}Jackpot · ${esc(jd.t)}</button>`;
+const fvWStrip=(w,rule)=>`<div class="fv-ws">${wFace(w)}<span><b>${esc(wNm(w))}</b>${esc(rule)}</span></div>`;
 const fvMin=ms=>ms<60000?"<1 min":Math.floor(ms/60000)+" min";
 const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
-function fvWildPaint(g,v,at){const el=$("fvWild");if(!el)return;const w=g.wild&&v&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked?g.wild:null;
-  const h=w?fvWcCard(w.text,fvRule(g,w)):"";if(el._h!==h){el._h=h;el.innerHTML=h}}
 // rooftops so far: every one you've left, newest first (the one you're at is the card above). The page scrolls; a crawl
 // rarely goes past five or six.
 function fvListPaint(d,g,t){const el=$("fvList");if(!el)return;const vs=fvVisits(g),done=vs.filter(v=>v.leftAt).slice().reverse(),JD=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpAt=JD?g.jp.leg:-1;
@@ -604,9 +600,9 @@ const fvG=()=>{try{return JSON.parse(liveDoc.g)}catch(e){return {}}};
 function fvStopSheet(i,back){const d=liveDoc;if(!d)return;const g=fvG(),t=Date.now()+(d.off||0),vs=fvVisits(g),v=vs[i];if(!v)return;const b=byId(v.id);if(!b)return;
   const prev=i>0?vs[i-1].leftAt:g.startedAt,leg=prev?v.arrivedAt-prev:null,w=fvWildAt(g,v.id),cp=cardPhoto(b),jd=g.jp&&g.jp.leg===i&&JACKPOTS.find(x=>x.k===g.jp.k);
   if(phMem[b.id]===undefined)barPhoto(b).then(ph=>{if(ph&&$("sheet").open&&$("sheetBody").querySelector(".fv-sph"))fvStopSheet(i,back)});
-  sheet(`<div class="fv-sph${cp.cls?" on":""}"${cp.style}>${cp.cr}${back?`<button type="button" class="fv-sback" id="fsBack" aria-label="Back">${I.back}</button>`:""}<div class="fv-tx"><span class="eyebrow">Rooftop ${i+1}${v.cant?" · No entry":v.counted===false?" · Didn't count":""}</span><h2>${esc(b.name)}</h2></div></div>
+  sheet(`<div class="fv-sph${cp.cls?" on":""}${w?" has-w":""}"${cp.style}>${cp.cr}${jd?fvJTag(jd):""}${back?`<button type="button" class="fv-sback" id="fsBack" aria-label="Back">${I.back}</button>`:""}<div class="fv-tx"><span class="eyebrow">Rooftop ${i+1}${v.cant?" · No entry":v.counted===false?" · Didn't count":""}</span><h2>${esc(b.name)}</h2></div>${w?fvWStrip(w,WMETA[w]&&WMETA[w].spin?WMETA[w].t:w):""}</div>
     <div class="fv-stats"><div><small>Arrived</small><b>${clock12(sydAt(v.arrivedAt).min)}</b></div><div><small>Time there</small><b>${v.cant?"No entry":fvMin((v.leftAt||t)-v.arrivedAt)}</b></div><div><small>Travel</small><b>${leg!=null&&leg>=0?fvMin(leg):"–"}</b></div></div>
-    ${w||jd?`<div class="fv-cards">${w?fvWcCard(w,WMETA[w]&&WMETA[w].spin?WMETA[w].t:w):""}${jd?fvJpCard(jd,fvHost(d)):""}</div>`:""}`,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back})}
+`,()=>{$("sheet").classList.add("fvsh");if($("fsBack"))$("fsBack").onclick=back;const jt=$("sheetBody").querySelector(".fv-jtag");if(jt)jt.onclick=()=>toast(`<b>${esc(jd.t)}</b><br>${esc((FVJP[jd.k]||(()=>jd.d))(fvHost(d)))}`,3500)})}
 function paintFollow(){if(!fv)return;const d=liveDoc;if(!d){$("fvSub").textContent="Connecting…";return}
   let g={};try{g=JSON.parse(d.g)}catch(e){}const vs=(g.visits||[]).filter(v=>v.arrivedAt!=null),t=Date.now()+(d.off||0),cr=g.mode==="cruise";   // the host's game clock
   const who=fvHost(d);$("fvWho").textContent=fvPrev?"What friends see":`${who}'s crawl`;$("fvWhoS").textContent=fvPrev?"Only you can spin":"You're following";
