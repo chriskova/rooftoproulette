@@ -449,8 +449,10 @@ function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,
   const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="av more">${show.length?"+":""}${more}</span>`:"");
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 // as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
-function fitPile(el,d){if(!el||!d)return;const ck=$("fvClock");for(const c of [4,3,2,1]){paintPile(el,d,true,null,c);if(!ck||!el.offsetParent)return;
-    const a=el.getBoundingClientRect(),r=document.createRange();r.selectNodeContents(ck);const b=r.getBoundingClientRect();if(a.left>=b.right+3)return}}
+// Roomy first (a little gap from the menu, faces less squashed); tightened only when that's what fits more people.
+function fitPile(el,d){if(!el||!d)return;const ck=$("fvClock"),row=el.parentNode;
+  const fits=()=>{const a=el.getBoundingClientRect(),r=document.createRange();r.selectNodeContents(ck);return a.left>=r.getBoundingClientRect().right+3};
+  for(const c of [4,3,2,1])for(const roomy of [true,false]){row.classList.toggle("roomy",roomy);paintPile(el,d,true,null,c);if(!ck||!el.offsetParent||fits())return}}
 function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlPeople(d),names=L.map(([,m])=>m.n),host=d.host===me&&G()&&G().live;
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3><div class="plist">${L.map(([u,m])=>`<div class="prow">${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</div>`).join("")}</div>
     ${host?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();liveInvite()}})}
