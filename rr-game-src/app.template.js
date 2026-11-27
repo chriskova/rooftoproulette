@@ -721,7 +721,7 @@ function renderMini(){const g=G(),m=$("mini");if(!m)return;
   let fl=null;try{fl=!g&&S.follow&&liveDoc&&!liveDoc.ended&&!fv?liveDoc:null}catch(e){}   // the live-crawl code loads after this file's first render: until then there's nothing to show
   if(fl&&["home","bars","hist","end"].includes(S.route)){   // following a friend's crawl
     const d=fl,fg=fvGame(d),t=Date.now()+(d.off||0),c=fvClockTxt(d,fg,t),vs=(fg.visits||[]).filter(v=>v.arrivedAt!=null),at=vs.find(v=>!v.leftAt),tg=fg.target&&byId(fg.target);
-    const line=at?"At "+byId(at.id).name:tg?"Heading to "+tg.name:"Spinning…",who=(d.hostName||"Friend").split(" ")[0]+"'s crawl";
+    const hn=(d.hostName||"Friend").split(" ")[0],line=at?"At "+byId(at.id).name:tg?"Heading to "+tg.name:fvSpinning(fg,t)?hn+" is spinning":!fg.started&&!vs.length?"Waiting on "+hn:hn+" spins next",who=hn+"'s crawl";
     const h=`<span class="mt${fg.started?"":" sm"}">${esc(c.clock)}</span><span class="ml"><b>${esc(line)}</b><small>${esc(who)} · live</small></span><span class="up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>`;
     if(m._h!==h){m._h=h;m.innerHTML=h}if(!m._on){m._on=true;m.hidden=false;$("app").classList.add("has-mini");if(fvMinDrop){m.classList.remove("drop");void m.offsetWidth;m.classList.add("drop")}}fvMinDrop=false;
     m.onclick=()=>openFollow();return}
