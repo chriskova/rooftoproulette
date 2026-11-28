@@ -20,11 +20,12 @@ m=json.load(open(os.path.join(D,'data','manifest.webmanifest')))
 m['description']='A rooftop bar crawl against the clock.'
 m['start_url']='play/';m['scope']='./'
 json.dump(m,open(os.path.join(OUT,'manifest.webmanifest'),'w'),indent=1)
-open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v98-280";
+open(os.path.join(OUT,'sw.js'),'w').write('''const CACHE="rr-app-v98-281";
 const ASSETS=["play/","./","browser-config.js","rooftop-app.js","manifest.webmanifest",
 "icons/icon-192.png","icons/apple-touch-icon.png","icons/logo-pin.png",
 "fonts/big-shoulders-display-latin-500-normal.woff2","fonts/big-shoulders-display-latin-800-normal.woff2",
-"fonts/plus-jakarta-sans-latin-800-normal.woff2","fonts/plus-jakarta-sans-latin-700-normal.woff2","fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2","fonts/caveat-latin-600-normal.woff2"];
+"fonts/plus-jakarta-sans-latin-800-normal.woff2","fonts/plus-jakarta-sans-latin-700-normal.woff2","fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2","fonts/caveat-latin-600-normal.woff2",
+"fonts/big-shoulders-display-latin-ext-500-normal.woff2","fonts/big-shoulders-display-latin-ext-800-normal.woff2","fonts/plus-jakarta-sans-latin-ext-800-normal.woff2","fonts/plus-jakarta-sans-latin-ext-700-normal.woff2","fonts/caveat-latin-ext-600-normal.woff2"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))));self.clients.claim()});
 self.addEventListener("fetch",e=>{
@@ -47,7 +48,7 @@ js=open(os.path.join(OUT,'vendor/leaflet/leaflet.js')).read().replace('</script'
 assert s.count('<link rel="stylesheet" href="../vendor/leaflet/leaflet.css">')==1 and s.count('<script src="../vendor/leaflet/leaflet.js"></script>')==1
 s=s.replace('<link rel="stylesheet" href="../vendor/leaflet/leaflet.css">','<style>'+css+'</style>').replace('<script src="../vendor/leaflet/leaflet.js"></script>','<script>'+js+'</script>')
 import base64
-for fn in ['big-shoulders-display-latin-500-normal.woff2','big-shoulders-display-latin-800-normal.woff2','plus-jakarta-sans-latin-800-normal.woff2','plus-jakarta-sans-latin-700-normal.woff2']:
+for fn in ['big-shoulders-display-latin-500-normal.woff2','big-shoulders-display-latin-800-normal.woff2','plus-jakarta-sans-latin-800-normal.woff2','plus-jakarta-sans-latin-700-normal.woff2','big-shoulders-display-latin-ext-500-normal.woff2','big-shoulders-display-latin-ext-800-normal.woff2','plus-jakarta-sans-latin-ext-800-normal.woff2','plus-jakarta-sans-latin-ext-700-normal.woff2']:
     data=base64.b64encode(open(os.path.join(OUT,'fonts',fn),'rb').read()).decode()
     assert s.count('url(../fonts/'+fn+')')==1,fn
     s=s.replace('url(../fonts/'+fn+')','url(data:font/woff2;base64,'+data+')')

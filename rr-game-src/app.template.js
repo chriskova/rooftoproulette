@@ -3603,7 +3603,7 @@ async function bigMap(r,st){
   const close=()=>{ov.classList.remove("on");setTimeout(()=>{try{m&&m.remove()}catch(e){}ov.remove()},220)};ov.querySelector(".mf-x").onclick=close;
   m=await makeMap("bigMap",{greedy:true,noMe:true});if(!m)return;
   const {stops:pts,trail:tr}=crawlPath(r,st);
-  if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
+  if(!r.noLoc&&pts.length>1){if(tr.length>1)m.route(tr);else m.route(pts,true)}   // the walk when it was recorded; otherwise dotted straight lines between rooftops
   st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
   const all=pts.concat(tr);if(!all.length&&r.center)all.push(r.center);setTimeout(()=>m.fitPts(all,17,{top:80,left:30,right:30,bottom:40}),80);
 }
@@ -3723,7 +3723,7 @@ ${(()=>{const SV=window.SUMV||"b",arr=st.arrived;
     if(eMap){eMap.remove();eMap=null}
     const el=$("endMap"),m=await makeMap("endMap",{noMe:true,locked:true});if(!m||!document.contains(el))return;eMap=m;
     const {stops:pts,trail:tr}=crawlPath(r,st);
-    if(!r.noLoc&&pts.length>1){m.route(pts,true);if(tr.length>1)m.route(tr);else m.route(pts)}
+    if(!r.noLoc&&pts.length>1){if(tr.length>1)m.route(tr);else m.route(pts,true)}   // the walk when it was recorded; otherwise dotted straight lines between rooftops
     st.arrived.forEach((v,i)=>{const b=byId(v.id);m.num(b,i+1,v.counted!==true,b.name)});
     // leave room under the route for the stats laid over the bottom of the map
     const all=pts.concat(tr).filter(Boolean);if(!all.length&&r.center)all.push(r.center);
@@ -4573,7 +4573,7 @@ function legSheet(r,fromId,toId,lbl,val,back){
     let tr=(r.trail||[]).map(p=>({lat:p[0],lng:p[1]})),seg=[];
     if(tr.length>1){const near=(p,from)=>{let bi=-1,bd=1e9;for(let i=from;i<tr.length;i++){const dd=dist(tr[i],p);if(dd<bd){bd=dd;bi=i}}return bd<=200?bi:-1};
       const i0=near(a,0),i1=i0>=0?near(b,i0):-1;if(i0>=0&&i1>i0)seg=tr.slice(i0,i1+1)}
-    if(!r.noLoc){m.route([a,b],true);if(seg.length>1)m.route(seg);else m.route([a,b])}
+    if(!r.noLoc){if(seg.length>1)m.route(seg);else m.route([a,b],true)}
     m.num(a,ia+1,false,a.name);m.num(b,ib+1,false,b.name);
     setTimeout(()=>m.fitPts([a,b].concat(seg),17,{top:36,left:36,right:36,bottom:36}),80)});
 }
