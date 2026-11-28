@@ -989,12 +989,12 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
     {const rr=$("rrR");if(rr)rr.style.setProperty("--p",((rr.value-rr.min)/((rr.max-rr.min)||1)*100)+"%")}   // amber fill up to the thumb
-    $("rrLbl").innerHTML=z.r?`Within <strong>${kmTxt(z.r)}</strong> of ${esc(moved()||!me?nearestSuburb(z):"you")}`:esc((o&&o.allLbl)||`All of ${S.city}`);
+    $("rrLbl").innerHTML=z.r?`Within <strong>${kmTxt(z.r)}</strong> of ${esc(moved()||!me?nearestSuburb(z):"you")}`:esc((o&&(typeof o.allLbl==="function"?o.allLbl():o.allLbl))||`All of ${S.city}`);
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
     lastP=P;onPaint(P,z,moved(),full);
     if(!rrMap)return;
-    if(full){const ids=new Set(P.open.map(v=>v.id)),set=o&&o.pinSet?o.pinSet():VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)),key=set.map(v=>v.id+(ids.has(v.id)?"+":"")).join();
+    if(full){const ids=new Set(P.open.map(v=>v.id)),set=(o&&o.pinSet&&o.pinSet())||VENUES.filter(v=>cityOf(v)===S.city||(me&&dist(me,v)<20000)),key=set.map(v=>v.id+(ids.has(v.id)?"+":"")).join();
       if(key!==pinKey){pinKey=key;rrMap.clear();set.forEach(v=>rrMap.pin(v,ids.has(v.id)?"":"off",()=>pinCard(v)))}}
     rrMap.ring(z.r?z:null,z.r);if(me)rrMap.me(me)};
   // Pinch or scroll to zoom and the distance changes with it: the circle keeps its size on screen (same as the slider).
@@ -1062,7 +1062,9 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
     fit();paint(true);   // after the listeners, so the first fit's scale is caught (otherwise your first pinch did nothing)
     if(window.ResizeObserver){let h0=el.offsetHeight,rt=0;const ro=new ResizeObserver(()=>{if(!document.contains(el)){ro.disconnect();return}const h=el.offsetHeight;if(Math.abs(h-h0)<4)return;h0=h;clearTimeout(rt);rt=setTimeout(()=>{if(rrMap===m){m.resize();fit()}},120)});ro.observe(el)}
   });
-  return {paint};
+  // the zone changed from outside (R&R's list tabs): slider, dots, circle and map in one go
+  const refit=()=>{$("rrR").value=Z.toX(z.r);pinKey="";paint(true);fit()};
+  return {paint,refit};
 }
 /* mid-game: move or resize where an R&R night spins, or switch to the Hit list. Full height. */
 function clearInactiveZoneSetup(){
@@ -1133,8 +1135,8 @@ function renderQuick(){
   // Lists: Hit list or Favourites as the whole pool (only lists with 2+ open show). Skip visited only with all rooftops.
   tickOff();if(q.hl&&!q.list)q.list="want";delete q.hl;
   const opn=k=>listOf(k).filter(v=>openOK(v,t)).length,lists=["want","fav"].filter(k=>opn(k)>=2);if(q.list&&!lists.includes(q.list))q.list=null;
-  const wl=q.list?listOf(q.list):[];
-  const listPool=(z,t,newOnly)=>{const all=wl.filter(v=>(!z.r||dist(z,v)<=z.r*1000)&&(!newOnly||isNew(v.id)));return {all,open:all.filter(v=>openOK(v,t))}};
+  const wl=()=>q.list?listOf(q.list):[];
+  const listPool=(z,t,newOnly)=>{const all=wl().filter(v=>(!z.r||dist(z,v)<=z.r*1000)&&(!newOnly||isNew(v.id)));return {all,open:all.filter(v=>openOK(v,t))}};
   const tick=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
   const caret=`<svg class="cr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
   const allN=rrPool(q.z,t,!!q.newOnly).open.length;
@@ -1164,9 +1166,9 @@ function renderQuick(){
       if(q.list){q.from={type:"list",list:q.list,name:listName(q.list),lat:z.lat,lng:z.lng};q.newOnly=false}
       else q.from=z.r?(moved||pick?{type:"spot",name:"Around "+nearestSuburb(z),lat:z.lat,lng:z.lng}:Object.assign({},q.from)):{type:"all",name:"Anywhere"};
       q.r=z.r||null;q.z=z;if(whoOn()){q.who=1;save();renderQuick()}else{save();startCruise()}})},
-    Object.assign({locate:me?null:()=>{const h=S.test&&S.fake?S.fake:here;if(h&&nearLive(h)===S.city){q.from={type:"me",lat:h.lat,lng:h.lng};q.z={lat:h.lat,lng:h.lng,r:q.z&&q.z.r||2};save();renderQuick();return}
+    Object.assign({pool:(z,t,n)=>q.list?listPool(z,t,n):rrPool(z,t,n),allLbl:()=>q.list?"Your whole "+listName(q.list):"",pinSet:()=>q.list?wl():null,locate:me?null:()=>{const h=S.test&&S.fake?S.fake:here;if(h&&nearLive(h)===S.city){q.from={type:"me",lat:h.lat,lng:h.lng};q.z={lat:h.lat,lng:h.lng,r:q.z&&q.z.r||2};save();renderQuick();return}
       if(h){toast("You're not near "+esc(S.city)+" right now.",3000);return}q.from=null;save();renderQuick()},   // the locate button, same as timed: back to where you are
-      skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}},q.list?{pool:listPool,allLbl:"Your whole "+listName(q.list),pinSet:()=>wl}:{}));
+      skip:{n:()=>rrPool(q.z,now(),false).open.filter(v=>!isNew(v.id)).length,show:()=>!q.list&&visN(q.z)>0,get:()=>!!q.newOnly,set:v=>{q.newOnly=v;S.last.rrNew=v;save()}}}));
   // full screen: Spin from (a dropdown) and Skip visited up top under search, the open count as the See list pill
   {const cv=$("rrMap").parentElement;
     // a one-off message (nothing open near you, couldn't find you): the same note as everywhere else, gone on its own or with a swipe
@@ -1175,10 +1177,16 @@ function renderQuick(){
     return {title:`${L.length} rooftop${L.length===1?"":"s"} open in your circle`,top:"",html:`<div class="card zlist">${L.map(v=>{const o=openState(v,t);return `<div class="zrow"><button class="t zopen" type="button" data-z="${v.id}"><b>${esc(v.name)}</b><small>${esc(v.area)} · Open til ${clock12(o.closeAt)}</small></button><span class="zd">${mOrKm(dist(y,v))}</span></div>`}).join("")}</div>`,
       bind(root,again){const pb=root.querySelector(".fspass");if(pb)pb.onclick=()=>listSheet("nfu",null,()=>{if(qZB)qZB.paint(true);again()});const sb=root.querySelector(".fsskip");if(sb)sb.onclick=()=>{q.newOnly=!q.newOnly;S.last.rrNew=q.newOnly;save();if(qZB)qZB.paint(true);again()};root.querySelectorAll("[data-z]").forEach(x=>x.onclick=()=>barSheet(byId(x.dataset.z)))}}};
   fsLayout(b,b);rrOpts(q.z);
-  b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;q.list=k;
-    // picking a list: widen the circle (if it needs to) so every open bar on it is in it
-    if(q.list&&q.z.r){const far=Math.max(0,...listOf(q.list).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000));if(far>q.z.r)q.z.r=[1,2,5,10,15].find(r=>r>=far)||15}
-    save();renderQuick()}});
+  b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;
+    // switching tabs swaps the dots and refits the zone in place (no rebuild): a list's circle fits just its open rooftops,
+    // and All goes back to the distance you had before
+    if(k){if(!q.list)q.allR=q.z.r;
+      if(q.z.r){const far=Math.max(0,...listOf(k).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000)),mx=rrToR(RRALL-1);
+        q.z.r=far*1.1>mx?0:Math.max(0.5,Math.ceil(far*1.1*10)/10)}}
+    else if(q.allR!==undefined){q.z.r=q.allR;delete q.allR}
+    q.list=k;q.z.all=!q.z.r;save();
+    b.querySelectorAll(".fstabs [data-k]").forEach(y=>y.setAttribute("aria-selected",String(y===x)));
+    if(qZB&&qZB.refit)qZB.refit();else renderQuick()}});
   fitMap(b);
 }
 let qZB=null;
