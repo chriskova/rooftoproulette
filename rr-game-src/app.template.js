@@ -2828,18 +2828,24 @@ function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
   // three groups: the crawl, the app, leaving it. Invite lives on the faces by the drinks count; the camera light lives on the camera.
-  sheet(`<h3>Menu</h3><div class="menu">
-    ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your "+listName(g.cz.list):zoneTxt(g)}</small></span></button>`:""}
-    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move your zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
-    ${cr||g.demo?"":`<button type="button" id="mWild">${I.sparkle}<span>Wildcards<small>${esc(deckLbl())}</small></span></button>`}
-    ${liveMenuRows(g)}
-    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
-    <i class="msep"></i>
-    <button type="button" id="mSound" class="mtgl" role="switch" aria-checked="${!!S.sound}">${I.sound}<span>Sound</span><i class="sw"></i></button>
-    <button type="button" id="mHow">${I.help}<span>How it works</span></button>
-    <i class="msep"></i>
-    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
-    <button type="button" class="danger" id="mEnd">${I.flag}<span>${g.started?"End crawl":"Cancel crawl"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
+  // Same cards and rows as Settings: the crawl, then the app, then ending it on its own
+  const r=(id,ic,t,sub,x)=>`<button class="strow" type="button" id="${id}" ${x||""}>${ic}<span class="t"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span><i class="chev">›</i></button>`;
+  sheet(`<h3>Menu</h3><div class="mgrps">
+    <div class="sgrp">
+    ${cr?r("mZone",I.move,"Spin zone",g.cz.type==="list"?"Your "+listName(g.cz.list):zoneTxt(g)):""}
+    ${r("mMove",I.move,"Move your zone",free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl",(cr?"hidden ":"")+(canMove?"":"disabled style='opacity:.4'"))}
+    ${cr||g.demo?"":r("mWild",I.sparkle,"Wildcards",esc(deckLbl()))}
+    ${liveMenuRows(g,r)}
+    ${g.clipN?r("mClips",I.camera,"Clips",g.clipN+" from this crawl"):""}
+    </div>
+    <div class="sgrp">
+    <button class="strow tgl" type="button" id="mSound" role="switch" aria-checked="${!!S.sound}">${I.sound}<span class="t"><b>Sound</b></span><span class="sw"></span></button>
+    ${r("mHow",I.help,"How it works")}
+    </div>
+    <div class="sgrp">
+    ${S.test?r("mHome",I.back,"Home (test mode)","Drops this crawl. Nothing goes on your tab"):""}
+    <button class="strow danger" type="button" id="mEnd">${I.flag}<span class="t"><b>${g.started?"End crawl":"Cancel crawl"}</b><small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
+    </div>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>crawlMap({move:true,pre:true});
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it

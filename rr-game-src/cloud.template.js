@@ -884,8 +884,8 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
   b.addEventListener("levelchange",chk);document.addEventListener("visibilitychange",()=>setTimeout(chk,1500));chk()}).catch(()=>{})}
 
 // menu rows during a crawl
-function liveMenuRows(g){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
-  return (g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
+function liveMenuRows(g,r){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
+  return g.live&&n?r("mGive",I.redo,"Give the spin to…","They spin, you follow"):""}
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows
