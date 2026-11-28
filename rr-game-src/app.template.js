@@ -1180,10 +1180,13 @@ function renderQuick(){
   b.querySelectorAll(".fstabs [data-k]").forEach(x=>{["pointerdown","touchstart"].forEach(ev=>x.addEventListener(ev,e=>e.stopPropagation(),{passive:true}));x.onclick=()=>{const k=x.dataset.k||null;if(k===q.list)return;
     // switching tabs swaps the dots and refits the zone in place (no rebuild): a list's circle fits just its open rooftops,
     // and All goes back to the distance you had before
-    if(k){if(!q.list)q.allR=q.z.r;
-      if(q.z.r){const far=Math.max(0,...listOf(k).filter(v=>openOK(v,now())).map(v=>dist(q.z,v)/1000)),mx=rrToR(RRALL-1);
-        q.z.r=far*1.1>mx?0:Math.max(0.5,Math.ceil(far*1.1*10)/10)}}
-    else if(q.allR!==undefined){q.z.r=q.allR;delete q.allR}
+    // the circle moves to sit over the list's open rooftops (centred on them, not on you), sized to just fit them
+    if(k){if(!q.list)q.allZ={lat:q.z.lat,lng:q.z.lng,r:q.z.r};
+      const L=listOf(k).filter(v=>openOK(v,now()));
+      if(q.z.r&&L.length){const la=L.map(v=>v.lat),ln=L.map(v=>v.lng),c={lat:(Math.min(...la)+Math.max(...la))/2,lng:(Math.min(...ln)+Math.max(...ln))/2},
+          far=Math.max(0,...L.map(v=>dist(c,v)/1000)),mx=rrToR(RRALL-1);
+        if(far*1.12>mx)q.z.r=0;else{q.z.lat=c.lat;q.z.lng=c.lng;q.z.r=Math.max(0.5,Math.ceil(far*1.12*10)/10)}}}
+    else if(q.allZ){Object.assign(q.z,q.allZ);delete q.allZ}
     q.list=k;q.z.all=!q.z.r;save();
     b.querySelectorAll(".fstabs [data-k]").forEach(y=>y.setAttribute("aria-selected",String(y===x)));
     if(qZB&&qZB.refit)qZB.refit();else renderQuick()}});
