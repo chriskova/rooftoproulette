@@ -960,11 +960,14 @@ function zoneCity(p){const c=p&&cityAt(p);if(c&&c!==S.city){S.city=c;S.cityManua
 function cityAt(p){let b=null,bd=1e12;VENUES.forEach(v=>{const d=dist(p,v);if(d<bd){bd=d;b=v}});return b&&bd<40000?cityOf(b):null}
 function followCity(p){const c=cityAt(p);if(!c||c===S.city)return false;S.city=c;S.cityManual=true;S.cityManualRun=RUN;save();toast(`<span>Now in <b>${esc(cityIn(c))}</b></span>`,2500);return true}
 // a smooth range lo..hi km (log scale); R&R adds "All" at the end
-const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true,max:RRMAX,snap:r=>Math.round(r*20)/20};
-  if(o.step){const n=Math.round((o.hi-o.lo)/o.step),toR=x=>Math.round((o.lo+Math.max(0,Math.min(n,Math.round(x)))*o.step)*10)/10,toX=r=>Math.round((Math.max(o.lo,Math.min(o.hi,r))-o.lo)/o.step);
-    return {toR,toX,ticks:o.ticks,all:false,max:n,snap:r=>Math.round(Math.round((r-o.lo)/o.step)*o.step*10+o.lo*10)/10}}
+// toR: the clean distance a thumb position settles on. raw: the exact distance under the finger, so the circle
+// moves smoothly while dragging; letting go settles it on the clean value.
+const zRange=o=>{if(!o||!o.lo)return {toR:rrToR,toX:rrToX,raw:x=>x>=RRALL?0:0.5*Math.pow(30,x/RRALL),ticks:[[1,"1 km"],[2,"2 km"],[5,"5 km"],[10,"10 km"]],all:true,max:RRMAX,snap:r=>Math.round(r*20)/20};
+  if(o.step){const n=Math.round((o.hi-o.lo)/o.step),F=40,cl=r=>Math.max(o.lo,Math.min(o.hi,r)),
+      toR=x=>Math.round((o.lo+Math.max(0,Math.min(n,Math.round(x/F)))*o.step)*10)/10,toX=r=>Math.round((cl(r)-o.lo)/o.step*F),raw=x=>cl(o.lo+x/F*o.step);
+    return {toR,toX,raw,ticks:o.ticks,all:false,max:n*F,snap:r=>Math.round(Math.round((r-o.lo)/o.step)*o.step*10+o.lo*10)/10}}
   const k=Math.log(o.hi/o.lo),toR=x=>Math.round(o.lo*Math.exp(k*x/RRMAX)*10)/10,toX=r=>Math.round(Math.log(Math.max(o.lo,Math.min(o.hi,r))/o.lo)/k*RRMAX);
-  return {toR,toX,ticks:o.ticks,all:false,max:RRMAX,snap:r=>Math.round(r*20)/20}};
+  return {toR,toX,raw:x=>o.lo*Math.exp(k*x/RRMAX),ticks:o.ticks,all:false,max:RRMAX,snap:r=>Math.round(r*20)/20}};
 const rrZoneHTML=o=>{const Z=zRange(o),sr=`<button class="rrme" type="button" id="rrHome" aria-label="Back to where I am" hidden>${I.target}</button>
       <div class="msearch">${I.search}<div id="rrQ" class="sfield" contenteditable="plaintext-only" role="searchbox" inputmode="search" enterkeyhint="search" autocapitalize="off" autocorrect="off" spellcheck="false" data-hint="${o&&o.searchHint||"Search a suburb"}"></div></div><div class="mres" id="rrRes" hidden></div>`;
   return (o&&o.row?`<div class="rrmap stack">${sr}<div class="map rrcanvas"><div id="rrMap"></div><i class="rrpin" id="rrPin"></i><button class="mcard" type="button" id="rrCard" hidden></button></div></div>`
@@ -989,7 +992,7 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const moved=()=>!!me&&dist(z,me)>150;
   const paint=full=>{if(!$("rrLbl"))return;const P=pool(z,now(),newOnly());
     {const rr=$("rrR");if(rr)rr.style.setProperty("--p",((rr.value-rr.min)/((rr.max-rr.min)||1)*100)+"%")}   // amber fill up to the thumb
-    $("rrLbl").innerHTML=z.r?`Within <strong>${kmTxt(z.r)}</strong> of ${esc(moved()||!me?nearestSuburb(z):"you")}`:esc((o&&(typeof o.allLbl==="function"?o.allLbl():o.allLbl))||`All of ${S.city}`);
+    $("rrLbl").innerHTML=z.r?`Within <strong>${kmTxt(Z.toR(Z.toX(z.r))||z.r)}</strong> of ${esc(moved()||!me?nearestSuburb(z):"you")}`:esc((o&&(typeof o.allLbl==="function"?o.allLbl():o.allLbl))||`All of ${S.city}`);
     $("rrN").textContent=P.open.length?`${P.open.length} open`:"None open";
     $("rrHome").hidden=!z.r||(!me&&!(o&&o.locate));$("rrHome").classList.toggle("on",!!me&&!moved());$("rrPin").hidden=!z.r;
     lastP=P;onPaint(P,z,moved(),full);
@@ -1006,9 +1009,16 @@ function rrZoneBind(z,me,newOnly,onPaint,o){const Z=zRange(o),pool=o&&o.pool||rr
   const fit=()=>{if(!rrMap)return;const p0=prog=Date.now()+800;clamped=false;setTimeout(()=>{if(prog===p0){prog=0;setBase()}},820);if(z.r)rrMap.fitZone(z,z.r,null,ZPAD(),ZONEK);else rrMap.fitPts(VENUES.filter(v=>cityOf(v)===S.city),14)};
   // sliding bigger: the map zooms out with the circle as you go. Sliding smaller: the circle shrinks on the map as it is,
   // and the map zooms back in to fit when you let go.
-  $("rrR").oninput=()=>{const r0=z.r;if(!base&&r0)setBase();z.r=Z.toR(+$("rrR").value);paint(false);
+  let raf=0,tw=0;
+  $("rrR").oninput=()=>{cancelAnimationFrame(tw);const r0=z.r;if(!base&&r0)setBase();const x=+$("rrR").value;z.r=Z.raw?Z.raw(x):Z.toR(x);
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;paint(true)});
     if(rrMap&&rrMap.setMpp&&z.r&&r0&&base&&base.r){const want=base.mpp*z.r/base.r;if(want>rrMap.mpp()*1.001){prog=Date.now()+400;rrMap.setMpp(want)}}};
-  $("rrR").onchange=()=>{save();paint(true);fit()};
+  $("rrR").onchange=()=>{const el=$("rrR"),x0=+el.value,r1=Z.toR(x0),x1=Z.toX(r1),r0=z.r,t0=performance.now(),D=140;
+    const done=()=>{el.value=x1;z.r=r1;save();paint(true);fit()};
+    if(x0===x1||!r0||!r1){done();return}
+    const step=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);if(k>=1){done();return}
+      el.value=Math.round(x0+(x1-x0)*e);z.r=r0+(r1-r0)*e;paint(true);tw=requestAnimationFrame(step)};
+    tw=requestAnimationFrame(step)};
   // tap a pin: a little card on the map; tap the card for the full bar page (not from inside a panel)
   const card=$("rrCard"),inSheet=!!card.closest("dialog");
   const pinCard0=v=>{const o=openState(v,now()),y=me||you();
