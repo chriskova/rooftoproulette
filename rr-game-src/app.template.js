@@ -4331,10 +4331,10 @@ function skipToast(id){const v=byId(id);if(!v||S.nfu[id])return;
 const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
-  const L={want:{t:"Hit list",d:"Rooftops you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
+  const L={want:{t:"Hit list",d:"Rooftops you want to try. Spin from this list in R&amp;R."},
     been:{t:"Visited",d:"Rooftops you've been to. Crawls add these automatically."},
     nfu:{t:"Pass",d:"Rooftops to leave out of R&amp;R."},
-    fav:{t:"Favourites",d:"Rooftops you love. Tap the heart on any rooftop to add it here."}}[k];
+    fav:{t:"Favourites",d:"Rooftops you love. Spin from this list in R&amp;R."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
   const add=id=>{if(k==="been"){S.been[id]=1;delete S.want[id]}else if(k==="fav"){S.fav[id]=Date.now();delete S.want[id];delete S.nfu[id]}else{S[k][id]=1;delete S[k==="want"?"nfu":"want"][id];if(k==="nfu")delete S.fav[id]}save();buzz(10)};
   const del=id=>{delete S[k][id];save()};
