@@ -114,7 +114,11 @@ function simTick(){const B=SIM.B;if(!B)return;
   Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host)||SIM.quiet[k])return;const P=hostPongs(d);if(P)B.set(k,{pongs:P,beat:Date.now()},true)});
   // and their bar counts once they've been there 3 minutes, the way it does on a real phone
   Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||!simFriend(d.host))return;let g;try{g=JSON.parse(d.g)}catch(e){return}const a=(g.visits||[]).find(v=>v.arrivedAt!=null&&!v.leftAt);
-    if(a&&!a._inCount&&Date.now()+(d.off||0)-a.arrivedAt>=DWELL_MIN*60000)simAct(k,()=>{})})}
+    if(a&&!a._inCount&&Date.now()+(d.off||0)-a.arrivedAt>=DWELL_MIN*60000)simAct(k,()=>{})});
+  simYourSpin()}
+function simYourSpin(){Object.keys(SIM.docs).filter(k=>k.startsWith("live/")).forEach(k=>{const d=SIM.docs[k];if(!d||d.ended||simFriend(d.host))return;let g;try{g=JSON.parse(d.g)}catch(e){return}
+  const w=g.wild,m=w&&WMETA[w.text];if(!m||!m.multi||!wOpenNow(g,w))return;const wk=wKey(w);
+  Object.entries(d.members||{}).forEach(([u,x])=>{if(!simFriend(u)||(x.ws&&x.ws.k===wk)||Math.random()>.35)return;SIM.B.set(k,{members:{[u]:Object.assign({},x,{ws:{k:wk,r:m.spin[Math.floor(Math.random()*m.spin.length)]}})}},true)})})}
 function simJoin(id,f){return SIM.B.tx(`live/${id}`,d=>{if(!d||d.ended)return undefined;const m=Object.assign({},d.members||{});if(m[f.uid])return undefined;
   let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[f.uid]={n:f.n,j:Date.now(),b:(gg.visits||[]).length};return Object.assign({},d,{members:m})})}
 function simSpin(g,t){const c=g.center||{lat:-33.8688,lng:151.2093},been=new Set((g.visits||[]).map(v=>v.id));
@@ -424,7 +428,18 @@ function onLive(id,d){
   if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
   if(S.follow===id||(g&&g.live===id))joinCheck(d,id,memFresh(d,id));
   if(S.follow===id){if(d.ended)followEnded(d);else offerAsk(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
-  if(g&&g.live===id){paintMembers(d,id);if(d.host===me)offerWatch(d);if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
+  if(g&&g.live===id){paintMembers(d,id);if(d.host===me){offerWatch(d);wMerge(g,d)}if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
+// Your spin on a live crawl: each follower spins on their own phone and writes it to their member entry; the host's
+// phone adds it to the card with their name. The host's own wheel stays open for anyone not following.
+function wMerge(g,d){const w=g.wild,m=w&&WMETA[w.text];if(!m||!m.multi||d.ended)return;const k=wKey(w);let ch=false;w.fu=w.fu||{};
+  Object.entries(d.members||{}).forEach(([u,x])=>{const s=x&&x.ws;if(u!==d.host&&s&&s.k===k&&s.r&&!w.fu[u]){w.fu[u]=1;w.res=(w.res||[]).concat([(nFirst(x.n)||"Friend")+": "+s.r]);ch=true}});
+  if(ch){save();if(S.route==="play")renderPlay()}}
+const fvMine={},fvAsked={};
+const fvMyDrink=(d,k)=>{const me=ME&&ME.uid,x=me&&(d.members||{})[me];return fvMine[k]||(x&&x.ws&&x.ws.k===k?x.ws.r:"")};
+function fvWildSpin(){const d=liveDoc,id=S.follow,me=ME&&ME.uid;if(!d||!id||!me||d.ended)return;const g=fvGame(d),w=g.wild,m=w&&WMETA[w.text];if(!m||!m.multi)return;const k=wKey(w);
+  if(fvMyDrink(d,k))return;
+  wildSpin(w.text,false,null,async pick=>{fvMine[k]=pick;const el=$("fvNow");if(el)el._k="";paintFollow();
+    try{const B=await cloud();await B.set(`live/${id}`,{members:{[me]:Object.assign({},(liveDoc&&liveDoc.members||{})[me],{ws:{k,r:pick}})}},true)}catch(e){console.warn(e)}})}
 // A follower opening the menu asks "are you there?" (their member entry gets a ping time). The host's phone answers
 // straight away by echoing it back. No answer within a few seconds and that follower can take over the crawl.
 function hostPongs(d){const P=Object.assign({},d.pongs||{});let ch=false;Object.entries(d.members||{}).forEach(([u,m])=>{if(m&&m.ping&&P[u]!==m.ping){P[u]=m.ping;ch=true}});return ch?P:null}
@@ -714,7 +729,8 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   // this rooftop's wildcard and jackpot ride on its card
   const w=v&&g.wild&&g.wild.id===v.id&&g.wild.text&&!g.wild.locked&&(g.wild.shown||g.wild.landed)?g.wild:null;
   const jd=g.jp&&JACKPOTS.find(x=>x.k===g.jp.k),jpOn=!!(jd&&v&&(here?vs.indexOf(at)===g.jp.leg:g.jp.leg===vs.length&&(g.targetAt||0)>=g.jp.at));
-  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx,w&&fvRule(g,w),jpOn]);
+  const wm=w&&WMETA[w.text],ys=!!(wm&&wm.multi&&here&&!fvPrev&&wOpenNow(g,w)),wk=ys?wKey(w):"",mine=ys?fvMyDrink(d,wk):"";
+  const k=JSON.stringify([d.ended,at&&at.id,v&&v.id,spin,JD&&JD.k,!!(v&&phMem[v.id]),yy&&Math.round(yy.lat*2000),yy&&Math.round(yy.lng*2000),g.started,!!nx,w&&fvRule(g,w),jpOn,ys,mine]);
   if(el._k===k){const dw=$("fvDwell");if(dw&&here){const x=fvHere(t-at.arrivedAt);if(dw.textContent!==x)dw.textContent=x}return}
   const was=el._k?JSON.parse(el._k):null;el._k=k;
   if(was&&v&&was[2]!==v.id)buzz(here?[40,40,40]:30);    // a new rooftop picked, or arrived
@@ -724,7 +740,10 @@ function fvCard0(d,g,t){const el=$("fvNow"),who=esc(fvHost(d));if(!el)return;
   const cp=cardPhoto(v);
   const meta=here?`<span id="fvDwell">${fvHere(t-at.arrivedAt)}</span>`:yy?`${walkMin(yy,v)<=45?walkMin(yy,v)+" min walk":Math.round(dist(yy,v)/1000*1.25/50*60)+4+" min drive"} · ${mOrKm(dist(yy,v))}`:(v.vibe?esc(v.vibe):"");
   el.innerHTML=`<div class="fv-ph${cp.cls?" on":""}${w?" has-w":""}"${cp.style}>${cp.cr}${jpOn?fvJTag(jd):""}<div class="fv-tx"><span class="eyebrow">${here?"At the rooftop":at?"Up next":"Heading to"}</span><h2>${esc(v.name)}</h2><div class="m">${meta}</div></div>
-    ${here?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}${w?fvWStrip(w.text,fvRule(g,w)):""}</div>`;
+    ${here?"":`<a class="fv-dir" href="${esc(dirURL(v))}" target="_blank" rel="noopener" aria-label="Directions">${I.nav}</a>`}${w?(ys?fvYStrip(w,mine):fvWStrip(w.text,fvRule(g,w))):""}</div>`;
+  const ysb=el.querySelector("[data-fws]");if(ysb)ysb.onclick=fvWildSpin;
+  // the card opening at the rooftop pops the wheel up once
+  if(ys&&!mine&&!fvAsked[wk]&&!document.hidden&&!$("sheet").open){fvAsked[wk]=1;setTimeout(()=>{if(fv&&!$("sheet").open&&!document.hidden){buzz(30);fvWildSpin()}else{fvAsked[wk]=0;el._k=""}},400)}
   const jt=el.querySelector(".fv-jtag");if(jt)jt.onclick=()=>toast(`<b>${esc(jd.t)}</b><br>${esc((FVJP[jd.k]||(()=>jd.d))(fvHost(d)))}`,3500)}
 // the jackpot: a tag on the rooftop it picked, tap for what it did (the clock already says when it's frozen)
 const FVJP={call:w=>`${w} picked this rooftop from three.`,freeze:()=>"Clock frozen for 10 minutes.",spins:w=>`${w}'s next 3 re-spins are free.`,short:()=>"The closest open rooftop.",dealer:w=>`${w} picked the wildcard.`};
@@ -732,6 +751,7 @@ const JPI={call:()=>I.pin,freeze:()=>I.clock,spins:()=>I.redo,short:()=>I.nav,de
 const jpIcon=k=>(JPI[k]||(()=>I.sparkle))();
 const fvJTag=jd=>`<button type="button" class="fv-jtag">${jpIcon(jd.k)}Jackpot · ${esc(jd.t)}</button>`;
 const fvWStrip=(w,rule)=>`<div class="fv-ws">${wFace(w)}<span><b>${esc(wNm(w))}</b>${esc(rule)}</span></div>`;
+const fvYStrip=(w,mine)=>{const r=w.res||[];return `<div class="fv-ws${mine?"":" tap"}"${mine?"":` data-fws="1" role="button" tabindex="0"`}>${wFace(w.text)}<span><b>${esc(wNm(w.text))}</b>${r.length?esc(r.join(" · ")):"Everyone spins for their own drink."}<small class="fv-wcap">${mine?"Your drink: "+esc(mine):"Tap to spin for your drink"}</small></span></div>`};
 const fvMin=ms=>ms<60000?"<1 min":Math.floor(ms/60000)+" min";
 const fvHere=ms=>ms<60000?"Just arrived":fvMin(ms)+" here";
 // rooftops so far: every one you've left, newest first (the one you're at is the card above). The page scrolls; a crawl

@@ -3176,8 +3176,8 @@ Object.assign(WIC,{spin:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12
  shaker:'<path d="M7.5 9h9L15 21H9z"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2"/><path d="M11 3h2"/>',
  house:'<path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>',
  dspin:'<circle cx="8" cy="12" r="6.5"/><circle cx="16" cy="12" r="6.5"/><path d="M8 7.5v9M3.5 12h9"/>'});
-const DRINK_SAY=["a spritz","a martini","a margarita","a beer","a glass of wine","a negroni","a mojito","an espresso martini"];
-const SPIN_DRINKS=["Spritz","Martini","Margarita","Beer","Wine","Negroni","Mojito","Espresso martini"];
+const DRINK_SAY=["a spritz","a margarita","a beer","a glass of wine","a vodka lime soda","an espresso martini"];
+const SPIN_DRINKS=["Spritz","Margarita","Beer","Wine","Vodka lime soda","Espresso martini"];
 const PACKS=[
  {id:"house",name:"House Rules",logo:"house",line:"Wildcards that hit the whole group.",prev:[0,1,6],cards:[
   {n:"Every colour",ic:"drop",t:"Everyone orders a different colour drink."},
@@ -3193,14 +3193,14 @@ const PACKS=[
   {n:"Last search",ic:"search",t:"Read out your last Google search. The group picks a drink to match it."},
   {n:"Lock screen",ic:"phone",t:"Order a drink that matches your lock screen."}]},
  {id:"spin",name:"Double Spin",logo:"dspin",line:"Wildcards that hit the whole group.",prev:[0,9,6],cards:[
-  {n:"Spirit spin",ic:"bottle",t:"Everyone orders something with the spirit it lands on.",spin:["Gin","Vodka","Tequila","Rum","Whisky","Mezcal"],lead:"Everyone orders something with"},
-  {n:"Colour spin",ic:"drop",t:"Everyone orders that colour.",spin:["Red","Orange","Yellow","Green","Blue","Pink","Clear"],lead:"Everyone orders something"},
+  {n:"Spirit spin",ic:"bottle",t:"Everyone orders something with the spirit it lands on.",spin:["Gin","Vodka","Tequila","Rum","Whisky"],lead:"Everyone orders something with"},
+  {n:"Colour spin",ic:"drop",t:"Everyone orders that colour.",spin:["Red","Orange","Yellow","Pink","Clear"],lead:"Everyone orders something"},
   {n:"Flavour spin",ic:"bubbles",t:"Sweet, sour, bitter or fizzy. Everyone orders to match.",spin:["Sweet","Sour","Bitter","Fizzy"],lead:"Everyone orders something"},
   {n:"Glass spin",ic:"coupe",t:"Everyone orders something served in that glass.",spin:["Martini glass","Coupe","Highball","Rocks glass","Wine glass","Flute"],lead:"Everyone orders something served in a"},
   {n:"Fruit spin",ic:"citrus",t:"Everyone orders something with that fruit in it.",spin:["Lime","Lemon","Orange","Pineapple","Berries","Passionfruit","Watermelon"],lead:"Everyone orders something with"},
   {n:"Order spin",ic:"bell",t:"Bartender's choice, a stranger's pick, or the next table's drink.",spin:["Bartender's choice","A stranger's pick","The next table's drink"],lead:"Everyone orders",say:["whatever the bartender picks","whatever a stranger picks","whatever the next table's drinking"]},
   {n:"Shot spin",ic:"shot",t:"Shots all round, half of you, or one of you.",spin:["Everyone","Half of you","One of you"],lead:"Shots for",say:["everyone","half of you","one of you"]},
-  {n:"Passport spin",ic:"globe",t:"Spin for a country. Everyone orders a drink from it.",spin:["Mexico","Italy","Cuba","Japan","Brazil","Ireland","France"],lead:"Everyone orders a drink from",keep:1},
+  {n:"Passport spin",ic:"globe",t:"Spin for a country. Everyone orders a drink from it.",spin:["Mexico","Italy","Australia","Ireland","France"],lead:"Everyone orders a drink from",keep:1},
   {n:"Your spin",ic:"phone",t:"Pass the phone. Everyone spins for their own drink.",spin:SPIN_DRINKS,multi:1,lead:"Pass the phone. Everyone spins for their own drink."},
   {n:"Story spin",ic:"book",t:"Your first drink, your holiday drink or your guilty pleasure. Everyone orders their own answer.",spin:["First drink","Holiday drink","Guilty pleasure"],lead:"Everyone orders their",say:["first ever drink","go-to holiday drink","guilty pleasure drink"]},
   {n:"Usual spin",ic:"repeat",t:"Your usual, the opposite of your usual, or something you've never tried.",spin:["Your usual","The opposite","Never tried"],lead:"Everyone orders",say:["their usual","the opposite of their usual","something they've never tried"]},
@@ -3212,6 +3212,8 @@ const packById=id=>PACKS.find(p=>p.id===id);
 const wLead=m=>m&&m.lead?(m.multi?m.lead:m.lead+"…"):m?m.t:"";
 const wSay=(m,r)=>{const i=m.spin?m.spin.indexOf(r):-1;if(i<0)return r;if(m.say)return m.say[i];return m.keep?r:r.charAt(0).toLowerCase()+r.slice(1)};
 const wFull=(m,res)=>m.multi?m.lead+" "+res.join(", "):m.lead+" "+wSay(m,res[res.length-1])+".";
+const wKey=w=>w&&w.text?w.id+"@"+(w.t0||w.leg||0):"";   // one deal of a card: followers' Your spin results are matched to it
+const liveFollowing=()=>{try{return !!(liveDoc&&!liveDoc.ended&&memN(liveDoc)>0)}catch(e){return false}};   // cloud code loads after this
 const wFill=(m,res)=>m.multi?res.join(" · "):"…"+wSay(m,res[res.length-1])+".";
 // each deck's own mark: on its row, its pack and the cards you haven't landed yet
 const deckLogo=id=>{const p=packById(id);return p&&p.logo?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WIC[p.logo]}</svg>`:I.sparkle};
@@ -3238,7 +3240,7 @@ function wildInner(g,w,o){o=o||{};const m=WMETA[w.text];
   const res=(w.res||[]).length?(m.spin?`<span class="wfill">${esc(wFill(m,w.res))}</span>`:`<small class="wres">${w.res.map(esc).join(" · ")}</small>`):"";
   let walk="";if(m.walk&&here&&w.t0){const a=g.visits.find(v=>v.id===w.id&&v.leftAt==null);if(a&&a.arrivedAt>w.t0)walk=`<small class="wres">The walk took ${Math.max(1,Math.round((a.arrivedAt-w.t0)/60000))} min</small>`}
   // a spin card waiting to be spun: the whole card is the control, with one line saying so
-  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<small class="wcap" data-wspin="1">${m.multi&&(w.res||[]).length?"Tap for the next person":"Tap to spin"}</small>`:"";
+  const btn=m.spin&&(here||!m.seal)&&!o.follow&&(m.multi||!(w.res||[]).length)?`<small class="wcap" data-wspin="1">${m.multi&&(w.res||[]).length?"Tap for the next person":m.multi&&g&&g.live&&liveFollowing()?"Tap to spin for anyone not following":"Tap to spin"}</small>`:"";
   return `${ic}<span><b>${esc(m.n)}</b>${esc(wLead(m))}${res}${walk}${lastLine(w)}${btn}</span>`}
 const lastLine=w=>w&&w.last?`<small class="wres">Last new Rooftop Originals card</small>`:"";
 function wildBox(g,w,cls,o){return `<div class="wild${cls||""}" data-t="${esc(w.text)}">${wildInner(g,w,o)}</div>`}
@@ -3247,16 +3249,17 @@ const WK=k=>S.test?"t"+k:k;
 const WP=()=>S[WK("wplayed")]||(S[WK("wplayed")]={});
 const markPlayed=t=>{if(!t||ALLW.indexOf(t)<0)return;WP()[t]=1};
 // the wheel for a spin card. trial: a preview from the pack sheet, nothing is kept
-function wildSpin(t,trial,back){const m=WMETA[t];if(!m||!m.spin)return;const g=G();
+// mine: a follower spinning for their own drink, handed the result
+function wildSpin(t,trial,back,mine){const m=WMETA[t];if(!m||!m.spin)return;const g=G();
   const draw=()=>{const w=g&&g.wild&&g.wild.text===t?g.wild:null,done=w&&(w.res||[]);
-    sheet(`<h3>${esc(m.n)}</h3><p class="note">${esc(wLead(m))}</p><div class="demo wsdemo"><div id="wsBox"><div id="wsReel" class="demoreel"></div></div></div><div id="wsOut"></div>`,()=>{
+    sheet(`<h3>${mine?"Your spin":esc(m.n)}</h3><p class="note">${mine?"Spin for your own drink.":esc(wLead(m))}</p><div class="demo wsdemo"><div id="wsBox"><div id="wsReel" class="demoreel"></div></div></div><div id="wsOut"></div>`,()=>{
       const box=$("wsBox");box.addEventListener("touchstart",e=>e.stopPropagation(),{passive:true});
       const R=makeReel($("wsReel"),m.spin,{hint:true,onRelease:vel=>{if(R.busy)return false;go_(vel)}});
       const go_=vel=>{const pick=m.spin[Math.floor(Math.random()*m.spin.length)];
         R.spinTo(pick,vel===undefined?-(30+Math.random()*20):vel,()=>{buzz(20);box.innerHTML=`<div class="wsres">${esc(pick)}</div>`;
-          if(!trial&&G()&&G().wild&&G().wild.text===t){const ww=G().wild;ww.res=m.multi?(ww.res||[]).concat([pick]):[pick];save();if(S.route==="play")renderPlay()}
-          const more=m.multi||trial;
-          $("wsOut").innerHTML=`${m.multi?"":`<p class="wsfull">${esc(m.lead)} <span>${esc(wSay(m,pick))}.</span></p>`}<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the deck":"Done"}</button></div>`;
+          if(mine)mine(pick);else if(!trial&&G()&&G().wild&&G().wild.text===t){const ww=G().wild;ww.res=m.multi?(ww.res||[]).concat([pick]):[pick];save();if(S.route==="play")renderPlay()}
+          const more=!mine&&(m.multi||trial);
+          $("wsOut").innerHTML=`${m.multi?(mine?`<p class="wsfull">Your drink: <span>${esc(pick)}</span></p>`:""):`<p class="wsfull">${esc(m.lead)} <span>${esc(wSay(m,pick))}.</span></p>`}<div class="acts">${more?`<button class="btn" type="button" id="wsAgain">${trial?"Spin again":"Next person"}</button>`:""}<button class="btn ${more?"line":""}" type="button" id="wsDone">${trial&&back?"Back to the deck":"Done"}</button></div>`;
           if($("wsAgain"))$("wsAgain").onclick=draw;$("wsDone").onclick=()=>{if(trial&&back)back();else closeSheet()}})};
       $("wsOut").innerHTML=`<button class="btn" type="button" id="wsGo">Spin the wildcard</button>`;$("wsGo").onclick=()=>{$("wsOut").innerHTML="";go_()};
     })};
