@@ -534,7 +534,7 @@ function joinShow(){const q=joinQ;if(!q||document.hidden||invOpen())return;joinQ
   const old=$("joinBan");if(old)old.remove();
   const ban=document.createElement("div");ban.id="joinBan";ban.className="joinban";ban.setAttribute("role","status");
   const flyers=q.list.slice(-3);ban.innerHTML=`<span class="jbav">${flyers.map(([u,m])=>avHTML(u,m)).join("")}</span><span class="jbt">${txt}</span>`;
-  document.body.appendChild(ban);requestAnimationFrame(()=>requestAnimationFrame(()=>ban.classList.add("on")));setTimeout(()=>buzz([30,60,30]),220);   // the buzz lands as it pops through
+  document.body.appendChild(ban);requestAnimationFrame(()=>requestAnimationFrame(()=>ban.classList.add("on")));setTimeout(()=>buzz([30,60,30]),120);   // the buzz lands as it pops in
   setTimeout(()=>{const pile=fv?$("fvPile"):$("pPile"),vis=pile&&pile.offsetParent!==null&&!pile.hidden;
     if(!vis){ban.classList.remove("on");setTimeout(()=>ban.remove(),300);joinRelease(uids);return}
     // lay the pile out with the newcomers in place but invisible, so each face flies to its exact spot

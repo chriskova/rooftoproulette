@@ -2063,14 +2063,11 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 .pv.pop{animation:avpop .55s cubic-bezier(.3,1.6,.5,1)}@keyframes avpop{0%{transform:scale(.4)}100%{transform:scale(1)}}
 .fpile .pv.ghost{visibility:hidden}.fpile.landing .pinvb{opacity:0}
 .fpile .land{animation:avland .5s ease-out}@keyframes avland{0%{transform:scale(1)}35%{transform:scale(1.18)}70%{transform:scale(.96)}100%{transform:scale(1)}}
-/* pulled through a hole: squeezed narrow and tiny, stretches out past full size, wobbles, settles. From its own centre. */
-.fpile.pilein{animation:pilein .62s cubic-bezier(.25,.8,.3,1) both;transform-origin:center}
-@keyframes pilein{0%{opacity:0;transform:scale(.12,.32)}35%{opacity:1;transform:scale(.7,1.12)}58%{transform:scale(1.12,.9)}78%{transform:scale(.96,1.04)}100%{opacity:1;transform:none}}
+.fpile.pilein{animation:pilein .6s cubic-bezier(.3,1.45,.5,1) both;transform-origin:center}@keyframes pilein{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:none}}
 .plist{display:flex;flex-direction:column;margin-top:var(--gap-label)}.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-child{border-top:0}
 .prow .pv.host{margin:0 2px}.prow .pn{flex:1;min-width:0;font-weight:650;font-size:15.5px}.prow .pn small{color:var(--muted);font-weight:500}.ptag{font-size:12px;font-weight:800;color:var(--amber-text);background:var(--amber-soft);border-radius:99px;padding:3px 9px;white-space:nowrap}
 .joinban{position:fixed;left:50%;bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 14px);z-index:3200;display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:7px 14px 7px 7px;border-radius:99px;background:var(--s1);border:1px solid var(--line);box-shadow:0 10px 30px var(--sh);transform:translate(-50%,16px);opacity:0;transition:transform .35s cubic-bezier(.3,1.4,.5,1),opacity .25s}
-.joinban.on{transform:translate(-50%,0);opacity:1;animation:banin .62s cubic-bezier(.25,.8,.3,1) both}
-@keyframes banin{0%{opacity:0;transform:translate(-50%,0) scale(.12,.32)}35%{opacity:1;transform:translate(-50%,0) scale(.7,1.12)}58%{transform:translate(-50%,0) scale(1.08,.92)}78%{transform:translate(-50%,0) scale(.97,1.03)}100%{opacity:1;transform:translate(-50%,0)}}.joinban .jbav{display:flex}.joinban .jbav .pv{width:32px;height:32px;font-size:13px;box-shadow:0 0 0 2px var(--s1)}.joinban .jbav .pv+.pv{margin-left:-8px}
+.joinban.on{transform:translate(-50%,0);opacity:1;animation:banin .6s cubic-bezier(.3,1.45,.5,1) both}@keyframes banin{0%{opacity:0;transform:translate(-50%,0) scale(.4)}100%{opacity:1;transform:translate(-50%,0)}}.joinban .jbav{display:flex}.joinban .jbav .pv{width:32px;height:32px;font-size:13px;box-shadow:0 0 0 2px var(--s1)}.joinban .jbav .pv+.pv{margin-left:-8px}
 .joinban .jbt{font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
 .joinban.fly{background:transparent;border-color:transparent;box-shadow:none;transition:background .25s,border-color .25s,box-shadow .25s}.joinban.fly .jbt{opacity:0}
 .fv-top{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:start;gap:6px;flex:none}
