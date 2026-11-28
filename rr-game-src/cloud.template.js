@@ -367,15 +367,12 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
 function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
   const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
-  // the host can tap anyone following to hand them the spin
-  const canGive=!!(liveDoc&&me&&liveDoc.host===me&&G()&&G().live===id);
-  const joined=inn.map(([u,m])=>{const tag=canGive?"button":"div";return `<${tag} ${canGive?`type="button" data-gsu="${u}"`:""} class="fr in${canGive?" give":""}${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></${tag}>`});
+  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
   const rest=mates.filter(m=>!inU.has(m.uid)&&m.uid!==(liveDoc&&liveDoc.host)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
-  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>${canGive&&inn.length?`<p class="note givenote">Tap a face to hand over the spin</p>`:""}`:""}
+  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
 function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
-    root.querySelectorAll("[data-gsu]").forEach(b=>b.onclick=()=>giveOneSheet(b.dataset.gsu));
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}
@@ -446,7 +443,10 @@ function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="current
 function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&memN(liveDoc)>0?liveDoc:null,on=cloudOn()&&g&&!g.ended&&!g.demo&&(g.started||!!d);   // before the clock starts, setup's big Invite button does the job
   b.hidden=!on;if(!on)return;b.dataset.inv="1";
   if(d)paintPile(b,d,false);else{const h=invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
-  b.setAttribute("aria-label",d?"Who's following. Invite friends":"Invite friends");b.onclick=()=>liveInvite()}
+  b.setAttribute("aria-label",d?"Who's following. Invite friends":"Invite friends");b.onclick=e=>pileTap(e,liveInvite)}
+// The faces as one button: nobody following yet opens the invite; once someone is, it opens who's on the crawl,
+// which has its own Invite friends button (like Spotify Jam: View guests and Invite are separate)
+function pileTap(e,inv){if(liveDoc&&!liveDoc.ended&&memN(liveDoc)>0)peopleSheet();else inv()}
 const invSolo=()=>`<span class="pv inv solo">${MIX_INVI}</span>`;
 // Followers invite too: same link, and anyone who joins that way just follows. The host still holds the spin.
 function followInvite(){const d=liveDoc,id=S.follow||(d&&d.id);if(!d||!id||d.ended){peopleSheet();return}
@@ -472,8 +472,8 @@ function fitPile(el,d){if(!el||!d)return;const ck=$("fvClock"),row=el.parentNode
   const fits=()=>{const a=el.getBoundingClientRect(),r=document.createRange();r.selectNodeContents(ck);return a.left>=r.getBoundingClientRect().right+3};
   for(const c of [4,3,2,1])for(const roomy of [true,false]){row.classList.toggle("roomy",roomy);paintPile(el,d,true,null,c);if(!ck||!el.offsetParent||fits())return}}
 function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlPeople(d),names=L.map(([,m])=>m.n),host=d.host===me&&G()&&G().live;
-  sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3><div class="plist">${L.map(([u,m])=>`<div class="prow">${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</div>`).join("")}</div>
-    ${host?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();liveInvite()}})}
+  sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3><div class="plist">${L.map(([u,m])=>`<div class="prow">${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:host&&u!==me?`<button class="btn sm line pgive" type="button" data-gsu="${u}">Give the spin</button>`:""}</div>`).join("")}</div>
+    ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=()=>giveOneSheet(b.dataset.gsu))})}
 
 // ---------- someone joined: a banner for everyone on the crawl ----------
 // In the app only (no phone notification). Shown when it happens, or when you next open the app if that's within
@@ -529,7 +529,7 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
     <div class="fv-r"><button type="button" class="fpile" id="fvPile" data-inv="1" aria-label="Who's on this crawl. Invite friends"></button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
-  $("fvMenu").onclick=followMenu;$("fvPile").onclick=followInvite;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
+  $("fvMenu").onclick=followMenu;$("fvPile").onclick=e=>pileTap(e,followInvite);if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
   fvStretch(fv.querySelector(".fv-body"));
@@ -745,7 +745,7 @@ function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{}).f
 // from the invite sheet: tap a follower's face, confirm, then the usual offer goes to their phone
 function giveOneSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"them");
   sheet(`<h3>Give ${nm} the spin?</h3><p class="note">${nm} spins and tracks the crawl. You keep following.</p><div class="acts"><button class="btn" type="button" id="goY">Give the spin</button><button class="btn dark" type="button" id="goN">Cancel</button></div>`,
-    ()=>{$("goN").onclick=()=>liveInvite();$("goY").onclick=()=>offerSpin(u)})}
+    ()=>{$("goN").onclick=peopleSheet;$("goY").onclick=()=>offerSpin(u)})}
 // the offer: their phone asks them; it's only handed over once they say yes (30 seconds, or Cancel)
 const OFFER_MS=30000;let offerT=0;
 async function offerSpin(u){const d=liveDoc,g=G(),m=d&&d.members&&d.members[u];if(!g||!m)return;const at=Date.now(),who=esc(nFirst(m.n)||"Friend");
