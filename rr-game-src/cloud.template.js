@@ -374,7 +374,8 @@ function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!docum
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
 function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
-      try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
+      try{const B=await cloud();if(liveDoc&&liveDoc.kicked&&liveDoc.kicked[u]&&liveDoc.host===ME.uid)await B.tx(`live/${id}`,d=>{if(!d||!d.kicked||!d.kicked[u])return undefined;const k=Object.assign({},d.kicked);delete k[u];return Object.assign({},d,{kicked:k})});   // inviting someone you removed lets them back in
+        await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}
 invParts.sent={};
 async function inviteSheet(id,head,foot){const P=await invParts(id);sheet(head+P.html+(foot||""),()=>{P.bind($("sheetBody"));const l=$("sheetBody").querySelector('[data-iv="later"]');if(l)l.onclick=closeSheet})}
@@ -443,7 +444,7 @@ function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d
 // the people button on the crawl screen: a plus until someone follows, then how many are following
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
 // Top left, under the drinks count: the invite button. Faces of whoever's following, then a + to invite more.
-function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host&&!joinHold.has(u))?liveDoc:null,on=cloudOn()&&g&&!g.ended&&!g.demo&&g.started&&(g.visits.length>0||(!!g.target&&!spinning));   // before the first rooftop lands, the big Invite button does the job
+function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host&&!joinHold.has(u))?liveDoc:null,anyone=!!(g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host)),on=cloudOn()&&g&&!g.ended&&!g.demo&&((g.started&&(g.visits.length>0||(!!g.target&&!spinning)))||anyone);   // someone following: always a spot for their face, even before the first rooftop   // before the first rooftop lands, the big Invite button does the job
   const was=b._on;b._on=!!on;b.hidden=!on;if(!on)return;b.dataset.inv="1";
   if(was===false){b.classList.remove("pilein");void b.offsetWidth;b.classList.add("pilein")}   // just took over from the big button: springs in from its spot
   if(d)paintPile(b,d,false);else{const h=invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
@@ -480,24 +481,26 @@ function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlP
   // the host gets a ⋮ on each follower (like the song rows in Spotify or YouTube Music); it opens that person's panel
   const DOTS='<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5.5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="18.5" r="1.9"/></svg>';
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3><div class="plist">${L.map(([u,m])=>{const tap=host&&!m.host&&u!==me;return `<div class="prow${tap?" ptap":""}" ${tap?`data-gsu="${u}"`:""}>${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}${tap?`<button class="pmore" type="button" aria-label="Options for ${esc(nFirst(m.n)||"this follower")}">${DOTS}</button>`:""}</div>`}).join("")}</div>
-    ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=()=>personSheet(b.dataset.gsu))})}
-// the host taps a follower: a second panel slides up over the list (the list never changes size), then a centred alert confirms
-function layerClose(){document.querySelectorAll("#sheet .lyr,#sheet .lyalert").forEach(x=>{x.classList.remove("on");setTimeout(()=>x.remove(),220)})}
-function layerPanel(html,bind){layerClose();const L=document.createElement("div");L.className="lyr";L.innerHTML=`<div class="lydim"></div><div class="lyp"><div class="lyh"></div>${html}</div>`;$("sheet").appendChild(L);
-  requestAnimationFrame(()=>L.classList.add("on"));L.querySelector(".lydim").onclick=layerClose;
-  const p=L.querySelector(".lyp");let y0=null,dy=0;p.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;dy=0;p.style.transition="none"},{passive:true});
-  p.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);p.style.transform=`translateY(${dy}px)`},{passive:true});
-  p.addEventListener("touchend",()=>{p.style.transition="";p.style.transform="";if(dy>70)layerClose();y0=null});if(bind)bind(L)}
+    ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=e=>personSheet(b.dataset.gsu,b.querySelector(".pmore")))})}
+// The host taps a follower's dots: a small menu floats out from them (Android/Material style), then a dialog confirms.
+function layerClose(){document.querySelectorAll("#sheet .fmenu,#sheet .fmback,#sheet .lyalert").forEach(x=>x.remove())}
+function rowMenu(anchor,items){layerClose();const r=anchor.getBoundingClientRect(),bk=document.createElement("div");bk.className="fmback";bk.onclick=layerClose;$("sheet").appendChild(bk);
+  const M=document.createElement("div");M.className="fmenu";M.setAttribute("role","menu");
+  M.innerHTML=items.map((it,i)=>`<button type="button" role="menuitem" data-i="${i}" class="${it.red?"red":""}">${it.icon}<span>${it.label}</span></button>`).join("");$("sheet").appendChild(M);
+  const h=M.offsetHeight,w=M.offsetWidth,below=r.bottom+6+h<window.innerHeight-12;
+  M.style.left=Math.max(12,Math.min(r.right-w,window.innerWidth-w-12))+"px";M.style.top=(below?r.bottom+4:r.top-h-4)+"px";M.style.transformOrigin=below?"top right":"bottom right";
+  requestAnimationFrame(()=>M.classList.add("on"));M.querySelectorAll("[data-i]").forEach(bn=>bn.onclick=()=>{layerClose();items[+bn.dataset.i].act()})}
 function layerAlert(title,body,yes,danger,onYes){const A=document.createElement("div");A.className="lyalert";
-  A.innerHTML=`<div class="lyab" role="alertdialog"><h4>${title}</h4><p>${body}</p><div class="lyabt"><button type="button" data-a="n">Cancel</button><button type="button" data-a="y" class="${danger?"red":"go"}">${yes}</button></div></div>`;
-  $("sheet").appendChild(A);requestAnimationFrame(()=>A.classList.add("on"));const shut=()=>{A.classList.remove("on");setTimeout(()=>A.remove(),200)};
+  A.innerHTML=`<div class="lyab" role="alertdialog"><h4>${title}</h4><p>${body}</p><div class="lyabt"><button type="button" data-a="n">Cancel</button><button type="button" data-a="y" class="${danger?"red":""}">${yes}</button></div></div>`;
+  $("sheet").appendChild(A);requestAnimationFrame(()=>A.classList.add("on"));const shut=()=>{A.classList.remove("on");setTimeout(()=>A.remove(),180)};
   A.querySelector('[data-a="n"]').onclick=shut;A.onclick=e=>{if(e.target===A)shut()};A.querySelector('[data-a="y"]').onclick=()=>{shut();onYes()}}
-function personSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"Friend");
-  layerPanel(`<div class="lyn">${avHTML(u,m)}<span><b>${esc(m.n||"Friend")}</b><small>Following</small></span></div><div class="lyg"><button class="lyrow" type="button" data-p="give">${I.redo}<span>Give the spin</span></button><button class="lyrow red" type="button" data-p="rem">${I.x}<span>Remove from crawl</span></button></div>`,L=>{
-    L.querySelector('[data-p="give"]').onclick=()=>layerAlert(`Give ${nm} the spin?`,`${nm} spins and tracks the crawl. You keep following.`,"Give the spin",false,()=>{layerClose();offerSpin(u)});
-    L.querySelector('[data-p="rem"]').onclick=()=>layerAlert(`Remove ${nm}?`,`${nm} stops following and can't rejoin this crawl.`,"Remove",true,()=>{layerClose();removeFollower(u)})})}
+function personSheet(u,anchor){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"Friend");
+  anchor=anchor||document.querySelector(`#sheetBody [data-gsu="${u}"] .pmore`);if(!anchor)return;
+  rowMenu(anchor,[{icon:I.redo,label:"Give the spin",act:()=>layerAlert(`Give ${nm} the spin?`,`${nm} spins and tracks the crawl. You keep following.`,"Give the spin",false,()=>offerSpin(u))},
+    {icon:I.x,label:"Remove from crawl",red:true,act:()=>layerAlert(`Remove ${nm}?`,`${nm} stops following. Only you can invite them back.`,"Remove",true,()=>removeFollower(u))}])}
 async function removeFollower(u){const g=G();if(!g||!g.live)return;const B=await cloud();
   try{await B.tx(`live/${g.live}`,d=>{if(!d||d.host!==ME.uid)return undefined;const members=Object.assign({},d.members);delete members[u];return Object.assign({},d,{members,kicked:Object.assign({},d.kicked||{},{[u]:Date.now()})})});
+    if(invParts.sent[g.live])delete invParts.sent[g.live][u];joinDone.delete(u);   // they show as invitable again on the invite screen
     track("live_remove");peopleSheet()}catch(e){toast("Couldn't remove them. Check your signal.",3000)}}
 
 // ---------- someone joined: a banner for everyone on the crawl ----------
@@ -535,7 +538,7 @@ function joinShow(){const q=joinQ;if(!q||document.hidden||invOpen())return;joinQ
         dx=T.left+T.width/2-(r.left+r.width/2),dy=T.top+T.height/2-(r.top+r.height/2),sc=T.height/r.height;
       a.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${sc})`}],{duration:560,delay:i*70,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"})});
     setTimeout(()=>{ban.remove();joinRelease(uids,uids)},560+(avs.length-1)*70)},2000)}
-$("sheet").addEventListener("close",()=>{document.querySelectorAll("#sheet .lyr,#sheet .lyalert").forEach(x=>x.remove());setTimeout(()=>{if(joinQ)joinShow()},250)});
+$("sheet").addEventListener("close",()=>{layerClose();setTimeout(()=>{if(joinQ)joinShow()},250)});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&joinQ)setTimeout(joinShow,400)});
 
 // test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
