@@ -885,7 +885,7 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
 
 // menu rows during a crawl
 function liveMenuRows(g,r){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
-  return g.live&&n?r("mGive",I.redo,"Give the spin to…","They spin, you follow"):""}
+  return g.live&&n?r("mGive",I.redo,"Give the spin to…","Hand over the spin · You follow along"):""}
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows

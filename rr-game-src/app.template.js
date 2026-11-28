@@ -2833,7 +2833,7 @@ function openMenu(){
   sheet(`<h3>Menu</h3><div class="mgrps">
     <div class="sgrp">
     ${cr?r("mZone",I.move,"Spin zone",g.cz.type==="list"?"Your "+listName(g.cz.list):zoneTxt(g)):""}
-    ${r("mMove",I.move,"Move your zone",free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl",(cr?"hidden ":"")+(canMove?"":"disabled style='opacity:.4'"))}
+    ${r("mMove",I.move,"Move your zone","Shift it or make it bigger · "+(free?"Free, zone nearly empty":g.voluntaryUsed?"Used this crawl":"Once per crawl"),(cr?"hidden ":"")+(canMove?"":"disabled style='opacity:.4'"))}
     ${cr||g.demo?"":r("mWild",I.sparkle,"Wildcards",esc(deckLbl()))}
     ${liveMenuRows(g,r)}
     ${g.clipN?r("mClips",I.camera,"Clips",g.clipN+" from this crawl"):""}
@@ -2843,8 +2843,8 @@ function openMenu(){
     ${r("mHow",I.help,"How it works")}
     </div>
     <div class="sgrp">
-    ${S.test?r("mHome",I.back,"Home (test mode)","Drops this crawl. Nothing goes on your tab"):""}
-    <button class="strow danger" type="button" id="mEnd">${I.flag}<span class="t"><b>${g.started?"End crawl":"Cancel crawl"}</b><small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
+    ${S.test?r("mHome",I.back,"Home (test mode)","Drop this crawl · Not saved to My Tab"):""}
+    <button class="strow danger" type="button" id="mEnd">${I.flag}<span class="t"><b>${g.started?"End crawl":"Cancel crawl"}</b><small>${g.started?(cr?"Finish here · Saved to My Tab":"Stop the clock · Saved to My Tab"):"Back to home · Nothing's saved yet"}</small></span></button>
     </div>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>crawlMap({move:true,pre:true});
