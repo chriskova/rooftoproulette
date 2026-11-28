@@ -416,8 +416,9 @@ function onLive(id,d){
   if(g&&g.live===id&&d.host!==me){   // the spin was handed over or taken: this phone becomes a follower
     if(fv&&fvPrev)closeFollow();g.handedOff=true;S.game=null;S.follow=id;save();stopWatch();closeSheet();toast(`${esc(nFirst(d.hostName)||"Someone else")} has the spin now.`,3500);go("home");openFollow();return}
   if(S.follow===id&&d.host===me&&!d.ended){takeSpin(d);return}   // handed to this phone
+  if(S.follow===id&&d.kicked&&me&&d.kicked[me]){leaveFollow();toast(`You've been removed from ${nFirst(d.hostName)?esc(nFirst(d.hostName))+"'s":"this"} crawl.`,3500);go("home");return}
   if(S.follow===id&&d.cancelled){S.follow=null;save();if(fv)closeFollow();toast(`${esc(nFirst(d.hostName)||"The host")} called off the crawl.`,3500);go("home");return}
-  if((S.follow===id||(g&&g.live===id))&&!(($("sheet").open&&$("invRow")&&$("sheet").contains($("invRow")))))joinCheck(d,id);
+  if(S.follow===id||(g&&g.live===id))joinCheck(d,id,memFresh(d,id));
   if(S.follow===id){if(d.ended)followEnded(d);else offerAsk(d);paintFollow();if(!fv){let gg={};try{gg=JSON.parse(d.g)}catch(e){}followNote(d,gg,Date.now()+(d.off||0))}}
   if(g&&g.live===id){paintMembers(d,id);if(d.host===me)offerWatch(d);if(d.host===me){const P=hostPongs(d);if(P)cloud().then(B=>B.set(`live/${id}`,{pongs:P,beat:Date.now()},true)).catch(()=>{})}}}
 // A follower opening the menu asks "are you there?" (their member entry gets a ping time). The host's phone answers
@@ -433,6 +434,8 @@ document.addEventListener("visibilitychange",()=>hostAway(document.hidden));
 addEventListener("pagehide",()=>hostAway(true));
 const memN=d=>d?Object.keys(d.members||{}).filter(u=>u!==d.host).length:0;
 let memSeen=null;
+// who's appeared in the doc since this phone last saw it (for the join banner); paintMembers keeps its own copy for the invite sheet
+let memPrev=null;function memFresh(d,id){const ids=Object.keys(d.members||{}),p=memPrev&&memPrev.id===id?memPrev.s:null;memPrev={id,s:new Set(ids)};return p?new Set(ids.filter(u=>!p.has(u))):null}
 function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d.host),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
   memSeen={id,s:new Set(ids)};
   if(fresh.size)invRefresh(fresh);
@@ -440,8 +443,9 @@ function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d
 // the people button on the crawl screen: a plus until someone follows, then how many are following
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
 // Top left, under the drinks count: the invite button. Faces of whoever's following, then a + to invite more.
-function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&memN(liveDoc)>0?liveDoc:null,on=cloudOn()&&g&&!g.ended&&!g.demo&&(g.started||!!d);   // before the clock starts, setup's big Invite button does the job
-  b.hidden=!on;if(!on)return;b.dataset.inv="1";
+function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host&&!joinHold.has(u))?liveDoc:null,on=cloudOn()&&g&&!g.ended&&!g.demo&&g.started&&(g.visits.length>0||(!!g.target&&!spinning));   // before the first rooftop lands, the big Invite button does the job
+  const was=b._on;b._on=!!on;b.hidden=!on;if(!on)return;b.dataset.inv="1";
+  if(was===false){b.classList.remove("pilein");void b.offsetWidth;b.classList.add("pilein")}   // just took over from the big button: springs in from its spot
   if(d)paintPile(b,d,false);else{const h=invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
   b.setAttribute("aria-label",d?"Who's following. Invite friends":"Invite friends");b.onclick=e=>pileTap(e,liveInvite)}
 // The faces as one button: nobody following yet opens the invite; once someone is, it opens who's on the crawl,
@@ -462,8 +466,8 @@ const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="pv ${c
 // everyone on it, the host first
 const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Object.entries(d.members||{}).filter(([u])=>u!==d.host).sort((a,b)=>(a[1].j||0)-(b[1].j||0))):[];
 // up to three overlapping faces, then +N; never yourself
-function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
-  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"")
+function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)&&!joinHold.has(u)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
+  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":"")+(pileGhost&&pileGhost.has(u)?" ghost":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"")
     +(el.dataset.inv?(show.length||more>0?`<span class="pinvb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>`:invSolo()):"");   // an amber + on the last face: viewing who's on comes first, inviting is the extra
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 // as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
@@ -473,31 +477,55 @@ function fitPile(el,d){if(!el||!d)return;const ck=$("fvClock"),row=el.parentNode
   for(const c of [4,3,2,1])for(const roomy of [true,false]){row.classList.toggle("roomy",roomy);paintPile(el,d,true,null,c);if(!ck||!el.offsetParent||fits())return}}
 function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlPeople(d),names=L.map(([,m])=>m.n),host=d.host===me&&G()&&G().live;
   // the host taps a follower to hand over the spin; one line under the heading says so
-  sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3>${host?`<p class="note pnote">Tap a follower to give them the spin</p>`:""}<div class="plist">${L.map(([u,m])=>{const tap=host&&!m.host&&u!==me,tag=tap?"button":"div";return `<${tag} class="prow${tap?" ptap":""}" ${tap?`type="button" data-gsu="${u}"`:""}>${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</${tag}>`}).join("")}</div>
-    ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=()=>giveOneSheet(b.dataset.gsu))})}
+  sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3>${host?`<p class="note pnote">Tap a follower to give them the spin or remove them</p>`:""}<div class="plist">${L.map(([u,m])=>{const tap=host&&!m.host&&u!==me,tag=tap?"button":"div";return `<${tag} class="prow${tap?" ptap":""}" ${tap?`type="button" data-gsu="${u}"`:""}>${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</${tag}>`}).join("")}</div>
+    ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=()=>personSheet(b.dataset.gsu))})}
+// the host taps a follower: hand them the spin, or take them off the crawl
+function personSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m){peopleSheet();return}const nm=esc(nFirst(m.n)||"Friend");
+  sheet(`<h3>${nm}</h3><div class="mgrps"><div class="sgrp"><button class="strow" type="button" id="psGive">${I.redo}<span class="t"><b>Give the spin</b></span></button>
+    <button class="strow danger" type="button" id="psRem">${I.x}<span class="t"><b>Remove from crawl</b></span></button></div></div>`,()=>{
+    $("psGive").onclick=()=>giveOneSheet(u);
+    $("psRem").onclick=()=>sheet(`<h3>Remove ${nm}?</h3><p class="note">${nm} stops following and can't rejoin this crawl.</p><div class="acts"><button class="btn" type="button" id="rmY" style="background:var(--red);color:#fff">Remove</button><button class="btn dark" type="button" id="rmN">Cancel</button></div>`,
+      ()=>{$("rmN").onclick=()=>personSheet(u);$("rmY").onclick=()=>removeFollower(u)})})}
+async function removeFollower(u){const g=G();if(!g||!g.live)return;const B=await cloud();
+  try{await B.tx(`live/${g.live}`,d=>{if(!d||d.host!==ME.uid)return undefined;const members=Object.assign({},d.members);delete members[u];return Object.assign({},d,{members,kicked:Object.assign({},d.kicked||{},{[u]:Date.now()})})});
+    track("live_remove");peopleSheet()}catch(e){toast("Couldn't remove them. Check your signal.",3000)}}
 
 // ---------- someone joined: a banner for everyone on the crawl ----------
 // In the app only (no phone notification). Shown when it happens, or when you next open the app if that's within
 // 5 minutes; joins close together share one banner. Then the words fade and the faces fly up into the pile.
-let joinQ=null;
-function joinCheck(d,id){const me=ME&&ME.uid;if(!d||d.ended||!me)return;S.joinSeen=S.joinSeen||{};
-  const fresh=Object.entries(d.members||{}).filter(([u,m])=>u!==me&&u!==d.host&&!m.was&&m.j);
-  if(S.joinSeen[id]==null){S.joinSeen[id]=Math.max(Date.now(),...fresh.map(([,m])=>m.j));save();return}   // first look: everyone here's already here
-  const nw=fresh.filter(([,m])=>m.j>S.joinSeen[id]);if(!nw.length)return;
-  joinQ={id,list:nw.sort((a,b)=>a[1].j-b[1].j)};joinShow()}
-function joinShow(){const q=joinQ;if(!q||document.hidden)return;joinQ=null;const newest=Math.max(...q.list.map(([,m])=>m.j));
-  S.joinSeen[q.id]=Math.max(S.joinSeen[q.id]||0,newest);save();if(Date.now()-newest>5*60000)return;
+let joinQ=null;const joinHold=new Set(),joinDone=new Set();let pileGhost=null;
+// Who to announce: anyone who's appeared since this phone last looked (fresh, from the doc update itself, so a phone
+// clock that's off can't hide them), or who joined in the 5 minutes before you reopened the app (joinSeen).
+// Until their face has flown up, they're held out of the pile, so it never shows them early.
+function joinCheck(d,id,fresh){const me=ME&&ME.uid;if(!d||d.ended||!me)return;S.joinSeen=S.joinSeen||{};
+  const all=Object.entries(d.members||{}).filter(([u,m])=>u!==me&&u!==d.host&&!m.was);
+  if(S.joinSeen[id]==null){S.joinSeen[id]=Math.max(Date.now(),...all.map(([,m])=>m.j||0));all.forEach(([u])=>joinDone.add(u));save();return}   // first look: everyone here's already here
+  const nw=all.filter(([u,m])=>!joinDone.has(u)&&((fresh&&fresh.has(u))||(m.j&&m.j>S.joinSeen[id])));if(!nw.length)return;
+  nw.forEach(([u])=>{joinDone.add(u);joinHold.add(u)});
+  const list=(joinQ&&joinQ.id===id?joinQ.list:[]).concat(nw).sort((a,b)=>(a[1].j||0)-(b[1].j||0));joinQ={id,list};joinShow()}
+// the invite sheet's open: it shows the tick itself. The banner and the fly-up wait till it's closed.
+const invOpen=()=>!!($("sheet").open&&$("invRow")&&$("sheet").contains($("invRow")));
+function joinRelease(uids,pop){uids.forEach(u=>joinHold.delete(u));pileGhost=null;const pile=fv?$("fvPile"):$("pPile");if(!pile)return;pile.classList.remove("landing");pile._h="";
+  if(fv)fitPile(pile,liveDoc);else paintPeople();if(pop)pop.forEach(u=>{const f=pile.querySelector(`.pv[data-u="${u}"]`)||pile.querySelector(".pv.more");if(f){f.classList.remove("land");void f.offsetWidth;f.classList.add("land")}});
+  const bd=pile.querySelector(".pinvb");if(bd&&pop){bd.classList.remove("land");void bd.offsetWidth;bd.classList.add("land")}}
+function joinShow(){const q=joinQ;if(!q||document.hidden||invOpen())return;joinQ=null;const uids=q.list.map(([u])=>u),newest=Math.max(...q.list.map(([,m])=>m.j||0));
+  S.joinSeen[q.id]=Math.max(S.joinSeen[q.id]||0,Math.min(newest,Date.now()));save();
+  if(q.list.every(([,m])=>m.j&&Date.now()-m.j>5*60000&&Date.now()-m.j<864e5)){joinRelease(uids);return}   // reopened long after: no fanfare
   const first=nFirst(q.list[0][1].n)||"A friend",n=q.list.length,txt=n===1?`${esc(first)} joined the crawl`:n===2?`${esc(first)} and ${esc(nFirst(q.list[1][1].n)||"a friend")} joined`:`${esc(first)} + ${n-1} others joined`;
   const old=$("joinBan");if(old)old.remove();
   const ban=document.createElement("div");ban.id="joinBan";ban.className="joinban";ban.setAttribute("role","status");
-  ban.innerHTML=`<span class="jbav">${q.list.slice(-3).map(([u,m])=>avHTML(u,m)).join("")}</span><span class="jbt">${txt}</span>`;
+  const flyers=q.list.slice(-3);ban.innerHTML=`<span class="jbav">${flyers.map(([u,m])=>avHTML(u,m)).join("")}</span><span class="jbt">${txt}</span>`;
   document.body.appendChild(ban);requestAnimationFrame(()=>ban.classList.add("on"));buzz([30,60,30]);
-  setTimeout(()=>{const pile=fv?$("fvPile"):$("pPile"),vis=pile&&pile.offsetParent!==null;
-    if(!vis){ban.classList.remove("on");setTimeout(()=>ban.remove(),300);return}
-    const T=pile.getBoundingClientRect(),avs=[...ban.querySelectorAll(".pv")];ban.classList.add("fly");
-    avs.forEach((a,i)=>{const r=a.getBoundingClientRect(),dx=T.left+12+i*4-(r.left+r.width/2),dy=T.top+T.height/2-(r.top+r.height/2),s=Math.max(.6,T.height/r.height*.8);
-      a.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${s})`,opacity:.9}],{duration:520,delay:i*60,easing:"cubic-bezier(.5,0,.2,1)",fill:"forwards"})});
-    setTimeout(()=>{ban.remove();const d=liveDoc;if(d)paintPile(pile,d,!!fv,new Set(q.list.map(([u])=>u)));setTimeout(()=>{if(d){pile._h="";paintPile(pile,d,!!fv)}},700)},560+avs.length*60)},2800)}
+  setTimeout(()=>{const pile=fv?$("fvPile"):$("pPile"),vis=pile&&pile.offsetParent!==null&&!pile.hidden;
+    if(!vis){ban.classList.remove("on");setTimeout(()=>ban.remove(),300);joinRelease(uids);return}
+    // lay the pile out with the newcomers in place but invisible, so each face flies to its exact spot
+    uids.forEach(u=>joinHold.delete(u));pileGhost=new Set(uids);pile.classList.add("landing");pile._h="";if(fv)fitPile(pile,liveDoc);else paintPeople();
+    const avs=[...ban.querySelectorAll(".pv")];ban.classList.add("fly");
+    avs.forEach((a,i)=>{const u=flyers[i][0],tg=pile.querySelector(`.pv[data-u="${u}"]`)||pile.querySelector(".pv.more")||pile,T=tg.getBoundingClientRect(),r=a.getBoundingClientRect(),
+        dx=T.left+T.width/2-(r.left+r.width/2),dy=T.top+T.height/2-(r.top+r.height/2),sc=T.height/r.height;
+      a.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${sc})`}],{duration:560,delay:i*70,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"})});
+    setTimeout(()=>{ban.remove();joinRelease(uids,uids)},560+(avs.length-1)*70)},2000)}
+$("sheet").addEventListener("close",()=>setTimeout(()=>{if(joinQ)joinShow()},250));
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&joinQ)setTimeout(joinShow,400)});
 
 // test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
@@ -510,7 +538,7 @@ async function followLive(id){if(!cloudOn()){toast("Live crawls need the latest 
   if(!myName()){nameSheet(()=>followLive(id),"follow");return}   // so the host sees who's following, not "Friend"
   S.follow=id;S.liveInv=null;save();track("live_follow");openFollow();
   const B=await cloud();
-  try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid)return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===crawlName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:crawlName()||"",j:Date.now(),b:(gg.visits||[]).length,p:(ME&&ME.photo)||""}}
+  try{await B.tx(`live/${id}`,d=>{if(!d||d.ended||d.host===ME.uid||(d.kicked&&d.kicked[ME.uid]))return undefined;const m=d.members||{};if(m[ME.uid]){if(m[ME.uid].n===crawlName())return undefined}else{let gg={};try{gg=JSON.parse(d.g)}catch(e){}m[ME.uid]={n:crawlName()||"",j:Date.now(),b:(gg.visits||[]).length,p:(ME&&ME.photo)||""}}
     m[ME.uid].n=crawlName()||m[ME.uid].n||"";return Object.assign({},d,{members:m})})}catch(e){console.warn("join",e)}
   liveAttach()}
 let fv=null,fvMap=null,fvLayer=null,fvT=null,fvPrev=false;
@@ -746,7 +774,7 @@ function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{}).f
 // from the invite sheet: tap a follower's face, confirm, then the usual offer goes to their phone
 function giveOneSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"them");
   sheet(`<h3>Give ${nm} the spin?</h3><p class="note">${nm} spins and tracks the crawl. You keep following.</p><div class="acts"><button class="btn" type="button" id="goY">Give the spin</button><button class="btn dark" type="button" id="goN">Cancel</button></div>`,
-    ()=>{$("goN").onclick=peopleSheet;$("goY").onclick=()=>offerSpin(u)})}
+    ()=>{$("goN").onclick=()=>personSheet(u);$("goY").onclick=()=>offerSpin(u)})}
 // the offer: their phone asks them; it's only handed over once they say yes (30 seconds, or Cancel)
 const OFFER_MS=30000;let offerT=0;
 async function offerSpin(u){const d=liveDoc,g=G(),m=d&&d.members&&d.members[u];if(!g||!m)return;const at=Date.now(),who=esc(nFirst(m.n)||"Friend");
