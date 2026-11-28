@@ -447,7 +447,8 @@ function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="current
 function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host&&!joinHold.has(u))?liveDoc:null,anyone=!!(g&&g.live&&liveDoc&&!liveDoc.ended&&Object.keys(liveDoc.members||{}).some(u=>u!==liveDoc.host)),on=cloudOn()&&g&&!g.ended&&!g.demo&&((g.started&&(g.visits.length>0||(!!g.target&&!spinning)))||anyone);   // someone following: always a spot for their face, even before the first rooftop   // before the first rooftop lands, the big Invite button does the job
   const was=b._on;b._on=!!on;b.hidden=!on;if(!on)return;b.dataset.inv="1";
   if(was===false){b.classList.remove("pilein");void b.offsetWidth;b.classList.add("pilein")}   // just took over from the big button: springs in from its spot
-  if(d)paintPile(b,d,false);else{const h=invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
+  const early=!(g.started&&(g.visits.length>0||(!!g.target&&!spinning)));   // before the first rooftop the big Invite button's on screen: no second invite icon, just an empty spot for the face to land in
+  if(d)paintPile(b,d,false);else{const h=early?`<span class="pv inv solo" style="visibility:hidden"></span>`:invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
   b.setAttribute("aria-label",d?"Who's following. Invite friends":"Invite friends");b.onclick=e=>pileTap(e,liveInvite)}
 // The faces as one button: nobody following yet opens the invite; once someone is, it opens who's on the crawl,
 // which has its own Invite friends button (like Spotify Jam: View guests and Invite are separate)
