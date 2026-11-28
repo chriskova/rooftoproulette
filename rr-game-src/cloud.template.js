@@ -479,13 +479,21 @@ function peopleSheet(){const d=liveDoc;if(!d)return;const me=ME&&ME.uid,L=crawlP
   // the host taps a follower to hand over the spin; one line under the heading says so
   sheet(`<h3 tabindex="-1" autofocus style="outline:0">On this crawl</h3>${host?`<p class="note pnote">Tap a follower to give them the spin or remove them</p>`:""}<div class="plist">${L.map(([u,m])=>{const tap=host&&!m.host&&u!==me,tag=tap?"button":"div";return `<${tag} class="prow${tap?" ptap":""}" ${tap?`type="button" data-gsu="${u}"`:""}>${avHTML(u,m,m.host?"host":"")}<span class="pn">${esc(nIn(m.n,names)||"Friend")}${u===me?` <small>(you)</small>`:""}</span>${m.host?`<span class="ptag">Has the spin</span>`:""}</${tag}>`}).join("")}</div>
     ${!d.ended?`<button class="btn line" type="button" id="plInv" style="margin-top:var(--gap-section)">${I.share} Invite friends</button>`:""}`,()=>{if($("plInv"))$("plInv").onclick=()=>{closeSheet();host?liveInvite():followInvite()};document.querySelectorAll("#sheetBody [data-gsu]").forEach(b=>b.onclick=()=>personSheet(b.dataset.gsu))})}
-// the host taps a follower: hand them the spin, or take them off the crawl
-function personSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m){peopleSheet();return}const nm=esc(nFirst(m.n)||"Friend");
-  sheet(`<h3>${nm}</h3><div class="mgrps"><div class="sgrp"><button class="strow" type="button" id="psGive">${I.redo}<span class="t"><b>Give the spin</b></span></button>
-    <button class="strow danger" type="button" id="psRem">${I.x}<span class="t"><b>Remove from crawl</b></span></button></div></div>`,()=>{
-    $("psGive").onclick=()=>giveOneSheet(u);
-    $("psRem").onclick=()=>sheet(`<h3>Remove ${nm}?</h3><p class="note">${nm} stops following and can't rejoin this crawl.</p><div class="acts"><button class="btn" type="button" id="rmY" style="background:var(--red);color:#fff">Remove</button><button class="btn dark" type="button" id="rmN">Cancel</button></div>`,
-      ()=>{$("rmN").onclick=()=>personSheet(u);$("rmY").onclick=()=>removeFollower(u)})})}
+// the host taps a follower: a second panel slides up over the list (the list never changes size), then a centred alert confirms
+function layerClose(){document.querySelectorAll("#sheet .lyr,#sheet .lyalert").forEach(x=>{x.classList.remove("on");setTimeout(()=>x.remove(),220)})}
+function layerPanel(html,bind){layerClose();const L=document.createElement("div");L.className="lyr";L.innerHTML=`<div class="lydim"></div><div class="lyp"><div class="lyh"></div>${html}</div>`;$("sheet").appendChild(L);
+  requestAnimationFrame(()=>L.classList.add("on"));L.querySelector(".lydim").onclick=layerClose;
+  const p=L.querySelector(".lyp");let y0=null,dy=0;p.addEventListener("touchstart",e=>{y0=e.touches[0].clientY;dy=0;p.style.transition="none"},{passive:true});
+  p.addEventListener("touchmove",e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);p.style.transform=`translateY(${dy}px)`},{passive:true});
+  p.addEventListener("touchend",()=>{p.style.transition="";p.style.transform="";if(dy>70)layerClose();y0=null});if(bind)bind(L)}
+function layerAlert(title,body,yes,danger,onYes){const A=document.createElement("div");A.className="lyalert";
+  A.innerHTML=`<div class="lyab" role="alertdialog"><h4>${title}</h4><p>${body}</p><div class="lyabt"><button type="button" data-a="n">Cancel</button><button type="button" data-a="y" class="${danger?"red":"go"}">${yes}</button></div></div>`;
+  $("sheet").appendChild(A);requestAnimationFrame(()=>A.classList.add("on"));const shut=()=>{A.classList.remove("on");setTimeout(()=>A.remove(),200)};
+  A.querySelector('[data-a="n"]').onclick=shut;A.onclick=e=>{if(e.target===A)shut()};A.querySelector('[data-a="y"]').onclick=()=>{shut();onYes()}}
+function personSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"Friend");
+  layerPanel(`<div class="lyn">${avHTML(u,m)}<b>${esc(m.n||"Friend")}</b></div><div class="sgrp lyg"><button class="strow" type="button" data-p="give">${I.redo}<span class="t"><b>Give the spin</b></span></button><button class="strow danger" type="button" data-p="rem">${I.x}<span class="t"><b>Remove from crawl</b></span></button></div>`,L=>{
+    L.querySelector('[data-p="give"]').onclick=()=>layerAlert(`Give ${nm} the spin?`,`${nm} spins and tracks the crawl. You keep following.`,"Give the spin",false,()=>{layerClose();offerSpin(u)});
+    L.querySelector('[data-p="rem"]').onclick=()=>layerAlert(`Remove ${nm}?`,`${nm} stops following and can't rejoin this crawl.`,"Remove",true,()=>{layerClose();removeFollower(u)})})}
 async function removeFollower(u){const g=G();if(!g||!g.live)return;const B=await cloud();
   try{await B.tx(`live/${g.live}`,d=>{if(!d||d.host!==ME.uid)return undefined;const members=Object.assign({},d.members);delete members[u];return Object.assign({},d,{members,kicked:Object.assign({},d.kicked||{},{[u]:Date.now()})})});
     track("live_remove");peopleSheet()}catch(e){toast("Couldn't remove them. Check your signal.",3000)}}
@@ -525,7 +533,7 @@ function joinShow(){const q=joinQ;if(!q||document.hidden||invOpen())return;joinQ
         dx=T.left+T.width/2-(r.left+r.width/2),dy=T.top+T.height/2-(r.top+r.height/2),sc=T.height/r.height;
       a.animate([{transform:"none"},{transform:`translate(${dx}px,${dy}px) scale(${sc})`}],{duration:560,delay:i*70,easing:"cubic-bezier(.45,0,.2,1)",fill:"forwards"})});
     setTimeout(()=>{ban.remove();joinRelease(uids,uids)},560+(avs.length-1)*70)},2000)}
-$("sheet").addEventListener("close",()=>setTimeout(()=>{if(joinQ)joinShow()},250));
+$("sheet").addEventListener("close",()=>{document.querySelectorAll("#sheet .lyr,#sheet .lyalert").forEach(x=>x.remove());setTimeout(()=>{if(joinQ)joinShow()},250)});
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&joinQ)setTimeout(joinShow,400)});
 
 // test mode: open the follow screen on your own crawl, exactly as it reaches friends' phones
