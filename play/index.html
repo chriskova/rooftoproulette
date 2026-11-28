@@ -1177,11 +1177,13 @@ dialog.sheet[open]{animation:up .25s ease-out}
 .menu button small{display:block;font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
 .menu button.danger{color:var(--red)}
 .menu button.warn small{color:var(--amber-text);font-weight:700}
+.menu .msep{display:block;height:6px;border-radius:3px;background:var(--line);opacity:.55;margin:8px 0}.menu .msep+button,.menu .msep+button[hidden]+button{border-top:0}.menu .msep:last-child{display:none}
+.menu button.mtgl>span{flex:1}.menu button.mtgl .sw{margin-left:auto}.menu button.mtgl[aria-checked="true"] .sw{background:var(--amber)}.menu button.mtgl[aria-checked="true"] .sw::after{transform:translateX(20px)}
 #camVid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;display:none}
 body.camon #camVid{display:block;opacity:0;transition:opacity .3s}body.camon #camVid.on{opacity:1}
 body.camon,body.camon .app,body.camon .appbar{background:transparent!important}
 body.camon .app{position:relative;z-index:1}
-body.camon #pMap{display:none}   /* filming a spin: the map has no part in it */
+body.camon #pMap,body.camon #pPile{display:none}   /* filming a spin: the map has no part in it */
 body.camon .appbar .logo{text-shadow:0 1px 8px rgba(0,0,0,.5)}
 body.camon #v-play{background:transparent}
 body.camon #v-play #pCount{visibility:hidden}
@@ -1219,6 +1221,8 @@ body.camon .testfab{bottom:auto;top:46%;right:auto;left:12px}
 .camfab{appearance:none;flex:none;width:52px;height:52px;border-radius:50%;border:1px solid var(--line);background:var(--s2);color:var(--text);display:grid;place-items:center;padding:0}.camfab svg{width:22px;height:22px}
 .ready{position:relative}
 .camfab.ontop{position:absolute;right:8px;bottom:8px;width:40px;height:40px;z-index:5;background:rgba(28,33,44,.85)}.camfab.ontop svg{width:19px;height:19px}
+.camfab.flash{bottom:56px;color:#fff}.camfab.flash.on{color:var(--amber)}.camfab.flash.off svg{opacity:.55}.camfab.flash.off::after{content:"";position:absolute;width:22px;height:2px;background:#fff;border-radius:2px;transform:rotate(-45deg);box-shadow:0 0 0 1.5px rgba(11,13,18,.62)}
+.camfab.flash b{position:absolute;right:5px;bottom:4px;font-size:9px;font-weight:800;line-height:1}
 body.camon .camfab.ontop{background:rgba(11,13,18,.62);border-color:transparent}
 .camtgt{flex-wrap:wrap}.camtgt .wild{flex:1 0 100%;margin:0;padding:8px 10px;font-size:13.5px;background:rgba(0,0,0,.28);border:1.5px dashed rgba(245,184,61,.75);color:rgba(255,255,255,.92)}
 body.camon .jpx.camup .jpcard-wrap{place-items:start center;padding:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 58px) 14px 0}
@@ -2710,7 +2714,10 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 .fpile .pv{width:30px;height:30px;font-size:13px;box-shadow:0 0 0 2px var(--bg)}.fpile .pv+.pv{margin-left:-9px}.pleft .fpile{padding:0 2px}.pleft .fpile .pv{width:26px;height:26px;font-size:11.5px}.pleft .fpile .pv+.pv{margin-left:-8px}
 .fpile .pv:nth-child(1){z-index:4}.fpile .pv:nth-child(2){z-index:3}.fpile .pv:nth-child(3){z-index:2}.fpile .pv:nth-child(4){z-index:1}
 .pv{position:relative;flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;overflow:hidden;color:#fff;font-weight:800;font-size:15px;line-height:1;background:var(--s2)}
-.pv img{width:100%;height:100%;object-fit:cover}.pv.more{background:var(--s2);color:var(--text);font-size:11.5px;font-weight:800}
+.pv img{width:100%;height:100%;object-fit:cover}
+.pv.inv{background:var(--s1);color:var(--text);border:1.5px dashed var(--muted);font-size:16px;font-weight:700}.fpile .pv.inv{margin-left:3px!important}
+.pv.inv.solo{border:1px solid var(--line);background:var(--s2);margin-left:0!important}.pv.inv.solo svg{width:58%;height:58%}
+.pleft .fpile .pv.inv.solo{width:34px;height:34px}.pv.more{background:var(--s2);color:var(--text);font-size:11.5px;font-weight:800}
 .pv.host{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--amber)!important}.fpile .pv.host{margin-right:3px}
 .pv.pop{animation:avpop .55s cubic-bezier(.3,1.6,.5,1)}@keyframes avpop{0%{transform:scale(.4)}100%{transform:scale(1)}}
 .plist{display:flex;flex-direction:column;margin-top:var(--gap-label)}.prow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-child{border-top:0}
@@ -2745,7 +2752,7 @@ body.fvon .followv{bottom:calc(var(--tab) + var(--safe-area-inset-bottom,env(saf
 .fr.pop .av{animation:frPop .5s cubic-bezier(.3,1.5,.5,1)}@keyframes frPop{0%{transform:scale(.6)}100%{transform:scale(1)}}
 .invn{color:var(--green);font-weight:700}.fr.sent .av{background:var(--s2);color:var(--muted)}.fr.sent .fn{color:var(--muted)}
 .invbig{width:100%;margin-top:14px;background:none;border:1.5px solid var(--amber);color:var(--text)}.invbig svg{color:var(--amber-text)}.invbig svg{width:20px;height:20px}
-.ready:has(.invbig) .camfab.ontop{bottom:78px}   /* the camera stays on the spinner, not on the button */
+.ready:has(.invbig) .camfab.ontop{bottom:78px}.ready:has(.invbig) .camfab.flash{bottom:126px}   /* the camera stays on the spinner, not on the button */
 .whobox{margin-top:18px}.whobox .qrbox{margin-top:6px}.whold{height:220px}
 .qrbox.xs{width:min(150px,40vw);margin-left:auto;margin-right:auto}.skiplink{display:block;margin:12px auto 0;padding:6px 14px;background:none;border:0;font:inherit;font-weight:700;font-size:15px;color:var(--muted);cursor:pointer}
 .invacts{display:flex;gap:10px}.invacts .btn:first-child{flex:1}.invacts .qrbtn{flex:none;width:56px;padding:0}.invacts .qrbtn svg{width:24px;height:24px}

@@ -2271,7 +2271,7 @@ setInterval(()=>{
     if(!CAM.spun){if(Date.now()-CAM.t0>8000&&!document.querySelector("#v-play .reel .row")?.closest(".reel")?.matches(":active"))camStop(true)}   // touched the reel but never spun: no clip
     else{if(busy)CAM.idleAt=0;else if(!CAM.idleAt)CAM.idleAt=Date.now();
       if((CAM.idleAt&&Date.now()-CAM.idleAt>6000)||Date.now()-CAM.t0>90000)camStop()}}
-  camLight(!!CAM.rec&&CAM.dark&&S.camLight!==false);camRecPill()},120);
+  camLight(!!CAM.rec&&(S.camLight==="on"||CAM.dark&&S.camLight!==false));camRecPill()},120);
 let nudgeAt=0;setInterval(()=>{if(!document.body.classList.contains("camon")||spinning||!reel||reel.busy||!$("reelBox")||document.hidden||CAM.spun||$("sheet").open||Math.abs(reel.p-reel.rest)>.01)return;
   if(!nudgeAt)nudgeAt=Date.now();if(Date.now()-nudgeAt<6500)return;nudgeAt=Date.now();
   // a slow pull up of the wheel, then it drops back with a little bounce: "pull me down"
@@ -2288,6 +2288,12 @@ document.addEventListener("pointerdown",e=>{if(CAM.stream&&!CAM.rec&&e.isTrusted
 const camGrab=t=>!!t.closest&&(!!t.closest("#camSwipe")||document.body.classList.contains("camon")&&!!t.closest("#v-play,.appbar")&&!t.closest("button,a,input,.reel,.camtgt,.wild,.bar,dialog"));
 document.addEventListener("pointerdown",e=>{const sw=camGrab(e.target),rb=$("reelBox");if(!sw||!rb||spinning||rb.closest(".jpx"))return;e.preventDefault();
   rb.dispatchEvent(new PointerEvent("pointerdown",{pointerId:e.pointerId,pointerType:e.pointerType,isPrimary:true,clientX:e.clientX,clientY:e.clientY,bubbles:true}))});
+// the light round the screen when you film a spin: auto (only when it's dark), on, or off. Tap the bolt on the camera to cycle.
+const flashMode=()=>S.camLight==="on"?"on":S.camLight===false?"off":"auto";
+const FLASHI='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4.5 13.5H12L11 22l8.5-11.5H12z"/></svg>';
+function flashTap(e){if(e)e.stopPropagation();const m=flashMode(),nx=m==="auto"?"on":m==="on"?false:true;S.camLight=nx;save();buzz(10);
+  const b=$("camFlash");if(b){b.outerHTML=camFlashHTML();$("camFlash").onclick=flashTap}toast(nx==="on"?"Light on":nx===false?"Light off":"Light auto",1200)}
+function camFlashHTML(){const m=flashMode();return `<button class="camfab ontop flash ${m}" type="button" id="camFlash" aria-label="Light: ${m}">${FLASHI}${m==="auto"?"<b>A</b>":""}</button>`}
 function camLight(on){let l=$("camLight");if(!l){if(!on)return;l=document.createElement("div");l.id="camLight";document.body.appendChild(l)}l.classList.toggle("on",on)}
 function camStart(){
   if(typeof MediaRecorder==="undefined"||!CAM.vid)return;
@@ -2821,23 +2827,24 @@ function howSheet(next){next=typeof next==="function"?next:null;sawHow("rush");
 function openMenu(){
   const g=G(),free=g.started&&basePool().length<2,canMove=free||!g.voluntaryUsed;
   const cr=CR(g);
+  // three groups: the crawl, the app, leaving it. Invite lives on the faces by the drinks count; the camera light lives on the camera.
   sheet(`<h3>Menu</h3><div class="menu">
     ${cr?`<button type="button" id="mZone">${I.move}<span>Spin zone<small>${g.cz.type==="list"?"Your "+listName(g.cz.list):zoneTxt(g)}</small></span></button>`:""}
-    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
-    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
+    <button type="button" id="mMove" ${cr?"hidden":""} ${canMove?"":"disabled style='opacity:.4'"}>${I.move}<span>Move your zone<small>${free?"Free: your zone's nearly empty":g.voluntaryUsed?"Already used this crawl":"Move it or go bigger. Once a crawl"}</small></span></button>
     ${cr||g.demo?"":`<button type="button" id="mWild">${I.sparkle}<span>Wildcards<small>${esc(deckLbl())}</small></span></button>`}
-    <button type="button" id="mHow">${I.help}<span>How it works</span></button>
-    <button type="button" id="mSound">${I.sound}<span>Sound ${S.sound?"on":"off"}<small>Spin clicks and arrival chime</small></span></button>
-    ${S.film!==false?`<button type="button" id="mLight">${I.sparkle}<span>Light ${S.camLight!==false?"auto":"off"}<small>Lights up your faces when you film a spin in the dark</small></span></button>`:""}
-    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
     ${liveMenuRows(g)}
+    ${g.clipN?`<button type="button" id="mClips">${I.camera}<span>Clips<small>${g.clipN} from this crawl</small></span></button>`:""}
+    <i class="msep"></i>
+    <button type="button" id="mSound" class="mtgl" role="switch" aria-checked="${!!S.sound}">${I.sound}<span>Sound</span><i class="sw"></i></button>
+    <button type="button" id="mHow">${I.help}<span>How it works</span></button>
+    <i class="msep"></i>
+    ${S.test?`<button type="button" id="mHome">${I.back}<span>Home (test mode)<small>Drops this crawl. Nothing goes on your tab</small></span></button>`:""}
     <button type="button" class="danger" id="mEnd">${I.flag}<span>${g.started?"End crawl":"Cancel crawl"}<small>${g.started?(cr?"Your crawl goes on your tab":"Your crawl card is saved"):"It hasn't started, so nothing's saved"}</small></span></button>
   </div>`,()=>{
     $("mMove").onclick=()=>{if(canMove)openMove(free)};if($("mZone"))$("mZone").onclick=()=>crawlMap({move:true,pre:true});
     if($("mHome"))$("mHome").onclick=()=>{closeSheet();S.game=null;S.wiz=null;S.quick=null;save();stopWatch();go("home")};   // test mode: throw the game away, don't record it
     $("mHow").onclick=cr?cruiseHow:howSheet;if($("mWild"))$("mWild").onclick=deckSheet;
-    $("mSound").onclick=()=>{S.sound=!S.sound;save();openMenu()};
-    if($("mLight"))$("mLight").onclick=()=>{S.camLight=S.camLight===false;save();openMenu()};
+    $("mSound").onclick=()=>{S.sound=!S.sound;save();$("mSound").setAttribute("aria-checked",String(!!S.sound))};
     if($("mClips"))$("mClips").onclick=()=>clipsSheet(g.id);liveMenuBind();
     $("mEnd").onclick=()=>!g.started?sheet(`<h3>Cancel the crawl?</h3><p class="note">It hasn't started yet, so there's nothing to save.</p>
       <div class="acts"><button class="btn" type="button" id="eY" style="background:var(--red);color:#fff">Cancel crawl</button><button class="btn dark" type="button" id="eN">Keep it</button></div>`,()=>{$("eN").onclick=closeSheet;$("eY").onclick=()=>{closeSheet();endGame(now())}}):sheet(`<h3>End the crawl?</h3><p class="note">${g.started?(cr?"Your night is saved, with the time you spent at each rooftop.":"Your crawl card is saved. The rooftop you're at counts if your visit's been logged."):"You haven't spun yet, so nothing will be saved."}</p>
@@ -3029,7 +3036,7 @@ function renderPlay0(){if(typeof paintPeople==="function")try{paintPeople()}catc
     const bp=basePool(),pool=bp.length,nm=k=>bp.length?bp[(k+bp.length*3)%bp.length].name:"";
     st.innerHTML=banner+ask+`<div class="ready">
       ${g.started&&!CR(g)?"":mixlineHTML(g)}
-      <div id="reelBox"></div>${g.started?"":mixInvBig(g)}<button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button><div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
+      <div id="reelBox"></div>${g.started?"":mixInvBig(g)}<button class="camfab ontop${CAM.once?" x":""}" type="button" id="camBtn" aria-label="${CAM.once?"Close camera":"Film this spin"}">${CAM.once?I.x:I.camera}</button>${CAM.once&&S.film!==false?camFlashHTML():""}<div class="camswipe" id="camSwipe"><span><i class="recdot"></i>Swipe down to spin and record</span></div>
       ${g.started&&!CR(g)&&!g.demo&&!g.voluntaryUsed&&pool>3?`<button class="txtbtn adjz" type="button" id="adjZone">${I.move} Move zone</button>`:""}
       ${pool<=3&&g.started?`<div class="poolnum low">Only <b>${pool}</b> ${CR(g)?"open nearby":"left in your zone"}${!CR(g)&&!g.demo&&(!g.voluntaryUsed||pool<2)?` <button class="txtbtn poolmove" type="button" id="poolMove">Move zone</button>`:""}</div>`:""}
 
@@ -3066,6 +3073,7 @@ function renderPlay0(){if(typeof paintPeople==="function")try{paintPeople()}catc
     if(a&&a._ans===undefined&&now()-a.arrivedAt<DWELL())askDrink(a,open_);else open_()};
   if($("leaveBtn"))$("leaveBtn").onclick=()=>{const d=leaving();if(d){closeVisit(d,now(),"walk");save();buzz(10)}renderPlay()};
   camTip();setTimeout(mapTip,900);
+  {const fb=$("camFlash");if(fb)fb.onclick=flashTap}
   {const cb=$("camBtn");if(cb)cb.onclick=()=>{if(spinning)return;
     if(cb.classList.contains("x")){CAM.once=false;camSync();renderPlay();return}
     CAM.once=true;CAM.onceAt=Date.now();track("camera_open");document.body.classList.add("camon");const sb_=$("spinBtn"),sk_=$("skipBtn");

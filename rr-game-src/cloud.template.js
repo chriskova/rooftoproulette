@@ -368,7 +368,7 @@ function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[
   const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
   const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
-  const rest=mates.filter(m=>!inU.has(m.uid)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
+  const rest=mates.filter(m=>!inU.has(m.uid)&&m.uid!==(liveDoc&&liveDoc.host)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
   const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
@@ -439,8 +439,16 @@ function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d
   const n=ids.length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople();if(typeof paintMixInv==="function")paintMixInv()}
 // the people button on the crawl screen: a plus until someone follows, then how many are following
 function PEOPLEI_(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.6"/><path d="M3.5 20c1-3.7 3.6-5.6 6.5-5.6s5.5 1.9 6.5 5.6"/></svg>'}
-function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const on=cloudOn()&&g&&!g.ended&&!g.demo&&g.live&&liveDoc&&!liveDoc.ended&&memN(liveDoc)>0;
-  b.hidden=!on;if(on){paintPile(b,liveDoc,false);b.onclick=peopleSheet}}
+// Top left, under the drinks count: the invite button. Faces of whoever's following, then a + to invite more.
+function paintPeople(){const b=$("pPile"),g=G();if(!b)return;const d=g&&g.live&&liveDoc&&!liveDoc.ended&&memN(liveDoc)>0?liveDoc:null,on=cloudOn()&&g&&!g.ended&&!g.demo&&(g.started||!!d);   // before the clock starts, setup's big Invite button does the job
+  b.hidden=!on;if(!on)return;b.dataset.inv="1";
+  if(d)paintPile(b,d,false);else{const h=invSolo();if(b._h!==h){b._h=h;b.innerHTML=h}}
+  b.setAttribute("aria-label",d?"Who's following. Invite friends":"Invite friends");b.onclick=()=>liveInvite()}
+const invSolo=()=>`<span class="pv inv solo">${MIX_INVI}</span>`;
+// Followers invite too: same link, and anyone who joins that way just follows. The host still holds the spin.
+function followInvite(){const d=liveDoc,id=S.follow||(d&&d.id);if(!d||!id||d.ended){peopleSheet();return}
+  if(ME&&d.host===ME.uid){liveInvite();return}track("live_invite",{follower:true});const n=memN(d);
+  inviteSheet(id,`<h3 tabindex="-1" autofocus style="outline:0">Invite friends</h3><p class="note" style="margin:4px 0 12px"><span id="invN">${n?`<span class="invn">${n} following.</span> `:""}</span>Friends follow along and get the recap.</p>`)}
 
 // ---------- who's on the crawl ----------
 // each person keeps one colour (worked out from their account), the way Google does initials
@@ -452,7 +460,8 @@ const avHTML=(u,m,cls)=>{const n=(m&&m.n)||"";return m&&m.p?`<span class="pv ${c
 const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Object.entries(d.members||{}).filter(([u])=>u!==d.host).sort((a,b)=>(a[1].j||0)-(b[1].j||0))):[];
 // up to three overlapping faces, then +N; never yourself
 function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
-  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"");
+  const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"")
+    +(el.dataset.inv?(show.length||more>0?`<span class="pv inv" aria-hidden="true">+</span>`:invSolo()):"");
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 // as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
 // Roomy first (a little gap from the menu, faces less squashed); tightened only when that's what fits more people.
@@ -514,10 +523,10 @@ function openFollow(prev){if(fv)return;fvPrev=!!prev;fvSig="";fvCardSig="";fvCnt
   // No reel, no animations, nothing to press that the host's phone does, so nobody expects it to work like the host's.
   fv.innerHTML=`<div class="fv-top"><div class="fv-l"><div class="t"><small id="fvWhoS"></small><b id="fvWho">Following</b></div>${S.test?`<button type="button" class="fv-test" id="fvTest">TEST</button>`:""}</div>
     <div class="clock fv-clock" id="fvClockW"><b id="fvClock">--:--</b><small id="fvSub"></small></div>
-    <div class="fv-r"><button type="button" class="fpile" id="fvPile" aria-label="Who's on this crawl"></button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
+    <div class="fv-r"><button type="button" class="fpile" id="fvPile" data-inv="1" aria-label="Who's on this crawl. Invite friends"></button><button type="button" class="iconbtn" id="fvMenu" aria-label="Menu">${I.more}</button></div></div>
     <div class="tbar" id="fvBar"><i id="fvBarI"></i></div>
     <div class="fv-body"><div class="fv-alert" id="fvAlert" hidden></div><div id="fvNow"></div><div id="fvList"></div><div class="fv-act" id="fvAct"></div></div>`;
-  $("fvMenu").onclick=followMenu;$("fvPile").onclick=peopleSheet;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
+  $("fvMenu").onclick=followMenu;$("fvPile").onclick=followInvite;if($("fvTest"))$("fvTest").onclick=()=>$("testFab").onclick();
   // travel time to the bar from where you are: only if location's already allowed (no prompt just for following)
   if(!(S.test&&S.fake)&&!here)permState(false).then(st=>{if(st==="granted")getOnce().then(()=>{if($("fvNow"))$("fvNow")._k="";paintFollow()}).catch(()=>{})}).catch(()=>{});
   fvStretch(fv.querySelector(".fv-body"));
@@ -876,7 +885,7 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
 
 // menu rows during a crawl
 function liveMenuRows(g){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
-  return `<button type="button" id="mInvite">${PEOPLEI_()}<span>Invite friends<small>${n?`${n} following live`:"They follow every spin and the timer"}</small></span></button>`+(g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
+  return (g.live&&n?`<button type="button" id="mGive">${I.redo}<span>Give the spin to…<small>They spin, you follow</small></span></button>`:"")}
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows
