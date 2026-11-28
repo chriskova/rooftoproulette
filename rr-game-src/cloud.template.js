@@ -364,12 +364,15 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
     invBindRow(root,id,onAct)}}}
 // The faces row: people following now (green tick, their name, "Following") first, then crawl friends to tap and invite.
 // It redraws as people join, so the host watches each one tick over.
-function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
+function invRowHTML(id,fresh){const mates=(invParts.mates||[]).filter(m=>m.uid!==(ME&&ME.uid)&&m.uid!==(liveDoc&&liveDoc.host)),sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
   const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
-  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
-  const rest=mates.filter(m=>!inU.has(m.uid)&&m.uid!==(liveDoc&&liveDoc.host)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
-  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
+  // crawl friends keep their place: when one accepts, their face ticks over where it is. Anyone who joined another way
+  // (QR, a shared link) goes on the end.
+  const joinedHTML=(u,m)=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`;
+  const mateRow=mates.map(m=>inU.has(m.uid)?joinedHTML(m.uid,mem[m.uid]):`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`),
+    newRow=inn.filter(([u])=>!mates.some(m=>m.uid===u)).map(([u,m])=>joinedHTML(u,m));   // joined by QR or link: not crawled with before, so they get their own row
+  return (newRow.length?`<p class="invlbl">Following</p><div class="frow">${newRow.join("")}</div>`:"")+(mateRow.length?`<p class="invlbl">Crawled with before</p><div class="frow">${mateRow.join("")}</div>`:"")}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
 function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
