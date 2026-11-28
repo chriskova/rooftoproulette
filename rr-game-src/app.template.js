@@ -2865,6 +2865,7 @@ function cruiseHow(next){next=typeof next==="function"?next:null;sawHow("rr");sh
 function endGame(at,quiet){
   const g=G();if(!g||g.ended)return;
   document.querySelectorAll(".jpx").forEach(o=>o.remove());spinning=false;   // a jackpot card still up when the clock runs out (or the crawl's ended from the notification) mustn't sit over the crawl card
+  if(S.test&&!g.demo&&!g.started)S.fake=null;   // test mode: the fake spot from this crawl doesn't carry into the next one
   if(!g.started){if(g.live&&typeof liveCancel==="function")liveCancel(g.live);S.game=null;save();stopWatch();go("home");return}
   track("crawl_end",{mode:CR(g)?"rr":"rush",bars:g.visits.filter(v=>v.counted===true||(v.leftAt==null&&v.arrivedAt!=null)).length,minutes:Math.round((Math.min(at,g.endsAt)-g.startedAt)/60000),ended_early:at<g.endsAt,city:g.city||null});
   const before=collectedMap();
@@ -2873,7 +2874,7 @@ function endGame(at,quiet){
   const d=leaving();if(d)closeVisit(d,Math.min(t,awayNow()||document.hidden?leftGuess(d):t),"end");
   if(g.target){const y=you(),v=byId(g.target);g.missed={id:v.id,m:y?Math.round(dist(y,v)):null}}
   if(g.loHit){const lv=g.visits[g.visits.length-1];if(lv){lv.counted=true;lv.leftAt=lv.leftAt||lv.arrivedAt;lv.lastOrders=true}g.missed=null}
-  g.ended=true;g.endedAt=t;g.early=early;
+  g.ended=true;g.endedAt=t;g.early=early;if(S.test&&!g.demo)S.fake=null;   // (after the last visit's closed: that still uses where you were)
   const rec=JSON.parse(JSON.stringify(g));
   // which bars were new to the collection in this game
   const prevCol={};H.forEach(r=>r.visits.forEach(v=>{if(v.counted===true)prevCol[v.id]=1}));
