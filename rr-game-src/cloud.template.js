@@ -367,12 +367,15 @@ async function invParts(id,onAct){const link=liveLink(id),text=`Follow our crawl
 function invRowHTML(id,fresh){const mates=invParts.mates||[],sent=invParts.sent[id]||{},mem=(liveDoc&&liveDoc.members)||{},me=ME&&ME.uid;
   const inn=Object.entries(mem).filter(([u])=>u!==me&&u!==(liveDoc&&liveDoc.host)).sort((a,b)=>(a[1].j||0)-(b[1].j||0)),inU=new Set(inn.map(([u])=>u));
   const names=inn.map(([,m])=>m.n).concat(mates.map(m=>m.n));
-  const joined=inn.map(([u,m])=>`<div class="fr in${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></div>`);
+  // the host can tap anyone following to hand them the spin
+  const canGive=!!(liveDoc&&me&&liveDoc.host===me&&G()&&G().live===id);
+  const joined=inn.map(([u,m])=>{const tag=canGive?"button":"div";return `<${tag} ${canGive?`type="button" data-gsu="${u}"`:""} class="fr in${canGive?" give":""}${fresh&&fresh.has(u)?" pop":""}"><span class="av" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0].toUpperCase())}<i>✓</i></span><span class="fn">${esc(nIn(m.n,names)||"Friend")}</span><span class="st">Following</span></${tag}>`});
   const rest=mates.filter(m=>!inU.has(m.uid)&&m.uid!==(liveDoc&&liveDoc.host)).map(m=>`<button type="button" class="fr${sent[m.uid]?" sent":""}" data-mu="${m.uid}" ${sent[m.uid]?"disabled":""}><span class="av"${sent[m.uid]?"":` style="background:${avCol(m.uid)};color:#fff"`}>${esc((m.n||"?")[0].toUpperCase())}<i>${sent[m.uid]?"✓":"+"}</i></span><span class="fn">${sent[m.uid]?"Invited":esc(nIn(m.n,names)||"Friend")}</span></button>`);
-  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>`:""}
+  const all=joined.concat(rest);return all.length?`<div class="frow">${all.join("")}</div>${canGive&&inn.length?`<p class="note givenote">Tap a face to hand over the spin</p>`:""}`:""}
 function invRefresh(fresh){const r=$("invRow"),id=invParts.id;if(!r||!id||!document.contains(r))return;r.innerHTML=invRowHTML(id,fresh);invBindRow($("sheetBody"),id);
   const n=$("invN"),c=memN(liveDoc);if(n)n.innerHTML=c?`<span class="invn">${c} following.</span> `:""}
 function invBindRow(root,id,onAct){const sent=invParts.sent[id]||(invParts.sent[id]={});
+    root.querySelectorAll("[data-gsu]").forEach(b=>b.onclick=()=>giveOneSheet(b.dataset.gsu));
     root.querySelectorAll("[data-mu]").forEach(b=>b.onclick=async()=>{const u=b.dataset.mu;b.disabled=true;
       try{const B=await cloud();await B.set(`users/${u}/invites/${id}`,{from:crawlName(),fromUid:ME.uid,at:Date.now()});sent[u]=1;b.classList.add("sent");b.querySelector("i").textContent="✓";b.querySelector(".fn").textContent="Invited";track("live_invite_mate");if(onAct)onAct()}
       catch(e){b.disabled=false;toast("Couldn't send that one.",2500)}})}
@@ -739,6 +742,10 @@ function takeSpin(d){let g;try{g=JSON.parse(d.g)}catch(e){return}
 function giveSpinSheet(){const d=liveDoc,ms=Object.entries((d&&d.members)||{}).filter(([u])=>u!==(d&&d.host));
   sheet(`<h3>Give the spin to…</h3><p class="note">They spin from here and their phone tracks the crawl. You keep following.</p><div class="mates">${ms.length?ms.map(([u,m])=>`<button type="button" class="mate" data-gs="${u}"><span class="mav" style="background:${avCol(u)};color:#fff">${esc((m.n||"?")[0])}</span><span class="mn">${esc(nIn(m.n,ms.map(x=>x[1].n))||"Friend")}</span><span class="mst">Give</span></button>`).join(""):`<p class="note">Nobody's following yet. Invite someone first.</p>`}</div>`,()=>{
     document.querySelectorAll("[data-gs]").forEach(b=>b.onclick=()=>offerSpin(b.dataset.gs))})}
+// from the invite sheet: tap a follower's face, confirm, then the usual offer goes to their phone
+function giveOneSheet(u){const m=liveDoc&&liveDoc.members&&liveDoc.members[u];if(!m)return;const nm=esc(nFirst(m.n)||"them");
+  sheet(`<h3>Give ${nm} the spin?</h3><p class="note">${nm} spins and tracks the crawl. You keep following.</p><div class="acts"><button class="btn" type="button" id="goY">Give the spin</button><button class="btn dark" type="button" id="goN">Cancel</button></div>`,
+    ()=>{$("goN").onclick=()=>liveInvite();$("goY").onclick=()=>offerSpin(u)})}
 // the offer: their phone asks them; it's only handed over once they say yes (30 seconds, or Cancel)
 const OFFER_MS=30000;let offerT=0;
 async function offerSpin(u){const d=liveDoc,g=G(),m=d&&d.members&&d.members[u];if(!g||!m)return;const at=Date.now(),who=esc(nFirst(m.n)||"Friend");
@@ -884,8 +891,7 @@ function batteryWatch(){if(!navigator.getBattery)return;navigator.getBattery().t
   b.addEventListener("levelchange",chk);document.addEventListener("visibilitychange",()=>setTimeout(chk,1500));chk()}).catch(()=>{})}
 
 // menu rows during a crawl
-function liveMenuRows(g,r){if(!cloudOn()||g.demo)return "";const n=memN(liveDoc);
-  return g.live&&n?r("mGive",I.redo,"Give the spin to…","Hand over the spin · You follow along"):""}
+function liveMenuRows(){return ""}   // invite and give-the-spin live on the faces now, not in the menu
 function liveMenuBind(){if($("mInvite"))$("mInvite").onclick=()=>liveInvite();if($("mGive"))$("mGive").onclick=giveSpinSheet}
 
 // Settings rows
