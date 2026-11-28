@@ -4332,7 +4332,7 @@ const fold=x=>x.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 function listSheet(k,msg,after){
   const c=collectedMap();
   const L={want:{t:"Hit list",d:"Rooftops you've been meaning to get to. Start R&amp;R with <b>Pick from my Hit list</b> and the wheel only spins these."},
-    been:{t:"Visited",d:"Rooftops you've been to before. Turn on <b>Skip visited rooftops</b> when you set up and they won't come up."},
+    been:{t:"Visited",d:"Rooftops you've been to. Crawls add these automatically."},
     nfu:{t:"Pass",d:"Rooftops to leave out of R&amp;R."},
     fav:{t:"Favourites",d:"Rooftops you love. Tap the heart on any rooftop to add it here."}}[k];
   const has=id=>k==="been"?!!(S.been[id]||c[id]):!!S[k][id];
