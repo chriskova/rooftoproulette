@@ -437,7 +437,8 @@ const memN=d=>d?Object.keys(d.members||{}).filter(u=>u!==d.host).length:0;
 let memSeen=null;
 // who's appeared in the doc since this phone last saw it (for the join banner); paintMembers keeps its own copy for the invite sheet
 let memPrev=null;function memFresh(d,id){const ids=Object.keys(d.members||{}),p=memPrev&&memPrev.id===id?memPrev.s:null;memPrev={id,s:new Set(ids)};return p?new Set(ids.filter(u=>!p.has(u))):null}
-function paintMembers(d,id){const ids=Object.keys(d.members||{}).filter(u=>u!==d.host),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
+function peopleOpen(){const h=document.querySelector("#sheetBody h3");return $("sheet").open&&h&&h.textContent==="On this crawl"&&!document.querySelector("#sheet .fmenu,#sheet .lyalert")}
+function paintMembers(d,id){const sig=Object.keys(d.members||{}).sort().join()+"|"+d.host;if(peopleOpen()&&paintMembers._s&&paintMembers._s!==sig)setTimeout(()=>{if(peopleOpen())peopleSheet()},0);paintMembers._s=sig;const ids=Object.keys(d.members||{}).filter(u=>u!==d.host),me=ME&&ME.uid,prev=memSeen&&memSeen.id===id?memSeen.s:null,fresh=new Set(prev?ids.filter(u=>!prev.has(u)&&u!==me):[]);
   memSeen={id,s:new Set(ids)};
   if(fresh.size)invRefresh(fresh);
   const n=ids.length,el=$("liveN");if(el)el.textContent=n?`${n} following`:"Live";paintPeople();if(typeof paintMixInv==="function")paintMixInv()}
@@ -502,7 +503,8 @@ function personSheet(u,anchor){const m=liveDoc&&liveDoc.members&&liveDoc.members
 async function removeFollower(u){const g=G();if(!g||!g.live)return;const B=await cloud();
   try{await B.tx(`live/${g.live}`,d=>{if(!d||d.host!==ME.uid)return undefined;const members=Object.assign({},d.members);delete members[u];return Object.assign({},d,{members,kicked:Object.assign({},d.kicked||{},{[u]:Date.now()})})});
     if(invParts.sent[g.live])delete invParts.sent[g.live][u];joinDone.delete(u);   // they show as invitable again on the invite screen
-    track("live_remove");peopleSheet()}catch(e){toast("Couldn't remove them. Check your signal.",3000)}}
+    if(liveDoc&&liveDoc.members&&liveDoc.members[u]){liveDoc=Object.assign({},liveDoc,{members:Object.assign({},liveDoc.members)});delete liveDoc.members[u]}   // don't wait for the doc to come back round
+    track("live_remove");peopleSheet();paintPeople()}catch(e){toast("Couldn't remove them. Check your signal.",3000)}}
 
 // ---------- someone joined: a banner for everyone on the crawl ----------
 // In the app only (no phone notification). Shown when it happens, or when you next open the app if that's within
