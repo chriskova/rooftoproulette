@@ -464,7 +464,7 @@ const crawlPeople=d=>d?[[d.host,{n:d.hostName,p:d.hostPic,host:1}]].concat(Objec
 // up to three overlapping faces, then +N; never yourself
 function paintPile(el,d,withHost,pop,cap){if(!el||!d)return;const me=ME&&ME.uid,L=crawlPeople(d).filter(([u,m])=>u!==me&&(withHost||!m.host)),c=cap||3,show=c===1&&L.length>1?[]:L.slice(0,L.length>c?Math.max(1,c-1):c),more=L.length-show.length;   // up to `cap` circles, the last one +N when there are more
   const h=show.map(([u,m])=>avHTML(u,m,(m.host?"host ":"")+(pop&&pop.has(u)?"pop":""))).join("")+(more>0?`<span class="pv more">${show.length?"+":""}${more}</span>`:"")
-    +(el.dataset.inv?(show.length||more>0?`<span class="pv inv" aria-hidden="true">+</span>`:invSolo()):"");
+    +(el.dataset.inv?(show.length||more>0?`<span class="pinvb" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>`:invSolo()):"");   // an amber + on the last face: viewing who's on comes first, inviting is the extra
   if(el._h!==h){el._h=h;el.innerHTML=h}}
 // as many faces as fit between the clock and the menu: three circles normally, fewer while the clock's at its widest
 // Roomy first (a little gap from the menu, faces less squashed); tightened only when that's what fits more people.
